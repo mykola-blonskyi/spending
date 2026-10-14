@@ -21,6 +21,7 @@ import {
   toView,
   toLedgerRow,
 } from '../ledger/views';
+import { learnCategoryRule } from '../imports/category-rules';
 import { AccessPolicy } from '../workspaces/access-policy';
 import {
   type ConflictLocal,
@@ -369,6 +370,19 @@ export class SyncService {
                 and(eq(syncConflicts.transactionId, input.id), ne(syncConflicts.userId, actorId)),
               );
           }
+          // BR-29: correcting an imported row's category teaches the next import.
+          if (
+            loaded!.source === 'import' &&
+            intended.categoryId !== null &&
+            intended.categoryId !== existing!.categoryId
+          ) {
+            await learnCategoryRule(
+              tx,
+              intended.workspaceId,
+              existing!.description,
+              intended.categoryId,
+            );
+          }
         }
         return { status: 'applied', transactionId: input.id };
       }
@@ -448,9 +462,17 @@ export class SyncService {
   private async existing(
     tx: Tx,
     id: string,
-  ): Promise<{ row: ExistingRow; accountWorkspaceId: string | null } | null> {
+  ): Promise<{
+    row: ExistingRow;
+    accountWorkspaceId: string | null;
+    source: 'manual' | 'import' | 'recurring';
+  } | null> {
     const [found] = await tx
-      .select({ row: existingColumns, accountWorkspaceId: accounts.workspaceId })
+      .select({
+        row: existingColumns,
+        accountWorkspaceId: accounts.workspaceId,
+        source: transactions.source,
+      })
       .from(transactions)
       .leftJoin(accounts, eq(accounts.id, transactions.accountId))
       .where(eq(transactions.id, id))

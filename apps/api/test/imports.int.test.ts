@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { importBatches, transactions } from '../src/database/schema';
+import { categoryRules, importBatches, transactions } from '../src/database/schema';
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
 import {
   as,
@@ -105,6 +105,30 @@ describe('imports', () => {
   }
   const remove = (s: Session, view: View) =>
     push(s, { type: 'transaction.delete', transactionId: view.id, baseVersion: view.version });
+  const edit = (s: Session, view: View, fields: Record<string, unknown>) =>
+    push(s, {
+      type: 'transaction.upsert',
+      baseVersion: view.version,
+      transaction: {
+        id: view.id,
+        workspaceId: view.workspaceId,
+        kind: view.kind,
+        amountMinor: view.amountMinor,
+        currency: view.currency,
+        occurredOn: view.occurredOn,
+        accountId: view.accountId,
+        categoryId: view.categoryId,
+        description: view.description,
+        note: view.note,
+        ...fields,
+      },
+    });
+  async function categoryIds(s: Session, workspaceId: string): Promise<Map<string, string>> {
+    const { categories } = await json<{
+      categories: { id: string; systemKey: string | null; name: string }[];
+    }>(await as(t, s, `/v1/categories?workspaceId=${workspaceId}`), 200);
+    return new Map(categories.map((c) => [c.systemKey ?? c.name, c.id]));
+  }
   async function history(s: Session, query = ''): Promise<View[]> {
     return (await json<{ transactions: View[] }>(await as(t, s, `/v1/transactions${query}`), 200))
       .transactions;
@@ -268,6 +292,92 @@ describe('imports', () => {
       expect(again.imported.count).toBe(0);
       expect(again.duplicates).toBe(3);
       expect((await history(ann)).map((r) => r.description)).not.toContain('Renfe');
+    });
+  });
+
+  describe('categorization (BR-29)', () => {
+    const byDescription = async (s: Session) =>
+      new Map((await history(s)).map((r) => [r.description, r]));
+
+    it('applies built-in rules by kind and leaves unknown merchants empty', async () => {
+      const ids = await categoryIds(ann, annPersonal);
+      await importRows(ann, [
+        row(2, { description: 'COMPRA TARJ 5489XXXX1234 MERCADONA VALENCIA' }),
+        row(3, { description: 'NOMINA OCTUBRE', amountMinor: 250000 }),
+        row(4, { description: 'MERCADONA', amountMinor: 500 }),
+        row(5, { description: 'Ferreteria Lopez' }),
+      ]);
+      const rows = await byDescription(ann);
+      expect(rows.get('COMPRA TARJ 5489XXXX1234 MERCADONA VALENCIA')!.categoryId).toBe(
+        ids.get('groceries'),
+      );
+      expect(rows.get('NOMINA OCTUBRE')!.categoryId).toBe(ids.get('salary'));
+      expect(rows.get('MERCADONA')!.categoryId).toBeNull();
+      expect(rows.get('Ferreteria Lopez')!.categoryId).toBeNull();
+    });
+
+    it('learns from a correction through sync and uses it on the next import', async () => {
+      const ids = await categoryIds(ann, annPersonal);
+      await importRows(ann, [row(2, { description: 'BAR PEPE 0012 MADRID' })]);
+      const imported = (await history(ann))[0]!;
+      expect(imported.categoryId).toBe(ids.get('dining'));
+      expect((await edit(ann, imported, { categoryId: ids.get('entertainment') })).status).toBe(
+        'applied',
+      );
+      expect(await t.db.select().from(categoryRules)).toMatchObject([
+        {
+          workspaceId: annPersonal,
+          merchantKey: 'bar pepe madrid',
+          categoryId: ids.get('entertainment'),
+        },
+      ]);
+
+      await importRows(ann, [
+        row(2, { description: 'Bar Pepe 0099 Madrid', occurredOn: '2026-10-05' }),
+        row(3, { description: 'Bar Manolo', occurredOn: '2026-10-05' }),
+      ]);
+      const rows = await byDescription(ann);
+      expect(rows.get('Bar Pepe 0099 Madrid')!.categoryId).toBe(ids.get('entertainment'));
+      expect(rows.get('Bar Manolo')!.categoryId).toBe(ids.get('dining'));
+    });
+
+    it('does not learn from manual rows or unchanged categories', async () => {
+      const ids = await categoryIds(ann, annPersonal);
+      await importRows(ann, [row(2, { description: 'Mercadona' })]);
+      const imported = (await history(ann))[0]!;
+      expect((await edit(ann, imported, { note: 'weekly shop' })).status).toBe('applied');
+      const manual = {
+        id: crypto.randomUUID(),
+        workspaceId: annPersonal,
+        kind: 'expense',
+        amountMinor: 100,
+        currency: 'EUR',
+        occurredOn: '2026-10-01',
+        accountId: null,
+        categoryId: null,
+        description: 'Lidl',
+        note: '',
+      };
+      await push(ann, { type: 'transaction.upsert', baseVersion: null, transaction: manual });
+      await push(ann, {
+        type: 'transaction.upsert',
+        baseVersion: 1,
+        transaction: { ...manual, categoryId: ids.get('shopping') },
+      });
+      expect(await t.db.select().from(categoryRules)).toEqual([]);
+    });
+
+    it('ignores a learned rule whose category was archived', async () => {
+      const ids = await categoryIds(ann, annPersonal);
+      await importRows(ann, [row(2, { description: 'Mercadona' })]);
+      await edit(ann, (await history(ann))[0]!, { categoryId: ids.get('shopping') });
+      await as(t, ann, `/v1/categories/${ids.get('shopping')}`, {
+        method: 'PATCH',
+        body: { archived: true },
+      });
+      await importRows(ann, [row(2, { description: 'Mercadona', occurredOn: '2026-10-09' })]);
+      const fresh = (await history(ann)).find((r) => r.occurredOn === '2026-10-09')!;
+      expect(fresh.categoryId).toBe(ids.get('groceries'));
     });
   });
 });

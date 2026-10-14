@@ -7,6 +7,8 @@ import { accounts, importBatches, transactions } from '../database/schema';
 import { convert } from '../ledger/fx/conversion';
 import { FxService } from '../ledger/fx/fx.service';
 import { AccessPolicy } from '../workspaces/access-policy';
+import { categorize } from './categorize';
+import { loadCatalog } from './category-rules';
 import { importHashes } from './dedupe';
 import { type NormalizedRow, validateRows } from './rows';
 import { batchColumns, type ImportBody, type ImportResult, toBatchView } from './schemas';
@@ -44,6 +46,7 @@ export class ImportsService {
         })
         .returning({ id: importBatches.id });
       const hashes = importHashes(account.id, valid);
+      const catalog = await loadCatalog(tx, workspaceId);
       const values = [];
       for (const [index, row] of valid.entries()) {
         values.push({
@@ -55,6 +58,7 @@ export class ImportsService {
           currency: row.currency,
           occurredOn: row.occurredOn,
           accountId: account.id,
+          categoryId: categorize(row.description, row.kind, catalog),
           description: row.description,
           externalId: row.externalId,
           importHash: hashes[index]!,

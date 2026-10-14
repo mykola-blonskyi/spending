@@ -119,7 +119,11 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   user confirms category and scope for each row.
 - **BR-29.** Auto-categorization first uses the user's learned CategoryRules (per merchant key),
   then built-in keyword rules for default categories, and otherwise leaves the category empty.
-  Confirming or changing the category of an imported row updates the learned rule.
+  Only categories of the row's kind qualify, and archived ones are skipped. Confirming or changing
+  the category of an imported row (sync push or review confirmation) updates the learned rule of
+  the row's workspace. The merchant key is the first three words of the stored description, folded
+  to lowercase without accents, with dates, card masks, numbers and bank boilerplate ("compra",
+  "tarjeta", "recibo") removed.
 - **BR-30.** Undoing an import batch deletes (tombstones) its transactions that were not edited
   after import and clears their dedupe keys, so the same statement can be imported again. Edited
   ones are kept and reported. Deleting a single imported transaction keeps its key, so a
