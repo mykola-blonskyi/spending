@@ -41,7 +41,7 @@ services:
         condition: service_completed_successfully
     restart: 'no'
 
-  api:
+  spending-api:
     build:
       context: .
       dockerfile: deploy/api.Dockerfile
@@ -73,7 +73,7 @@ services:
       context: .
       dockerfile: deploy/web.Dockerfile
     depends_on:
-      api:
+      spending-api:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:

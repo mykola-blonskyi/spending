@@ -79,7 +79,7 @@ plain-http issuer only when `NODE_ENV=test`, so run it that way against the fake
 ## Production topology
 
 ```text
-Cloudflare (proxied) → Traefik (Coolify) → web:8080 nginx ──/api/──► api:3000 NestJS
+Cloudflare (proxied) → Traefik (Coolify) → web:8080 nginx ──/api/──► spending-api:3000 NestJS
                                                                         │
 predeploy-backup → migrate → api → web          (start order)           ▼
 backup (daily pg_dump) ──► spending-backups volume       Postgres 18 at 3p9qjnulllqn3bcjqokir0wq:5432
