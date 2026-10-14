@@ -36,7 +36,9 @@ export function useSignOut() {
   });
 
   const request = async () => {
-    if (await hasPendingChanges()) setConfirming(true);
+    // If the local store cannot answer, ask: losing unsynced work silently is the worse outcome.
+    const pending = await hasPendingChanges().catch(() => true);
+    if (pending) setConfirming(true);
     else mutation.mutate();
   };
 

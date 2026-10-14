@@ -3,15 +3,19 @@ import type { AuthLostCode } from '@data/auth-events';
 export const SIGN_IN_PATH = '/signin';
 
 /**
- * Only same-origin paths survive; anything else could turn sign-in into an open redirect.
- * The sign-in page itself is refused too, since returning there after sign-in would loop.
+ * Only same-origin paths survive; anything else could turn sign-in into an open redirect. This
+ * mirrors the API's sanitizer: browsers strip tabs and newlines and treat backslashes as slashes,
+ * and dot segments collapse during parsing ("/..//evil" becomes "//evil"), so the parsed result
+ * is checked too. The sign-in page itself is refused, since returning there would loop.
  */
 export function safeReturnTo(value: string | null): string {
-  if (!value || !value.startsWith('/') || value.startsWith('//') || value.startsWith('/\\')) {
-    return '/';
-  }
-  const { pathname } = new URL(value, 'http://app.invalid');
-  return pathname === SIGN_IN_PATH ? '/' : value;
+  if (!value || value.length > 2048 || !value.startsWith('/')) return '/';
+  if ([...value].some((c) => c <= '\u001f' || c === '\u007f' || c === '\\')) return '/';
+  const parsed = new URL(value, 'http://app.invalid');
+  if (parsed.origin !== 'http://app.invalid') return '/';
+  const target = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  if (target.startsWith('//') || parsed.pathname === SIGN_IN_PATH) return '/';
+  return target;
 }
 
 export function loginHref(returnTo: string): string {

@@ -13,6 +13,13 @@ describe('safeReturnTo', () => {
     ['budgets', '/'],
     ['/signin', '/'],
     ['/signin?returnTo=%2Fbudgets', '/'],
+    ['/\t/evil.example', '/'],
+    ['/\n/evil.example', '/'],
+    ['/..//evil.example', '/'],
+    ['/a/../..//evil.example', '/'],
+    ['/%2e%2e//evil.example', '/'],
+    ['/%5Cevil.example', '/%5Cevil.example'],
+    ['/a\\b', '/'],
   ])('%s becomes %s', (input, expected) => {
     expect(safeReturnTo(input)).toBe(expected);
   });

@@ -114,4 +114,13 @@ describe('useSignOut', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Sign out anyway' }));
     await waitFor(() => expect(loadPage).toHaveBeenCalledWith('/signin'));
   });
+
+  it('asks first when the local store cannot tell whether changes are pending', async () => {
+    vi.mocked(hasPendingChanges).mockRejectedValue(new Error('IndexedDB unavailable'));
+    renderButton();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    expect(await screen.findByRole('alertdialog')).toBeInTheDocument();
+    expect(logout).not.toHaveBeenCalled();
+  });
 });

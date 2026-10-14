@@ -63,6 +63,13 @@ export function useUpdateProfile() {
         queryClient.setQueryData(key, profile);
       }
     },
+    onSettled: () => {
+      // A /me refetch that started mid-PATCH may have restored the old value; refetch once the
+      // last pending update settles.
+      if (queryClient.isMutating({ mutationKey: UPDATE_KEY }) === 1) {
+        void queryClient.invalidateQueries({ queryKey: key });
+      }
+    },
   });
 }
 
