@@ -12,6 +12,7 @@ export const ERROR_STATUS = {
   CONFLICT: HttpStatus.CONFLICT,
   RATE_LIMITED: HttpStatus.TOO_MANY_REQUESTS,
   PAYLOAD_TOO_LARGE: HttpStatus.PAYLOAD_TOO_LARGE,
+  UNAVAILABLE: HttpStatus.SERVICE_UNAVAILABLE,
   INTERNAL: HttpStatus.INTERNAL_SERVER_ERROR,
 } as const satisfies Record<string, HttpStatus>;
 

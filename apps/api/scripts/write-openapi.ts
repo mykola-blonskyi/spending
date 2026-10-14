@@ -5,7 +5,9 @@ import { buildOpenApi, createApp } from '../src/bootstrap';
 import { parseConfig } from '../src/common/config';
 
 async function main(): Promise<void> {
-  const app = await createApp(parseConfig({ NODE_ENV: 'test' }));
+  const app = await createApp(
+    parseConfig({ NODE_ENV: 'test', DATABASE_URL: 'postgres://openapi@localhost/openapi' }),
+  );
   const target = resolve(__dirname, '../../web/src/data/openapi.json');
   writeFileSync(target, `${JSON.stringify(buildOpenApi(app), null, 2)}\n`);
   await app.close();

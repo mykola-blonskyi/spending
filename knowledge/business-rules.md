@@ -14,6 +14,7 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   its author's personal workspace. Viewers who cannot access that account see `account: null`
   and the author's display name instead.
 - **BR-4.** A transaction's category must belong to the transaction's workspace and match its kind.
+  The service layer enforces it, because family deletion (BR-11) moves rows between workspaces.
 - **BR-5.** A user with no session gets `401 AUTH_REQUIRED`. A session whose provider grant was
   revoked is destroyed, and the next request gets `401 SESSION_REVOKED`.
 
@@ -73,7 +74,8 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   timezone.
 - **BR-23.** Recurring generation is idempotent: `(recurringRuleId, recurringOccurrence)` is
   unique. The generator creates every missed occurrence up to today in the rule's timezone. A
-  monthly rule anchored on the 29th to 31st clamps to the last day of shorter months.
+  monthly rule anchored on the 29th to 31st clamps to the last day of shorter months. Deleting a
+  generated transaction leaves its tombstone in place, so that occurrence is not regenerated.
 - **BR-24.** Editing a rule affects only future occurrences. Deleting a rule keeps the
   transactions it already generated.
 
@@ -95,7 +97,9 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   then built-in keyword rules for default categories, and otherwise leaves the category empty.
   Confirming or changing the category of an imported row updates the learned rule.
 - **BR-30.** Undoing an import batch deletes (tombstones) its transactions that were not edited
-  after import. Edited ones are kept and reported.
+  after import and clears their dedupe keys, so the same statement can be imported again. Edited
+  ones are kept and reported. Deleting a single imported transaction keeps its key, so a
+  re-import does not bring it back.
 
 ## Data rights
 
