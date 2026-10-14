@@ -135,6 +135,12 @@ for export and API clients.
 **Consequences.** There is no second code path whose access checks can drift. Offline and online
 behave identically.
 
+Revisions come from one sequence, assigned by the `ledger_stamp` trigger under a
+transaction-scoped advisory lock. Revision order therefore equals commit order, and a pull cursor
+cannot skip a write that commits late. The cost is that ledger writes are serialized, which is
+negligible at household scale. `transactions.version` increments only on user-visible changes,
+so background FX fills never cause conflicts.
+
 ## ADR-007: EUR base currency, ECB reference rates
 
 Date: 2026-10-14

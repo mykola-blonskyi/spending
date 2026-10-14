@@ -44,6 +44,14 @@ describe('convertToEurMinor', () => {
     expect(convertToEurMinor(1_000_000_003, c('GBP'), '0.8571000000')).toBe(1_166_725_006);
   });
 
+  it('rejects amounts outside the positive safe range and overflowing results', () => {
+    expect(() => convertToEurMinor(-8, c('USD'), '3')).toThrow(RangeError);
+    expect(() => convertToEurMinor(1.5, c('USD'), '3')).toThrow(RangeError);
+    expect(() => convertToEurMinor(Number.MAX_SAFE_INTEGER, c('JPY'), '0.0001')).toThrow(
+      RangeError,
+    );
+  });
+
   it('rejects malformed or zero rates', () => {
     expect(() => convertToEurMinor(100, c('USD'), '0')).toThrow(RangeError);
     expect(() => convertToEurMinor(100, c('USD'), '1e3')).toThrow(RangeError);
@@ -62,7 +70,18 @@ describe('parseAmountToMinor', () => {
     expect(parseAmountToMinor(text, exponent, sep)).toBe(expected);
   });
 
-  it.each(['', 'abc', '1,2,3', '12.345,678', '9'.repeat(20)])('rejects %s', (text) => {
-    expect(parseAmountToMinor(text, 2, ',')).toBeNull();
+  it.each([
+    ['', ','],
+    ['abc', ','],
+    ['1,2,3', ','],
+    ['12.345,678', ','],
+    ['9'.repeat(20), ','],
+    ['12,50', '.'],
+    ['1.5', ','],
+    ['1 2 3', '.'],
+    ['1,2,3.4', '.'],
+    ['1,234 567.00', '.'],
+  ] as const)('rejects %s with %s as decimal separator', (text, sep) => {
+    expect(parseAmountToMinor(text, 2, sep)).toBeNull();
   });
 });

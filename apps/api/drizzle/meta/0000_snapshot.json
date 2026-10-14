@@ -1,5 +1,5 @@
 {
-  "id": "c969e5e0-5c3a-4c7d-a317-880119ac259f",
+  "id": "cc96081c-5a66-43f6-b119-baea9e33bb2d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -488,7 +488,12 @@
       },
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "fx_rates_rate_ck": {
+          "name": "fx_rates_rate_ck",
+          "value": "\"fx_rates\".\"rate_per_eur\" > 0"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.import_batches": {
@@ -1695,15 +1700,54 @@
           "method": "btree",
           "with": {}
         },
-        "transactions_import_hash_uq": {
-          "name": "transactions_import_hash_uq",
+        "transactions_account_idx": {
+          "name": "transactions_account_idx",
           "columns": [
             {
               "expression": "account_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
-            },
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "transactions_created_by_idx": {
+          "name": "transactions_created_by_idx",
+          "columns": [
+            {
+              "expression": "created_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "transactions_import_batch_idx": {
+          "name": "transactions_import_batch_idx",
+          "columns": [
+            {
+              "expression": "import_batch_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "transactions_import_hash_uq": {
+          "name": "transactions_import_hash_uq",
+          "columns": [
             {
               "expression": "import_hash",
               "isExpression": false,
@@ -1835,6 +1879,18 @@
         "transactions_fx_ck": {
           "name": "transactions_fx_ck",
           "value": "(\"transactions\".\"base_amount_minor\" is null) = (\"transactions\".\"fx_rate\" is null and \"transactions\".\"currency\" <> 'EUR')"
+        },
+        "transactions_eur_base_ck": {
+          "name": "transactions_eur_base_ck",
+          "value": "\"transactions\".\"currency\" <> 'EUR' or \"transactions\".\"base_amount_minor\" = \"transactions\".\"amount_minor\""
+        },
+        "transactions_fx_rate_ck": {
+          "name": "transactions_fx_rate_ck",
+          "value": "\"transactions\".\"fx_rate\" is null or \"transactions\".\"fx_rate\" > 0"
+        },
+        "transactions_version_ck": {
+          "name": "transactions_version_ck",
+          "value": "\"transactions\".\"version\" >= 1"
         }
       },
       "isRLSEnabled": false

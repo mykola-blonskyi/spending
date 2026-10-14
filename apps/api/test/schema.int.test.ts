@@ -1,4 +1,4 @@
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { memberships, transactions, users, workspaces } from '../src/database/schema';
 import { resetData, startTestApp, type TestApp } from './harness';
@@ -47,10 +47,57 @@ describe('schema invariants', () => {
     expect(second!.revision).toBeGreaterThan(first!.revision);
     const [updated] = await t.db
       .update(transactions)
-      .set({ revision: sql`nextval('ledger_revision')` })
+      .set({ description: 'Coffee' })
       .where(eq(transactions.id, first!.id))
       .returning();
     expect(updated!.revision).toBeGreaterThan(second!.revision);
+    expect(updated!.version).toBe(2);
+  });
+
+  it('keeps the version when only derived conversion fields change', async () => {
+    const { workspace } = await userWithWorkspace('rev2');
+    const [row] = await t.db
+      .insert(transactions)
+      .values({ ...baseTx(workspace.id), currency: 'USD', baseAmountMinor: null })
+      .returning();
+    const [filled] = await t.db
+      .update(transactions)
+      .set({ baseAmountMinor: 1155, fxRate: '1.0823', fxRateDate: '2026-10-01', fxSource: 'ecb' })
+      .where(eq(transactions.id, row!.id))
+      .returning();
+    expect(filled!.version).toBe(1);
+    expect(filled!.revision).toBeGreaterThan(row!.revision);
+  });
+
+  it('assigns revisions in commit order across concurrent writers', async () => {
+    const { workspace } = await userWithWorkspace('rev3');
+    let releaseFirst!: () => void;
+    const firstHolds = new Promise<void>((resolve) => (releaseFirst = resolve));
+    const first = t.db.transaction(async (tx) => {
+      const [row] = await tx.insert(transactions).values(baseTx(workspace.id)).returning();
+      await firstHolds;
+      return row!;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    let secondCommitted = false;
+    const second = t.db
+      .insert(transactions)
+      .values(baseTx(workspace.id))
+      .returning()
+      .then((rows) => ((secondCommitted = true), rows));
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const committedEarly = secondCommitted;
+    releaseFirst();
+    expect(committedEarly, 'a later writer must wait for the open writer to commit').toBe(false);
+    const [a, [b]] = await Promise.all([first, second]);
+    expect(b!.revision).toBeGreaterThan(a.revision);
+  });
+
+  it('keeps EUR base amounts equal to the amount', async () => {
+    const { workspace } = await userWithWorkspace('eur');
+    await expect(
+      t.db.insert(transactions).values({ ...baseTx(workspace.id), baseAmountMinor: 999 }),
+    ).rejects.toThrow();
   });
 
   it('rejects non-positive amounts and malformed currencies', async () => {

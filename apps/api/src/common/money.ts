@@ -25,7 +25,7 @@ function parseDecimal(text: string): Decimal | null {
   return { digits: BigInt(match[1]! + fraction), scale: fraction.length };
 }
 
-/** Integer division rounding half to even, so repeated conversions carry no bias. */
+/** Division of non-negative integers rounding half to even, so conversions carry no bias. */
 function divideHalfEven(numerator: bigint, denominator: bigint): bigint {
   const quotient = numerator / denominator;
   const remainder = numerator % denominator;
@@ -43,33 +43,41 @@ export function convertToEurMinor(
   currency: CurrencyCode,
   ratePerEur: string,
 ): number {
+  if (!Number.isSafeInteger(amountMinor) || amountMinor <= 0) {
+    throw new RangeError('Amount must be a positive safe integer');
+  }
   const rate = parseDecimal(ratePerEur);
   if (!rate || rate.digits === 0n) throw new RangeError('Invalid exchange rate');
   const eurExponent = currencyExponent(BASE_CURRENCY);
   const exponent = currencyExponent(currency);
   const numerator = BigInt(amountMinor) * 10n ** BigInt(eurExponent + rate.scale);
   const denominator = rate.digits * 10n ** BigInt(exponent);
-  return Number(divideHalfEven(numerator, denominator));
+  const converted = divideHalfEven(numerator, denominator);
+  if (converted > BigInt(Number.MAX_SAFE_INTEGER))
+    throw new RangeError('Converted amount overflows');
+  return Number(converted);
 }
 
 /**
  * Parses a human amount ("1.234,56", "-12.5", "1 234.5") into a signed minor-unit integer.
- * `decimalSeparator` disambiguates grouping. Returns null for anything that is not a plain amount
- * or that has more fraction digits than the currency allows.
+ * Grouping characters are accepted only between valid groups of three digits, so a wrong
+ * separator choice fails loudly ("12,50" with "." as decimal separator) instead of scaling the
+ * amount. Returns null for anything that is not a plain amount or has too many fraction digits.
  */
 export function parseAmountToMinor(
   text: string,
   exponent: number,
   decimalSeparator: '.' | ',',
 ): number | null {
-  const group = decimalSeparator === ',' ? /[.\s\u00a0\u202f']/g : /[,\s\u00a0\u202f']/g;
-  let normalized = text.trim().replace(group, '');
-  if (decimalSeparator === ',') normalized = normalized.replace(',', '.');
-  const match = /^([+-]?)(\d+)(?:\.(\d*))?$/.exec(normalized);
+  const groupChars = decimalSeparator === ',' ? ".\\s\\u00a0\\u202f'" : ",\\s\\u00a0\\u202f'";
+  const match = new RegExp(
+    `^([+-]?)(\\d{1,3}(?:([${groupChars}])\\d{3}(?:\\3\\d{3})*)?|\\d+)(?:\\${decimalSeparator}(\\d*))?$`,
+  ).exec(text.trim());
   if (!match) return null;
-  const fraction = match[3] ?? '';
+  const integer = match[2]!.replace(/\D/g, '');
+  const fraction = match[4] ?? '';
   if (fraction.length > exponent) return null;
-  const minor = BigInt(match[2]! + fraction.padEnd(exponent, '0'));
+  const minor = BigInt(integer + fraction.padEnd(exponent, '0'));
   if (minor > BigInt(Number.MAX_SAFE_INTEGER)) return null;
   return Number(match[1] === '-' ? -minor : minor);
 }

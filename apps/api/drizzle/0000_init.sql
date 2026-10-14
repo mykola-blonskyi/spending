@@ -60,7 +60,8 @@ CREATE TABLE "fx_rates" (
 	"currency" text NOT NULL,
 	"rate_per_eur" numeric(20, 10) NOT NULL,
 	"source" text NOT NULL,
-	CONSTRAINT "fx_rates_currency_date_pk" PRIMARY KEY("currency","date")
+	CONSTRAINT "fx_rates_currency_date_pk" PRIMARY KEY("currency","date"),
+	CONSTRAINT "fx_rates_rate_ck" CHECK ("fx_rates"."rate_per_eur" > 0)
 );
 --> statement-breakpoint
 CREATE TABLE "import_batches" (
@@ -196,7 +197,10 @@ CREATE TABLE "transactions" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "transactions_amount_ck" CHECK ("transactions"."amount_minor" > 0),
 	CONSTRAINT "transactions_currency_ck" CHECK (currency ~ '^[A-Z]{3}$'),
-	CONSTRAINT "transactions_fx_ck" CHECK (("transactions"."base_amount_minor" is null) = ("transactions"."fx_rate" is null and "transactions"."currency" <> 'EUR'))
+	CONSTRAINT "transactions_fx_ck" CHECK (("transactions"."base_amount_minor" is null) = ("transactions"."fx_rate" is null and "transactions"."currency" <> 'EUR')),
+	CONSTRAINT "transactions_eur_base_ck" CHECK ("transactions"."currency" <> 'EUR' or "transactions"."base_amount_minor" = "transactions"."amount_minor"),
+	CONSTRAINT "transactions_fx_rate_ck" CHECK ("transactions"."fx_rate" is null or "transactions"."fx_rate" > 0),
+	CONSTRAINT "transactions_version_ck" CHECK ("transactions"."version" >= 1)
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
@@ -269,5 +273,8 @@ CREATE INDEX "sync_mutations_created_idx" ON "sync_mutations" USING btree ("crea
 CREATE INDEX "transactions_history_idx" ON "transactions" USING btree ("workspace_id","occurred_on" DESC NULLS LAST) WHERE "transactions"."deleted_at" is null;--> statement-breakpoint
 CREATE INDEX "transactions_revision_idx" ON "transactions" USING btree ("revision");--> statement-breakpoint
 CREATE INDEX "transactions_category_idx" ON "transactions" USING btree ("category_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "transactions_import_hash_uq" ON "transactions" USING btree ("account_id","import_hash") WHERE "transactions"."import_hash" is not null;--> statement-breakpoint
+CREATE INDEX "transactions_account_idx" ON "transactions" USING btree ("account_id");--> statement-breakpoint
+CREATE INDEX "transactions_created_by_idx" ON "transactions" USING btree ("created_by");--> statement-breakpoint
+CREATE INDEX "transactions_import_batch_idx" ON "transactions" USING btree ("import_batch_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "transactions_import_hash_uq" ON "transactions" USING btree ("import_hash") WHERE "transactions"."import_hash" is not null;--> statement-breakpoint
 CREATE UNIQUE INDEX "transactions_recurring_uq" ON "transactions" USING btree ("recurring_rule_id","recurring_occurrence") WHERE "transactions"."recurring_rule_id" is not null;

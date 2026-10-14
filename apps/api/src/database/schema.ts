@@ -19,7 +19,11 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-/** One global, monotonically increasing sequence shared by every synced table (BR-17). */
+/**
+ * One global sequence shared by every synced table (BR-17). The `ledger_stamp` trigger
+ * (migration 0001) assigns it under a transaction-scoped advisory lock, so revisions become
+ * visible in commit order and a pull cursor can never skip a late-committing write.
+ */
 export const ledgerRevision = pgSequence('ledger_revision');
 
 export const localeEnum = pgEnum('locale', ['en', 'uk', 'ru', 'es']);
@@ -288,8 +292,13 @@ export const transactions = pgTable(
       .where(sql`${t.deletedAt} is null`),
     index('transactions_revision_idx').on(t.revision),
     index('transactions_category_idx').on(t.categoryId),
+    index('transactions_account_idx').on(t.accountId),
+    index('transactions_created_by_idx').on(t.createdBy),
+    index('transactions_import_batch_idx').on(t.importBatchId),
+    // The hash already includes the account id (BR-27), so it is unique on its own and survives
+    // the row moving to the family workspace or the account being archived.
     uniqueIndex('transactions_import_hash_uq')
-      .on(t.accountId, t.importHash)
+      .on(t.importHash)
       .where(sql`${t.importHash} is not null`),
     uniqueIndex('transactions_recurring_uq')
       .on(t.recurringRuleId, t.recurringOccurrence)
@@ -300,6 +309,12 @@ export const transactions = pgTable(
       'transactions_fx_ck',
       sql`(${t.baseAmountMinor} is null) = (${t.fxRate} is null and ${t.currency} <> 'EUR')`,
     ),
+    check(
+      'transactions_eur_base_ck',
+      sql`${t.currency} <> 'EUR' or ${t.baseAmountMinor} = ${t.amountMinor}`,
+    ),
+    check('transactions_fx_rate_ck', sql`${t.fxRate} is null or ${t.fxRate} > 0`),
+    check('transactions_version_ck', sql`${t.version} >= 1`),
   ],
 );
 
@@ -351,7 +366,10 @@ export const fxRates = pgTable(
     ratePerEur: numeric('rate_per_eur', { precision: 20, scale: 10 }).notNull(),
     source: text('source').notNull(),
   },
-  (t) => [primaryKey({ columns: [t.currency, t.date] })],
+  (t) => [
+    primaryKey({ columns: [t.currency, t.date] }),
+    check('fx_rates_rate_ck', sql`${t.ratePerEur} > 0`),
+  ],
 );
 
 export const budgets = pgTable(
