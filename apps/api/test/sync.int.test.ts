@@ -396,13 +396,12 @@ describe('sync', () => {
     expect((await pull(cat, catStart.cursor)).transactions).toEqual([tombstone]);
     expect((await pull(bob)).transactions.filter((r) => r.id === row.id)).toEqual([tombstone]);
 
-    const [{ id: bobId }] = await t.db
+    const [bobUser] = await t.db
       .select({ id: users.id })
       .from(users)
       .where(eq(users.email, 'Bob@example.test'));
-    expect(
-      (await as(t, ann, '/v1/family/transfer', { method: 'POST', body: { userId: bobId } })).status,
-    ).toBe(200);
+    const transfer = { method: 'POST', body: { userId: bobUser!.id } } as const;
+    expect((await as(t, ann, '/v1/family/transfer', transfer)).status).toBe(200);
     expect((await as(t, ann, '/v1/family/leave', { method: 'POST' })).status).toBe(204);
     await push(ann, upsert({ ...row, workspaceId: annPersonal, note: 'after leaving' }, version));
     expect((await pull(bob, bobMoved.cursor)).transactions).toEqual([]);
