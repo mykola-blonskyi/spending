@@ -45,6 +45,8 @@ jobs:
           pnpm openapi
           git status --porcelain -- apps/web/src/data
           test -z "$(git status --porcelain -- apps/web/src/data)"
+      - name: Deploy script tests
+        run: sh scripts/coolify-deploy.test.sh
 
   unit:
     name: Unit and component tests
