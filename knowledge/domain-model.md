@@ -68,7 +68,8 @@ Where money sits: a card, a bank account, cash.
 
 - `id`, `workspaceId`, `name`, `kind` (`income|expense`), `color`, `icon`, `archivedAt`.
 - `systemKey` (nullable). Default categories carry a stable key such as `groceries`, so the UI can
-  localize their names until the user renames them. Every new workspace, personal or family, is
+  localize their names while the stored name still equals the default English name. Renaming
+  keeps the key, which the import categorizer relies on. Every new workspace, personal or family, is
   seeded with 14 expense and 6 income defaults (`workspaces/default-categories.ts`).
 
 ## Transaction

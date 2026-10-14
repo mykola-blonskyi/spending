@@ -202,8 +202,12 @@ export class FamilyService {
     });
   }
 
+  /**
+   * Only a pending link reveals who invited; every other state answers like accept does, so a
+   * leaked used or revoked link discloses nothing and the endpoint is no state oracle.
+   */
   async previewInvitation(token: string) {
-    if (!TOKEN_FORMAT.test(token)) throw new ApiError('NOT_FOUND');
+    if (!TOKEN_FORMAT.test(token)) throw new ApiError('INVITATION_INVALID');
     const owner = alias(users, 'owner');
     const [row] = await this.db
       .select({
@@ -217,12 +221,14 @@ export class FamilyService {
       .innerJoin(workspaces, eq(workspaces.id, invitations.workspaceId))
       .innerJoin(owner, eq(owner.id, workspaces.ownerId))
       .where(eq(invitations.tokenHash, hashToken(token)));
-    if (!row) throw new ApiError('NOT_FOUND');
+    if (!row || invitationState(row, new Date()) !== 'pending') {
+      throw new ApiError('INVITATION_INVALID');
+    }
     return {
       familyName: row.familyName,
       ownerName: row.ownerName,
       expiresAt: row.expiresAt.toISOString(),
-      state: invitationState(row, new Date()),
+      state: 'pending' as const,
     };
   }
 

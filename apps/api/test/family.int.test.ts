@@ -149,10 +149,9 @@ describe('family workspaces', () => {
     const replay = await accept(cat, invitation.token);
     expect(replay.status).toBe(410);
     expect(await errorCode(replay)).toBe('INVITATION_INVALID');
-    expect(
-      (await json<{ state: string }>(await as(t, cat, `/v1/invitations/${invitation.token}`), 200))
-        .state,
-    ).toBe('accepted');
+    const usedPreview = await as(t, cat, `/v1/invitations/${invitation.token}`);
+    expect(usedPreview.status).toBe(410);
+    expect(await errorCode(usedPreview)).toBe('INVITATION_INVALID');
 
     const expired = await invite(ann);
     await t.db
@@ -167,11 +166,14 @@ describe('family workspaces', () => {
       (await as(t, ann, `/v1/family/invitations/${revoked.id}`, { method: 'DELETE' })).status,
     ).toBe(204);
     for (const token of [expired.token, revoked.token, 'x'.repeat(43), 'short']) {
-      const response = await accept(cat, token);
-      expect(response.status).toBe(410);
-      expect(await errorCode(response)).toBe('INVITATION_INVALID');
+      for (const response of [
+        await as(t, cat, `/v1/invitations/${token}`),
+        await accept(cat, token),
+      ]) {
+        expect(response.status).toBe(410);
+        expect(await errorCode(response)).toBe('INVITATION_INVALID');
+      }
     }
-    expect((await as(t, cat, `/v1/invitations/${'x'.repeat(43)}`)).status).toBe(404);
 
     const pending = await invite(ann, 30);
     const list = await json<{ invitations: { id: string; state: string }[] }>(

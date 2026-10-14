@@ -1,6 +1,6 @@
 {
-  "id": "f6b882eb-5c44-4502-8e2c-c5fa91d9eb9d",
-  "prevId": "5f00e7e5-9985-4065-ab93-777bd9b42df1",
+  "id": "a4e71330-26de-4e30-b03c-78f0fa3d4370",
+  "prevId": "f1e8e778-9710-4dc4-8cb6-73c7cee40028",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -780,6 +780,12 @@
         },
         "code_verifier": {
           "name": "code_verifier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "binding_hash": {
+          "name": "binding_hash",
           "type": "text",
           "primaryKey": false,
           "notNull": true
