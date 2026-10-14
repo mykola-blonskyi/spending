@@ -92,6 +92,13 @@ Where money sits: a card, a bank account, cash.
 The idempotency log for offline writes: `id` (client mutation UUID, primary key), `userId`,
 `result` (JSON), `createdAt`. Replaying a mutation ID returns the stored result.
 
+## SyncTombstone
+
+Records that a transaction left a workspace (its author moved it), so that workspace's members
+pull a tombstone for it: `(workspaceId, transactionId)` primary key, `revision` (from the global
+change sequence, assigned at the move), `deletedAt`. A repeated move refreshes the row. Later edits
+of the transaction never touch it (BR-2).
+
 ## SyncConflict
 
 Created when an offline edit was based on a stale version.
