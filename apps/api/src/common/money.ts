@@ -69,9 +69,9 @@ export function parseAmountToMinor(
   exponent: number,
   decimalSeparator: '.' | ',',
 ): number | null {
-  const groupChars = decimalSeparator === ',' ? ".\\s\\u00a0\\u202f'" : ",\\s\\u00a0\\u202f'";
+  const groupChars = decimalSeparator === ',' ? ". \\u00a0\\u202f'" : ", \\u00a0\\u202f'";
   const match = new RegExp(
-    `^([+-]?)(\\d{1,3}(?:([${groupChars}])\\d{3}(?:\\3\\d{3})*)?|\\d+)(?:\\${decimalSeparator}(\\d*))?$`,
+    `^([+-]?)(\\d{1,3}(?:([${groupChars}])\\d{3}(?:\\3\\d{3})*)?|\\d+)(?:\\${decimalSeparator}(\\d+))?$`,
   ).exec(text.trim());
   if (!match) return null;
   const integer = match[2]!.replace(/\D/g, '');

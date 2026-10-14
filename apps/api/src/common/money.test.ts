@@ -81,6 +81,8 @@ describe('parseAmountToMinor', () => {
     ['1 2 3', '.'],
     ['1,2,3.4', '.'],
     ['1,234 567.00', '.'],
+    ['1\t234', '.'],
+    ['5.', '.'],
   ] as const)('rejects %s with %s as decimal separator', (text, sep) => {
     expect(parseAmountToMinor(text, 2, sep)).toBeNull();
   });

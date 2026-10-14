@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { memberships, transactions, users, workspaces } from '../src/database/schema';
+import { ledgerTransaction } from '../src/database/database.module';
 import { resetData, startTestApp, type TestApp } from './harness';
 
 describe('schema invariants', () => {
@@ -91,6 +92,19 @@ describe('schema invariants', () => {
     expect(committedEarly, 'a later writer must wait for the open writer to commit').toBe(false);
     const [a, [b]] = await Promise.all([first, second]);
     expect(b!.revision).toBeGreaterThan(a.revision);
+  });
+
+  it('lets ledger writers touch rows in opposite order without deadlocking', async () => {
+    const { workspace } = await userWithWorkspace('dl');
+    const [a] = await t.db.insert(transactions).values(baseTx(workspace.id)).returning();
+    const [b] = await t.db.insert(transactions).values(baseTx(workspace.id)).returning();
+    const touch = (first: string, second: string) =>
+      ledgerTransaction(t.db, async (tx) => {
+        await tx.update(transactions).set({ note: first }).where(eq(transactions.id, first));
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        await tx.update(transactions).set({ note: second }).where(eq(transactions.id, second));
+      });
+    await Promise.all([touch(a!.id, b!.id), touch(b!.id, a!.id)]);
   });
 
   it('keeps EUR base amounts equal to the amount', async () => {
