@@ -75,6 +75,13 @@ as `ApiError` with a stable `code`, and screens show `errors.<code>` from the ca
 - **Transaction writes.** They go to the local store and the mutation queue, then
   `POST /api/v1/sync/push` (ADR-006). Results update the local rows: applied, conflict or
   rejected.
+- **Local store** (`data/sync`). One IndexedDB database per user (`spending-<userId>`), listed in
+  the device registry `localStorage['spending.localDatabases']`. Each transaction record keeps the
+  last server row and, while a change is pending, the optimistic local row; readers count one of
+  them, never both. A local write updates the record and the mutation queue in one IndexedDB
+  transaction. Pull and push results are applied by pure reducers (`pull.ts`, `push.ts`), and
+  the flusher (`engine.ts`) pushes up to 200 queued mutations in order, then pulls until
+  `hasMore` is false.
 - **Conflicts.** The server keeps its row and records the client's version (BR-19). The client
   shows both and lets the user pick or merge.
 

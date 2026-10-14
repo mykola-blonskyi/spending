@@ -66,6 +66,12 @@ export const uk = {
       conflictShort:
         '{count, plural, one {# конфлікт} few {# конфлікти} many {# конфліктів} other {# конфлікту}}',
       conflictDescription: 'Цей запис змінили на іншому пристрої. Оберіть, яку версію залишити.',
+      retrying: 'Повторна спроба…',
+      authRequired: 'Увійдіть, щоб синхронізувати',
+      failedShort:
+        '{count, plural, one {# не надіслано} few {# не надіслано} many {# не надіслано} other {# не надіслано}}',
+      offlineShort:
+        '{count, plural, =0 {Офлайн} one {Офлайн, # в черзі} few {Офлайн, # в черзі} many {Офлайн, # в черзі} other {Офлайн, # в черзі}}',
     },
     approval: {
       title: 'Очікує схвалення',
@@ -99,6 +105,11 @@ export const uk = {
     errors: {
       login_failed: 'Не вдалося завершити вхід. Спробуйте ще раз.',
       login_expired: 'Час на вхід вичерпано. Почніть спочатку.',
+      INVALID_ACCOUNT: 'Цей рахунок архівовано або він тут недоступний. Оберіть інший.',
+      INVALID_CATEGORY:
+        'Цю категорію архівовано або вона не підходить до цього типу. Оберіть іншу.',
+      REVIEW_REQUIRED: 'Цей запис очікує перевірки в імпорті, тож його поки не можна змінити.',
+      MUTATION_ID_REUSED: 'Цю зміну не вдалося повʼязати з вашим акаунтом. Зробіть її ще раз.',
     },
     pendingHint: {
       title: 'Досі не вдається увійти?',
@@ -126,12 +137,31 @@ export const uk = {
       description: 'Усі витрати й доходи, від нових до старих.',
       emptyTitle: 'Операцій поки немає',
       emptyDescription: 'Додайте витрату або імпортуйте банківську виписку, щоб почати.',
+      searchLabel: 'Пошук операцій',
+      searchPlaceholder: 'Шукати в описах і нотатках',
+      kindFilter: 'Тип',
+      allKinds: 'Усі',
+      noMatchesTitle: 'Нічого не знайдено',
+      noMatchesDescription: 'Спробуйте інший запит або тип.',
+      firstSync: 'Переносимо вашу історію на цей пристрій…',
+      firstSyncLoaded:
+        '{count, plural, one {Уже # запис} few {Уже # записи} many {Уже # записів} other {Уже # запису}}',
+      totalSpent: 'Витрачено',
+      totalReceived: 'Отримано',
+      uncategorized: 'Без категорії',
+      pending: 'Очікує синхронізації',
+      failed: 'Не синхронізовано: {reason}',
+      conflict: 'Потребує перевірки',
     },
     addTransaction: {
       title: 'Нова операція',
       description: 'Запишіть витрату чи дохід.',
-      emptyTitle: 'Швидке додавання — незабаром',
-      emptyDescription: 'Скоро тут можна буде додати операцію в кілька дотиків.',
+    },
+    editTransaction: {
+      title: 'Редагування операції',
+      description: 'Зміни зберігаються на цьому пристрої й синхронізуються автоматично.',
+      notFoundTitle: 'Операцію не знайдено',
+      notFoundDescription: 'Можливо, її видалили або вона ще не дійшла до цього пристрою.',
     },
     budgets: {
       title: 'Бюджети',
@@ -180,6 +210,28 @@ export const uk = {
       emptyTitle: 'Усе синхронізовано',
       emptyDescription: 'Зміни, зроблені офлайн, чекатимуть тут, доки не потраплять на сервер.',
     },
+  },
+  transactionForm: {
+    kind: 'Тип',
+    expense: 'Витрата',
+    income: 'Дохід',
+    amount: 'Сума',
+    amountInvalid: 'Введіть суму, більшу за нуль, наприклад 12.50.',
+    currency: 'Валюта',
+    date: 'Дата',
+    account: 'Рахунок',
+    noAccount: 'Без рахунку',
+    category: 'Категорія',
+    noCategory: 'Без категорії',
+    description: 'Опис',
+    descriptionPlaceholder: 'На що це було?',
+    save: 'Зберегти',
+    saveFailed: 'Не вдалося зберегти зміну на цьому пристрої. Спробуйте ще раз.',
+    delete: 'Видалити',
+    deleteTitle: 'Видалити цю операцію?',
+    deleteDescription:
+      'Вона зникне з історії одразу, а із сервера — під час наступної синхронізації.',
+    notReady: 'Готуємо ваші рахунки й категорії…',
   },
   settings: {
     appearance: 'Вигляд',

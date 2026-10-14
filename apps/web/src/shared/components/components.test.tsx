@@ -26,7 +26,11 @@ describe('SyncStatusBadge', () => {
     [{ state: 'synced' }, 'Up to date'],
     [{ state: 'syncing' }, 'Syncing…'],
     [{ state: 'pending', count: 3 }, '3 pending'],
-    [{ state: 'failed' }, 'Sync failed'],
+    [{ state: 'retrying' }, 'Retrying…'],
+    [{ state: 'offline', count: 0 }, 'Offline'],
+    [{ state: 'offline', count: 2 }, 'Offline, 2 pending'],
+    [{ state: 'failed', count: 1 }, '1 failed'],
+    [{ state: 'authRequired' }, 'Sign in to sync'],
     [{ state: 'conflict', count: 2 }, '2 conflicts'],
   ])('shows %o as "%s"', (status, label) => {
     render(<SyncStatusBadge status={status} />);

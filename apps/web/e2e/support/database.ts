@@ -23,6 +23,23 @@ export class E2EDatabase {
     return result.rowCount ?? 0;
   }
 
+  /** The user's transactions as the server holds them, deleted ones included. */
+  async transactions(email: string) {
+    const { rows } = await this.pool.query<{
+      id: string;
+      amount_minor: string;
+      description: string;
+      version: number;
+      deleted: boolean;
+    }>(
+      `select t.id, t.amount_minor, t.description, t.version, t.deleted_at is not null as deleted
+         from transactions t join users u on u.id = t.created_by
+        where u.email = $1 order by t.created_at`,
+      [email],
+    );
+    return rows.map((row) => ({ ...row, amount_minor: Number(row.amount_minor) }));
+  }
+
   close(): Promise<void> {
     return this.pool.end();
   }

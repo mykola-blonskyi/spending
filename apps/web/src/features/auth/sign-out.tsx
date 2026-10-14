@@ -17,16 +17,19 @@ export function useSignOut() {
   const queryClient = useQueryClient();
   const { user } = useSession();
 
-  const leave = (endSessionUrl: string | null) => {
-    clearLocalUserData(queryClient, user.id);
-    loadPage(endSessionUrl ?? SIGN_IN_PATH);
+  const leave = async (endSessionUrl: string | null) => {
+    try {
+      await clearLocalUserData(queryClient, user.id);
+    } finally {
+      loadPage(endSessionUrl ?? SIGN_IN_PATH);
+    }
   };
 
   const mutation = useMutation({
     mutationFn: logout,
     onSuccess: ({ endSessionUrl }) => leave(endSessionUrl),
     onError: (error) => {
-      if (isSignedOutError(error)) leave(null);
+      if (isSignedOutError(error)) void leave(null);
       else toast.error(t(`errors.${errorCode(error)}`));
     },
   });
