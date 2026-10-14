@@ -67,6 +67,7 @@ missing or invalid. `apps/api/.env.example` documents every variable with local 
 | `OIDC_CLIENT_SECRET`     | Its secret (`client_secret_basic`)                                             |
 | `SESSION_ENCRYPTION_KEY` | Base64 of 32 random bytes. Rotating it signs everyone out at the next re-check |
 | `COOKIE_SECURE`          | Default `true`; must be `true` in production                                   |
+| `APP_VERSION`            | Optional build commit shown by `/api/health` (default `unknown`)               |
 
 Register these URIs with the provider: redirect `${APP_ORIGIN}/api/v1/auth/callback` and
 post-logout `${APP_ORIGIN}/signin`.
@@ -75,3 +76,213 @@ For local sign-in without the real provider, run `pnpm --filter @spending/api fa
 4400). It offers one button per test user, configured with `FAKE_OIDC_USERS`,
 `FAKE_OIDC_CLIENT_ID`, `FAKE_OIDC_CLIENT_SECRET` and `FAKE_OIDC_APP_ORIGIN`. The API talks to a
 plain-http issuer only when `NODE_ENV=test`, so run it that way against the fake provider.
+
+## Production topology
+
+```text
+Cloudflare (proxied) → Traefik (Coolify) → web:8080 nginx ──/api/──► spending-api:3000 NestJS
+                                                                        │
+predeploy-backup → migrate → api → web          (start order)           ▼
+backup (daily pg_dump) ──► spending-backups volume       Postgres 18 at 3p9qjnulllqn3bcjqokir0wq:5432
+```
+
+`docker-compose.yml` is the Coolify stack (ADR-004). Images: `deploy/api.Dockerfile` (also runs
+`migrate`), `deploy/web.Dockerfile`, `deploy/backup.Dockerfile`. Only `web` has a domain. All
+containers run as non-root users.
+
+Every deploy runs `predeploy-backup` (a `pg_dump`), then `migrate`, then starts `api` and waits
+for it to be healthy before `web`. Compose recreates both `web` and `api`, so the whole site is
+unavailable while the backup and migration run, typically a few seconds. If the dump or a
+migration fails, the deploy fails and the whole site stays down until a later deploy succeeds.
+That is deliberate (fail-closed): new code never runs against an old schema, and nothing runs
+without a fresh dump. Fix forward or revert and redeploy (see Rollback).
+
+`SOURCE_COMMIT` is provided by Coolify (the commit it built). Compose passes it to the API as
+`APP_VERSION`, and `/api/health` reports it as `version`, so the Deploy workflow can confirm the
+running build is the commit it verified. Outside Coolify it is `unknown`.
+
+### Real client IP
+
+Traffic is Cloudflare → Traefik → nginx → API. Coolify's Traefik does not trust forwarded
+headers, so it rewrites `X-Forwarded-For` to its own peer. That peer is a Cloudflare edge for
+proxied traffic, or the client itself when someone reaches the VPS directly.
+
+nginx (`deploy/nginx.conf`) recovers that peer from private-range proxies. It believes
+`CF-Connecting-IP` only when the peer is in Cloudflare's published ranges
+(`deploy/cloudflare-ips.conf`). A request that bypasses Cloudflare therefore cannot spoof its
+address. nginx sends the result as the only `X-Forwarded-For` value to the API, which trusts
+only private ranges, so rate limits key on the real client.
+
+Cloudflare occasionally changes its ranges. Refresh the file, review the diff, and redeploy:
+
+```bash
+{
+  echo "# Cloudflare's published proxy ranges, as a geo map: an address in these ranges is a Cloudflare"
+  echo "# edge, so its CF-Connecting-IP header names the real client."
+  echo "# Fetched $(date -u +%Y-%m-%d) from https://www.cloudflare.com/ips-v4 and https://www.cloudflare.com/ips-v6."
+  echo '# Refresh: re-run the loop in docs/operations.md ("Real client IP"), review the diff, redeploy.'
+  for u in ips-v4 ips-v6; do
+    curl -fsS "https://www.cloudflare.com/$u" | tr -d '\r' | sed -e '/^$/d' -e 's/$/ 1;/'
+  done
+} > deploy/cloudflare-ips.conf
+```
+
+Local smoke test of the whole stack (throwaway Postgres, dummy secrets, web on
+`127.0.0.1:18080`):
+
+```bash
+docker compose --env-file deploy/smoke.env -f docker-compose.yml \
+  -f deploy/docker-compose.smoke.yml up -d --build --wait
+APP_URL=http://127.0.0.1:18080 sh scripts/check-deploy.sh
+docker compose --env-file deploy/smoke.env -f docker-compose.yml \
+  -f deploy/docker-compose.smoke.yml down -v
+```
+
+## First-time production setup (owner checklist)
+
+1. **Database role and database.** Generate the password with `openssl rand -hex 24` (hex
+   needs no URL escaping), then:
+
+   ```bash
+   ssh blonskyi
+   docker exec -i 3p9qjnulllqn3bcjqokir0wq psql -U postgres
+   ```
+
+   ```sql
+   CREATE ROLE spending_app LOGIN PASSWORD '<generated>' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;
+   CREATE DATABASE spending OWNER spending_app;
+   REVOKE ALL ON DATABASE spending FROM PUBLIC;
+   ```
+
+   `DATABASE_URL` is `postgres://spending_app:<generated>@3p9qjnulllqn3bcjqokir0wq:5432/spending`.
+   Use the container name, never the `postgres` alias, which other stacks on the shared network
+   may also answer to.
+
+2. **Secrets.** `openssl rand -base64 32` once for `SESSION_ENCRYPTION_KEY` and once for the
+   OIDC client secret. Store them only in Coolify and your password manager.
+
+3. **OIDC client on login.blonskyi.dev.** Run the login service's `register-client` command
+   inside its container against the login database, as the login README documents, with:
+
+   ```bash
+   REGISTER_CLIENT_ID=spending REGISTER_CLIENT_NAME=Spending \
+   REGISTER_CLIENT_SECRET=<oidc secret from step 2> \
+   REGISTER_REDIRECT_URIS=https://spending.blonskyi.dev/api/v1/auth/callback \
+   REGISTER_POST_LOGOUT_REDIRECT_URIS=https://spending.blonskyi.dev/signin \
+   login register-client
+   ```
+
+4. **Hub.** Add the `spending` project in the hub so users can be granted access to it, then
+   grant yourself.
+
+5. **DNS.** Cloudflare: `spending.blonskyi.dev`, A record to the VPS, proxied (orange cloud).
+
+6. **Coolify resource.** New resource → Docker Compose → this repository, branch `main`,
+   compose file `docker-compose.yml`. Then:
+   - Turn auto-deploy on push off. Only the Deploy workflow deploys.
+   - Turn "Connect to Predefined Network" on.
+   - Domain `https://spending.blonskyi.dev` on the `web` service, port 8080. No other service
+     gets a domain.
+   - Environment variables: `DATABASE_URL`, `APP_ORIGIN=https://spending.blonskyi.dev`,
+     `OIDC_ISSUER=https://login.blonskyi.dev`, `OIDC_CLIENT_ID=spending`, `OIDC_CLIENT_SECRET`,
+     `SESSION_ENCRYPTION_KEY`. Each is `${VAR:?}` in the compose file, so a missing one fails
+     the deploy.
+
+7. **Coolify API token.** Keys & Tokens → new token with only the `deploy` and `read`
+   abilities. Do NOT grant `read:sensitive` while the repository is public: Actions logs are
+   public and build logs can contain secrets. Copy the resource's deploy webhook URL from its
+   Webhooks page.
+
+8. **GitHub.** Settings → Environments → `production`, deployment branches limited to `main`.
+   In that environment add secrets `COOLIFY_DEPLOY_WEBHOOK_URL` and `COOLIFY_DEPLOY_TOKEN`, and
+   variable `APP_URL=https://spending.blonskyi.dev`. Required reviewers are free on a public
+   repository but optional; the manual dispatch is already the gate.
+
+9. Deploy once (next section) and sign in.
+
+## Deploying
+
+Actions → Deploy → Run workflow, branch `main`. The workflow re-runs CI for that commit, triggers
+Coolify, waits for the deployment to finish (`scripts/coolify-deploy.sh`), then checks
+`/api/health/ready` and the security headers through the public URL
+(`scripts/check-deploy.sh`). Deploys are serialized; a second dispatch waits for the first.
+
+Coolify builds the head of `main`, not a given SHA, so the workflow fails right before the
+trigger if `main` has moved since dispatch ("re-run on the new head"). After the deploy, the
+check waits until `/api/health` reports the dispatched SHA as `version`.
+
+Cloudflare bot protection may challenge requests from GitHub runners and fail the post-deploy
+check. Add a WAF custom rule: Security → WAF → Custom rules, expression
+`(http.host eq "spending.blonskyi.dev" and starts_with(http.request.uri.path, "/api/health"))`,
+action Skip (all remaining custom rules, and Bot Fight Mode / Super Bot Fight Mode if offered).
+
+## Rollback
+
+- **Code.** Revert the commit on `main` and dispatch Deploy. This re-runs CI, so it is the only
+  documented path. (Redeploying an old deployment from the Coolify UI skips the CI gate; keep it
+  for emergencies.)
+- **Schema.** Migrations are forward-only. Every migration must be backward-compatible with the
+  previous release (expand, deploy, then contract in a later release), so rolling the code back
+  never needs a down migration.
+- **Data.** Never rolled back automatically. Restore a pre-migrate dump only by hand, after
+  checking what data written since the dump would be lost.
+
+## Backups and restore
+
+- `predeploy-backup` writes `pre-migrate/pre-migrate-<UTC timestamp>.dump` before every deploy
+  and keeps the newest 10.
+- `backup` writes `daily/daily-<date>.dump` at 03:00 UTC (and on start if today's is missing),
+  keeps 14 daily and 8 weekly (`weekly/weekly-<ISO week>.dump`).
+- Dumps are `pg_dump --format=custom` (gzip-compressed), mode 600, in the `spending-backups`
+  volume. The script logs only file names and sizes. The container turns unhealthy when no daily
+  dump is younger than 26 hours.
+- The volume is on the VPS disk only. Copy dumps off the host for disaster recovery.
+
+Restore into a scratch database first, verify, then swap. On the VPS (`ssh blonskyi`); the
+backup container name comes from `docker ps --format '{{.Names}}' | grep '^backup-'`:
+
+```bash
+BACKUP=<backup container name>
+docker exec "$BACKUP" ls -l /backups/daily /backups/weekly /backups/pre-migrate
+
+docker exec -i 3p9qjnulllqn3bcjqokir0wq psql -U postgres \
+  -c 'CREATE DATABASE spending_restore OWNER spending_app;' \
+  -c 'REVOKE ALL ON DATABASE spending_restore FROM PUBLIC;'
+
+# DATABASE_URL is expanded inside the container, so it never reaches your shell history.
+docker exec "$BACKUP" sh -c 'pg_restore --dbname="${DATABASE_URL%/*}/spending_restore" \
+  --no-owner --exit-on-error /backups/daily/daily-YYYY-MM-DD.dump'
+
+docker exec -i 3p9qjnulllqn3bcjqokir0wq psql -U postgres -d spending_restore \
+  -c '\dt' -c 'SELECT count(*) FROM drizzle.__drizzle_migrations;' \
+  -c 'SELECT count(*) FROM transactions;'
+```
+
+If the scratch copy is right, stop the resource in Coolify, then swap:
+
+```sql
+SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'spending';
+ALTER DATABASE spending RENAME TO spending_replaced_YYYYMMDD;
+ALTER DATABASE spending_restore RENAME TO spending;
+```
+
+Redeploy the commit whose migrations match the dump. Drop `spending_replaced_*` only once the
+restored database has been in use for a while.
+
+## Monitoring
+
+- Container logs and status: the Coolify resource page (`api` logs are JSON lines).
+- Health: `/api/health` (process up) and `/api/health/ready` (database reachable), also used by
+  the container health checks and the Deploy workflow.
+- Backups: the `backup` container's health and log lines.
+- No third-party telemetry or error reporting.
+
+## Security headers
+
+Static, in `deploy/security-headers.conf`, included by `deploy/nginx.conf` in the server block
+and in every location that sets its own `Cache-Control` (nginx drops inherited `add_header`
+directives otherwise). The CSP allows no inline scripts; `style-src` includes `'unsafe-inline'` because sonner and
+Radix inject styles (ADR-011). Caching:
+`/assets/*` is immutable for a year, `/api/` is `no-store`, everything else (including
+`index.html`, `sw.js`, `registerSW.js`, `manifest.webmanifest`) is `no-cache`. Source maps are
+not shipped and `*.map` returns 404.

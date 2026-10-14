@@ -189,10 +189,14 @@
           "status": {
             "type": "string",
             "const": "ok"
+          },
+          "version": {
+            "type": "string"
           }
         },
         "required": [
-          "status"
+          "status",
+          "version"
         ],
         "additionalProperties": false
       },
