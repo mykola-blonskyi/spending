@@ -7,12 +7,38 @@
 #   backup.sh schedule     daily at 03:00 UTC, forever
 #
 # Dumps use pg_dump's custom format, which is gzip-compressed and is what pg_restore reads.
-# DATABASE_URL is passed to pg_dump and never printed.
+# DATABASE_URL is split into the PG* environment variables, so the password is never in a
+# process argument list, and is never printed.
 set -eu
 
 : "${DATABASE_URL:?DATABASE_URL is required}"
 dir=${BACKUP_DIR:-/backups}
 umask 077
+
+# postgres://user:password@host[:port]/database. Passwords are hex (docs/operations.md), so no
+# percent-decoding is implemented; a URL that needs it is refused instead of misread.
+case "$DATABASE_URL" in
+  *%*) echo "DATABASE_URL must not contain percent-encoding; use a hex password." >&2; exit 1 ;;
+  postgres://* | postgresql://*) ;;
+  *) echo "DATABASE_URL must be a postgres:// URL." >&2; exit 1 ;;
+esac
+rest=${DATABASE_URL#*://}
+userinfo=${rest%%@*}
+hostpart=${rest#*@}
+[ "$userinfo" != "$rest" ] || { echo "DATABASE_URL has no credentials." >&2; exit 1; }
+PGUSER=${userinfo%%:*}
+PGPASSWORD=${userinfo#*:}
+PGHOST=${hostpart%%/*}
+PGDATABASE=${hostpart#*/}
+PGDATABASE=${PGDATABASE%%\?*}
+PGPORT=5432
+case "$PGHOST" in
+  *:*)
+    PGPORT=${PGHOST##*:}
+    PGHOST=${PGHOST%:*}
+    ;;
+esac
+export PGHOST PGPORT PGUSER PGPASSWORD PGDATABASE
 
 log() {
   printf '%s backup: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"
@@ -21,7 +47,7 @@ log() {
 dump_to() {
   partial="$1.partial"
   trap 'rm -f "$partial"' EXIT
-  pg_dump --dbname="$DATABASE_URL" --format=custom --compress=gzip:6 --file="$partial"
+  pg_dump --format=custom --compress=gzip:6 --file="$partial"
   chmod 600 "$partial"
   mv "$partial" "$1"
   trap - EXIT
