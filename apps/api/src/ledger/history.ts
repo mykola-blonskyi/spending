@@ -26,8 +26,19 @@ export type TransactionQuery = z.infer<typeof transactionQuerySchema>;
 /** Position after the last row of a page, in history order (occurredOn, createdAt, id; all desc). */
 export type HistoryCursor = Readonly<{ occurredOn: string; createdAt: string; id: string }>;
 
-/** `createdAt` keeps the microseconds PostgreSQL stores, which a JS Date would drop. */
-const microsecondInstant = z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/);
+/**
+ * `createdAt` keeps the microseconds PostgreSQL stores, which a JS Date would drop. The rest must
+ * survive a Date round trip, so a forged `2026-02-30` or `25:00` never reaches a SQL cast.
+ */
+const microsecondInstant = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/)
+  .refine((text) => calendarDateSchema.safeParse(text.slice(0, 10)).success)
+  .refine((text) => {
+    const millis = `${text.slice(0, 23)}Z`;
+    const date = new Date(millis);
+    return !Number.isNaN(date.getTime()) && date.toISOString() === millis;
+  });
 const cursorSchema = z.tuple([calendarDateSchema, microsecondInstant, z.uuid()]);
 
 export function encodeCursor(cursor: HistoryCursor): string {
@@ -40,7 +51,7 @@ export function encodeCursor(cursor: HistoryCursor): string {
 export function decodeCursor(text: string): HistoryCursor | null {
   try {
     const parsed = cursorSchema.safeParse(JSON.parse(Buffer.from(text, 'base64url').toString()));
-    if (!parsed.success || Number.isNaN(Date.parse(parsed.data[1]))) return null;
+    if (!parsed.success) return null;
     const [occurredOn, createdAt, id] = parsed.data;
     return { occurredOn, createdAt, id };
   } catch {

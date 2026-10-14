@@ -268,6 +268,14 @@ describe('ledger', () => {
       expect(await ids('?from=2026-10-02&to=2026-10-02')).toHaveLength(2);
       expect((await as(t, ann, '/v1/transactions?limit=201')).status).toBe(400);
       expect((await as(t, ann, '/v1/transactions?cursor=nonsense')).status).toBe(400);
+      const forged = Buffer.from(
+        JSON.stringify(['2026-10-01', '2026-02-30T00:00:00.000000Z', crypto.randomUUID()]),
+      ).toString('base64url');
+      const forgedResponse = await as(t, ann, `/v1/transactions?cursor=${forged}`);
+      expect(forgedResponse.status).toBe(400);
+      expect(((await forgedResponse.json()) as { error: { code: string } }).error.code).toBe(
+        'VALIDATION_FAILED',
+      );
       expect((await as(t, ann, '/v1/transactions?unknown=1')).status).toBe(400);
       expect((await as(t, bob, `/v1/transactions?workspaceId=${annPersonal}`)).status).toBe(404);
 
