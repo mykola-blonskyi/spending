@@ -45,6 +45,9 @@ run_case() {
   if grep -q "$token" "$tmp/$name.out"; then
     fail "$name printed the token" "$name"
   fi
+  if grep -q 'HIDDEN-SECRET-LINE' "$tmp/$name.out"; then
+    fail "$name printed a hidden log entry" "$name"
+  fi
 }
 
 expect_output() {

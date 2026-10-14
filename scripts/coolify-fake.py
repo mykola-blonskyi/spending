@@ -20,7 +20,12 @@ TERMINAL = {
     "unknown_status": "something-coolify-never-returns",
 }
 
-LOGS = json.dumps([{"output": "ERROR: no space left on device"}])
+LOGS = json.dumps(
+    [
+        {"output": "ERROR: no space left on device"},
+        {"output": "HIDDEN-SECRET-LINE-7d41", "hidden": True},
+    ]
+)
 
 seen = {}
 

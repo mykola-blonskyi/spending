@@ -67,6 +67,7 @@ missing or invalid. `apps/api/.env.example` documents every variable with local 
 | `OIDC_CLIENT_SECRET`     | Its secret (`client_secret_basic`)                                             |
 | `SESSION_ENCRYPTION_KEY` | Base64 of 32 random bytes. Rotating it signs everyone out at the next re-check |
 | `COOKIE_SECURE`          | Default `true`; must be `true` in production                                   |
+| `APP_VERSION`            | Optional build commit shown by `/api/health` (default `unknown`)               |
 
 Register these URIs with the provider: redirect `${APP_ORIGIN}/api/v1/auth/callback` and
 post-logout `${APP_ORIGIN}/signin`.
@@ -90,10 +91,40 @@ backup (daily pg_dump) ──► spending-backups volume       Postgres 18 at 3p
 containers run as non-root users.
 
 Every deploy runs `predeploy-backup` (a `pg_dump`), then `migrate`, then starts `api` and waits
-for it to be healthy before `web`. If the dump or a migration fails, the deploy fails and `api`
-stays stopped: Compose has already removed the old `api` container by then, so `/api` answers
-502 until a deploy succeeds. That is deliberate; new code never runs against an old schema, and
-nothing runs without a fresh dump. Fix forward or redeploy the previous commit (see Rollback).
+for it to be healthy before `web`. Compose recreates both `web` and `api`, so the whole site is
+unavailable while the backup and migration run, typically a few seconds. If the dump or a
+migration fails, the deploy fails and the whole site stays down until a later deploy succeeds.
+That is deliberate (fail-closed): new code never runs against an old schema, and nothing runs
+without a fresh dump. Fix forward or revert and redeploy (see Rollback).
+
+`SOURCE_COMMIT` is provided by Coolify (the commit it built). Compose passes it to the API as
+`APP_VERSION`, and `/api/health` reports it as `version`, so the Deploy workflow can confirm the
+running build is the commit it verified. Outside Coolify it is `unknown`.
+
+### Real client IP
+
+Traffic is Cloudflare → Traefik → nginx → API. nginx (`deploy/nginx.conf`) trusts
+`X-Forwarded-For` only from private ranges and Cloudflare's published ranges
+(`deploy/cloudflare-ips.conf`), recovers the client with `real_ip_recursive`, and sends just that
+address to the API, which trusts only private ranges. The API's rate limits therefore see the
+real client as `req.ip`.
+
+In production only Traefik reaches nginx. In the local smoke stack, requests through the
+published port arrive from the Docker bridge gateway, a private address, so nginx trusts a
+spoofed `X-Forwarded-For` there; that is expected and not representative of production.
+
+Cloudflare occasionally changes its ranges. Refresh the file, review the diff, and redeploy:
+
+```bash
+{
+  echo "# Cloudflare's published proxy ranges, trusted by nginx as sources of X-Forwarded-For."
+  echo "# Fetched $(date -u +%Y-%m-%d) from https://www.cloudflare.com/ips-v4 and https://www.cloudflare.com/ips-v6."
+  echo '# Refresh: re-run the loop in docs/operations.md ("Real client IP"), review the diff, redeploy.'
+  for u in ips-v4 ips-v6; do
+    curl -fsS "https://www.cloudflare.com/$u" | tr -d '\r' | sed -e '/^$/d' -e 's/^/set_real_ip_from /' -e 's/$/;/'
+  done
+} > deploy/cloudflare-ips.conf
+```
 
 Local smoke test of the whole stack (throwaway Postgres, dummy secrets, web on
 `127.0.0.1:18080`):
@@ -157,8 +188,9 @@ docker compose --env-file deploy/smoke.env -f docker-compose.yml \
      the deploy.
 
 7. **Coolify API token.** Keys & Tokens → new token with only the `deploy` and `read`
-   abilities (add `read:sensitive` only if you want build logs printed on failure). Copy the
-   resource's deploy webhook URL from its Webhooks page.
+   abilities. Do NOT grant `read:sensitive` while the repository is public: Actions logs are
+   public and build logs can contain secrets. Copy the resource's deploy webhook URL from its
+   Webhooks page.
 
 8. **GitHub.** Settings → Environments → `production`, deployment branches limited to `main`.
    In that environment add secrets `COOLIFY_DEPLOY_WEBHOOK_URL` and `COOLIFY_DEPLOY_TOKEN`, and
@@ -174,10 +206,20 @@ Coolify, waits for the deployment to finish (`scripts/coolify-deploy.sh`), then 
 `/api/health/ready` and the security headers through the public URL
 (`scripts/check-deploy.sh`). Deploys are serialized; a second dispatch waits for the first.
 
+Coolify builds the head of `main`, not a given SHA, so the workflow fails right before the
+trigger if `main` has moved since dispatch ("re-run on the new head"). After the deploy, the
+check waits until `/api/health` reports the dispatched SHA as `version`.
+
+Cloudflare bot protection may challenge requests from GitHub runners and fail the post-deploy
+check. Add a WAF custom rule: Security → WAF → Custom rules, expression
+`(http.host eq "spending.blonskyi.dev" and starts_with(http.request.uri.path, "/api/health"))`,
+action Skip (all remaining custom rules, and Bot Fight Mode / Super Bot Fight Mode if offered).
+
 ## Rollback
 
-- **Code.** Revert the commit on `main` and dispatch Deploy, or redeploy the previous
-  deployment from the Coolify UI.
+- **Code.** Revert the commit on `main` and dispatch Deploy. This re-runs CI, so it is the only
+  documented path. (Redeploying an old deployment from the Coolify UI skips the CI gate; keep it
+  for emergencies.)
 - **Schema.** Migrations are forward-only. Every migration must be backward-compatible with the
   previous release (expand, deploy, then contract in a later release), so rolling the code back
   never needs a down migration.
@@ -238,8 +280,8 @@ restored database has been in use for a while.
 
 Static, in `deploy/security-headers.conf`, included by `deploy/nginx.conf` in the server block
 and in every location that sets its own `Cache-Control` (nginx drops inherited `add_header`
-directives otherwise). The CSP allows no inline scripts or styles; `style-src-attr
-'unsafe-inline'` only covers the `style=""` attributes Radix sets for positioning. Caching:
+directives otherwise). The CSP allows no inline scripts; `style-src` includes `'unsafe-inline'` because sonner and
+Radix inject styles (ADR-011). Caching:
 `/assets/*` is immutable for a year, `/api/` is `no-store`, everything else (including
 `index.html`, `sw.js`, `registerSW.js`, `manifest.webmanifest`) is `no-cache`. Source maps are
 not shipped and `*.map` returns 404.
