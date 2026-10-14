@@ -14,13 +14,13 @@ describe('API process', () => {
     const response = await fetch(`${t.baseUrl}/api/health`);
     expect(response.status).toBe(200);
     expect(response.headers.get('x-powered-by')).toBeNull();
-    expect(await response.json()).toEqual({ status: 'ok' });
+    expect(await response.json()).toEqual({ status: 'ok', version: 'unknown' });
   });
 
   it('reports readiness from the database', async () => {
     const response = await fetch(`${t.baseUrl}/api/health/ready`);
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ status: 'ok' });
+    expect(await response.json()).toEqual({ status: 'ok', version: 'unknown' });
   });
 
   it('renders unknown routes with a stable error code', async () => {

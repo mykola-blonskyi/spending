@@ -427,6 +427,7 @@ export interface components {
         HealthDto_Output: {
             /** @constant */
             status: "ok";
+            version: string;
         };
         AvatarUrl_Output: string | null;
         SessionDto_Output: {

@@ -1,0 +1,101 @@
+# Production stack, built and run by Coolify (docs/decisions.md ADR-004, docs/operations.md).
+#
+# Coolify resource settings:
+# - Build pack Docker Compose, this repository, branch main, auto-deploy on push off. Only
+#   .github/workflows/deploy.yml deploys.
+# - "Connect to Predefined Network" on. It is how migrate, api and the backups reach the shared
+#   Postgres at 3p9qjnulllqn3bcjqokir0wq:5432 (the container name, never the `postgres` alias).
+#   There is no `networks:` block here on purpose; Coolify manages the stack network.
+# - A domain only on `web`, port 8080. Every other service stays private.
+#
+# Every ${VAR:?} comes from Coolify's per-resource environment panel. `:?` makes a missing
+# entry fail the deploy instead of starting a container with an empty value.
+#
+# Start order on every deploy: predeploy-backup (pg_dump) → migrate → api (healthy) → web.
+# `docker compose up` stops at the first step that fails, so migrations never run without a
+# fresh dump and the new api never starts against an unmigrated schema. The one-shot services
+# use `restart: "no"`, which also keeps their exited state out of Coolify's health status.
+
+services:
+  predeploy-backup:
+    build:
+      context: .
+      dockerfile: deploy/backup.Dockerfile
+    command: ['pre-migrate']
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?}
+    volumes:
+      - spending-backups:/backups
+    restart: 'no'
+
+  migrate:
+    build:
+      context: .
+      dockerfile: deploy/api.Dockerfile
+    command: ['node', 'dist/database/migrate.js']
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?}
+      NODE_ENV: production
+    depends_on:
+      predeploy-backup:
+        condition: service_completed_successfully
+    restart: 'no'
+
+  spending-api:
+    build:
+      context: .
+      dockerfile: deploy/api.Dockerfile
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?}
+      APP_ORIGIN: ${APP_ORIGIN:?}
+      OIDC_ISSUER: ${OIDC_ISSUER:?}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:?}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:?}
+      SESSION_ENCRYPTION_KEY: ${SESSION_ENCRYPTION_KEY:?}
+      # Coolify sets SOURCE_COMMIT to the commit it built; /api/health reports it so the deploy
+      # workflow can confirm the running build is the one it verified.
+      APP_VERSION: ${SOURCE_COMMIT:-unknown}
+      NODE_ENV: production
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/web.Dockerfile
+    depends_on:
+      spending-api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:8080/']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  backup:
+    build:
+      context: .
+      dockerfile: deploy/backup.Dockerfile
+    command: ['schedule']
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?}
+    volumes:
+      - spending-backups:/backups
+    restart: unless-stopped
+
+volumes:
+  spending-backups:
