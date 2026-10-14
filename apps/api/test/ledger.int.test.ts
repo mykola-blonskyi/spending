@@ -419,5 +419,65 @@ describe('ledger', () => {
       await t.app.get(FxService).refresh();
       expect(fetch.mock.calls.map((call) => call[0])).toEqual(['history', 'latest']);
     });
+
+    it('still stores the daily feed and backfills when the history feed fails', async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const [row] = await push(ann, { currency: 'USD', amountMinor: 2500, occurredOn: today });
+      vi.spyOn(t.app.get<FxRateSource>(FX_RATE_SOURCE), 'fetch').mockImplementation(
+        async (feed) => {
+          if (feed === 'history') throw new Error('history is down');
+          return [{ date: today, currency: 'USD', ratePerEur: '1.25' }];
+        },
+      );
+      expect(await t.app.get(FxService).refresh()).toEqual({ rates: 1, filled: 1 });
+      const [stored] = await t.db.select().from(transactions).where(eq(transactions.id, row!.id));
+      expect(stored).toMatchObject({ baseAmountMinor: 2000, fxRateDate: today });
+    });
+
+    it('loads the full history for rows older than every stored rate, once a day', async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      await t.db
+        .insert(fxRates)
+        .values({ date: today, currency: 'USD', ratePerEur: '1.25', source: 'ecb' });
+      const [old] = await push(ann, {
+        currency: 'USD',
+        amountMinor: 1100,
+        occurredOn: '2020-03-02',
+      });
+      const fetch = vi
+        .spyOn(t.app.get<FxRateSource>(FX_RATE_SOURCE), 'fetch')
+        .mockImplementation(async (feed) =>
+          feed === 'full'
+            ? [
+                { date: '2020-03-02', currency: 'USD', ratePerEur: '1.1' },
+                { date: today, currency: 'USD', ratePerEur: '9.99' },
+              ]
+            : [{ date: today, currency: 'USD', ratePerEur: '1.25' }],
+        );
+      const fx = t.app.get(FxService);
+      expect(await fx.refresh()).toEqual({ rates: 3, filled: 1 });
+      expect(fetch.mock.calls.map((call) => call[0])).toEqual(['latest', 'full']);
+      const stored = async (id: string) =>
+        (await t.db.select().from(transactions).where(eq(transactions.id, id)))[0]!;
+      expect(await stored(old!.id)).toMatchObject({
+        baseAmountMinor: 1000,
+        fxRateDate: '2020-03-02',
+        version: 1,
+      });
+      expect(
+        (await t.db.select().from(fxRates).where(eq(fxRates.date, today)))[0]!.ratePerEur,
+      ).toBe('1.2500000000');
+
+      await push(ann, { currency: 'USD', amountMinor: 1100, occurredOn: '2019-06-03' });
+      fetch.mockClear();
+      await fx.refresh();
+      expect(fetch.mock.calls.map((call) => call[0])).toEqual(['latest']);
+
+      const later = Date.now() + 25 * 60 * 60_000;
+      vi.spyOn(Date, 'now').mockReturnValue(later);
+      fetch.mockClear();
+      await fx.refresh();
+      expect(fetch.mock.calls.map((call) => call[0])).toEqual(['latest', 'full']);
+    });
   });
 });

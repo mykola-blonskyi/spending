@@ -5,7 +5,11 @@ export type FxRate = Readonly<{ date: string; currency: string; ratePerEur: stri
 
 /** Fits `numeric(20, 10)` and is strictly positive. */
 const RATE = /^(?:0|[1-9]\d{0,9})(?:\.\d{1,10})?$/;
-const CUBE = /<Cube\b([^>]*)>/g;
+/**
+ * The closing `>` is optional so the pattern always matches without backtracking: one pass over
+ * the input, even for the ~30 MB full history. A tag without it is rejected below.
+ */
+const CUBE = /<Cube\b([^>]*)(>)?/g;
 const ATTRIBUTE = /(\w+)\s*=\s*(?:'([^']*)'|"([^"]*)")/g;
 
 function attributes(text: string): Map<string, string> {
@@ -23,6 +27,7 @@ export function parseEcbXml(xml: string): FxRate[] {
   const rates: FxRate[] = [];
   let day: string | null = null;
   for (const match of xml.matchAll(CUBE)) {
+    if (match[2] === undefined) throw new Error('ECB feed has an unterminated tag');
     const attrs = attributes(match[1]!);
     const time = attrs.get('time');
     if (time !== undefined) {

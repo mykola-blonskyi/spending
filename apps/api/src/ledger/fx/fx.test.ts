@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { type CurrencyCode, parseCurrency } from '../../common/money';
 import { convert, rateWindow, UNCONVERTED } from './conversion';
-import { parseEcbXml } from './ecb';
+import { type FxRate, parseEcbXml } from './ecb';
+import { type FxFeed, fetchFeeds, type FxRateSource, readCapped } from './fx-source';
 
 const c = (code: string) => parseCurrency(code) as CurrencyCode;
 
@@ -49,8 +50,76 @@ describe('parseEcbXml', () => {
     expect(() => parseEcbXml(feed(body))).toThrow();
   });
 
+  it('rejects a feed cut off inside a tag', () => {
+    const whole = feed(`<Cube time='2026-10-14'><Cube currency='USD' rate='1.1'/></Cube>`);
+    expect(() => parseEcbXml(whole.slice(0, whole.indexOf("rate='1.1'") + 10))).toThrow(
+      'unterminated',
+    );
+  });
+
   it('rejects input that is not the feed', () => {
     expect(() => parseEcbXml('<html>maintenance</html>')).toThrow();
+  });
+});
+
+describe('parseEcbXml on the full history', () => {
+  it('reads a feed the size of the full ECB history in one pass', () => {
+    const currencies = ['USD', 'JPY', 'GBP', 'CHF', 'SEK', 'NOK', 'PLN', 'CZK', 'HUF', 'DKK'];
+    const days = Array.from({ length: 7000 }, (_, i) => {
+      const date = new Date(Date.UTC(1999, 0, 4 + i)).toISOString().slice(0, 10);
+      const rates = currencies.map((c) => `<Cube currency='${c}' rate='1.2345'/>`).join('');
+      return `<Cube time='${date}'>${rates}</Cube>`;
+    });
+    const xml = feed(days.join('\n'.repeat(3)).repeat(3));
+    const started = performance.now();
+    expect(parseEcbXml(xml)).toHaveLength(7000 * currencies.length * 3);
+    expect(performance.now() - started).toBeLessThan(5000);
+  });
+});
+
+describe('readCapped', () => {
+  it('returns a body within the limit and refuses a larger one', async () => {
+    expect(await readCapped(new Response('x'.repeat(100)), 100)).toBe('x'.repeat(100));
+    await expect(readCapped(new Response('x'.repeat(101)), 100)).rejects.toThrow('too large');
+  });
+});
+
+describe('fetchFeeds', () => {
+  const rate = (date: string, ratePerEur: string): FxRate => ({
+    date,
+    currency: 'USD',
+    ratePerEur,
+  });
+  const source = (feeds: Partial<Record<FxFeed, FxRate[]>>): FxRateSource => ({
+    name: 'fake',
+    fetch: async (feed) => {
+      const rates = feeds[feed];
+      if (!rates) throw new Error(`${feed} is down`);
+      return rates;
+    },
+  });
+
+  it('keeps the daily feed when the history feed fails', async () => {
+    const failures: string[] = [];
+    const rates = await fetchFeeds(
+      source({ latest: [rate('2026-10-14', '1.1')] }),
+      ['history', 'latest'],
+      (feed, error) => failures.push(`${feed}: ${(error as Error).message}`),
+    );
+    expect(rates).toEqual([rate('2026-10-14', '1.1')]);
+    expect(failures).toEqual(['history: history is down']);
+  });
+
+  it('lets a later feed win for the same day and currency', async () => {
+    const rates = await fetchFeeds(
+      source({
+        history: [rate('2026-10-13', '1.0'), rate('2026-10-14', '1.0')],
+        latest: [rate('2026-10-14', '1.1')],
+      }),
+      ['history', 'latest'],
+      () => {},
+    );
+    expect(rates).toEqual([rate('2026-10-13', '1.0'), rate('2026-10-14', '1.1')]);
   });
 });
 

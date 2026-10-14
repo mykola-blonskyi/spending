@@ -147,9 +147,11 @@ is always `NOT_FOUND`, never `FORBIDDEN`.
 
 `ledger/fx` fetches the ECB daily feed 10 s after startup and every 6 hours, with a 10 s timeout.
 It also fetches the 90-day history when the newest stored rate is more than 4 days old, so days
-missed while the API or the ECB was down are recovered. A feed with any invalid date or rate is
-dropped whole. After each fetch, transactions without a rate are converted, and rows converted
-with an earlier day's rate move to a closer one. Only derived columns change, so `version` stays
+missed while the API or the ECB was down are recovered. When an unconverted non-EUR row predates
+every stored rate, it loads the full history as well (ADR-007). Each feed is fetched on its own:
+a failed or invalid feed is logged and dropped whole, and the others still apply. After each
+refresh, transactions without a rate are converted, and rows converted with an earlier day's
+rate move to a closer one. Only derived columns change, so `version` stays
 and no offline edit turns into a conflict. The rate source is
 an injectable `FxRateSource`, and the schedule is off when `NODE_ENV=test`.
 

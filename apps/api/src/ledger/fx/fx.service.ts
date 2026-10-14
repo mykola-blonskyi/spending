@@ -18,15 +18,23 @@ import {
   rateWindow,
   type RateQuote,
 } from './conversion';
-import { FX_RATE_SOURCE, type FxRateSource } from './fx-source';
+import type { FxRate } from './ecb';
+import { FX_RATE_SOURCE, type FxFeed, fetchFeeds, type FxRateSource } from './fx-source';
 
 const BACKFILL_BATCH = 500;
 const UPSERT_BATCH = 1000;
 /** Longer than a weekend plus a holiday, so normal ECB gaps never trigger a history fetch. */
 const HISTORY_GAP_DAYS = 4;
+/** The first day of the ECB series. Stored rates reaching it mean the full history is loaded. */
+const ECB_FIRST_DAY = '1999-01-04';
+/** The full history is about 30 MB, so even a failed attempt waits this long before the next. */
+const FULL_HISTORY_INTERVAL_MS = 24 * 60 * 60_000;
 
 @Injectable()
 export class FxService {
+  private readonly logger = new Logger('Fx');
+  private lastFullHistoryAttempt = Number.NEGATIVE_INFINITY;
+
   constructor(
     @Inject(DB) private readonly db: Db,
     @Inject(FX_RATE_SOURCE) private readonly source: FxRateSource,
@@ -44,29 +52,68 @@ export class FxService {
 
   /**
    * Fetches the latest rates, plus the 90-day history when the stored rates are missing or stale
-   * (the API was down, or fetches failed), so missed days are recovered. Then reconverts rows.
+   * (the API was down, or fetches failed), so missed days are recovered. When non-EUR rows predate
+   * every stored rate (an old statement import), it also loads the full history once. A failed
+   * feed is logged and skipped; rows are reconverted with whatever is stored.
    */
   async refresh(): Promise<{ rates: number; filled: number }> {
     const [stored] = await this.db.select({ latest: max(fxRates.date) }).from(fxRates);
     const stale =
       !stored?.latest ||
       stored.latest < addDays(new Date().toISOString().slice(0, 10), -HISTORY_GAP_DAYS);
-    const fetched = [
-      ...(stale ? await this.source.fetch('history') : []),
-      ...(await this.source.fetch('latest')),
-    ];
-    // The history overlaps the latest day; one upsert statement may touch each key only once.
-    const rates = [...new Map(fetched.map((r) => [`${r.currency}:${r.date}`, r])).values()];
-    for (let i = 0; i < rates.length; i += UPSERT_BATCH) {
-      await this.db
-        .insert(fxRates)
-        .values(rates.slice(i, i + UPSERT_BATCH).map((r) => ({ ...r, source: this.source.name })))
-        .onConflictDoUpdate({
-          target: [fxRates.currency, fxRates.date],
-          set: { ratePerEur: sql`excluded.rate_per_eur`, source: sql`excluded.source` },
-        });
+    let rates = await this.store(await this.fetch(stale ? ['history', 'latest'] : ['latest']));
+    if (
+      Date.now() - this.lastFullHistoryAttempt >= FULL_HISTORY_INTERVAL_MS &&
+      (await this.predatesStoredRates())
+    ) {
+      this.lastFullHistoryAttempt = Date.now();
+      rates += await this.store(await this.fetch(['full']), 'keep');
     }
-    return { rates: rates.length, filled: await this.backfill() };
+    return { rates, filled: await this.backfill() };
+  }
+
+  private fetch(feeds: readonly FxFeed[]): Promise<FxRate[]> {
+    return fetchFeeds(this.source, feeds, (feed, error) =>
+      this.logger.warn(
+        `fx_feed_failed feed=${feed} ${error instanceof Error ? error.message : 'unknown'}`,
+      ),
+    );
+  }
+
+  /**
+   * `fx_rates` is not a synced table, so a plain transaction suffices. `keep` leaves stored days
+   * alone, so the full history never overrides what the daily feeds already gave.
+   */
+  private async store(rates: readonly FxRate[], existing: 'replace' | 'keep' = 'replace') {
+    await this.db.transaction(async (tx) => {
+      for (let i = 0; i < rates.length; i += UPSERT_BATCH) {
+        const insert = tx
+          .insert(fxRates)
+          .values(
+            rates.slice(i, i + UPSERT_BATCH).map((r) => ({ ...r, source: this.source.name })),
+          );
+        await (existing === 'keep'
+          ? insert.onConflictDoNothing()
+          : insert.onConflictDoUpdate({
+              target: [fxRates.currency, fxRates.date],
+              set: { ratePerEur: sql`excluded.rate_per_eur`, source: sql`excluded.source` },
+            }));
+      }
+    });
+    return rates.length;
+  }
+
+  /** True while an unconverted non-EUR row is older than every stored rate and older days exist. */
+  private async predatesStoredRates(): Promise<boolean> {
+    const { rows } = await this.db.execute<{ needed: boolean }>(sql`
+      with oldest as (select min(date) as date from fx_rates)
+      select exists (
+        select 1 from transactions t, oldest
+        where oldest.date > ${ECB_FIRST_DAY}::date
+          and t.currency <> 'EUR' and t.deleted_at is null and t.base_amount_minor is null
+          and t.occurred_on < oldest.date
+      ) as needed`);
+    return rows[0]?.needed === true;
   }
 
   /**
