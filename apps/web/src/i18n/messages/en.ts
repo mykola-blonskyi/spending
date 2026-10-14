@@ -93,6 +93,21 @@ export const en = {
       login_failed: 'Sign-in did not complete. Please try again.',
       login_expired: 'Your sign-in took too long and expired. Please start again.',
     },
+    pendingHint: {
+      title: 'Still waiting to get in?',
+      description:
+        'If you sign in but keep coming back here, the owner may not have approved your account or given you access to Spending yet. Ask them to, then try again.',
+      dismiss: 'Dismiss',
+    },
+  },
+  signOut: {
+    pendingTitle: 'Sign out with unsynced changes?',
+    pendingDescription:
+      'Some changes on this device have not reached the server yet. Signing out deletes them from this device.',
+    pendingConfirm: 'Sign out anyway',
+  },
+  userMenu: {
+    label: 'Account: {name}',
   },
   invite: {
     title: 'You have been invited',
@@ -156,7 +171,7 @@ export const en = {
     },
     settings: {
       title: 'Settings',
-      description: 'Preferences for this device.',
+      description: 'Your profile and preferences.',
     },
     sync: {
       title: 'Sync',
@@ -178,6 +193,15 @@ export const en = {
       dark: 'Dark',
       system: 'System',
     },
+    timezone: {
+      label: 'Time zone',
+      description: 'Used for dates, budgets and recurring payments.',
+      suggested: 'This device',
+      all: 'All time zones',
+    },
+    account: 'Account',
+    signOutNote:
+      'Signing out removes your data from this device. Everything stays safe on the server.',
   },
   errors: {
     AUTH_REQUIRED: 'Please sign in to continue.',

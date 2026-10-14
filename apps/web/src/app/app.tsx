@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router';
-import { onAuthLost } from '@data/auth-events';
 import { createQueryClient } from '@data/query-client';
+import { installAuthLostHandler } from '@features/auth';
 import { AppProviders } from './providers';
 import { routes } from './routes';
 
@@ -10,14 +10,7 @@ export function App() {
   const [router] = useState(() => createBrowserRouter(routes));
 
   useEffect(
-    () =>
-      onAuthLost(() => {
-        queryClient.clear();
-        const { pathname, search } = window.location;
-        if (pathname !== '/signin') {
-          void router.navigate(`/signin?${new URLSearchParams({ returnTo: pathname + search })}`);
-        }
-      }),
+    () => installAuthLostHandler(queryClient, (to) => void router.navigate(to, { replace: true })),
     [queryClient, router],
   );
 

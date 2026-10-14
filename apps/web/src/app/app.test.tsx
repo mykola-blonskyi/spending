@@ -1,16 +1,25 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createQueryClient } from '@data/query-client';
+import { type Profile, type ProfilePatch, type Session, sessionQuery } from '@data/session';
+import { testProfile, testSession } from '@data/testing';
 import { useLocaleStore } from '@i18n/index';
 import { AppProviders } from './providers';
 import { routes } from './routes';
 
-function renderAt(path: string) {
+vi.mock(import('@data/session'), async (importOriginal) => ({
+  ...(await importOriginal()),
+  updateMe: async (patch: ProfilePatch): Promise<Profile> => ({ ...testProfile, ...patch }),
+}));
+
+function renderAt(path: string, session: Session | null = testSession()) {
+  const queryClient = createQueryClient();
+  queryClient.setQueryData(sessionQuery.queryKey, session);
   const router = createMemoryRouter(routes, { initialEntries: [path] });
   render(
-    <AppProviders queryClient={createQueryClient()}>
+    <AppProviders queryClient={queryClient}>
       <RouterProvider router={router} />
     </AppProviders>,
   );
@@ -29,7 +38,7 @@ describe('app routes', () => {
   });
 
   it('shows the login failure message on the sign-in page', () => {
-    renderAt('/signin?error=login_failed');
+    renderAt('/signin?error=login_failed', null);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Welcome to Spending');
     expect(screen.getByText('Sign-in did not complete. Please try again.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Continue with Google' })).toHaveAttribute(
@@ -39,7 +48,7 @@ describe('app routes', () => {
   });
 
   it('ignores unknown error codes and refuses off-site return targets', () => {
-    renderAt('/signin?error=boom&returnTo=//evil.example');
+    renderAt('/signin?error=boom&returnTo=//evil.example', null);
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Continue with Google' })).toHaveAttribute(
       'href',
@@ -47,9 +56,8 @@ describe('app routes', () => {
     );
   });
 
-  it('renders the translated shell and page in the active language', () => {
-    useLocaleStore.getState().setLocale('uk');
-    renderAt('/budgets');
+  it('renders the translated shell and page in the profile language', () => {
+    renderAt('/budgets', testSession({ locale: 'uk' }));
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Бюджети');
     const [sidebar] = screen.getAllByRole('navigation', { name: 'Основна навігація' });
     expect(within(sidebar!).getByRole('link', { name: 'Бюджети' })).toHaveAttribute(
@@ -61,9 +69,9 @@ describe('app routes', () => {
   it('switches the theme from settings', async () => {
     renderAt('/settings');
     await userEvent.click(screen.getByRole('radio', { name: 'Dark' }));
-    expect(document.documentElement).toHaveClass('dark');
+    await waitFor(() => expect(document.documentElement).toHaveClass('dark'));
     await userEvent.click(screen.getByRole('radio', { name: 'Light' }));
-    expect(document.documentElement).not.toHaveClass('dark');
+    await waitFor(() => expect(document.documentElement).not.toHaveClass('dark'));
   });
 
   it('shows a not-found page inside the shell', () => {
@@ -93,8 +101,38 @@ describe('app routes', () => {
   it('retitles and focuses pages outside the shell too', async () => {
     const router = renderAt('/settings');
     expect(document.title).toBe('Settings · Spending');
-    await act(() => router.navigate('/signin'));
-    expect(document.title).toBe('Welcome to Spending · Spending');
+    await act(() => router.navigate('/invite/abc'));
+    expect(document.title).toBe('You have been invited · Spending');
     expect(screen.getByRole('main')).toHaveFocus();
+  });
+
+  it('sends a signed-out visitor to sign-in, keeping the deep link', () => {
+    const router = renderAt('/budgets?month=2026-10', null);
+    expect(router.state.location.pathname).toBe('/signin');
+    expect(router.state.location.search).toBe('?returnTo=%2Fbudgets%3Fmonth%3D2026-10');
+    expect(screen.getByRole('link', { name: 'Continue with Google' })).toHaveAttribute(
+      'href',
+      '/api/v1/auth/login?returnTo=%2Fbudgets%3Fmonth%3D2026-10',
+    );
+  });
+
+  it('sends someone already signed in from sign-in to their return target', () => {
+    const router = renderAt('/signin?returnTo=%2Fbudgets');
+    expect(router.state.location.pathname).toBe('/budgets');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Budgets');
+  });
+
+  it('shows who is signed in', () => {
+    renderAt('/');
+    expect(screen.getByRole('button', { name: 'Account: Ann Example' })).toHaveTextContent(
+      'Ann Example',
+    );
+  });
+
+  it('explains why the session ended', () => {
+    renderAt('/signin?reason=SESSION_REVOKED', null);
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'You were signed out. Please sign in again.',
+    );
   });
 });

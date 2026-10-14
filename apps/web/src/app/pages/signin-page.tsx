@@ -1,8 +1,8 @@
-import { AlertCircle, ShieldCheck } from 'lucide-react';
+import { AlertCircle, Info, ShieldCheck } from 'lucide-react';
 import { useSearchParams } from 'react-router';
+import { ApprovalHint, loginHref, recordSignInAttempt, safeReturnTo } from '@features/auth';
 import { useTranslations } from '@i18n/index';
 import { Alert, AlertDescription } from '@shared/ui/alert';
-import { loginHref, safeReturnTo } from '../auth-links';
 import { BrandMark } from '../brand';
 import { LanguageSelect } from '../language-select';
 
@@ -11,6 +11,12 @@ type LoginError = (typeof LOGIN_ERRORS)[number];
 
 const isLoginError = (value: string | null): value is LoginError =>
   LOGIN_ERRORS.includes(value as LoginError);
+
+const SESSION_END_REASONS = ['AUTH_REQUIRED', 'SESSION_REVOKED'] as const;
+type SessionEndReason = (typeof SESSION_END_REASONS)[number];
+
+const isSessionEndReason = (value: string | null): value is SessionEndReason =>
+  SESSION_END_REASONS.includes(value as SessionEndReason);
 
 function GoogleIcon() {
   return (
@@ -39,6 +45,7 @@ export function SignInPage() {
   const t = useTranslations();
   const [params] = useSearchParams();
   const error = params.get('error');
+  const reason = params.get('reason');
   const returnTo = safeReturnTo(params.get('returnTo'));
 
   return (
@@ -57,16 +64,26 @@ export function SignInPage() {
           </div>
         </div>
 
-        {isLoginError(error) && (
+        {isLoginError(error) ? (
           <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
             <AlertCircle aria-hidden />
             <AlertDescription>{t(`signin.errors.${error}`)}</AlertDescription>
           </Alert>
+        ) : (
+          isSessionEndReason(reason) && (
+            <Alert>
+              <Info aria-hidden />
+              <AlertDescription>{t(`errors.${reason}`)}</AlertDescription>
+            </Alert>
+          )
         )}
+
+        <ApprovalHint />
 
         <div className="flex flex-col gap-4">
           <a
             href={loginHref(returnTo)}
+            onClick={recordSignInAttempt}
             className="flex h-12 items-center justify-center gap-3 rounded-xl border bg-card text-[15px] font-medium shadow-xs transition-[background-color,transform] duration-150 ease-out outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/60 active:scale-[0.97]"
           >
             <GoogleIcon />

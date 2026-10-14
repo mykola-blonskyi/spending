@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react';
 import type { RouteObject } from 'react-router';
+import { RedirectIfSignedIn, RequireSession } from '@features/auth';
 import { ADD_TRANSACTION_PATH, DESTINATIONS } from './destinations';
 import { PlaceholderPage } from './pages/placeholder-page';
 import { SettingsPage } from './pages/settings-page';
@@ -19,10 +20,22 @@ export const routes: RouteObject[] = [
   {
     element: <DocumentLayout />,
     children: [
-      { path: '/signin', element: <SignInPage />, errorElement: <RouteErrorPage /> },
+      {
+        path: '/signin',
+        element: (
+          <RedirectIfSignedIn>
+            <SignInPage />
+          </RedirectIfSignedIn>
+        ),
+        errorElement: <RouteErrorPage />,
+      },
       { path: '/invite/:token', element: <InvitePage />, errorElement: <RouteErrorPage /> },
       {
-        element: <ShellLayout />,
+        element: (
+          <RequireSession>
+            <ShellLayout />
+          </RequireSession>
+        ),
         errorElement: <RouteErrorPage />,
         children: [
           {
