@@ -16,6 +16,7 @@ FROM nginx:1.30.0-alpine
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY deploy/nginx.conf /etc/nginx/nginx.conf
 COPY deploy/security-headers.conf /etc/nginx/security-headers.conf
+COPY deploy/cloudflare-ips.conf /etc/nginx/cloudflare-ips.conf
 COPY --from=build /repo/apps/web/dist /usr/share/nginx/html
 USER nginx
 EXPOSE 8080
