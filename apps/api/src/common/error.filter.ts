@@ -19,6 +19,7 @@ const STATUS_CODES: Partial<Record<number, ErrorCode>> = {
   [HttpStatus.CONFLICT]: 'CONFLICT',
   [HttpStatus.TOO_MANY_REQUESTS]: 'RATE_LIMITED',
   [HttpStatus.PAYLOAD_TOO_LARGE]: 'PAYLOAD_TOO_LARGE',
+  [HttpStatus.SERVICE_UNAVAILABLE]: 'UNAVAILABLE',
 };
 
 /** Renders every error as `{ error: { code, message } }` and never echoes request data. */
