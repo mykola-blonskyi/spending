@@ -1,0 +1,47 @@
+name: Deploy
+
+# Manual only: Actions → Deploy → Run workflow on main. The dispatch is the release gate.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One production deploy at a time; a second dispatch waits instead of cancelling the first.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: CI
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ github.sha }}
+
+  deploy:
+    name: Deploy to production
+    needs: verify
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    # Restricted to main in Settings → Environments. The repository is public, so required
+    # reviewers can be added to this environment for free if a second approval is ever wanted.
+    environment:
+      name: production
+      url: ${{ vars.APP_URL }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Deploy via Coolify
+        env:
+          COOLIFY_DEPLOY_WEBHOOK_URL: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK_URL }}
+          COOLIFY_DEPLOY_TOKEN: ${{ secrets.COOLIFY_DEPLOY_TOKEN }}
+        run: sh scripts/coolify-deploy.sh
+      - name: Check health and security headers
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+        run: sh scripts/check-deploy.sh
