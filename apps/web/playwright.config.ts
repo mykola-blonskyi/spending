@@ -29,7 +29,6 @@ export default defineConfig({
       cwd: '../api',
       command: `node --import tsx test/fake-oidc/main.ts --port ${OIDC_PORT}`,
       url: `${OIDC_ISSUER}/.well-known/openid-configuration`,
-      reuseExistingServer: false,
       env: {
         FAKE_OIDC_CLIENT_ID: OIDC_CLIENT.id,
         FAKE_OIDC_CLIENT_SECRET: OIDC_CLIENT.secret,
@@ -41,7 +40,6 @@ export default defineConfig({
       name: 'API',
       command: 'node e2e/support/start-api.ts',
       url: `${API_ORIGIN}/api/health`,
-      reuseExistingServer: false,
       timeout: 60_000,
       env: {
         NODE_ENV: 'test',
@@ -59,7 +57,6 @@ export default defineConfig({
       name: 'web',
       command: `node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port ${WEB_PORT} --strictPort`,
       url: APP_ORIGIN,
-      reuseExistingServer: false,
       env: { API_ORIGIN },
     },
   ],

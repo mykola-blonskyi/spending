@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
 import { Navigate, useLocation, useSearchParams } from 'react-router';
 import { errorCode } from '@data/api-error';
 import { sessionQuery } from '@data/session';
@@ -7,7 +6,6 @@ import { useTranslations } from '@i18n/index';
 import { ErrorState, LoadingState } from '@shared/components';
 import { safeReturnTo, signInPath } from './return-to';
 import { SessionContext } from './session-context';
-import { resetSignInAttempts } from './signin-attempts';
 
 /** Fades in only if the check is slow, so a fast session check never flashes a skeleton. */
 function SessionSkeleton() {
@@ -22,10 +20,6 @@ export function RequireSession({ children }: { children: React.ReactNode }) {
   const t = useTranslations();
   const { pathname, search } = useLocation();
   const session = useQuery(sessionQuery);
-
-  useEffect(() => {
-    if (session.data) resetSignInAttempts();
-  }, [session.data]);
 
   if (session.data === null) return <Navigate to={signInPath(pathname + search)} replace />;
   if (session.data) return <SessionContext value={session.data}>{children}</SessionContext>;

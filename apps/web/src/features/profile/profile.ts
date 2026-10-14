@@ -57,12 +57,6 @@ export function useUpdateProfile() {
       }
       if (!isSignedOutError(error)) toast.error(t(`errors.${errorCode(error)}`));
     },
-    onSuccess: (profile) => {
-      // An older response must not overwrite a newer optimistic value.
-      if (queryClient.isMutating({ mutationKey: UPDATE_KEY }) === 1) {
-        queryClient.setQueryData(key, profile);
-      }
-    },
     onSettled: () => {
       // A /me refetch that started mid-PATCH may have restored the old value; refetch once the
       // last pending update settles.

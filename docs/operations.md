@@ -93,7 +93,7 @@ three servers itself and stops them afterwards:
 
 | Server       | Port | Started as                                                                              |
 | ------------ | ---- | --------------------------------------------------------------------------------------- |
-| fake OIDC    | 4410 | `node --import tsx test/fake-oidc/main.ts` with users ann and bob                       |
+| fake OIDC    | 4410 | `node --import tsx test/fake-oidc/main.ts` with user ann                                |
 | API          | 3410 | `node e2e/support/start-api.ts`: rebuilds `E2E_DATABASE_URL`, then runs `apps/api/dist` |
 | vite preview | 4173 | proxies `/api` to the API                                                               |
 

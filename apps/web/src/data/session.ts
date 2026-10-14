@@ -1,6 +1,7 @@
 import { queryOptions } from '@tanstack/react-query';
 import type { components } from './api.gen';
 import { ApiError } from './api-error';
+import { AUTH_LOST_CODES, type AuthLostCode } from './auth-events';
 import { api } from './client';
 import { setCsrfToken } from './csrf';
 
@@ -19,7 +20,7 @@ export function isSignedOutError(error: unknown): boolean {
   return (
     error instanceof ApiError &&
     error.status === 401 &&
-    (error.code === 'AUTH_REQUIRED' || error.code === 'SESSION_REVOKED')
+    AUTH_LOST_CODES.includes(error.code as AuthLostCode)
   );
 }
 

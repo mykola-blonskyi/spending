@@ -20,8 +20,3 @@ export function clearLocalUserData(queryClient: QueryClient, userId: string): vo
     // Storage can be unavailable; then nothing was stored either.
   }
 }
-
-/** Whether sign-out would discard local changes the server has not received. The sync queue (#25) answers this. */
-export async function hasPendingChanges(): Promise<boolean> {
-  return false;
-}

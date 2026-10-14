@@ -87,22 +87,3 @@ test('an ended session sends the user to sign-in and back to where they were', a
   await signInAs('ann');
   await expect(page).toHaveURL('/settings');
 });
-
-test('repeated sign-ins that never come back suggest waiting for approval', async ({ page }) => {
-  await page.goto('/signin');
-  await expect(page.getByRole('heading', { name: 'Still waiting to get in?' })).toBeHidden();
-
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    await page.getByRole('link', { name: 'Continue with Google' }).click();
-    await expect(page.getByRole('heading', { name: 'Choose a test user' })).toBeVisible();
-    await page.goBack();
-  }
-  await page.reload();
-  const hint = page.getByRole('region', { name: 'Still waiting to get in?' });
-  await expect(hint).toBeVisible();
-
-  await hint.getByRole('button', { name: 'Dismiss' }).click();
-  await expect(hint).toBeHidden();
-  await page.reload();
-  await expect(hint).toBeHidden();
-});

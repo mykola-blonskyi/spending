@@ -1,6 +1,7 @@
 import { AlertCircle, Info, ShieldCheck } from 'lucide-react';
 import { useSearchParams } from 'react-router';
-import { ApprovalHint, loginHref, recordSignInAttempt, safeReturnTo } from '@features/auth';
+import { AUTH_LOST_CODES, type AuthLostCode } from '@data/auth-events';
+import { ApprovalHint, loginHref, safeReturnTo } from '@features/auth';
 import { useTranslations } from '@i18n/index';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { BrandMark } from '../brand';
@@ -12,11 +13,8 @@ type LoginError = (typeof LOGIN_ERRORS)[number];
 const isLoginError = (value: string | null): value is LoginError =>
   LOGIN_ERRORS.includes(value as LoginError);
 
-const SESSION_END_REASONS = ['AUTH_REQUIRED', 'SESSION_REVOKED'] as const;
-type SessionEndReason = (typeof SESSION_END_REASONS)[number];
-
-const isSessionEndReason = (value: string | null): value is SessionEndReason =>
-  SESSION_END_REASONS.includes(value as SessionEndReason);
+const isSessionEndReason = (value: string | null): value is AuthLostCode =>
+  AUTH_LOST_CODES.includes(value as AuthLostCode);
 
 function GoogleIcon() {
   return (
@@ -83,7 +81,6 @@ export function SignInPage() {
         <div className="flex flex-col gap-4">
           <a
             href={loginHref(returnTo)}
-            onClick={recordSignInAttempt}
             className="flex h-12 items-center justify-center gap-3 rounded-xl border bg-card text-[15px] font-medium shadow-xs transition-[background-color,transform] duration-150 ease-out outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/60 active:scale-[0.97]"
           >
             <GoogleIcon />

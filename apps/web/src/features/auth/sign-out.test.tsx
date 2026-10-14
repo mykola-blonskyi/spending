@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@data/api-error';
-import { hasPendingChanges } from '@data/local-data';
 import { createQueryClient } from '@data/query-client';
 import { logout } from '@data/session';
 import { testSession } from '@data/testing';
@@ -19,10 +18,6 @@ vi.mock(import('@data/session'), async (importOriginal) => ({
   ...(await importOriginal()),
   logout: vi.fn(),
 }));
-vi.mock(import('@data/local-data'), async (importOriginal) => ({
-  ...(await importOriginal()),
-  hasPendingChanges: vi.fn(),
-}));
 
 function SignOutButton() {
   const signOut = useSignOut();
@@ -31,7 +26,6 @@ function SignOutButton() {
       <button disabled={signOut.busy} onClick={signOut.request}>
         Sign out
       </button>
-      {signOut.dialog}
     </>
   );
 }
@@ -55,7 +49,6 @@ function renderButton() {
 beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
-  vi.mocked(hasPendingChanges).mockResolvedValue(false);
 });
 
 describe('useSignOut', () => {
@@ -98,29 +91,5 @@ describe('useSignOut', () => {
     );
     expect(loadPage).not.toHaveBeenCalled();
     expect(localStorage.length).toBe(1);
-  });
-
-  it('asks first when local changes would be lost', async () => {
-    vi.mocked(hasPendingChanges).mockResolvedValue(true);
-    vi.mocked(logout).mockResolvedValue({ endSessionUrl: null });
-    renderButton();
-
-    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
-    expect(await screen.findByRole('alertdialog')).toHaveTextContent(
-      'Sign out with unsynced changes?',
-    );
-    expect(logout).not.toHaveBeenCalled();
-
-    await userEvent.click(screen.getByRole('button', { name: 'Sign out anyway' }));
-    await waitFor(() => expect(loadPage).toHaveBeenCalledWith('/signin'));
-  });
-
-  it('asks first when the local store cannot tell whether changes are pending', async () => {
-    vi.mocked(hasPendingChanges).mockRejectedValue(new Error('IndexedDB unavailable'));
-    renderButton();
-
-    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
-    expect(await screen.findByRole('alertdialog')).toBeInTheDocument();
-    expect(logout).not.toHaveBeenCalled();
   });
 });

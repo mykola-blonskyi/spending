@@ -97,14 +97,7 @@ export const en = {
       title: 'Still waiting to get in?',
       description:
         'If you sign in but keep coming back here, the owner may not have approved your account or given you access to Spending yet. Ask them to, then try again.',
-      dismiss: 'Dismiss',
     },
-  },
-  signOut: {
-    pendingTitle: 'Sign out with unsynced changes?',
-    pendingDescription:
-      'Some changes on this device have not reached the server yet. Signing out deletes them from this device.',
-    pendingConfirm: 'Sign out anyway',
   },
   userMenu: {
     label: 'Account: {name}',

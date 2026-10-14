@@ -102,14 +102,7 @@ export const es = {
       title: '¿Sigues sin poder entrar?',
       description:
         'Si inicias sesión pero siempre vuelves aquí, puede que el propietario aún no haya aprobado tu cuenta o no te haya dado acceso a Spending. Pídeselo y vuelve a intentarlo.',
-      dismiss: 'Cerrar',
     },
-  },
-  signOut: {
-    pendingTitle: '¿Cerrar sesión con cambios sin sincronizar?',
-    pendingDescription:
-      'Algunos cambios de este dispositivo aún no han llegado al servidor. Si cierras sesión, se borrarán de este dispositivo.',
-    pendingConfirm: 'Cerrar sesión de todos modos',
   },
   userMenu: {
     label: 'Cuenta: {name}',

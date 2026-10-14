@@ -11,7 +11,6 @@ import { testSession } from '@data/testing';
 import { I18nProvider } from '@i18n/index';
 import { RedirectIfSignedIn, RequireSession } from './require-session';
 import { useSession } from './session-context';
-import { recordSignInAttempt, signInAttempts } from './signin-attempts';
 
 vi.mock('@data/client', () => ({ api: { GET: vi.fn() } }));
 const get = vi.mocked(api.GET);
@@ -59,7 +58,6 @@ const signedOut = () =>
 
 beforeEach(() => {
   get.mockReset();
-  sessionStorage.clear();
 });
 
 describe('RequireSession', () => {
@@ -72,11 +70,9 @@ describe('RequireSession', () => {
 
   it('renders the page with the session and keeps the CSRF token', async () => {
     get.mockResolvedValue({ data: testSession() } as never);
-    recordSignInAttempt();
     renderAt('/budgets');
     expect(await screen.findByRole('heading', { name: 'Hello Ann Example' })).toBeInTheDocument();
     expect(getCsrfToken()).toBe('csrf-test');
-    expect(signInAttempts()).toBe(0);
   });
 
   it('sends a signed-out visitor to sign-in with the full return target', async () => {
