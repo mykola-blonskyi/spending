@@ -420,6 +420,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ImportsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -925,6 +941,48 @@ export interface components {
             /** Format: date-time */
             resolvedAt: string;
             transaction: components["schemas"]["TransactionView_Output"] | components["schemas"]["Tombstone_Output"];
+        };
+        ImportDto: {
+            /** Format: uuid */
+            accountId: string;
+            fileName: string;
+            mapping: {
+                [key: string]: unknown;
+            };
+            rows: {
+                line: number;
+                occurredOn: string;
+                amountMinor: number;
+                currency?: string;
+                description: string;
+                externalId?: string;
+            }[];
+        };
+        ImportBatchView_Output: {
+            /** Format: uuid */
+            id: string;
+            accountId: string | null;
+            fileName: string;
+            rowCount: number;
+            importedCount: number;
+            duplicateCount: number;
+            rejectedCount: number;
+            /** Format: date-time */
+            createdAt: string;
+            undoneAt: string | null;
+        };
+        ImportResultDto_Output: {
+            batch: components["schemas"]["ImportBatchView_Output"];
+            imported: {
+                count: number;
+                transactionIds: string[];
+            };
+            duplicates: number;
+            rejected: {
+                line: number;
+                /** @enum {string} */
+                reason: "INVALID_DATE" | "INVALID_AMOUNT" | "INVALID_CURRENCY" | "DESCRIPTION_TOO_LONG" | "EXTERNAL_ID_TOO_LONG" | "DUPLICATE_IN_FILE_EXTERNAL_ID";
+            }[];
         };
     };
     responses: never;
@@ -1599,6 +1657,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ResolveResponseDto_Output"];
+                };
+            };
+        };
+    };
+    ImportsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResultDto_Output"];
                 };
             };
         };
