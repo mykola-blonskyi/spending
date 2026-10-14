@@ -89,4 +89,12 @@ describe('app routes', () => {
     act(() => useLocaleStore.getState().setLocale('uk'));
     expect(document.title).toBe('Бюджети · Spending');
   });
+
+  it('retitles and focuses pages outside the shell too', async () => {
+    const router = renderAt('/settings');
+    expect(document.title).toBe('Settings · Spending');
+    await act(() => router.navigate('/signin'));
+    expect(document.title).toBe('Welcome to Spending · Spending');
+    expect(screen.getByRole('main')).toHaveFocus();
+  });
 });
