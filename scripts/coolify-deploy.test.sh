@@ -9,7 +9,8 @@ port=${COOLIFY_FAKE_PORT:-8977}
 token=test-token-0f3c9a
 tmp=$(mktemp -d)
 server_pid=''
-trap 'kill "$server_pid" 2>/dev/null && wait "$server_pid" 2>/dev/null; rm -rf "$tmp"' EXIT
+# Keep the script's own status: under dash, the killed server's 143 from `wait` would leak out.
+trap 'status=$?; kill "$server_pid" 2>/dev/null; wait "$server_pid" 2>/dev/null || true; rm -rf "$tmp"; exit "$status"' EXIT
 
 python3 scripts/coolify-fake.py "$port" &
 server_pid=$!
