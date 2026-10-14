@@ -127,7 +127,7 @@ export class SessionService {
     await this.db
       .update(sessions)
       .set({
-        refreshTokenEnc: this.encrypt(outcome.refreshToken),
+        ...(outcome.refreshToken ? { refreshTokenEnc: this.encrypt(outcome.refreshToken) } : {}),
         ...(outcome.idToken ? { idTokenEnc: this.encrypt(outcome.idToken) } : {}),
       })
       .where(byToken(hash));

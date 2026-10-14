@@ -7,9 +7,10 @@ import { UsersService } from '../users/users.service';
 import { OidcClient, type ProviderTokens } from './oidc.client';
 import { sanitizeReturnTo } from './return-to';
 import { type IssuedSession, SessionService } from './session.service';
-import { hashToken } from './token-crypto';
+import { timingSafeEqual } from 'node:crypto';
+import { hashToken, randomToken } from './token-crypto';
 
-const LOGIN_ATTEMPT_TTL_MS = 10 * 60_000;
+export const LOGIN_ATTEMPT_TTL_MS = 10 * 60_000;
 
 export type LoginResult =
   | { ok: true; session: IssuedSession; returnTo: string }
@@ -26,27 +27,36 @@ export class AuthService {
     @Inject(UsersService) private readonly users: UsersService,
   ) {}
 
-  /** Returns where to send the browser: the provider, or back to sign-in if it is unreachable. */
-  async startLogin(returnTo: unknown): Promise<string> {
+  /**
+   * Returns where to send the browser (the provider, or back to sign-in if it is unreachable) and
+   * the binding value the controller must set as the login cookie.
+   */
+  async startLogin(returnTo: unknown): Promise<{ redirect: string; binding?: string }> {
     let login: Awaited<ReturnType<OidcClient['startLogin']>>;
     try {
       login = await this.oidc.startLogin();
     } catch {
       this.logger.warn('login_failed reason=discovery_unavailable');
-      return '/signin?error=login_failed';
+      return { redirect: '/signin?error=login_failed' };
     }
+    const binding = randomToken();
     await this.db.delete(loginAttempts).where(lt(loginAttempts.expiresAt, sql`now()`));
     await this.db.insert(loginAttempts).values({
       state: login.state,
       nonce: login.nonce,
       codeVerifier: login.codeVerifier,
+      bindingHash: hashToken(binding),
       returnTo: sanitizeReturnTo(returnTo),
       expiresAt: new Date(Date.now() + LOGIN_ATTEMPT_TTL_MS),
     });
-    return login.url.href;
+    return { redirect: login.url.href, binding };
   }
 
-  async completeLogin(callbackUrl: URL, previousToken: string | undefined): Promise<LoginResult> {
+  async completeLogin(
+    callbackUrl: URL,
+    binding: string | undefined,
+    previousToken: string | undefined,
+  ): Promise<LoginResult> {
     const state = callbackUrl.searchParams.get('state');
     if (!state) return this.fail('missing_state');
     // Consuming before the exchange makes every state single-use, even when the exchange fails.
@@ -55,6 +65,9 @@ export class AuthService {
       .where(eq(loginAttempts.state, state))
       .returning();
     if (!attempt) return this.fail('unknown_state');
+    if (!binding || !sameHash(hashToken(binding), attempt.bindingHash)) {
+      return this.fail('browser_mismatch');
+    }
     if (attempt.expiresAt.getTime() <= Date.now()) {
       this.logger.warn('login_failed reason=attempt_expired');
       return { ok: false, error: 'login_expired' };
@@ -92,4 +105,10 @@ export class AuthService {
     this.logger.warn(`login_failed reason=${reason}`);
     return { ok: false, error: 'login_failed' };
   }
+}
+
+function sameHash(a: string, b: string): boolean {
+  const left = Buffer.from(a);
+  const right = Buffer.from(b);
+  return left.length === right.length && timingSafeEqual(left, right);
 }

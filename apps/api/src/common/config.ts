@@ -11,7 +11,8 @@ const httpUrl = z.url({ protocol: /^https?$/ });
 
 const configSchema = z
   .object({
-    NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+    // Defaults to production so a deploy that forgets it keeps every production check.
+    NODE_ENV: z.enum(['development', 'test', 'production']).default('production'),
     PORT: z.coerce.number().int().min(1).max(65535).default(3000),
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
     APP_ORIGIN: httpUrl.refine((value) => new URL(value).origin === value, 'must be a bare origin'),

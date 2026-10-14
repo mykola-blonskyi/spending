@@ -17,6 +17,11 @@ describe('sanitizeReturnTo', () => {
     '/\t/evil.example',
     '/\n/evil.example',
     '/a\\b',
+    '/..//evil.example',
+    '/.//evil.example',
+    '/a/..//evil.example',
+    '/%2e%2e//evil.example',
+    '/./%2e//evil.example',
     ['/'],
     `/${'a'.repeat(3000)}`,
   ])('neutralizes %j', (value) => {

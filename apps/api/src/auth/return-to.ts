@@ -9,5 +9,7 @@ export function sanitizeReturnTo(value: unknown): string {
   if ([...value].some((c) => c <= '\u001f' || c === '\u007f' || c === '\\')) return '/';
   const parsed = new URL(value, 'http://app.invalid');
   if (parsed.origin !== 'http://app.invalid') return '/';
-  return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  const target = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  // Dot segments collapse during parsing ("/..//evil" becomes "//evil"), so check the result too.
+  return target.startsWith('//') || target.startsWith('/\\') ? '/' : target;
 }

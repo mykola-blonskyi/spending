@@ -91,7 +91,7 @@ export class OidcClient {
       .discovery(
         new URL(this.config.oidc.issuer),
         this.config.oidc.clientId,
-        undefined,
+        { id_token_signed_response_alg: 'RS256' },
         oidc.ClientSecretBasic(this.config.oidc.clientSecret),
         {
           timeout: PROVIDER_TIMEOUT_SECONDS,

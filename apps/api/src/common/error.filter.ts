@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { ZodSerializationException, ZodValidationException } from 'nestjs-zod';
+import { DrizzleQueryError } from 'drizzle-orm';
 import { ZodError } from 'zod';
 import { ApiError, type ErrorBody, type ErrorCode } from './errors';
 
@@ -63,10 +64,19 @@ export class ErrorFilter implements ExceptionFilter {
       const code = STATUS_CODES[status] ?? 'INTERNAL';
       return [status, { error: { code, message: code } }];
     }
-    this.logger.error(exception instanceof Error ? exception.stack : 'Non-error thrown');
+    this.logger.error(describeUnexpected(exception));
     return [
       HttpStatus.INTERNAL_SERVER_ERROR,
       { error: { code: 'INTERNAL', message: 'Internal error' } },
     ];
   }
+}
+
+/** Drizzle puts query parameters (tokens, amounts, notes) in its message; log only the cause. */
+function describeUnexpected(exception: unknown): string {
+  if (exception instanceof DrizzleQueryError) {
+    const cause = exception.cause as { code?: string; message?: string } | undefined;
+    return `Query failed: ${cause?.code ?? 'unknown'} ${cause?.message ?? ''}`.trim();
+  }
+  return exception instanceof Error ? (exception.stack ?? exception.name) : 'Non-error thrown';
 }

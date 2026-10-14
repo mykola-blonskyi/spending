@@ -1,5 +1,5 @@
 {
-  "id": "5f00e7e5-9985-4065-ab93-777bd9b42df1",
+  "id": "f1e8e778-9710-4dc4-8cb6-73c7cee40028",
   "prevId": "d1e4727f-b31a-4670-a8d7-e16e5c01f48f",
   "version": "7",
   "dialect": "postgresql",
@@ -780,6 +780,12 @@
         },
         "code_verifier": {
           "name": "code_verifier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "binding_hash": {
+          "name": "binding_hash",
           "type": "text",
           "primaryKey": false,
           "notNull": true

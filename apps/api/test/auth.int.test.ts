@@ -146,6 +146,12 @@ describe('authentication', () => {
       expect(replay.cookie).toBeUndefined();
     });
 
+    it('rejects a callback replayed into a browser that did not start the login', async () => {
+      const outcome = await login(t, ann.sub, { withoutBinding: true });
+      expect(outcome.location).toBe('/signin?error=login_failed');
+      expect(outcome.cookie).toBeUndefined();
+    });
+
     it('rejects an expired login attempt', async () => {
       const outcome = await login(t, ann.sub, {
         beforeCallback: async () => {
@@ -181,6 +187,8 @@ describe('authentication', () => {
       'https://evil.example/',
       '/\t/evil.example',
       'javascript:alert(1)',
+      '/..//evil.example/x',
+      '/%2e%2e//evil.example/x',
     ])('neutralizes the open redirect %j', async (returnTo) => {
       const outcome = await login(t, ann.sub, { returnTo });
       expect(outcome.location).toBe('/');

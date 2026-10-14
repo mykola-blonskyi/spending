@@ -98,6 +98,8 @@ export const loginAttempts = pgTable('login_attempts', {
   state: text('state').primaryKey(),
   nonce: text('nonce').notNull(),
   codeVerifier: text('code_verifier').notNull(),
+  // SHA-256 of the login cookie set on the browser that started this attempt (login CSRF guard).
+  bindingHash: text('binding_hash').notNull(),
   returnTo: text('return_to').notNull(),
   expiresAt: tstz('expires_at').notNull(),
 });

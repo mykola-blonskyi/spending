@@ -43,6 +43,7 @@ export async function resetData(db: Db): Promise<void> {
 }
 
 export const SESSION_COOKIE = '__Host-spending_session';
+export const LOGIN_COOKIE = '__Host-spending_login';
 
 let ipCounter = 0;
 /** A fresh client IP per call, so per-IP auth budgets never couple unrelated tests. */
@@ -73,6 +74,8 @@ export async function login(
     returnTo?: string;
     ip?: string;
     cookie?: string;
+    /** Simulates the callback arriving in a browser that did not start the login. */
+    withoutBinding?: boolean;
     beforeCallback?: () => Promise<void>;
   } = {},
 ): Promise<LoginOutcome & { callbackUrl: string }> {
@@ -84,6 +87,10 @@ export async function login(
     headers: { 'x-forwarded-for': ip },
   });
   if (start.status !== 302) throw new Error(`login start returned ${start.status}`);
+  const binding = start.headers
+    .getSetCookie()
+    .map((c) => /^(?:__Host-)?spending_login=([^;]+)/.exec(c)?.[1])
+    .find(Boolean);
   const authorize = new URL(start.headers.get('location')!);
   authorize.searchParams.set('login_hint', sub);
   const provider = await fetch(authorize, { redirect: 'manual' });
@@ -91,7 +98,12 @@ export async function login(
   const back = new URL(provider.headers.get('location')!);
   const callbackUrl = `${t.baseUrl}${back.pathname}${back.search}`;
   await options.beforeCallback?.();
-  const outcome = await callback(callbackUrl, ip, options.cookie);
+  const outcome = await callback(
+    callbackUrl,
+    ip,
+    options.cookie,
+    options.withoutBinding ? undefined : binding,
+  );
   return { ...outcome, callbackUrl };
 }
 
@@ -99,12 +111,17 @@ export async function callback(
   url: string,
   ip = freshIp(),
   cookie?: string,
+  binding?: string,
 ): Promise<LoginOutcome> {
+  const cookies = [
+    cookie ? `${SESSION_COOKIE}=${cookie}` : undefined,
+    binding ? `${LOGIN_COOKIE}=${binding}` : undefined,
+  ].filter(Boolean);
   const response = await fetch(url, {
     redirect: 'manual',
     headers: {
       'x-forwarded-for': ip,
-      ...(cookie ? { cookie: `${SESSION_COOKIE}=${cookie}` } : {}),
+      ...(cookies.length > 0 ? { cookie: cookies.join('; ') } : {}),
     },
   });
   if (response.status !== 302) throw new Error(`callback returned ${response.status}`);

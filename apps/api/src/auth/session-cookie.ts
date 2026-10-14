@@ -5,6 +5,19 @@ export function sessionCookieName(secure: boolean): string {
   return secure ? '__Host-spending_session' : 'spending_session';
 }
 
+/** Binds a login attempt to the browser that started it; lives only for the login round trip. */
+export function loginCookieName(secure: boolean): string {
+  return secure ? '__Host-spending_login' : 'spending_login';
+}
+
+export function setLoginCookie(res: Response, secure: boolean, value: string, ttlMs: number): void {
+  res.cookie(loginCookieName(secure), value, { ...baseOptions(secure), maxAge: ttlMs });
+}
+
+export function clearLoginCookie(res: Response, secure: boolean): void {
+  res.clearCookie(loginCookieName(secure), baseOptions(secure));
+}
+
 export function readCookie(req: Request, name: string): string | undefined {
   for (const part of (req.headers.cookie ?? '').split(';')) {
     const index = part.indexOf('=');

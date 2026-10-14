@@ -8,11 +8,14 @@ import { APP_CONFIG, type AppConfig } from '../common/config';
 import { RateLimit } from '../common/rate-limit';
 import { profileSchema } from '../users/profile';
 import { UsersService } from '../users/users.service';
-import { AuthService } from './auth.service';
+import { AuthService, LOGIN_ATTEMPT_TTL_MS } from './auth.service';
 import {
+  clearLoginCookie,
   clearSessionCookie,
+  loginCookieName,
   readCookie,
   sessionCookieName,
+  setLoginCookie,
   setSessionCookie,
 } from './session-cookie';
 
@@ -36,7 +39,9 @@ export class AuthController {
   @ApiQuery({ name: 'returnTo', required: false, type: String })
   @ApiResponse({ status: 302, description: 'Redirect to the identity provider' })
   async login(@Query('returnTo') returnTo: unknown, @Res() res: Response): Promise<void> {
-    res.redirect(302, await this.auth.startLogin(returnTo));
+    const { redirect, binding } = await this.auth.startLogin(returnTo);
+    if (binding) setLoginCookie(res, this.config.cookieSecure, binding, LOGIN_ATTEMPT_TTL_MS);
+    res.redirect(302, redirect);
   }
 
   @Public()
@@ -47,7 +52,9 @@ export class AuthController {
     const callbackUrl = new URL(this.config.oidc.redirectUri);
     callbackUrl.search = new URL(req.originalUrl, 'http://callback.invalid').search;
     const previous = readCookie(req, sessionCookieName(this.config.cookieSecure));
-    const result = await this.auth.completeLogin(callbackUrl, previous);
+    const binding = readCookie(req, loginCookieName(this.config.cookieSecure));
+    clearLoginCookie(res, this.config.cookieSecure);
+    const result = await this.auth.completeLogin(callbackUrl, binding, previous);
     if (!result.ok) {
       res.redirect(302, `/signin?error=${result.error}`);
       return;

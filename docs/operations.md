@@ -58,7 +58,7 @@ missing or invalid. `apps/api/.env.example` documents every variable with local 
 
 | Variable                 | Meaning                                                                        |
 | ------------------------ | ------------------------------------------------------------------------------ |
-| `NODE_ENV`               | `development`, `test` or `production`                                          |
+| `NODE_ENV`               | `development`, `test` or `production` (default `production`)                   |
 | `PORT`                   | API listen port (default 3000)                                                 |
 | `DATABASE_URL`           | PostgreSQL connection string                                                   |
 | `APP_ORIGIN`             | Public origin, e.g. `https://spending.blonskyi.dev`. https in production       |
