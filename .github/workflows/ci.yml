@@ -43,7 +43,8 @@ jobs:
       - name: OpenAPI document and client types are current
         run: |
           pnpm openapi
-          git diff --exit-code -- apps/web/src/data
+          git status --porcelain -- apps/web/src/data
+          test -z "$(git status --porcelain -- apps/web/src/data)"
 
   unit:
     name: Unit and component tests
