@@ -24,6 +24,7 @@ export default tseslint.config(
       '**/playwright-report/**',
       '**/test-results/**',
       'apps/web/src/data/api.gen.ts',
+      'apps/web/public/**',
       'apps/api/drizzle/**',
     ],
   },

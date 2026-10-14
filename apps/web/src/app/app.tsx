@@ -1,7 +1,29 @@
+import { useEffect, useState } from 'react';
+import { createBrowserRouter, RouterProvider } from 'react-router';
+import { onAuthLost } from '@data/auth-events';
+import { createQueryClient } from '@data/query-client';
+import { AppProviders } from './providers';
+import { routes } from './routes';
+
 export function App() {
+  const [queryClient] = useState(createQueryClient);
+  const [router] = useState(() => createBrowserRouter(routes));
+
+  useEffect(
+    () =>
+      onAuthLost(() => {
+        queryClient.clear();
+        const { pathname, search } = window.location;
+        if (pathname !== '/signin') {
+          void router.navigate(`/signin?${new URLSearchParams({ returnTo: pathname + search })}`);
+        }
+      }),
+    [queryClient, router],
+  );
+
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-2 p-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Spending</h1>
-    </main>
+    <AppProviders queryClient={queryClient}>
+      <RouterProvider router={router} />
+    </AppProviders>
   );
 }

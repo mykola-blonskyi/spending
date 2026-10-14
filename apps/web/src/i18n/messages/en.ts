@@ -1,0 +1,198 @@
+export const en = {
+  app: {
+    name: 'Spending',
+    tagline: 'Your money, calmly accounted for',
+  },
+  nav: {
+    label: 'Main navigation',
+    skipToContent: 'Skip to content',
+    more: 'More',
+    moreTitle: 'All sections',
+    dashboard: 'Overview',
+    transactions: 'Transactions',
+    budgets: 'Budgets',
+    recurring: 'Recurring',
+    accounts: 'Accounts',
+    categories: 'Categories',
+    imports: 'Imports',
+    family: 'Family',
+    settings: 'Settings',
+    sync: 'Sync',
+    addTransaction: 'Add transaction',
+  },
+  actions: {
+    add: 'Add',
+    save: 'Save',
+    cancel: 'Cancel',
+    delete: 'Delete',
+    edit: 'Edit',
+    close: 'Close',
+    confirm: 'Confirm',
+    retry: 'Try again',
+    back: 'Back',
+    continue: 'Continue',
+    search: 'Search',
+    filter: 'Filter',
+    undo: 'Undo',
+    done: 'Done',
+    signOut: 'Sign out',
+    goHome: 'Go to overview',
+  },
+  states: {
+    loading: 'Loading…',
+    empty: {
+      title: 'Nothing here yet',
+      description: 'When there is something to show, it will appear here.',
+    },
+    offline: {
+      title: 'You are offline',
+      description: 'Changes are saved on this device and will sync when you reconnect.',
+    },
+    sync: {
+      synced: 'Up to date',
+      syncing: 'Syncing…',
+      pending: '{count, plural, one {# change waiting to sync} other {# changes waiting to sync}}',
+      pendingShort: '{count, plural, one {# pending} other {# pending}}',
+      failed: 'Sync failed',
+      failedDescription: 'We could not reach the server. Your changes are safe on this device.',
+      conflict: '{count, plural, one {# conflict needs review} other {# conflicts need review}}',
+      conflictShort: '{count, plural, one {# conflict} other {# conflicts}}',
+      conflictDescription:
+        'This entry was changed on another device. Choose which version to keep.',
+    },
+    approval: {
+      title: 'Waiting for approval',
+      description:
+        'Your sign-in worked, but the owner has not given you access yet. Ask them to approve your account, then sign in again.',
+    },
+    signInHelp:
+      'Having trouble? Make sure you use the Google account the owner invited, then try again.',
+    error: {
+      title: 'Something went wrong',
+      description: 'An unexpected error stopped this page from loading. Please try again.',
+    },
+    notFound: {
+      title: 'Page not found',
+      description: 'The page you are looking for does not exist or has moved.',
+    },
+  },
+  money: {
+    negative: 'minus {amount}',
+  },
+  confirm: {
+    typeToConfirm: 'To confirm, type {phrase} below.',
+    phraseLabel: 'Confirmation phrase',
+  },
+  signin: {
+    title: 'Welcome to Spending',
+    subtitle: 'A calm place for personal and family expenses.',
+    continueWithGoogle: 'Continue with Google',
+    approvalNote:
+      'Spending is private. After you sign in, the owner has to approve your account before you can use it.',
+    errors: {
+      login_failed: 'Sign-in did not complete. Please try again.',
+      login_expired: 'Your sign-in took too long and expired. Please start again.',
+    },
+  },
+  invite: {
+    title: 'You have been invited',
+    description: 'Sign in to join this family workspace and share expenses together.',
+    accept: 'Sign in to accept',
+  },
+  pages: {
+    dashboard: {
+      title: 'Overview',
+      description: 'Where your money went this month.',
+      emptyTitle: 'Your month at a glance',
+      emptyDescription: 'Add your first transaction to see spending, income and budgets here.',
+    },
+    transactions: {
+      title: 'Transactions',
+      description: 'Every expense and income, newest first.',
+      emptyTitle: 'No transactions yet',
+      emptyDescription: 'Add an expense or import a bank statement to get started.',
+    },
+    addTransaction: {
+      title: 'Add transaction',
+      description: 'Record an expense or income.',
+      emptyTitle: 'Quick entry is coming',
+      emptyDescription: 'Soon you will be able to add a transaction here in a few taps.',
+    },
+    budgets: {
+      title: 'Budgets',
+      description: 'Monthly limits per category.',
+      emptyTitle: 'No budgets yet',
+      emptyDescription: 'Set a monthly limit for a category to keep spending on track.',
+    },
+    recurring: {
+      title: 'Recurring',
+      description: 'Subscriptions, rent and other regular payments.',
+      emptyTitle: 'No recurring payments',
+      emptyDescription: 'Add a regular payment and it will be recorded for you on schedule.',
+    },
+    accounts: {
+      title: 'Accounts',
+      description: 'Cash, cards and bank accounts.',
+      emptyTitle: 'No accounts yet',
+      emptyDescription: 'Add an account to track balances in any currency.',
+    },
+    categories: {
+      title: 'Categories',
+      description: 'How your spending is grouped.',
+      emptyTitle: 'No categories yet',
+      emptyDescription: 'Create categories to see where your money goes.',
+    },
+    imports: {
+      title: 'Imports',
+      description: 'Bring in transactions from a bank statement.',
+      emptyTitle: 'No imports yet',
+      emptyDescription: 'Upload a CSV file from your bank to add many transactions at once.',
+    },
+    family: {
+      title: 'Family',
+      description: 'Share a workspace with the people you live with.',
+      emptyTitle: 'Just you for now',
+      emptyDescription: 'Invite family members to track shared expenses together.',
+    },
+    settings: {
+      title: 'Settings',
+      description: 'Preferences for this device.',
+    },
+    sync: {
+      title: 'Sync',
+      description: 'Changes on this device and their status.',
+      emptyTitle: 'Everything is in sync',
+      emptyDescription: 'Changes you make offline will wait here until they reach the server.',
+    },
+  },
+  settings: {
+    appearance: 'Appearance',
+    language: {
+      label: 'Language',
+      description: 'Used for menus, dates and numbers.',
+    },
+    theme: {
+      label: 'Theme',
+      description: 'Follow your device or pick one.',
+      light: 'Light',
+      dark: 'Dark',
+      system: 'System',
+    },
+  },
+  errors: {
+    AUTH_REQUIRED: 'Please sign in to continue.',
+    SESSION_REVOKED: 'You were signed out. Please sign in again.',
+    CSRF_FAILED: 'Your session needs a refresh. Reload the page and try again.',
+    FORBIDDEN: 'You do not have access to this.',
+    NOT_FOUND: 'We could not find what you were looking for.',
+    VALIDATION_FAILED: 'Some details are not valid. Check the highlighted fields.',
+    CONFLICT: 'This was changed somewhere else. Review the latest version.',
+    RATE_LIMITED: 'Too many attempts. Wait a moment and try again.',
+    PAYLOAD_TOO_LARGE: 'This file is too large to upload.',
+    UNAVAILABLE: 'The service is temporarily unavailable. Try again shortly.',
+    INTERNAL: 'Something went wrong on our side. Try again in a moment.',
+    NETWORK: 'No connection to the server. Check your internet and try again.',
+  },
+};
+
+export type Messages = typeof en;
