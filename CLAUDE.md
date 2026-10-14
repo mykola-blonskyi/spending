@@ -66,3 +66,17 @@ Reuse existing templates whenever possible.
 Additional project-specific instructions may exist in:
 
 - .claude/CLAUDE.local.md
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues of `mykola-blonskyi/spending` (via the `gh` CLI). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context, using the existing `knowledge/` files and `docs/decisions.md`. See `docs/agents/domain.md`.
