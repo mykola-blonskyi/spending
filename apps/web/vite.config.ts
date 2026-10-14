@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
 const fromSrc = (dir: string) => fileURLToPath(new URL(`./src/${dir}`, import.meta.url));
+const api = { target: process.env.API_ORIGIN ?? 'http://localhost:3000', changeOrigin: false };
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -16,10 +17,8 @@ export default defineConfig({
       '@i18n': fromSrc('i18n'),
     },
   },
-  server: {
-    port: 5173,
-    proxy: { '/api': { target: 'http://localhost:3000', changeOrigin: false } },
-  },
+  server: { port: 5173, proxy: { '/api': api } },
+  preview: { proxy: { '/api': api } },
   build: { sourcemap: 'hidden' },
   test: {
     environment: 'jsdom',

@@ -100,6 +100,11 @@ export default tseslint.config(
     },
   },
   {
+    // Playwright fixtures destructure their dependencies (even none) and receive a `use` callback.
+    files: ['apps/web/e2e/**/*.ts'],
+    rules: { 'no-empty-pattern': 'off', 'react-hooks/rules-of-hooks': 'off' },
+  },
+  {
     files: ['apps/web/src/shared/ui/**/*.tsx'],
     rules: { 'react-refresh/only-export-components': 'off' },
   },
