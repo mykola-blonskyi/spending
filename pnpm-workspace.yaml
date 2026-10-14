@@ -1,0 +1,7 @@
+packages:
+  - apps/*
+allowBuilds:
+  '@scarf/scarf': false
+  '@swc/core': true
+  esbuild: true
+  unrs-resolver: false
