@@ -52,6 +52,9 @@ services:
       OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:?}
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:?}
       SESSION_ENCRYPTION_KEY: ${SESSION_ENCRYPTION_KEY:?}
+      # Coolify sets SOURCE_COMMIT to the commit it built; /api/health reports it so the deploy
+      # workflow can confirm the running build is the one it verified.
+      APP_VERSION: ${SOURCE_COMMIT:-unknown}
       NODE_ENV: production
     depends_on:
       migrate:

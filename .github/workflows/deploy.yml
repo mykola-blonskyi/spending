@@ -36,6 +36,16 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
+      - name: Confirm main still points at the verified commit
+        env:
+          REPOSITORY: ${{ github.repository }}
+          VERIFIED_SHA: ${{ github.sha }}
+        run: |
+          head=$(git ls-remote "https://github.com/$REPOSITORY" refs/heads/main | cut -f1)
+          if [ "$head" != "$VERIFIED_SHA" ]; then
+            echo "main moved since dispatch ($VERIFIED_SHA verified, $head now); re-run on the new head." >&2
+            exit 1
+          fi
       - name: Deploy via Coolify
         env:
           COOLIFY_DEPLOY_WEBHOOK_URL: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK_URL }}
@@ -44,4 +54,5 @@ jobs:
       - name: Check health and security headers
         env:
           APP_URL: ${{ vars.APP_URL }}
+          EXPECTED_VERSION: ${{ github.sha }}
         run: sh scripts/check-deploy.sh
