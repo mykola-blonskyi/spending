@@ -111,7 +111,9 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
 - **BR-27.** The dedupe key is the provider transaction ID when mapped. Otherwise it is
   SHA-256 of account, date, amount, currency, normalized description, and the ordinal of that
   identical tuple within the file. Re-importing the same statement adds nothing. Two identical
-  purchases in one statement are both kept.
+  purchases in one statement are both kept. The amount in the tuple is signed (income and expense
+  differ); the description is NFKC-normalized, lowercased and whitespace-collapsed. A provider ID
+  repeated within one file rejects the later rows (`DUPLICATE_IN_FILE_EXTERNAL_ID`).
 - **BR-28.** For a user without a family, imported rows are confirmed immediately in the personal
   workspace and auto-categorized. For a user with a family, they are `pending_review` until the
   user confirms category and scope for each row.

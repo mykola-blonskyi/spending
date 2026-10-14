@@ -93,6 +93,18 @@ describe('imports', () => {
     });
   const importRows = async (s: Session, rows: Row[], accountId = account) =>
     json<ImportResult>(await post(s, rows, accountId), 201);
+  async function push(s: Session, mutation: Record<string, unknown>) {
+    const { results } = await json<{ results: { status: string; code?: string }[] }>(
+      await as(t, s, '/v1/sync/push', {
+        method: 'POST',
+        body: { mutations: [{ mutationId: crypto.randomUUID(), ...mutation }] },
+      }),
+      200,
+    );
+    return results[0]!;
+  }
+  const remove = (s: Session, view: View) =>
+    push(s, { type: 'transaction.delete', transactionId: view.id, baseVersion: view.version });
   async function history(s: Session, query = ''): Promise<View[]> {
     return (await json<{ transactions: View[] }>(await as(t, s, `/v1/transactions${query}`), 200))
       .transactions;
@@ -197,6 +209,65 @@ describe('imports', () => {
       const rows = Array.from({ length: 5000 }, (_, i) => row(i + 2, { amountMinor: -(i + 1) }));
       const result = await importRows(ann, rows);
       expect(result.imported.count).toBe(5000);
+    });
+  });
+
+  describe('dedupe (BR-27)', () => {
+    const statement = [
+      row(2, { description: 'Mercadona' }),
+      row(3, { description: 'Mercadona' }),
+      row(4, { description: 'Renfe', amountMinor: -890 }),
+    ];
+
+    it('keeps identical purchases and adds nothing on re-import', async () => {
+      const first = await importRows(ann, statement);
+      expect(first.imported.count).toBe(3);
+      const again = await importRows(ann, statement);
+      expect(again).toMatchObject({ imported: { count: 0, transactionIds: [] }, duplicates: 3 });
+      expect(again.batch).toMatchObject({ importedCount: 0, duplicateCount: 3, rejectedCount: 0 });
+      expect(await history(ann)).toHaveLength(3);
+    });
+
+    it('adds only the new rows of an overlapping statement', async () => {
+      await importRows(ann, statement);
+      const overlapping = await importRows(ann, [
+        row(2, { description: 'MERCADONA ' }),
+        row(3, { description: 'mercadona' }),
+        row(4, { description: 'Mercadona' }),
+        row(5, { description: 'Renfe', amountMinor: -890 }),
+        row(6, { description: 'Lidl', occurredOn: '2026-10-02' }),
+      ]);
+      expect(overlapping.imported.count).toBe(2);
+      expect(overlapping.duplicates).toBe(3);
+      expect(await history(ann)).toHaveLength(5);
+    });
+
+    it('keys rows by provider id when mapped', async () => {
+      await importRows(ann, [row(2, { externalId: 'TX-1' }), row(3, { externalId: 'TX-2' })]);
+      const result = await importRows(ann, [
+        row(2, { externalId: 'TX-1', description: 'Renamed by the bank', amountMinor: -1 }),
+        row(3, { externalId: 'TX-3' }),
+        row(4, { externalId: 'TX-3' }),
+      ]);
+      expect(result.imported.count).toBe(1);
+      expect(result.duplicates).toBe(1);
+      expect(result.rejected).toEqual([{ line: 4, reason: 'DUPLICATE_IN_FILE_EXTERNAL_ID' }]);
+    });
+
+    it('scopes keys to the account', async () => {
+      await importRows(ann, statement);
+      const other = await createAccount(ann, annPersonal, 'Santander');
+      expect((await importRows(ann, statement, other)).imported.count).toBe(3);
+    });
+
+    it('does not bring back a single deleted imported row', async () => {
+      await importRows(ann, statement);
+      const renfe = (await history(ann)).find((r) => r.description === 'Renfe')!;
+      expect((await remove(ann, renfe)).status).toBe('applied');
+      const again = await importRows(ann, statement);
+      expect(again.imported.count).toBe(0);
+      expect(again.duplicates).toBe(3);
+      expect((await history(ann)).map((r) => r.description)).not.toContain('Renfe');
     });
   });
 });

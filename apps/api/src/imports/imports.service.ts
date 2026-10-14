@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { ApiError } from '../common/errors';
 import { BASE_CURRENCY, type CurrencyCode } from '../common/money';
 import { DB, type Db, ledgerTransaction, type Tx } from '../database/database.module';
@@ -7,6 +7,7 @@ import { accounts, importBatches, transactions } from '../database/schema';
 import { convert } from '../ledger/fx/conversion';
 import { FxService } from '../ledger/fx/fx.service';
 import { AccessPolicy } from '../workspaces/access-policy';
+import { importHashes } from './dedupe';
 import { type NormalizedRow, validateRows } from './rows';
 import { batchColumns, type ImportBody, type ImportResult, toBatchView } from './schemas';
 
@@ -42,8 +43,9 @@ export class ImportsService {
           rejected,
         })
         .returning({ id: importBatches.id });
+      const hashes = importHashes(account.id, valid);
       const values = [];
-      for (const row of valid) {
+      for (const [index, row] of valid.entries()) {
         values.push({
           id: crypto.randomUUID(),
           workspaceId,
@@ -55,6 +57,7 @@ export class ImportsService {
           accountId: account.id,
           description: row.description,
           externalId: row.externalId,
+          importHash: hashes[index]!,
           source: 'import' as const,
           importBatchId: batch!.id,
           ...(await this.conversion(tx, row)),
@@ -65,6 +68,11 @@ export class ImportsService {
         const inserted = await tx
           .insert(transactions)
           .values(values.slice(i, i + INSERT_CHUNK))
+          // BR-27: a row whose key exists (imported before, or deleted since) is a duplicate.
+          .onConflictDoNothing({
+            target: transactions.importHash,
+            where: sql`${transactions.importHash} is not null`,
+          })
           .returning({ id: transactions.id });
         transactionIds.push(...inserted.map((r) => r.id));
       }
