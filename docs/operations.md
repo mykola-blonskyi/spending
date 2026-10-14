@@ -50,3 +50,28 @@ ever billed (for example if the repository becomes private and exhausts the 2,00
 2. Product-level budget → Actions → amount `0` → enable "Stop usage when budget limit is reached".
 
 Workflows then stop instead of incurring charges. Never switch to larger runners.
+
+## Configuration
+
+The API reads its configuration from the environment and refuses to start when any value is
+missing or invalid. `apps/api/.env.example` documents every variable with local defaults.
+
+| Variable                 | Meaning                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------ |
+| `NODE_ENV`               | `development`, `test` or `production` (default `production`)                   |
+| `PORT`                   | API listen port (default 3000)                                                 |
+| `DATABASE_URL`           | PostgreSQL connection string                                                   |
+| `APP_ORIGIN`             | Public origin, e.g. `https://spending.blonskyi.dev`. https in production       |
+| `OIDC_ISSUER`            | `https://login.blonskyi.dev`                                                   |
+| `OIDC_CLIENT_ID`         | Client registered at the provider                                              |
+| `OIDC_CLIENT_SECRET`     | Its secret (`client_secret_basic`)                                             |
+| `SESSION_ENCRYPTION_KEY` | Base64 of 32 random bytes. Rotating it signs everyone out at the next re-check |
+| `COOKIE_SECURE`          | Default `true`; must be `true` in production                                   |
+
+Register these URIs with the provider: redirect `${APP_ORIGIN}/api/v1/auth/callback` and
+post-logout `${APP_ORIGIN}/signin`.
+
+For local sign-in without the real provider, run `pnpm --filter @spending/api fake-oidc` (port
+4400). It offers one button per test user, configured with `FAKE_OIDC_USERS`,
+`FAKE_OIDC_CLIENT_ID`, `FAKE_OIDC_CLIENT_SECRET` and `FAKE_OIDC_APP_ORIGIN`. The API talks to a
+plain-http issuer only when `NODE_ENV=test`, so run it that way against the fake provider.

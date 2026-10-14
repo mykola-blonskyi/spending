@@ -34,8 +34,8 @@ deploy/      compose stack, nginx config, backup scripts
 | Module       | Owns                                                                    |
 | ------------ | ----------------------------------------------------------------------- |
 | `database`   | Drizzle schema, migrations, connection, transaction helper              |
-| `common`     | config parsing, actor context, error codes, CSRF/origin guard, zod pipe |
-| `auth`       | OIDC login/callback/logout, sessions, grant re-check                    |
+| `common`     | config, actor context, error codes, rate limits, HTTP middleware        |
+| `auth`       | OIDC login/logout, sessions, grant re-check, session and CSRF guards    |
 | `users`      | profile and preferences, export, account deletion                       |
 | `workspaces` | personal/family workspaces, memberships, invitations, the access policy |
 | `ledger`     | accounts, categories, transaction reads and writes, FX conversion       |
