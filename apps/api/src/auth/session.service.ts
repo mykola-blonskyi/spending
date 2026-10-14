@@ -79,8 +79,25 @@ export class SessionService {
       .where(byToken(hash))
       .returning({ refreshTokenEnc: sessions.refreshTokenEnc, idTokenEnc: sessions.idTokenEnc });
     const refreshToken = this.decrypt(row?.refreshTokenEnc);
-    if (refreshToken) await this.revokeQuietly(refreshToken);
+    if (refreshToken) await this.revokeOneQuietly(refreshToken);
     return this.decrypt(row?.idTokenEnc);
+  }
+
+  /**
+   * Deletes every session of `userId` inside `tx` and returns their refresh tokens, so the caller
+   * can revoke them with `revokeQuietly` once `tx` has committed.
+   */
+  async deleteAllOf(tx: Tx, userId: string): Promise<string[]> {
+    const rows = await tx
+      .delete(sessions)
+      .where(eq(sessions.userId, userId))
+      .returning({ refreshTokenEnc: sessions.refreshTokenEnc });
+    return rows.flatMap((row) => this.decrypt(row.refreshTokenEnc) ?? []);
+  }
+
+  /** Best effort: a provider that fails or times out is logged, never surfaced. */
+  async revokeQuietly(refreshTokens: readonly string[]): Promise<void> {
+    await Promise.all(refreshTokens.map((token) => this.revokeOneQuietly(token)));
   }
 
   async deleteExpired(): Promise<void> {
@@ -169,7 +186,7 @@ export class SessionService {
       );
   }
 
-  private async revokeQuietly(refreshToken: string): Promise<void> {
+  private async revokeOneQuietly(refreshToken: string): Promise<void> {
     let timer: NodeJS.Timeout | undefined;
     const timeout = new Promise<'timeout'>((resolve) => {
       timer = setTimeout(() => resolve('timeout'), REVOKE_TIMEOUT_MS);

@@ -10,6 +10,6 @@ import { SessionService } from './session.service';
   imports: [UsersModule],
   controllers: [AuthController],
   providers: [AuthService, OidcClient, SessionService, SessionGuard, CsrfGuard],
-  exports: [SessionGuard, CsrfGuard],
+  exports: [SessionGuard, CsrfGuard, SessionService],
 })
 export class AuthModule {}

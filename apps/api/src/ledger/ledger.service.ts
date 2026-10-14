@@ -30,7 +30,7 @@ type UpdateAccount = z.infer<typeof updateAccountSchema>;
 type CreateCategory = z.infer<typeof createCategorySchema>;
 type UpdateCategory = z.infer<typeof updateCategorySchema>;
 
-const accountColumns = {
+export const accountColumns = {
   id: accounts.id,
   workspaceId: accounts.workspaceId,
   name: accounts.name,
@@ -42,7 +42,7 @@ const accountColumns = {
   updatedAt: accounts.updatedAt,
 };
 
-const categoryColumns = {
+export const categoryColumns = {
   id: categories.id,
   workspaceId: categories.workspaceId,
   name: categories.name,
