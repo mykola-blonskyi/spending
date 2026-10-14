@@ -93,7 +93,11 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
 
 - **BR-22.** A budget is a monthly EUR limit on one expense category. Progress is the sum of
   confirmed expense `baseAmountMinor` in that category for the calendar month, in the user's
-  timezone.
+  timezone. `occurredOn` is a date, so the timezone only picks the current month. Unconverted
+  expenses are listed per currency beside the progress and never count (BR-15). The status is
+  `near` from 80% of the limit and `over` above it; spending exactly the limit is `near`. The
+  category must be an active expense category of the budget's workspace (`422 INVALID_CATEGORY`).
+  Any member of the workspace may set or delete its budgets.
 - **BR-23.** Recurring generation is idempotent: `(recurringRuleId, recurringOccurrence)` is
   unique. The generator creates every missed occurrence up to today in the rule's timezone. A
   monthly rule anchored on the 29th to 31st clamps to the last day of shorter months. Deleting a

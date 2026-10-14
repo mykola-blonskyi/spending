@@ -3,6 +3,7 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
 import { AuthModule } from './auth/auth.module';
+import { BudgetsModule } from './budgets/budgets.module';
 import { CsrfGuard, SessionGuard } from './auth/guards';
 import { APP_CONFIG, type AppConfig } from './common/config';
 import { ErrorFilter } from './common/error.filter';
@@ -28,6 +29,7 @@ export class AppModule {
         WorkspacesModule,
         LedgerModule,
         SyncModule,
+        BudgetsModule,
       ],
       controllers: [HealthController],
       providers: [

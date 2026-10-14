@@ -119,6 +119,14 @@ edited through REST and arrive through pull like transactions.
   `accountId: null`. Sending that null back in an upsert keeps the author's account. Only the
   author may choose an account from their own personal workspace.
 
+## Budgets
+
+`GET /budgets?workspaceId=&month=YYYY-MM` lists the budgets of every visible workspace (or one),
+with progress for that month or the current month in the actor's timezone. `PUT /budgets` upserts
+the limit of one expense category, and `DELETE /budgets/:id` removes it. The month range,
+thresholds and progress fold are pure (`budgets/progress.ts`); one grouped query sums expenses
+per budget and currency.
+
 ## Security
 
 - Authentication runs only through the shared OIDC provider. The API is a confidential client

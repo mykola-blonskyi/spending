@@ -420,6 +420,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/budgets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["BudgetsController_list"];
+        put: operations["BudgetsController_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/budgets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["BudgetsController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -925,6 +957,53 @@ export interface components {
             /** Format: date-time */
             resolvedAt: string;
             transaction: components["schemas"]["TransactionView_Output"] | components["schemas"]["Tombstone_Output"];
+        };
+        BudgetListDto_Output: {
+            budgets: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                /** @enum {string} */
+                scope: "personal" | "family";
+                /** Format: uuid */
+                categoryId: string;
+                amountMinor: number;
+                month: string;
+                spentMinor: number;
+                unconverted: {
+                    currency: string;
+                    amountMinor: number;
+                }[];
+                /** @enum {string} */
+                status: "ok" | "near" | "over";
+            }[];
+        };
+        PutBudgetDto: {
+            /** Format: uuid */
+            workspaceId: string;
+            /** Format: uuid */
+            categoryId: string;
+            amountMinor: number;
+        };
+        BudgetDto_Output: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** @enum {string} */
+            scope: "personal" | "family";
+            /** Format: uuid */
+            categoryId: string;
+            amountMinor: number;
+            month: string;
+            spentMinor: number;
+            unconverted: {
+                currency: string;
+                amountMinor: number;
+            }[];
+            /** @enum {string} */
+            status: "ok" | "near" | "over";
         };
     };
     responses: never;
@@ -1600,6 +1679,68 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ResolveResponseDto_Output"];
                 };
+            };
+        };
+    };
+    BudgetsController_list: {
+        parameters: {
+            query?: {
+                workspaceId?: string;
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetListDto_Output"];
+                };
+            };
+        };
+    };
+    BudgetsController_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutBudgetDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetDto_Output"];
+                };
+            };
+        };
+    };
+    BudgetsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
