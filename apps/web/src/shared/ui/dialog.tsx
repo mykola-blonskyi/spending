@@ -91,6 +91,7 @@ function DialogFooter({
 }: React.ComponentProps<'div'> & {
   showCloseButton?: boolean;
 }) {
+  const { strings } = useSharedLocale();
   return (
     <div
       data-slot="dialog-footer"
@@ -100,7 +101,7 @@ function DialogFooter({
       {children}
       {showCloseButton && (
         <DialogPrimitive.Close asChild>
-          <Button variant="outline">Close</Button>
+          <Button variant="outline">{strings.close}</Button>
         </DialogPrimitive.Close>
       )}
     </div>

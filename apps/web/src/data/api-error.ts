@@ -28,17 +28,21 @@ export class ApiError extends Error {
   readonly status: number;
   readonly code: ApiErrorCode;
   readonly details?: readonly ApiErrorDetail[];
+  /** True when the code came from the API's error envelope rather than being inferred from the status. */
+  readonly fromEnvelope: boolean;
 
   constructor(init: {
     status: number;
     code: ApiErrorCode;
     message: string;
     details?: readonly ApiErrorDetail[];
+    fromEnvelope?: boolean;
   }) {
     super(init.message);
     this.name = 'ApiError';
     this.status = init.status;
     this.code = init.code;
+    this.fromEnvelope = init.fromEnvelope ?? false;
     if (init.details) this.details = init.details;
   }
 }
@@ -93,6 +97,7 @@ export function parseApiError(status: number, body: unknown): ApiError {
       status,
       code: envelope['code'],
       message: message || envelope['code'],
+      fromEnvelope: true,
       ...(details && { details }),
     });
   }

@@ -25,8 +25,10 @@ export const apiMiddleware: Middleware = {
   async onResponse({ response }) {
     if (response.ok) return undefined;
     const error = parseApiError(response.status, await readBody(response));
+    // Only our own envelope proves the session ended; a bare 401 (e.g. from a proxy) must not log users out.
     if (
       response.status === 401 &&
+      error.fromEnvelope &&
       (error.code === 'AUTH_REQUIRED' || error.code === 'SESSION_REVOKED')
     ) {
       clearCsrfToken();

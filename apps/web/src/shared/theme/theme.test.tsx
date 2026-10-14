@@ -1,7 +1,15 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { applyStoredTheme, THEME_STORAGE_KEY, ThemeProvider, useTheme } from './index';
+import {
+  applyStoredTheme,
+  THEME_PREFERENCES,
+  THEME_STORAGE_KEY,
+  ThemeProvider,
+  useTheme,
+} from './index';
 
 function mockSystemDark(initial: boolean) {
   const listeners = new Set<() => void>();
@@ -100,5 +108,36 @@ describe('theme', () => {
     await userEvent.click(screen.getByRole('button', { name: 'light' }));
     expect(screen.getByRole('status')).toHaveTextContent('light:light');
     vi.restoreAllMocks();
+  });
+
+  it('keeps the head script in agreement with the TS constants', () => {
+    const script = readFileSync(resolve(process.cwd(), 'public/theme-init.js'), 'utf8');
+    expect(script).toContain(`'${THEME_STORAGE_KEY}'`);
+    for (const value of ['light', 'dark']) expect(script).toContain(`'${value}'`);
+    expect(THEME_PREFERENCES).toContain('system');
+    expect(script).toContain('(prefers-color-scheme: dark)');
+    expect(script).toContain("'#fafaf9'");
+    expect(script).toContain("'#0d1013'");
+  });
+
+  it('theme-init.js resolves the same result as applyStoredTheme', () => {
+    const script = readFileSync(resolve(process.cwd(), 'public/theme-init.js'), 'utf8');
+    for (const [stored, systemDark] of [
+      ['dark', false],
+      ['light', true],
+      ['sepia', true],
+      [null, false],
+    ] as const) {
+      mockSystemDark(systemDark);
+      localStorage.clear();
+      if (stored) localStorage.setItem(THEME_STORAGE_KEY, stored);
+      root.className = '';
+      applyStoredTheme();
+      const expected = [root.classList.contains('dark'), themeColor()];
+      root.className = '';
+      document.querySelector('meta[name="theme-color"]')?.remove();
+      new Function(script)();
+      expect([root.classList.contains('dark'), themeColor()]).toEqual(expected);
+    }
   });
 });

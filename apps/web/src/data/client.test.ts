@@ -65,6 +65,21 @@ describe('error handling', () => {
     expect(getCsrfToken()).toBeUndefined();
   });
 
+  it('does not emit auth lost for a 401 without our error envelope', async () => {
+    setCsrfToken('tok');
+    const listener = vi.fn();
+    const unsubscribe = onAuthLost(listener);
+    const { client } = setup(() => new Response('<html>proxy login</html>', { status: 401 }));
+
+    const error = (await client.GET('/api/health').catch((e: unknown) => e)) as ApiError;
+    unsubscribe();
+
+    expect(error.code).toBe('AUTH_REQUIRED');
+    expect(error.fromEnvelope).toBe(false);
+    expect(listener).not.toHaveBeenCalled();
+    expect(getCsrfToken()).toBe('tok');
+  });
+
   it('stops notifying after unsubscribe', async () => {
     const listener = vi.fn();
     onAuthLost(listener)();

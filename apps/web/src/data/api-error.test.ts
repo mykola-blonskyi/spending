@@ -20,6 +20,7 @@ describe('parseApiError', () => {
     const error = parseApiError(status, undefined);
     expect(error.code).toBe(code);
     expect(error.status).toBe(status);
+    expect(error.fromEnvelope).toBe(false);
   });
 
   it('uses the envelope code and message', () => {
@@ -28,6 +29,7 @@ describe('parseApiError', () => {
     expect(error.name).toBe('ApiError');
     expect(error.code).toBe('CSRF_FAILED');
     expect(error.message).toBe('bad token');
+    expect(error.fromEnvelope).toBe(true);
   });
 
   it('falls back to status when the body code is unknown', () => {

@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -70,5 +70,23 @@ describe('app routes', () => {
     renderAt('/nowhere');
     expect(screen.getByRole('heading', { name: 'Page not found' })).toBeInTheDocument();
     expect(screen.getAllByRole('navigation').length).toBeGreaterThan(0);
+  });
+
+  it('sets the document title and moves focus to main on navigation, not on first load', async () => {
+    renderAt('/');
+    expect(document.title).toBe('Overview · Spending');
+    expect(document.getElementById('main')).not.toHaveFocus();
+
+    const [sidebar] = screen.getAllByRole('navigation', { name: 'Main navigation' });
+    await userEvent.click(within(sidebar!).getByRole('link', { name: 'Budgets' }));
+    expect(document.title).toBe('Budgets · Spending');
+    expect(document.getElementById('main')).toHaveFocus();
+  });
+
+  it('retitles the document when the language changes', () => {
+    renderAt('/budgets');
+    expect(document.title).toBe('Budgets · Spending');
+    act(() => useLocaleStore.getState().setLocale('uk'));
+    expect(document.title).toBe('Бюджети · Spending');
   });
 });
