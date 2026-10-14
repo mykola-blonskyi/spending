@@ -1,10 +1,15 @@
 import { type DynamicModule, Module } from '@nestjs/common';
-import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
+import { AuthModule } from './auth/auth.module';
+import { CsrfGuard, SessionGuard } from './auth/guards';
 import { APP_CONFIG, type AppConfig } from './common/config';
 import { ErrorFilter } from './common/error.filter';
+import { rateLimitOptions } from './common/rate-limit';
 import { DatabaseModule } from './database/database.module';
 import { HealthController } from './health/health.controller';
+import { UsersModule } from './users/users.module';
 
 @Module({})
 export class AppModule {
@@ -12,13 +17,17 @@ export class AppModule {
     return {
       module: AppModule,
       global: true,
-      imports: [DatabaseModule],
+      imports: [DatabaseModule, ThrottlerModule.forRoot(rateLimitOptions), AuthModule, UsersModule],
       controllers: [HealthController],
       providers: [
         { provide: APP_CONFIG, useValue: config },
         { provide: APP_PIPE, useClass: ZodValidationPipe },
         { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptor },
         { provide: APP_FILTER, useClass: ErrorFilter },
+        // Order matters: the throttler keys on the actor the session guard resolves.
+        { provide: APP_GUARD, useExisting: SessionGuard },
+        { provide: APP_GUARD, useClass: ThrottlerGuard },
+        { provide: APP_GUARD, useExisting: CsrfGuard },
       ],
       exports: [APP_CONFIG],
     };

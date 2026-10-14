@@ -15,6 +15,13 @@
       "when": 1792012408988,
       "tag": "0001_ledger_stamp",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792013294557,
+      "tag": "0002_session_rotation",
+      "breakpoints": true
     }
   ]
 }

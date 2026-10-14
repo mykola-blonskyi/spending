@@ -70,6 +70,9 @@ export const sessions = pgTable(
   'sessions',
   {
     tokenHash: text('token_hash').primaryKey(),
+    // Rotation rewrites token_hash in place and keeps the old hash here for a short grace window,
+    // so the OIDC grant data lives in exactly one row and concurrent requests never fork it.
+    previousTokenHash: text('previous_token_hash'),
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
@@ -78,10 +81,17 @@ export const sessions = pgTable(
     idTokenEnc: text('id_token_enc'),
     grantCheckedAt: tstz('grant_checked_at').notNull().defaultNow(),
     createdAt: createdAt(),
+    rotatedAt: tstz('rotated_at').notNull().defaultNow(),
     lastSeenAt: tstz('last_seen_at').notNull().defaultNow(),
     expiresAt: tstz('expires_at').notNull(),
   },
-  (t) => [index('sessions_user_idx').on(t.userId), index('sessions_expires_idx').on(t.expiresAt)],
+  (t) => [
+    index('sessions_user_idx').on(t.userId),
+    index('sessions_expires_idx').on(t.expiresAt),
+    uniqueIndex('sessions_previous_token_uq')
+      .on(t.previousTokenHash)
+      .where(sql`${t.previousTokenHash} is not null`),
+  ],
 );
 
 export const loginAttempts = pgTable('login_attempts', {
