@@ -103,25 +103,26 @@ running build is the commit it verified. Outside Coolify it is `unknown`.
 
 ### Real client IP
 
-Traffic is Cloudflare → Traefik → nginx → API. nginx (`deploy/nginx.conf`) trusts
-`X-Forwarded-For` only from private ranges and Cloudflare's published ranges
-(`deploy/cloudflare-ips.conf`), recovers the client with `real_ip_recursive`, and sends just that
-address to the API, which trusts only private ranges. The API's rate limits therefore see the
-real client as `req.ip`.
+Traffic is Cloudflare → Traefik → nginx → API. Coolify's Traefik does not trust forwarded
+headers, so it rewrites `X-Forwarded-For` to its own peer. That peer is a Cloudflare edge for
+proxied traffic, or the client itself when someone reaches the VPS directly.
 
-In production only Traefik reaches nginx. In the local smoke stack, requests through the
-published port arrive from the Docker bridge gateway, a private address, so nginx trusts a
-spoofed `X-Forwarded-For` there; that is expected and not representative of production.
+nginx (`deploy/nginx.conf`) recovers that peer from private-range proxies. It believes
+`CF-Connecting-IP` only when the peer is in Cloudflare's published ranges
+(`deploy/cloudflare-ips.conf`). A request that bypasses Cloudflare therefore cannot spoof its
+address. nginx sends the result as the only `X-Forwarded-For` value to the API, which trusts
+only private ranges, so rate limits key on the real client.
 
 Cloudflare occasionally changes its ranges. Refresh the file, review the diff, and redeploy:
 
 ```bash
 {
-  echo "# Cloudflare's published proxy ranges, trusted by nginx as sources of X-Forwarded-For."
+  echo "# Cloudflare's published proxy ranges, as a geo map: an address in these ranges is a Cloudflare"
+  echo "# edge, so its CF-Connecting-IP header names the real client."
   echo "# Fetched $(date -u +%Y-%m-%d) from https://www.cloudflare.com/ips-v4 and https://www.cloudflare.com/ips-v6."
   echo '# Refresh: re-run the loop in docs/operations.md ("Real client IP"), review the diff, redeploy.'
   for u in ips-v4 ips-v6; do
-    curl -fsS "https://www.cloudflare.com/$u" | tr -d '\r' | sed -e '/^$/d' -e 's/^/set_real_ip_from /' -e 's/$/;/'
+    curl -fsS "https://www.cloudflare.com/$u" | tr -d '\r' | sed -e '/^$/d' -e 's/$/ 1;/'
   done
 } > deploy/cloudflare-ips.conf
 ```

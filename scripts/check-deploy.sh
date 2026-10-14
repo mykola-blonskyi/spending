@@ -3,8 +3,8 @@
 #
 #   APP_URL=https://spending.blonskyi.dev sh scripts/check-deploy.sh
 #
-# EXPECTED_VERSION (optional, the commit SHA) makes the check wait until the API reports that
-# version. An API that reports "unknown" (no SOURCE_COMMIT) is not held to it.
+# EXPECTED_VERSION (optional, the commit SHA) makes the check wait until the API reports exactly
+# that version. "unknown" never matches, so a build that lost SOURCE_COMMIT fails loudly.
 set -eu
 
 : "${APP_URL:?APP_URL is required}"
@@ -22,14 +22,18 @@ ready_and_current() {
     "$APP_URL/api/health/ready" || return 1
   grep -q '"status":"ok"' "$work/ready" || return 1
   version=$(sed -n 's/.*"version":"\([^"]*\)".*/\1/p' "$work/ready")
-  [ -z "$expected" ] || [ "$version" = unknown ] || [ "$version" = "$expected" ]
+  [ -z "$expected" ] || [ "$version" = "$expected" ]
 }
 
 i=1
 until ready_and_current; do
   if [ "$i" -ge "$attempts" ]; then
-    echo "$APP_URL/api/health/ready never reported ok${expected:+ for version $expected}" \
-      "(last version: ${version:-none})." >&2
+    if [ -n "$expected" ] && [ -n "$version" ] && [ "$version" != "$expected" ]; then
+      echo "Deployed version $version, expected $expected. main moved after the CI gate, or the" \
+        "build lost SOURCE_COMMIT. Dispatch Deploy again on the current head, or revert." >&2
+    else
+      echo "$APP_URL/api/health/ready never reported ok (last version: ${version:-none})." >&2
+    fi
     exit 1
   fi
   i=$((i + 1))
