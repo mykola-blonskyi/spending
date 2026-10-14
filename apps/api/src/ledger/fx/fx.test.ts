@@ -57,6 +57,20 @@ describe('parseEcbXml', () => {
     );
   });
 
+  it('rejects a feed cut off cleanly between tags', () => {
+    const whole = feed(
+      `<Cube time='2026-10-14'><Cube currency='USD' rate='1.1'/><Cube currency='GBP' rate='0.8'/></Cube>`,
+    );
+    const cut = whole.slice(0, whole.indexOf("<Cube currency='GBP'"));
+    expect(() => parseEcbXml(cut)).toThrow('truncated');
+  });
+
+  it('rejects an oversized tag quickly instead of scanning it', () => {
+    const started = performance.now();
+    expect(() => parseEcbXml(feed(`<Cube ${'a'.repeat(400_000)}>`))).toThrow('oversized');
+    expect(performance.now() - started).toBeLessThan(500);
+  });
+
   it('rejects input that is not the feed', () => {
     expect(() => parseEcbXml('<html>maintenance</html>')).toThrow();
   });

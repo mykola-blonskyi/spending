@@ -10,7 +10,9 @@ const RATE = /^(?:0|[1-9]\d{0,9})(?:\.\d{1,10})?$/;
  * the input, even for the ~30 MB full history. A tag without it is rejected below.
  */
 const CUBE = /<Cube\b([^>]*)(>)?/g;
-const ATTRIBUTE = /(\w+)\s*=\s*(?:'([^']*)'|"([^"]*)")/g;
+const ATTRIBUTE = /(?<!\w)(\w+)\s*=\s*(?:'([^']*)'|"([^"]*)")/g;
+/** Real Cube tags are short; a longer one is corruption, and parsing it is not worth the time. */
+const MAX_TAG_LENGTH = 200;
 
 function attributes(text: string): Map<string, string> {
   const result = new Map<string, string>();
@@ -28,6 +30,7 @@ export function parseEcbXml(xml: string): FxRate[] {
   let day: string | null = null;
   for (const match of xml.matchAll(CUBE)) {
     if (match[2] === undefined) throw new Error('ECB feed has an unterminated tag');
+    if (match[1]!.length > MAX_TAG_LENGTH) throw new Error('ECB feed has an oversized tag');
     const attrs = attributes(match[1]!);
     const time = attrs.get('time');
     if (time !== undefined) {
@@ -43,5 +46,7 @@ export function parseEcbXml(xml: string): FxRate[] {
     if (parseCurrency(currency)) rates.push({ date: day, currency, ratePerEur: rate });
   }
   if (rates.length === 0) throw new Error('ECB feed has no rates');
+  // A body cut cleanly between tags would otherwise pass as a shorter, valid feed.
+  if (!xml.trimEnd().endsWith('</gesmes:Envelope>')) throw new Error('ECB feed is truncated');
   return rates;
 }
