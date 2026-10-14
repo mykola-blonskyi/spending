@@ -88,8 +88,9 @@ must be in the `docker` group, which is root-equivalent.
 
 - `web`: nginx serving the Vite build with static CSP and security headers. It proxies `/api`
   to `api` on the private network. Only `web` gets a domain.
-- `migrate`: a one-shot job that takes a `pg_dump` into the `backups` volume, then applies
-  migrations. `api` starts only after it succeeds.
+- `predeploy-backup` then `migrate`: one-shot jobs. The first takes a `pg_dump` into the
+  `spending-backups` volume, the second applies migrations once the dump succeeded. `api`
+  starts only after both succeed.
 - `api`: NestJS.
 - `backup`: daily `pg_dump` with retention.
 
@@ -202,3 +203,25 @@ budget limit is reached" on the owner account. If the repository becomes private
 minutes apply and jobs stop when they run out.
 
 **Consequences.** CI never incurs charges. Larger runners are never used.
+
+## ADR-011: Content Security Policy allows inline styles, not inline scripts
+
+Date: 2026-10-14
+
+**Context.** sonner (toasts) and Radix's scroll lock (`react-remove-scroll`) inject `<style>`
+elements at runtime, and Radix positions popovers with `style=""` attributes. `style-src 'self'`
+blocks the elements, which breaks toasts and scroll locking in dialogs. The CSP must stay static
+(ADR-004), so a per-response nonce is not available.
+
+**Decision.** Keep `script-src 'self'` strict. Use `style-src 'self' 'unsafe-inline'` and drop the
+separate `style-src-attr` directive.
+
+**Alternatives.**
+
+- Hashes of the injected styles: they change with every library update and break silently.
+- Nonces: contradict the static-CSP requirement and need a server-rendered shell.
+- Replacing sonner and Radix's scroll lock: high cost for a small gain.
+
+**Consequences.** CSS injection still requires an HTML injection first, which React's escaping
+prevents. Scripts stay strictly same-origin, so the policy still blocks injected script
+execution and cross-origin script loading.

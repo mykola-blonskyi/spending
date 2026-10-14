@@ -89,7 +89,8 @@ as `ApiError` with a stable `code`, and screens show `errors.<code>` from the ca
   app is same-origin. Rate limits apply to auth, invitations, imports and sync.
 - Secrets live only in Coolify's environment panel. Logs carry request ID, route, status and
   duration only. Never bodies, amounts, notes or tokens.
-- CSP and security headers are static in nginx (`deploy/nginx.conf`).
+- CSP and security headers are static in nginx (`deploy/security-headers.conf`): scripts are
+  same-origin only; styles allow `'unsafe-inline'` (ADR-011).
 
 ## API errors
 
