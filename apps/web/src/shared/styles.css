@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -25,6 +26,7 @@
   --income: oklch(0.52 0.13 155);
   --expense: oklch(0.55 0.17 30);
   --warning: oklch(0.72 0.15 75);
+  --warning-foreground: oklch(0.5 0.12 65);
   --chart-1: oklch(0.55 0.12 165);
   --chart-2: oklch(0.62 0.14 250);
   --chart-3: oklch(0.7 0.15 75);
@@ -54,6 +56,7 @@
   --income: oklch(0.72 0.14 155);
   --expense: oklch(0.72 0.15 35);
   --warning: oklch(0.8 0.14 80);
+  --warning-foreground: oklch(0.82 0.13 80);
   --chart-1: oklch(0.72 0.12 165);
   --chart-2: oklch(0.7 0.13 250);
   --chart-3: oklch(0.8 0.14 80);
@@ -88,12 +91,14 @@
   --color-income: var(--income);
   --color-expense: var(--expense);
   --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
   --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 @layer base {
@@ -106,6 +111,10 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: 'tnum' 0;
+  }
+  .animate-in,
+  .animate-out {
+    --tw-ease: var(--ease-out-strong);
   }
   .tabular {
     font-variant-numeric: tabular-nums;
