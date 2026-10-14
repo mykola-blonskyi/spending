@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, gt, inArray, ne, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, exists, gt, inArray, ne, not, sql } from 'drizzle-orm';
 import { ApiError } from '../common/errors';
 import type { CurrencyCode } from '../common/money';
 import { DB, type Db, ledgerTransaction, type Tx } from '../database/database.module';
@@ -9,6 +9,7 @@ import {
   memberships,
   syncConflicts,
   syncMutations,
+  syncTombstones,
   transactions,
 } from '../database/schema';
 import { FxService } from '../ledger/fx/fx.service';
@@ -17,6 +18,7 @@ import {
   type AccountView,
   type CategoryView,
   type LedgerRow,
+  type Tombstone,
   toAccountView,
   toCategoryView,
   toLedgerRow,
@@ -122,8 +124,8 @@ export class SyncService {
   }
 
   /**
-   * One repeatable-read snapshot covers all three tables. Separate snapshots could see a late row
-   * in one table but miss an earlier-revision row in another, and the cursor would skip it.
+   * One repeatable-read snapshot covers all four sources. Separate snapshots could see a late row
+   * in one source but miss an earlier-revision row in another, and the cursor would skip it.
    */
   pull(actorId: string, cursor: number, limit: number) {
     return this.db.transaction((tx) => this.pullIn(tx, actorId, cursor, limit), {
@@ -149,21 +151,45 @@ export class SyncService {
       .orderBy(asc(categories.revision))
       .limit(limit + 1);
     const transactionRows = await selectViewRows(tx)
+      .where(and(inArray(transactions.workspaceId, ids), gt(transactions.revision, cursor)))
+      .orderBy(asc(transactions.revision))
+      .limit(limit + 1);
+    // A row that moved back into a workspace the actor sees arrives live; its old tombstone must
+    // not follow it.
+    const tombstoneRows = await tx
+      .select({
+        id: syncTombstones.transactionId,
+        workspaceId: syncTombstones.workspaceId,
+        deletedAt: syncTombstones.deletedAt,
+        revision: syncTombstones.revision,
+      })
+      .from(syncTombstones)
       .where(
         and(
-          or(
-            inArray(transactions.workspaceId, ids),
-            inArray(transactions.previousWorkspaceId, ids),
+          inArray(syncTombstones.workspaceId, ids),
+          gt(syncTombstones.revision, cursor),
+          not(
+            exists(
+              tx
+                .select({ id: transactions.id })
+                .from(transactions)
+                .where(
+                  and(
+                    eq(transactions.id, syncTombstones.transactionId),
+                    inArray(transactions.workspaceId, ids),
+                  ),
+                ),
+            ),
           ),
-          gt(transactions.revision, cursor),
         ),
       )
-      .orderBy(asc(transactions.revision))
+      .orderBy(asc(syncTombstones.revision))
       .limit(limit + 1);
     const window = pullWindow(cursor, limit, [
       accountRows.map((r) => r.revision),
       categoryRows.map((r) => r.revision),
       transactionRows.map((r) => r.revision),
+      tombstoneRows.map((r) => r.revision),
     ]);
     const upTo = <T extends { revision: number }>(rows: T[]) =>
       rows.filter((r) => r.revision <= window.cutoff);
@@ -176,7 +202,13 @@ export class SyncService {
       })),
       accounts: upTo(accountRows).map(toAccountView) satisfies AccountView[],
       categories: upTo(categoryRows).map(toCategoryView) satisfies CategoryView[],
-      transactions: upTo(transactionRows).map((row) => toLedgerRow(row, visible)),
+      transactions: [
+        ...upTo(transactionRows).map((row) => toLedgerRow(row, visible)),
+        ...upTo(tombstoneRows).map((row): Tombstone => ({
+          ...row,
+          deletedAt: row.deletedAt.toISOString(),
+        })),
+      ].sort((a, b) => a.revision - b.revision),
       conflicts: await this.conflicts(actorId, tx),
       cursor: window.cutoff,
       hasMore: window.hasMore,
@@ -330,15 +362,17 @@ export class SyncService {
           const moved = existing!.workspaceId !== intended.workspaceId;
           await tx
             .update(transactions)
-            .set({
-              ...intended,
-              ...conversion,
-              deletedAt: null,
-              ...(moved ? { previousWorkspaceId: existing!.workspaceId } : {}),
-            })
+            .set({ ...intended, ...conversion, deletedAt: null })
             .where(eq(transactions.id, input.id));
           // Only the author moves rows, so other users' conflicts concern a row they lose.
           if (moved) {
+            await tx
+              .insert(syncTombstones)
+              .values({ workspaceId: existing!.workspaceId, transactionId: input.id })
+              .onConflictDoUpdate({
+                target: [syncTombstones.workspaceId, syncTombstones.transactionId],
+                set: { deletedAt: sql`now()` },
+              });
             await tx
               .delete(syncConflicts)
               .where(

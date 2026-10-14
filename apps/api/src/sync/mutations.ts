@@ -223,10 +223,10 @@ export function decideDelete(facts: {
 export type PullWindow = Readonly<{ cutoff: number; hasMore: boolean }>;
 
 /**
- * Accounts, categories and transactions share one revision sequence. Each table is read with
- * `limit + 1` rows above the cursor, ascending. When a table overflows, rows above its `limit`-th
- * revision are unseen, so the page stops at the smallest such revision across overflowing tables;
- * every row at or below the cutoff has then been read from every table.
+ * Accounts, categories, transactions and sync tombstones share one revision sequence. Each source
+ * is read with `limit + 1` rows above the cursor, ascending. When a source overflows, rows above
+ * its `limit`-th revision are unseen, so the page stops at the smallest such revision across
+ * overflowing sources; every row at or below the cutoff has then been read from every source.
  */
 export function pullWindow(
   cursor: number,

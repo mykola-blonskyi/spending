@@ -1,6 +1,13 @@
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { accounts, syncConflicts, syncMutations, transactions } from '../src/database/schema';
+import {
+  accounts,
+  syncConflicts,
+  syncMutations,
+  syncTombstones,
+  transactions,
+  users,
+} from '../src/database/schema';
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
 import {
   as,
@@ -355,6 +362,68 @@ describe('sync', () => {
     });
     const [bobAgain] = await push(bob, upsert({ ...row, note: 'x' }, 2));
     expect(bobAgain!.code).toBe('NOT_FOUND');
+  });
+
+  it('tells members about a move once and nothing about later edits elsewhere (BR-2)', async () => {
+    const { url } = (await (
+      await as(t, ann, '/v1/family/invitations', { method: 'POST', body: {} })
+    ).json()) as { url: string };
+    await as(t, cat, `/v1/invitations/${url.split('/invite/')[1]}/accept`, { method: 'POST' });
+    const row = draft(family);
+    await push(ann, upsert(row));
+    const bobStart = await pull(bob);
+    const catStart = await pull(cat);
+
+    await push(ann, upsert({ ...row, workspaceId: annPersonal }, 1));
+    const tombstone = {
+      id: row.id,
+      workspaceId: family,
+      deletedAt: expect.any(String),
+      revision: expect.any(Number),
+    };
+    const bobMoved = await pull(bob, bobStart.cursor);
+    expect(bobMoved.transactions).toEqual([tombstone]);
+
+    let version = 2;
+    for (const note of ['one', 'two', 'three']) {
+      const [edit] = await push(ann, upsert({ ...row, workspaceId: annPersonal, note }, version));
+      expect(edit!.status).toBe('applied');
+      version = edit!.transaction!.version;
+    }
+    const bobAfterEdits = await pull(bob, bobMoved.cursor);
+    expect(bobAfterEdits.transactions).toEqual([]);
+    expect(bobAfterEdits.cursor).toBe(bobMoved.cursor);
+    expect((await pull(cat, catStart.cursor)).transactions).toEqual([tombstone]);
+    expect((await pull(bob)).transactions.filter((r) => r.id === row.id)).toEqual([tombstone]);
+
+    const [{ id: bobId }] = await t.db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, 'Bob@example.test'));
+    expect(
+      (await as(t, ann, '/v1/family/transfer', { method: 'POST', body: { userId: bobId } })).status,
+    ).toBe(200);
+    expect((await as(t, ann, '/v1/family/leave', { method: 'POST' })).status).toBe(204);
+    await push(ann, upsert({ ...row, workspaceId: annPersonal, note: 'after leaving' }, version));
+    expect((await pull(bob, bobMoved.cursor)).transactions).toEqual([]);
+    expect(await t.db.select().from(syncTombstones)).toHaveLength(1);
+  });
+
+  it('pulls a row moved back as live, without its old tombstone', async () => {
+    const row = draft(family);
+    await push(ann, upsert(row));
+    await push(ann, upsert({ ...row, workspaceId: annPersonal }, 1));
+    const bobMoved = await pull(bob);
+    expect(bobMoved.transactions.filter((r) => r.id === row.id)).toHaveLength(1);
+    await push(ann, upsert(row, 2));
+    const back = await pull(bob, bobMoved.cursor);
+    expect(back.transactions).toEqual([expect.objectContaining({ id: row.id, scope: 'family' })]);
+    expect((await pull(bob)).transactions.filter((r) => r.id === row.id)).toEqual([
+      expect.objectContaining({ scope: 'family' }),
+    ]);
+    expect((await pull(ann)).transactions.filter((r) => r.id === row.id)).toEqual([
+      expect.objectContaining({ scope: 'family' }),
+    ]);
   });
 
   it('applies BR-3 and BR-4 to references', async () => {

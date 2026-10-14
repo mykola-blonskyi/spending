@@ -60,7 +60,6 @@ const categoryColumns = {
 const viewColumns = {
   id: transactions.id,
   workspaceId: transactions.workspaceId,
-  previousWorkspaceId: transactions.previousWorkspaceId,
   workspaceKind: workspaces.kind,
   kind: transactions.kind,
   amountMinor: transactions.amountMinor,

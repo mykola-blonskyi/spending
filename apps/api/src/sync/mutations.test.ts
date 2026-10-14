@@ -268,6 +268,11 @@ describe('pullWindow', () => {
       ]),
     ).toEqual({ cutoff: 3, hasMore: true });
   });
+
+  it('lets the tombstone source alone stop or end the page', () => {
+    expect(pullWindow(0, 2, [[1], [], [3], [2, 4, 5]])).toEqual({ cutoff: 4, hasMore: true });
+    expect(pullWindow(0, 2, [[1], [], [3], [2, 8]])).toEqual({ cutoff: 8, hasMore: false });
+  });
 });
 
 describe('pushBodySchema', () => {

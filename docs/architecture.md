@@ -101,12 +101,17 @@ edited through REST and arrive through pull like transactions.
 - **Pull.** `GET /sync/pull?cursor=&limit=` (limit 1 to 1000, default 500) reads one
   repeatable-read snapshot. It returns the actor's workspaces, then accounts, categories and
   transactions (tombstones as `{ id, workspaceId, deletedAt, revision }`) with `revision > cursor`,
-  and all open conflicts. The three tables share one revision sequence, so each is read with
-  `limit + 1` rows. If any overflows, the page stops at the smallest `limit`-th revision among
-  the overflowing tables, and `hasMore` is true. The returned `cursor` is the page's last revision
-  (the input cursor when nothing changed). Pending-review rows are included; the client hides them.
-  When an author moves a row out of the family (`transactions.previous_workspace_id`), the other
-  members get a tombstone for it under the family's id, and their open conflicts on it are dropped.
+  and all open conflicts. Accounts, categories, transactions and `sync_tombstones` share one
+  revision sequence, so each is read with `limit + 1` rows. If any overflows, the page stops at
+  the smallest `limit`-th revision among the overflowing sources, and `hasMore` is true. The
+  returned `cursor` is the page's last revision (the input cursor when nothing changed).
+  Pending-review rows are included; the client hides them.
+- **Moves.** When an author moves a row to their other workspace, a `sync_tombstones` row for the
+  workspace it left is written at the move's revision, and other users' open conflicts on it are
+  dropped. Members of that workspace pull it once as a tombstone in `transactions`. Later edits
+  of the row touch only `transactions`, so they never reach the old workspace (BR-2). A tombstone
+  is skipped for a viewer who can see the row live again. Family deletion writes none, because
+  the workspace and its tombstones are deleted with it.
 - **Client duties.** Drop local rows of workspaces missing from `workspaces` (BR-17). When a new
   workspace id appears (the user joined a family), reset the cursor to 0, because that
   workspace's rows predate the cursor.

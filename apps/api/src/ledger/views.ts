@@ -120,7 +120,6 @@ export type LedgerRow = TransactionView | Tombstone;
 export type TransactionViewRow = Readonly<{
   id: string;
   workspaceId: string;
-  previousWorkspaceId: string | null;
   workspaceKind: WorkspaceKind;
   kind: EntryKind;
   amountMinor: number;
@@ -149,18 +148,9 @@ export type TransactionViewRow = Readonly<{
 
 /**
  * The one shape every reader gets (REST, sync, export). `visible` is the viewer's workspace ids:
- * an account outside them reads as null (BR-3), and a deleted row is only a tombstone (BR-16). A
- * row its author moved out of a workspace the viewer still sees is a tombstone there too.
+ * an account outside them reads as null (BR-3), and a deleted row is only a tombstone (BR-16).
  */
 export function toLedgerRow(row: TransactionViewRow, visible: ReadonlySet<string>): LedgerRow {
-  if (!visible.has(row.workspaceId) && row.previousWorkspaceId) {
-    return {
-      id: row.id,
-      workspaceId: row.previousWorkspaceId,
-      deletedAt: row.updatedAt.toISOString(),
-      revision: row.revision,
-    };
-  }
   if (row.deletedAt) {
     return {
       id: row.id,

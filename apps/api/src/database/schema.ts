@@ -318,13 +318,6 @@ export const transactions = pgTable(
       onDelete: 'set null',
     }),
     recurringOccurrence: date('recurring_occurrence', { mode: 'string' }),
-    /**
-     * Set when the author moves the row to their other workspace, so members of the workspace it
-     * left receive a tombstone on pull (ADR-008 allows only two workspaces per user).
-     */
-    previousWorkspaceId: uuid('previous_workspace_id').references(() => workspaces.id, {
-      onDelete: 'set null',
-    }),
     reviewStatus: reviewStatusEnum('review_status').notNull().default('confirmed'),
     version: integer('version').notNull().default(1),
     revision: revision(),
@@ -337,9 +330,6 @@ export const transactions = pgTable(
       .on(t.workspaceId, t.occurredOn.desc())
       .where(sql`${t.deletedAt} is null`),
     index('transactions_revision_idx').on(t.revision),
-    index('transactions_moved_idx')
-      .on(t.previousWorkspaceId, t.revision)
-      .where(sql`${t.previousWorkspaceId} is not null`),
     index('transactions_category_idx').on(t.categoryId),
     index('transactions_account_idx').on(t.accountId),
     index('transactions_created_by_idx').on(t.createdBy),
@@ -404,6 +394,29 @@ export const syncConflicts = pgTable(
       .on(t.transactionId, t.userId)
       .where(sql`${t.status} = 'open'`),
     index('sync_conflicts_user_idx').on(t.userId, t.status),
+  ],
+);
+
+/**
+ * A transaction that left a workspace (BR-18a). Members of that workspace pull it as a tombstone
+ * once, at the move's revision; later edits of the row elsewhere never touch it (BR-2). The row
+ * lives on in another workspace, so `transaction_id` has no foreign key. `revision` comes from
+ * the `sync_tombstone_stamp` trigger (migration 0005), under the ledger lock like every
+ * synced table.
+ */
+export const syncTombstones = pgTable(
+  'sync_tombstones',
+  {
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    transactionId: uuid('transaction_id').notNull(),
+    revision: revision(),
+    deletedAt: tstz('deleted_at').notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.workspaceId, t.transactionId] }),
+    index('sync_tombstones_revision_idx').on(t.workspaceId, t.revision),
   ],
 );
 
