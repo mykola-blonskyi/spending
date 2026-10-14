@@ -63,6 +63,8 @@ member_left | member_removed | ownership_transferred`
 Where money sits: a card, a bank account, cash.
 
 - `id`, `workspaceId`, `name`, `currency`, `kind` (`cash|bank|card|savings|other`), `archivedAt`.
+- Names are unique per `(workspaceId, kind)`, like categories. Accounts and categories are archived,
+  never deleted.
 
 ## Category
 

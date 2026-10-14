@@ -207,6 +207,7 @@ export const accounts = pgTable(
   },
   (t) => [
     index('accounts_workspace_idx').on(t.workspaceId),
+    uniqueIndex('accounts_name_uq').on(t.workspaceId, t.kind, t.name),
     index('accounts_revision_idx').on(t.revision),
     check('accounts_currency_ck', currencyCheck('currency')),
   ],
@@ -317,6 +318,13 @@ export const transactions = pgTable(
       onDelete: 'set null',
     }),
     recurringOccurrence: date('recurring_occurrence', { mode: 'string' }),
+    /**
+     * Set when the author moves the row to their other workspace, so members of the workspace it
+     * left receive a tombstone on pull (ADR-008 allows only two workspaces per user).
+     */
+    previousWorkspaceId: uuid('previous_workspace_id').references(() => workspaces.id, {
+      onDelete: 'set null',
+    }),
     reviewStatus: reviewStatusEnum('review_status').notNull().default('confirmed'),
     version: integer('version').notNull().default(1),
     revision: revision(),
@@ -329,6 +337,9 @@ export const transactions = pgTable(
       .on(t.workspaceId, t.occurredOn.desc())
       .where(sql`${t.deletedAt} is null`),
     index('transactions_revision_idx').on(t.revision),
+    index('transactions_moved_idx')
+      .on(t.previousWorkspaceId, t.revision)
+      .where(sql`${t.previousWorkspaceId} is not null`),
     index('transactions_category_idx').on(t.categoryId),
     index('transactions_account_idx').on(t.accountId),
     index('transactions_created_by_idx').on(t.createdBy),

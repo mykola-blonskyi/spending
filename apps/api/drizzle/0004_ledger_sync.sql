@@ -1,0 +1,4 @@
+ALTER TABLE "transactions" ADD COLUMN "previous_workspace_id" uuid;--> statement-breakpoint
+ALTER TABLE "transactions" ADD CONSTRAINT "transactions_previous_workspace_id_workspaces_id_fk" FOREIGN KEY ("previous_workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "accounts_name_uq" ON "accounts" USING btree ("workspace_id","kind","name");--> statement-breakpoint
+CREATE INDEX "transactions_moved_idx" ON "transactions" USING btree ("previous_workspace_id","revision") WHERE "transactions"."previous_workspace_id" is not null;
