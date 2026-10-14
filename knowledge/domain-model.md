@@ -49,6 +49,15 @@ A one-time link into one family workspace.
 - `expiresAt`, and `state` derived from `acceptedAt`, `acceptedBy` and `revokedAt`:
   `pending | accepted | revoked | expired`.
 
+## WorkspaceEvent
+
+The family audit log, readable by members (newest 50).
+
+- `id`, `workspaceId` (deleted with the workspace), `actorId` and `subjectUserId` (both nullable
+  after account deletion), `createdAt`
+- `type`: `family_created | renamed | invitation_created | invitation_revoked | member_joined |
+member_left | member_removed | ownership_transferred`
+
 ## Account
 
 Where money sits: a card, a bank account, cash.
@@ -59,7 +68,9 @@ Where money sits: a card, a bank account, cash.
 
 - `id`, `workspaceId`, `name`, `kind` (`income|expense`), `color`, `icon`, `archivedAt`.
 - `systemKey` (nullable). Default categories carry a stable key such as `groceries`, so the UI can
-  localize their names until the user renames them.
+  localize their names while the stored name still equals the default English name. Renaming
+  keeps the key, which the import categorizer relies on. Every new workspace, personal or family, is
+  seeded with 14 expense and 6 income defaults (`workspaces/default-categories.ts`).
 
 ## Transaction
 

@@ -41,6 +41,16 @@ export const reviewStatusEnum = pgEnum('review_status', ['confirmed', 'pending_r
 export const conflictStatusEnum = pgEnum('conflict_status', ['open', 'resolved']);
 export const conflictResolutionEnum = pgEnum('conflict_resolution', ['server', 'local', 'merged']);
 export const frequencyEnum = pgEnum('frequency', ['daily', 'weekly', 'monthly', 'yearly']);
+export const workspaceEventTypeEnum = pgEnum('workspace_event_type', [
+  'family_created',
+  'renamed',
+  'invitation_created',
+  'invitation_revoked',
+  'member_joined',
+  'member_left',
+  'member_removed',
+  'ownership_transferred',
+]);
 
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 const updatedAt = () => timestamp('updated_at', { withTimezone: true }).notNull().defaultNow();
@@ -162,6 +172,22 @@ export const invitations = pgTable(
     revokedAt: tstz('revoked_at'),
   },
   (t) => [index('invitations_workspace_idx').on(t.workspaceId)],
+);
+
+/** The family audit log shown to members. */
+export const workspaceEvents = pgTable(
+  'workspace_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    actorId: uuid('actor_id').references(() => users.id, { onDelete: 'set null' }),
+    type: workspaceEventTypeEnum('type').notNull(),
+    subjectUserId: uuid('subject_user_id').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('workspace_events_workspace_idx').on(t.workspaceId, t.createdAt.desc())],
 );
 
 export const accounts = pgTable(

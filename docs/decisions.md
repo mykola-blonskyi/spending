@@ -148,7 +148,8 @@ Revisions come from one sequence, assigned by the `ledger_stamp` trigger under a
 transaction-scoped advisory lock. Revision order therefore equals commit order, and a pull cursor
 cannot skip a write that commits late. The cost is that ledger writes are serialized, which is
 negligible at household scale. Service code writes the ledger only through
-`ledgerTransaction`, which takes the lock before any row lock, so writers cannot deadlock. `transactions.version` increments only on user-visible changes,
+`ledgerTransaction`, which takes the lock before any row lock, so writers cannot deadlock. Sign-in
+runs under it too, because a first login seeds the personal workspace's default categories. `transactions.version` increments only on user-visible changes,
 so background FX fills never cause conflicts.
 
 ## ADR-007: EUR base currency, ECB reference rates

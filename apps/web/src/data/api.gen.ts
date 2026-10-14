@@ -116,6 +116,166 @@ export interface paths {
         patch: operations["MeController_update"];
         trace?: never;
     };
+    "/api/v1/workspaces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WorkspacesController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/family": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["WorkspacesController_create"];
+        delete: operations["WorkspacesController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["WorkspacesController_rename"];
+        trace?: never;
+    };
+    "/api/v1/family/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WorkspacesController_invitations"];
+        put?: never;
+        post: operations["WorkspacesController_invite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/family/invitations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["WorkspacesController_revoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/family/leave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["WorkspacesController_leave"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/family/members/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["WorkspacesController_removeMember"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/family/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["WorkspacesController_transfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/family/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WorkspacesController_events"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invitations/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WorkspacesController_preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invitations/{token}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["WorkspacesController_accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -164,6 +324,114 @@ export interface components {
             /** @enum {string} */
             theme?: "light" | "dark" | "system";
             timezone?: string;
+        };
+        WorkspaceListDto_Output: {
+            workspaces: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                kind: "personal" | "family";
+                name: string;
+                /** @enum {string} */
+                role: "owner" | "member";
+                members: {
+                    /** Format: uuid */
+                    userId: string;
+                    displayName: string;
+                    avatarUrl: string | null;
+                    /** @enum {string} */
+                    role: "owner" | "member";
+                    /** Format: date-time */
+                    joinedAt: string;
+                }[];
+            }[];
+        };
+        FamilyNameDto: {
+            name: string;
+        };
+        WorkspaceDto_Output: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "personal" | "family";
+            name: string;
+            /** @enum {string} */
+            role: "owner" | "member";
+            members: {
+                /** Format: uuid */
+                userId: string;
+                displayName: string;
+                avatarUrl: string | null;
+                /** @enum {string} */
+                role: "owner" | "member";
+                /** Format: date-time */
+                joinedAt: string;
+            }[];
+        };
+        DeleteFamilyDto: {
+            confirmName: string;
+        };
+        CreateInvitationDto: {
+            /** @default 7 */
+            expiresInDays: number;
+        };
+        CreatedInvitationDto_Output: {
+            /** Format: uuid */
+            id: string;
+            url: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        InvitationListDto_Output: {
+            invitations: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                state: "pending" | "accepted" | "revoked" | "expired";
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                expiresAt: string;
+                acceptedAt: string | null;
+                revokedAt: string | null;
+                acceptedBy: {
+                    /** Format: uuid */
+                    userId: string;
+                    displayName: string;
+                } | null;
+            }[];
+        };
+        TransferDto: {
+            /** Format: uuid */
+            userId: string;
+        };
+        EventListDto_Output: {
+            events: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                type: "family_created" | "renamed" | "invitation_created" | "invitation_revoked" | "member_joined" | "member_left" | "member_removed" | "ownership_transferred";
+                actor: {
+                    /** Format: uuid */
+                    userId: string;
+                    displayName: string;
+                } | null;
+                subject: {
+                    /** Format: uuid */
+                    userId: string;
+                    displayName: string;
+                } | null;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+        };
+        InvitationPreviewDto_Output: {
+            familyName: string;
+            ownerName: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** @enum {string} */
+            state: "pending" | "accepted" | "revoked" | "expired";
         };
     };
     responses: never;
@@ -326,6 +594,265 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProfileDto_Output"];
+                };
+            };
+        };
+    };
+    WorkspacesController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceListDto_Output"];
+                };
+            };
+        };
+    };
+    WorkspacesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FamilyNameDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceDto_Output"];
+                };
+            };
+        };
+    };
+    WorkspacesController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteFamilyDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WorkspacesController_rename: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FamilyNameDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceDto_Output"];
+                };
+            };
+        };
+    };
+    WorkspacesController_invitations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationListDto_Output"];
+                };
+            };
+        };
+    };
+    WorkspacesController_invite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateInvitationDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedInvitationDto_Output"];
+                };
+            };
+        };
+    };
+    WorkspacesController_revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WorkspacesController_leave: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WorkspacesController_removeMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WorkspacesController_transfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceDto_Output"];
+                };
+            };
+        };
+    };
+    WorkspacesController_events: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventListDto_Output"];
+                };
+            };
+        };
+    };
+    WorkspacesController_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationPreviewDto_Output"];
+                };
+            };
+        };
+    };
+    WorkspacesController_accept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceDto_Output"];
                 };
             };
         };

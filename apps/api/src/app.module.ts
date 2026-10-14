@@ -10,6 +10,7 @@ import { rateLimitOptions } from './common/rate-limit';
 import { DatabaseModule } from './database/database.module';
 import { HealthController } from './health/health.controller';
 import { UsersModule } from './users/users.module';
+import { WorkspacesModule } from './workspaces/workspaces.module';
 
 @Module({})
 export class AppModule {
@@ -17,7 +18,13 @@ export class AppModule {
     return {
       module: AppModule,
       global: true,
-      imports: [DatabaseModule, ThrottlerModule.forRoot(rateLimitOptions), AuthModule, UsersModule],
+      imports: [
+        DatabaseModule,
+        ThrottlerModule.forRoot(rateLimitOptions),
+        AuthModule,
+        UsersModule,
+        WorkspacesModule,
+      ],
       controllers: [HealthController],
       providers: [
         { provide: APP_CONFIG, useValue: config },

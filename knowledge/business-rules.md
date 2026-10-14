@@ -22,19 +22,27 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
 
 - **BR-6.** Family mode is optional. A user belongs to at most one family workspace.
 - **BR-7.** Only the owner creates and revokes invitations, removes members, renames, transfers
-  or deletes the family.
+  or deletes the family. Any member may add, edit or delete family transactions.
 - **BR-8.** An invitation is single-use, bound to one workspace, expires (7 days by default,
   1 to 30 allowed) and can be revoked. Accepting needs a signed-in, approved account with a
   grant for this app; the provider's gate guarantees that. A user who already has a family cannot
-  accept.
+  accept (`409 FAMILY_EXISTS`), and the invitation stays pending. An unknown, used, revoked or
+  expired invitation fails with the same `410 INVITATION_INVALID`, so the endpoint is no oracle.
+  Only the token's SHA-256 is stored; the raw link is shown once. Previewing a link shows the family and owner names only
+  while it is pending; every other state answers the same `410`.
 - **BR-9.** When a member leaves or is removed, the family transactions they authored stay in the
-  family with their authorship intact. Their personal data is untouched.
-- **BR-10.** The owner cannot leave. They transfer ownership or delete the family.
+  family with their authorship intact. Their personal data is untouched. Their open sync conflicts
+  on family transactions are dropped.
+- **BR-10.** The owner cannot leave or remove themselves (`409 OWNER_CANNOT_LEAVE`). They
+  transfer ownership to a current member or delete the family. Non-owners get `403 FORBIDDEN` on
+  owner actions; ids outside the actor's own family get `404 NOT_FOUND`.
 - **BR-11.** Deleting a family requires typing its name. Each family transaction moves to its
   author's personal workspace. Its category is re-linked to the author's personal category with
   the same name and kind, created if missing. A family account reference becomes null. A
   transaction whose author has deleted their account is deleted along with the family. Budgets,
-  recurring rules and invitations of the family are deleted.
+  recurring rules and invitations of the family are deleted. Tombstones move too (with a category
+  only when the author already has a matching one), and open conflicts of non-authors on moved
+  rows are dropped. A wrong name fails with `400 CONFIRMATION_MISMATCH`.
 - **BR-12.** In family mode, every new transaction explicitly chooses personal or family. Personal
   is preselected.
 

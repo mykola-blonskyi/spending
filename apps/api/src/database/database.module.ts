@@ -24,6 +24,15 @@ export function ledgerTransaction<T>(db: Db, work: (tx: Tx) => Promise<T>): Prom
 }
 
 export const LEDGER_LOCK_KEY = 7302001;
+
+/** True for a PostgreSQL unique violation, optionally on one named constraint or index. */
+export function isUniqueViolation(error: unknown, constraint?: string): boolean {
+  const cause = error instanceof Error ? error.cause : undefined;
+  return [error, cause].some((candidate) => {
+    const pg = candidate as { code?: unknown; constraint?: unknown } | null | undefined;
+    return pg?.code === '23505' && (constraint === undefined || pg.constraint === constraint);
+  });
+}
 const POOL = Symbol('POOL');
 
 @Global()

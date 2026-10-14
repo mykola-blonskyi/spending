@@ -12,7 +12,8 @@
     "openapi": "DATABASE_URL=postgres://openapi@localhost/openapi tsx scripts/write-openapi.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/database/migrate.ts",
-    "fake-oidc": "tsx test/fake-oidc/main.ts"
+    "fake-oidc": "tsx test/fake-oidc/main.ts",
+    "db:check": "tsx scripts/check-migrations.ts && drizzle-kit check"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.7",
