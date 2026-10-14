@@ -143,6 +143,43 @@ describe('ledger', () => {
       }
     });
 
+    it('does not write a PATCH that changes nothing', async () => {
+      type Stamped = { id: string; revision: number; updatedAt: string; archivedAt: string | null };
+      const patch = async (path: string, body: Record<string, unknown>) =>
+        json<Stamped>(await as(t, ann, path, { method: 'PATCH', body }), 200);
+      const account = await json<Stamped>(
+        await as(t, ann, '/v1/accounts', {
+          method: 'POST',
+          body: { workspaceId: annPersonal, name: 'Visa', kind: 'card', currency: 'EUR' },
+        }),
+        201,
+      );
+      const archived = await patch(`/v1/accounts/${account.id}`, { archived: true });
+      for (const body of [{ archived: true }, { name: 'Visa', kind: 'card' }, {}]) {
+        expect(await patch(`/v1/accounts/${account.id}`, body)).toEqual(archived);
+      }
+      const renamed = await patch(`/v1/accounts/${account.id}`, { name: 'Visa', kind: 'bank' });
+      expect(renamed.revision).toBeGreaterThan(archived.revision);
+      expect(renamed.archivedAt).toBe(archived.archivedAt);
+
+      const category = await json<Stamped>(
+        await as(t, ann, '/v1/categories', {
+          method: 'POST',
+          body: {
+            workspaceId: annPersonal,
+            name: 'Pets',
+            kind: 'expense',
+            color: '#AABBCC',
+            icon: 'paw',
+          },
+        }),
+        201,
+      );
+      for (const body of [{ name: 'Pets', color: '#aabbcc', icon: 'paw' }, { archived: false }]) {
+        expect(await patch(`/v1/categories/${category.id}`, body)).toEqual(category);
+      }
+    });
+
     it('keeps personal accounts and categories private (BR-2)', async () => {
       const { id } = await json<{ id: string }>(
         await as(t, ann, '/v1/accounts', {

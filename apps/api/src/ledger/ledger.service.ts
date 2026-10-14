@@ -100,7 +100,21 @@ export function selectViewRows(tx: Tx) {
 }
 
 const archivedPatch = (archived: boolean | undefined) =>
-  archived === undefined ? {} : { archivedAt: archived ? sql`coalesce(archived_at, now())` : null };
+  archived === undefined ? {} : { archivedAt: archived ? sql`now()` : null };
+
+/**
+ * Only the fields and archive state that differ from `current`. An empty result means the PATCH
+ * is a no-op and must not write, since every write takes a new revision that clients re-pull.
+ */
+function changes<T extends { archived?: boolean }>(
+  current: { archivedAt: Date | null } & Record<string, unknown>,
+  patch: T,
+): Partial<T> {
+  const changed = Object.entries(patch).filter(([key, value]) =>
+    key === 'archived' ? value !== (current.archivedAt !== null) : value !== current[key],
+  );
+  return Object.fromEntries(changed) as Partial<T>;
+}
 
 @Injectable()
 export class LedgerService {
@@ -132,7 +146,7 @@ export class LedgerService {
       const [current] = await tx.select(accountColumns).from(accounts).where(eq(accounts.id, id));
       if (!current) throw new ApiError('NOT_FOUND');
       await this.policy.requireMember(actorId, current.workspaceId, tx);
-      const { archived, ...fields } = patch;
+      const { archived, ...fields } = changes(current, patch);
       if (Object.keys(fields).length === 0 && archived === undefined) return toAccountView(current);
       const [row] = await tx
         .update(accounts)
@@ -169,7 +183,7 @@ export class LedgerService {
         .where(eq(categories.id, id));
       if (!current) throw new ApiError('NOT_FOUND');
       await this.policy.requireMember(actorId, current.workspaceId, tx);
-      const { archived, ...fields } = patch;
+      const { archived, ...fields } = changes(current, patch);
       if (Object.keys(fields).length === 0 && archived === undefined) {
         return toCategoryView(current);
       }
