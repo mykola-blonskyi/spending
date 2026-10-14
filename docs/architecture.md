@@ -63,6 +63,11 @@ tests. Services are thin shells over them.
 Aliases `@app/*`, `@data/*`, `@features/*`, `@shared/*`, `@i18n/*` are identical in `tsconfig`
 and Vite. ESLint (`eslint-plugin-boundaries`) enforces the table.
 
+`shared` cannot read the message catalogs, so its components take their words from
+`SharedLocaleProvider` (`@shared/lib/locale-context`). The app fills it from the active `use-intl`
+catalog, so shared components stay translated without importing `i18n`. API failures reach the UI
+as `ApiError` with a stable `code`, and screens show `errors.<code>` from the catalog.
+
 ## Data flow
 
 - **Reads.** Accounts, categories and transactions are pulled into IndexedDB (partitioned per

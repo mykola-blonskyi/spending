@@ -1,10 +1,74 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
-import { App } from './app';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { createMemoryRouter, RouterProvider } from 'react-router';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createQueryClient } from '@data/query-client';
+import { useLocaleStore } from '@i18n/index';
+import { AppProviders } from './providers';
+import { routes } from './routes';
 
-describe('App', () => {
-  it('renders the product name', () => {
-    render(<App />);
-    expect(screen.getByRole('heading', { name: 'Spending' })).toBeInTheDocument();
+function renderAt(path: string) {
+  const router = createMemoryRouter(routes, { initialEntries: [path] });
+  render(
+    <AppProviders queryClient={createQueryClient()}>
+      <RouterProvider router={router} />
+    </AppProviders>,
+  );
+  return router;
+}
+
+describe('app routes', () => {
+  beforeEach(() => {
+    vi.stubGlobal('matchMedia', () => ({
+      matches: false,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+    useLocaleStore.getState().setLocale('en');
+    localStorage.clear();
+  });
+
+  it('shows the login failure message on the sign-in page', () => {
+    renderAt('/signin?error=login_failed');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Welcome to Spending');
+    expect(screen.getByText('Sign-in did not complete. Please try again.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Continue with Google' })).toHaveAttribute(
+      'href',
+      '/api/v1/auth/login?returnTo=%2F',
+    );
+  });
+
+  it('ignores unknown error codes and refuses off-site return targets', () => {
+    renderAt('/signin?error=boom&returnTo=//evil.example');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Continue with Google' })).toHaveAttribute(
+      'href',
+      '/api/v1/auth/login?returnTo=%2F',
+    );
+  });
+
+  it('renders the translated shell and page in the active language', () => {
+    useLocaleStore.getState().setLocale('uk');
+    renderAt('/budgets');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Бюджети');
+    const [sidebar] = screen.getAllByRole('navigation', { name: 'Основна навігація' });
+    expect(within(sidebar!).getByRole('link', { name: 'Бюджети' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  });
+
+  it('switches the theme from settings', async () => {
+    renderAt('/settings');
+    await userEvent.click(screen.getByRole('radio', { name: 'Dark' }));
+    expect(document.documentElement).toHaveClass('dark');
+    await userEvent.click(screen.getByRole('radio', { name: 'Light' }));
+    expect(document.documentElement).not.toHaveClass('dark');
+  });
+
+  it('shows a not-found page inside the shell', () => {
+    renderAt('/nowhere');
+    expect(screen.getByRole('heading', { name: 'Page not found' })).toBeInTheDocument();
+    expect(screen.getAllByRole('navigation').length).toBeGreaterThan(0);
   });
 });
