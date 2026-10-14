@@ -88,8 +88,9 @@ must be in the `docker` group, which is root-equivalent.
 
 - `web`: nginx serving the Vite build with static CSP and security headers. It proxies `/api`
   to `api` on the private network. Only `web` gets a domain.
-- `migrate`: a one-shot job that takes a `pg_dump` into the `backups` volume, then applies
-  migrations. `api` starts only after it succeeds.
+- `predeploy-backup` then `migrate`: one-shot jobs. The first takes a `pg_dump` into the
+  `spending-backups` volume, the second applies migrations once the dump succeeded. `api`
+  starts only after both succeed.
 - `api`: NestJS.
 - `backup`: daily `pg_dump` with retention.
 
