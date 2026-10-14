@@ -91,6 +91,14 @@ as `ApiError` with a stable `code`, and screens show `errors.<code>` from the ca
   duration only. Never bodies, amounts, notes or tokens.
 - CSP and security headers are static in nginx (`deploy/nginx.conf`).
 
+## API errors
+
+Every error is `{ error: { code, message, details? } }` with a stable `code` from
+`apps/api/src/common/errors.ts`, which the web app localizes. Codes outside the generic HTTP set:
+`SESSION_REVOKED`, `CSRF_FAILED`, `CONFIRMATION_MISMATCH` (400), `FAMILY_EXISTS` (409),
+`OWNER_CANNOT_LEAVE` (409), `INVITATION_INVALID` (410). A workspace the actor does not belong to
+is always `NOT_FOUND`, never `FORBIDDEN`.
+
 ## Observability
 
 Structured JSON logs to stdout (collected by Docker and Coolify), `/api/health` for liveness and

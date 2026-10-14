@@ -156,3 +156,24 @@ export function api(t: TestApp, path: string, request: ApiRequest = {}): Promise
     body: request.body === undefined ? undefined : JSON.stringify(request.body),
   });
 }
+
+export type Session = { cookie: string; csrf: string; userId: string };
+
+/** Signs `sub` in through the fake provider and returns what a browser needs for API calls. */
+export async function loginAs(t: TestApp, sub: string): Promise<Session> {
+  const { cookie } = await login(t, sub);
+  if (!cookie) throw new Error(`login of ${sub} set no session cookie`);
+  const response = await api(t, '/v1/auth/session', { cookie });
+  const body = (await response.json()) as { csrfToken: string; user: { id: string } };
+  return { cookie, csrf: body.csrfToken, userId: body.user.id };
+}
+
+/** Calls the API as the signed-in `session`, with its CSRF token on unsafe methods. */
+export function as(
+  t: TestApp,
+  session: Session,
+  path: string,
+  request: Omit<ApiRequest, 'cookie' | 'csrf'> = {},
+): Promise<Response> {
+  return api(t, path, { ...request, cookie: session.cookie, csrf: session.csrf });
+}

@@ -8,6 +8,7 @@ import {
   callback,
   freshIp,
   login,
+  loginAs,
   resetData,
   sessionCookieFrom,
   startTestApp,
@@ -45,13 +46,7 @@ describe('authentication', () => {
     await provider.close();
   });
 
-  async function signedIn(sub = ann.sub) {
-    const outcome = await login(t, sub);
-    expect(outcome.cookie).toBeDefined();
-    const response = await api(t, '/v1/auth/session', { cookie: outcome.cookie });
-    const body = (await response.json()) as { csrfToken: string; user: { id: string } };
-    return { cookie: outcome.cookie!, csrf: body.csrfToken, userId: body.user.id };
-  }
+  const signedIn = (sub = ann.sub) => loginAs(t, sub);
 
   const ageSession = (cookie: string, column: string, interval: string) =>
     t.db.execute(

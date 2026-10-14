@@ -3,13 +3,12 @@ import { and, eq, sql } from 'drizzle-orm';
 import { ApiError } from '../common/errors';
 import { DB, type Db, type Tx } from '../database/database.module';
 import { memberships, users, workspaces } from '../database/schema';
+import { seedDefaultCategories } from '../workspaces/default-categories';
 import type { Identity, Profile, ProfilePatch } from './profile';
 
 export type Provisioned = Readonly<{
   userId: string;
   personalWorkspaceId: string;
-  /** True on the login that created the personal workspace, for one-time seeding. */
-  workspaceCreated: boolean;
 }>;
 
 const profileColumns = {
@@ -30,6 +29,7 @@ export class UsersService {
    * Upserts the user by `sub` and ensures their personal workspace. Preferences come from the
    * provider only on first login; later logins refresh identity fields only. The upsert's row
    * lock serializes concurrent first logins of one user, so the workspace is created once.
+   * `tx` must come from `ledgerTransaction`, because a new workspace gets default categories.
    */
   async provision(tx: Tx, identity: Identity): Promise<Provisioned> {
     const [user] = await tx
@@ -58,7 +58,7 @@ export class UsersService {
       .from(memberships)
       .where(and(eq(memberships.userId, userId), eq(memberships.workspaceKind, 'personal')));
     if (existing) {
-      return { userId, personalWorkspaceId: existing.workspaceId, workspaceCreated: false };
+      return { userId, personalWorkspaceId: existing.workspaceId };
     }
     const [workspace] = await tx
       .insert(workspaces)
@@ -70,7 +70,8 @@ export class UsersService {
       userId,
       role: 'owner',
     });
-    return { userId, personalWorkspaceId: workspace!.id, workspaceCreated: true };
+    await seedDefaultCategories(tx, workspace!.id);
+    return { userId, personalWorkspaceId: workspace!.id };
   }
 
   async profile(userId: string): Promise<Profile> {

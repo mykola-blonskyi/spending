@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { eq, lt, sql } from 'drizzle-orm';
-import { DB, type Db } from '../database/database.module';
+import { DB, type Db, ledgerTransaction } from '../database/database.module';
 import { loginAttempts } from '../database/schema';
 import { identityFromClaims } from '../users/profile';
 import { UsersService } from '../users/users.service';
@@ -81,7 +81,7 @@ export class AuthService {
     const identity = identityFromClaims(tokens.claims);
     if (!identity) return this.fail('claims_invalid');
 
-    const session = await this.db.transaction(async (tx) => {
+    const session = await ledgerTransaction(this.db, async (tx) => {
       const { userId } = await this.users.provision(tx, identity);
       return this.sessions.create(tx, userId, tokens);
     });
