@@ -10,8 +10,9 @@
 # Every dump is checked with pg_restore --list before it is kept (a daily dump must list the
 # transactions table data), so a corrupt, empty or wrong-database dump fails the run instead of
 # replacing a good backup. When BACKUP_OFFSITE_REMOTE is set (an rclone destination such as
-# :s3:bucket/spending, credentials in RCLONE_* variables), each daily dump is also copied there;
-# retention off-host is the bucket's lifecycle rule.
+# :s3:bucket/spending, credentials in RCLONE_* variables), each daily dump is also copied there
+# and $BACKUP_DIR/offsite.ok is touched; a failed copy fails the run after local pruning.
+# Off-host retention is the bucket's lifecycle rule.
 # DATABASE_URL (optionally ?sslmode=...) is split into the PG* environment variables, so the password is never in a
 # process argument list, and is never printed.
 set -eu
@@ -107,13 +108,19 @@ daily() {
     mv "$week.partial" "$week"
     log "wrote $(basename "$week")"
   fi
+  rc=0
   if [ -n "${BACKUP_OFFSITE_REMOTE:-}" ]; then
-    rclone copyto --quiet "$today" "${BACKUP_OFFSITE_REMOTE%/}/daily/$(basename "$today")" ||
-      { log "off-host copy failed"; return 1; }
-    log "copied $(basename "$today") off-host"
+    if rclone copyto --quiet "$today" "${BACKUP_OFFSITE_REMOTE%/}/daily/$(basename "$today")"; then
+      touch "$dir/offsite.ok"
+      log "copied $(basename "$today") off-host"
+    else
+      log "off-host copy failed"
+      rc=1
+    fi
   fi
   prune "$dir/daily" daily 14
   prune "$dir/weekly" weekly 8
+  return $rc
 }
 
 schedule() {

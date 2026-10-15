@@ -284,7 +284,9 @@ action Skip (all remaining custom rules, and Bot Fight Mode / Super Bot Fight Mo
   carry `?sslmode=...` (passed as `PGSSLMODE`); any other query parameter is refused.
 - The volume is on the VPS disk only unless the optional off-host copy is configured. When
   `BACKUP_OFFSITE_REMOTE` is set on the Coolify resource, the `backup` container also copies each
-  daily dump there with rclone, and a failed copy fails the run (logged, retried next day). Owner
+  daily dump there with rclone and touches `offsite.ok` in the volume. A failed copy fails the run
+  after local pruning (logged, retried next day), and the container turns unhealthy when
+  `offsite.ok` is older than 26 hours. Owner
   steps: create a private S3-compatible bucket (Backblaze B2, Cloudflare R2, ...) with a
   lifecycle rule that expires objects after about 30 days, create a key restricted to that
   bucket, then set `BACKUP_OFFSITE_REMOTE=:s3:<bucket>/spending`, `RCLONE_S3_PROVIDER`,
