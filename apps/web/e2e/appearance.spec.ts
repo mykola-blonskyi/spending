@@ -77,6 +77,8 @@ for (const layout of Object.keys(LAYOUTS) as (keyof typeof LAYOUTS)[]) {
       for (const label of DESTINATIONS) {
         await navigateTo(page, label);
         await expect(page.getByRole('heading', { level: 1 })).toHaveText(label);
+        if (label === 'Transactions')
+          await expect(page.getByRole('heading', { name: 'No transactions yet' })).toBeVisible();
       }
       await page
         .getByRole('link', { name: 'Add transaction' })
@@ -84,6 +86,7 @@ for (const layout of Object.keys(LAYOUTS) as (keyof typeof LAYOUTS)[]) {
         .first()
         .click();
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('Add transaction');
+      await expect(page.getByLabel('Amount')).toBeVisible();
     });
   }
 }
