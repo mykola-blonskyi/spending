@@ -152,7 +152,8 @@ at a time for the whole database. We accept that throughput limit at household s
 push carries at most 200 mutations and is limited to 120 per minute per user. Service code
 writes the ledger only through `ledgerTransaction`, which takes the lock before any row lock, so
 writers cannot deadlock. Sign-in runs under it too, because a first login seeds the personal
-workspace's default categories. `transactions.version` increments only on user-visible changes,
+workspace's default categories. So do leaving and removing a family member, so a push that read
+the old membership cannot record a conflict after BR-9 dropped them. `transactions.version` increments only on user-visible changes,
 so background FX fills never cause conflicts.
 
 ## ADR-007: EUR base currency, ECB reference rates

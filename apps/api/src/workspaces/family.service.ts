@@ -263,7 +263,7 @@ export class FamilyService {
 
   /** BR-9, BR-10. Authored family transactions stay in the family. */
   async leave(actorId: string): Promise<void> {
-    await this.db.transaction(async (tx) => {
+    await ledgerTransaction(this.db, async (tx) => {
       const family = await this.lockFamily(tx, actorId);
       if (family.role === 'owner') throw new ApiError('OWNER_CANNOT_LEAVE');
       await this.dropMember(tx, family.workspaceId, actorId);
@@ -272,7 +272,7 @@ export class FamilyService {
   }
 
   async removeMember(actorId: string, userId: string): Promise<void> {
-    await this.db.transaction(async (tx) => {
+    await ledgerTransaction(this.db, async (tx) => {
       const family = await this.lockOwnedFamily(tx, actorId);
       if (userId === actorId) throw new ApiError('OWNER_CANNOT_LEAVE');
       if (!(await this.dropMember(tx, family.workspaceId, userId))) {
