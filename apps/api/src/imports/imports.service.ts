@@ -126,8 +126,9 @@ export class ImportsService {
 
   /**
    * BR-30. Tombstones the batch's rows nobody edited (still version 1 in the personal workspace)
-   * and clears their keys so the statement can be imported again. Repeating it changes nothing;
-   * the counts are read back from the rows, so a repeat reports the same outcome.
+   * and clears their keys so the statement can be imported again. Repeating it changes nothing.
+   * The counts are read back from the rows at the time it runs, so a manual delete in between
+   * changes what a repeat reports.
    */
   undo(actorId: string, id: string) {
     return ledgerTransaction(this.db, async (tx) => {
