@@ -40,6 +40,43 @@ export class E2EDatabase {
     return rows.map((row) => ({ ...row, amount_minor: Number(row.amount_minor) }));
   }
 
+  /** History as the server holds it: where each row lives, its review state and category. */
+  async history(email: string) {
+    const { rows } = await this.pool.query<{
+      description: string;
+      amount_minor: string;
+      scope: string;
+      review_status: string;
+      category: string | null;
+      version: number;
+      deleted: boolean;
+    }>(
+      `select t.description, t.amount_minor, w.kind as scope, t.review_status,
+              c.name as category, t.version, t.deleted_at is not null as deleted
+         from transactions t
+         join users u on u.id = t.created_by
+         join workspaces w on w.id = t.workspace_id
+         left join categories c on c.id = t.category_id
+        where u.email = $1 order by t.occurred_on, t.created_at, t.id`,
+      [email],
+    );
+    return rows.map((row) => ({ ...row, amount_minor: Number(row.amount_minor) }));
+  }
+
+  /** What the categorizer learned, per merchant key. */
+  async categoryRules(email: string) {
+    const { rows } = await this.pool.query<{ merchant_key: string; category: string }>(
+      `select r.merchant_key, c.name as category
+         from category_rules r
+         join categories c on c.id = r.category_id
+         join workspaces w on w.id = r.workspace_id
+         join users u on u.id = w.owner_id
+        where u.email = $1 order by r.merchant_key`,
+      [email],
+    );
+    return rows;
+  }
+
   close(): Promise<void> {
     return this.pool.end();
   }

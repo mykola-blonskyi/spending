@@ -117,6 +117,12 @@ function useWriter<A extends unknown[], R>(
   );
 }
 
+/** Pulls the server's latest rows now, for screens that just wrote through REST (imports). */
+export function useRequestSync(): () => Promise<void> {
+  const ready = useReady();
+  return useCallback(() => ready?.engine.flush() ?? Promise.resolve(), [ready]);
+}
+
 export const useRecordTransaction = (): ((draft: TransactionDraft) => Promise<string>) =>
   useWriter(recordTransaction);
 export const useUpdateTransaction = (): ((id: string, draft: TransactionDraft) => Promise<void>) =>
