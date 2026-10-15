@@ -12,7 +12,7 @@ export function parseCurrency(code: string): CurrencyCode | null {
 
 /**
  * ISO 4217 minor-unit digits where they differ from 2. Intl's digits are not ISO's (HUF, IDR and
- * COP format with 0), so they never decide the exponent. Keep in sync with
+ * COP format with 0), so they never decide the exponent. money.test.ts holds this equal to
  * apps/web/src/shared/format/money.ts.
  */
 const MINOR_DIGITS: Readonly<Record<string, number>> = {
@@ -41,8 +41,11 @@ const MINOR_DIGITS: Readonly<Record<string, number>> = {
   TND: 3,
 };
 
-/** Number of minor-unit digits (EUR 2, JPY 0, KWD 3), per BR-13. */
-export function currencyExponent(code: CurrencyCode): number {
+/**
+ * Number of minor-unit digits (EUR 2, JPY 0, KWD 3), per BR-13. Takes any stored code, so a
+ * currency a newer ICU withdrew still renders.
+ */
+export function currencyExponent(code: string): number {
   return MINOR_DIGITS[code] ?? 2;
 }
 

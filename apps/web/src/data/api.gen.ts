@@ -1280,6 +1280,32 @@ export interface components {
                 /** Format: date-time */
                 updatedAt: string;
             }[];
+            conflicts: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                transactionId: string;
+                local: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    workspaceId: string;
+                    /** @enum {string} */
+                    kind: "income" | "expense";
+                    amountMinor: number;
+                    currency: string;
+                    occurredOn: string;
+                    accountId: string | null;
+                    categoryId: string | null;
+                    description: string;
+                    note: string;
+                } | {
+                    /** @constant */
+                    deleted: true;
+                };
+                /** Format: date-time */
+                createdAt: string;
+            }[];
         };
         DeleteUserDto: {
             confirmation: string;

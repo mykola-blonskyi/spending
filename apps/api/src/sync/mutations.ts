@@ -100,6 +100,47 @@ export type ExistingRow = IntendedFields &
 export type AccountFact = Readonly<{ workspaceId: string; archived: boolean }>;
 export type CategoryFact = Readonly<{ workspaceId: string; kind: EntryKind; archived: boolean }>;
 
+export type ReferenceFacts = Readonly<{
+  workspaceId: string;
+  kind: EntryKind;
+  accountId: string | null;
+  categoryId: string | null;
+  /** The references the row or rule already has, which stay allowed even when archived. */
+  current: { accountId: string | null; categoryId: string | null } | null;
+  isAuthor: boolean;
+  authorPersonalWorkspaceId: string | null;
+  account: AccountFact | null;
+  category: CategoryFact | null;
+}>;
+
+/** BR-3, BR-4 reference rules, shared by sync upserts and recurring rule templates. */
+export function referenceError(
+  facts: ReferenceFacts,
+): Extract<RejectCode, 'INVALID_ACCOUNT' | 'INVALID_CATEGORY'> | null {
+  const { account, category } = facts;
+  if (facts.accountId !== null) {
+    const unchanged = facts.current?.accountId === facts.accountId;
+    // BR-3: only the author may pick their personal account; others may keep it.
+    const allowed =
+      account !== null &&
+      (account.workspaceId === facts.workspaceId ||
+        (account.workspaceId === facts.authorPersonalWorkspaceId && (facts.isAuthor || unchanged)));
+    if (!allowed || (account.archived && !unchanged)) return 'INVALID_ACCOUNT';
+  }
+  if (facts.categoryId !== null) {
+    const unchanged = facts.current?.categoryId === facts.categoryId;
+    if (
+      category === null ||
+      category.workspaceId !== facts.workspaceId ||
+      category.kind !== facts.kind ||
+      (category.archived && !unchanged)
+    ) {
+      return 'INVALID_CATEGORY';
+    }
+  }
+  return null;
+}
+
 /** BR-19: equal user-visible state means the write would change nothing. */
 export function sameIntent(intended: IntendedFields, row: IntendedFields): boolean {
   return (
@@ -171,29 +212,15 @@ export function decideUpsert(facts: UpsertFacts): UpsertDecision {
       : { outcome: 'conflict' };
   }
 
-  if (intended.accountId !== null) {
-    const account = facts.account;
-    const unchanged = existing?.accountId === intended.accountId;
-    const isAuthor = existing ? existing.createdBy === facts.actorId : true;
-    // BR-3: only the author may pick their personal account; others may keep it.
-    const allowedWorkspace =
-      account !== null &&
-      (account.workspaceId === intended.workspaceId ||
-        (account.workspaceId === facts.authorPersonalWorkspaceId && (isAuthor || unchanged)));
-    if (!allowedWorkspace || (account.archived && !unchanged)) return reject('INVALID_ACCOUNT');
-  }
-  if (intended.categoryId !== null) {
-    const category = facts.category;
-    const unchanged = existing?.categoryId === intended.categoryId;
-    if (
-      category === null ||
-      category.workspaceId !== intended.workspaceId ||
-      category.kind !== intended.kind ||
-      (category.archived && !unchanged)
-    ) {
-      return reject('INVALID_CATEGORY');
-    }
-  }
+  const referenceCode = referenceError({
+    ...intended,
+    current: existing,
+    isAuthor: existing ? existing.createdBy === facts.actorId : true,
+    authorPersonalWorkspaceId: facts.authorPersonalWorkspaceId,
+    account: facts.account,
+    category: facts.category,
+  });
+  if (referenceCode) return reject(referenceCode);
   if (!existing) return { outcome: 'insert' };
   return live && sameIntent(intended, existing) ? { outcome: 'unchanged' } : { outcome: 'update' };
 }

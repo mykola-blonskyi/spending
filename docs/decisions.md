@@ -54,8 +54,9 @@ page and never returns to the client. Access and ID tokens live 5 minutes. Refre
   random bytes, and the DB keeps only its SHA-256 hash. The cookie is `__Host-spending_session`:
   HttpOnly, Secure, SameSite=Lax, Path=/. The session is rotated on login and every 24 hours.
   Rotation rewrites the row's token hash in place and keeps the old hash for 60 seconds, so
-  requests already in flight still succeed and the grant data never exists in two rows. Sessions
-  end after 30 days absolute or 14 days idle.
+  requests already in flight still succeed and the grant data never exists in two rows. An old
+  token arriving later gets `401` but leaves the cookie alone, since the browser may already hold
+  the new one. Sessions end after 30 days absolute or 14 days idle.
 - The encrypted refresh token is kept with the session. On a request more than 5 minutes after
   the last grant check, the API refreshes. `invalid_grant` destroys the session
   (`SESSION_REVOKED`). A conditional update lets one concurrent request perform the refresh, since
@@ -151,7 +152,8 @@ at a time for the whole database. We accept that throughput limit at household s
 push carries at most 200 mutations and is limited to 120 per minute per user. Service code
 writes the ledger only through `ledgerTransaction`, which takes the lock before any row lock, so
 writers cannot deadlock. Sign-in runs under it too, because a first login seeds the personal
-workspace's default categories. `transactions.version` increments only on user-visible changes,
+workspace's default categories. So do leaving and removing a family member, so a push that read
+the old membership cannot record a conflict after BR-9 dropped them. `transactions.version` increments only on user-visible changes,
 so background FX fills never cause conflicts.
 
 ## ADR-007: EUR base currency, ECB reference rates

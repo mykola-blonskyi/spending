@@ -31,13 +31,8 @@ describe('csvRow', () => {
 });
 
 describe('transactionsCsv', () => {
-  it.each([
-    ['en', 'former member'],
-    ['uk', 'колишній учасник'],
-    ['ru', 'бывший участник'],
-    ['es', 'antiguo miembro'],
-  ])('labels a deleted author in %s', (locale, label) => {
-    const document = {
+  const exportOf = (locale: string, currency = 'EUR') =>
+    ({
       user: { locale },
       workspaces: [],
       accounts: [],
@@ -48,7 +43,7 @@ describe('transactionsCsv', () => {
           occurredOn: '2026-10-01',
           kind: 'expense',
           amountMinor: 150,
-          currency: 'EUR',
+          currency,
           baseAmountMinor: 150,
           fx: null,
           scope: 'family',
@@ -61,7 +56,20 @@ describe('transactionsCsv', () => {
           author: { userId: null, displayName: null },
         },
       ],
-    } as unknown as DataExport;
-    expect(transactionsCsv(document).trimEnd().split('\r\n')[1]!.split(',').pop()).toBe(label);
+    }) as unknown as DataExport;
+  const firstRow = (document: DataExport) =>
+    transactionsCsv(document).trimEnd().split('\r\n')[1]!.split(',');
+
+  it.each([
+    ['en', 'former member'],
+    ['uk', 'колишній учасник'],
+    ['ru', 'бывший участник'],
+    ['es', 'antiguo miembro'],
+  ])('labels a deleted author in %s', (locale, label) => {
+    expect(firstRow(exportOf(locale)).pop()).toBe(label);
+  });
+
+  it('exports a stored currency the runtime no longer knows with 2 decimals', () => {
+    expect(firstRow(exportOf('en', 'XYZ')).slice(2, 4)).toEqual(['1.50', 'XYZ']);
   });
 });

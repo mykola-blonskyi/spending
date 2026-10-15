@@ -123,7 +123,7 @@ export class LedgerService {
   ) {}
 
   async listAccounts(actorId: string, workspaceId?: string): Promise<AccountView[]> {
-    const ids = await this.scope(actorId, workspaceId);
+    const ids = (await this.policy.scope(actorId, workspaceId)).map((m) => m.workspaceId);
     const rows = await this.db
       .select(accountColumns)
       .from(accounts)
@@ -157,7 +157,7 @@ export class LedgerService {
   }
 
   async listCategories(actorId: string, workspaceId?: string): Promise<CategoryView[]> {
-    const ids = await this.scope(actorId, workspaceId);
+    const ids = (await this.policy.scope(actorId, workspaceId)).map((m) => m.workspaceId);
     const rows = await this.db
       .select(categoryColumns)
       .from(categories)
@@ -273,11 +273,6 @@ export class LedgerService {
       and(inArray(transactions.id, [...ids]), inArray(transactions.workspaceId, [...visible])),
     );
     return new Map(rows.map((row) => [row.id, toLedgerRow(row, visible)]));
-  }
-
-  private async scope(actorId: string, workspaceId: string | undefined): Promise<string[]> {
-    if (workspaceId) return [(await this.policy.requireMember(actorId, workspaceId)).workspaceId];
-    return (await this.policy.memberships(actorId)).map((m) => m.workspaceId);
   }
 
   private async write<T>(work: (tx: Tx) => Promise<T>): Promise<T> {

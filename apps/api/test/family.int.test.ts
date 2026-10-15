@@ -9,6 +9,7 @@ import {
   transactions,
   workspaces,
 } from '../src/database/schema';
+import { LEDGER_LOCK_KEY } from '../src/database/database.module';
 import { AccessPolicy } from '../src/workspaces/access-policy';
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
 import {
@@ -355,6 +356,28 @@ describe('family workspaces', () => {
       subject: { userId: dan.userId },
     });
     expect((await as(t, bob, '/v1/family/events')).status).toBe(404);
+  });
+
+  it('takes the ledger lock to leave or remove a member, so no push lands in between (BR-9)', async () => {
+    await familyWith(ann, bob, cat);
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => (release = resolve));
+    let locked!: () => void;
+    const lockTaken = new Promise<void>((resolve) => (locked = resolve));
+    const holder = t.db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(${LEDGER_LOCK_KEY})`);
+      locked();
+      await released;
+    });
+    await lockTaken;
+    const leaving = as(t, cat, '/v1/family/leave', { method: 'POST' });
+    const removing = as(t, ann, `/v1/family/members/${bob.userId}`, { method: 'DELETE' });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const members = await t.db.select().from(memberships).where(eq(memberships.role, 'member'));
+    release();
+    await holder;
+    expect(members).toHaveLength(2);
+    expect([(await leaving).status, (await removing).status]).toEqual([204, 204]);
   });
 
   it('keeps family management with the owner', async () => {

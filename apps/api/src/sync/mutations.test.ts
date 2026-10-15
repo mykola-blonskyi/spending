@@ -6,6 +6,8 @@ import {
   type ExistingRow,
   pullWindow,
   pushBodySchema,
+  referenceError,
+  type ReferenceFacts,
   sameIntent,
   type TransactionInput,
   transactionInputSchema,
@@ -324,5 +326,74 @@ describe('transactionInputSchema', () => {
     expect(transactionInputSchema.safeParse({ ...input, amountMinor: 1e12 + 1 }).success).toBe(
       false,
     );
+  });
+});
+
+const referenceFacts = (overrides: Partial<ReferenceFacts>): ReferenceFacts => ({
+  workspaceId: 'family',
+  kind: 'expense',
+  accountId: 'acc',
+  categoryId: 'cat',
+  current: null,
+  isAuthor: true,
+  authorPersonalWorkspaceId: 'personal',
+  account: { workspaceId: 'family', archived: false },
+  category: { workspaceId: 'family', kind: 'expense', archived: false },
+  ...overrides,
+});
+
+describe('referenceError', () => {
+  it('accepts references of the workspace, or the creator’s own account (BR-3)', () => {
+    expect(referenceError(referenceFacts({}))).toBeNull();
+    expect(
+      referenceError(referenceFacts({ account: { workspaceId: 'personal', archived: false } })),
+    ).toBeNull();
+    expect(referenceError(referenceFacts({ accountId: null, categoryId: null }))).toBeNull();
+  });
+
+  it('lets only the creator pick a personal account; others may keep it', () => {
+    const personal = { workspaceId: 'personal', archived: false };
+    expect(referenceError(referenceFacts({ isAuthor: false, account: personal }))).toBe(
+      'INVALID_ACCOUNT',
+    );
+    expect(
+      referenceError(
+        referenceFacts({
+          isAuthor: false,
+          account: personal,
+          current: { accountId: 'acc', categoryId: null },
+        }),
+      ),
+    ).toBeNull();
+    expect(
+      referenceError(referenceFacts({ account: { workspaceId: 'other', archived: false } })),
+    ).toBe('INVALID_ACCOUNT');
+    expect(referenceError(referenceFacts({ account: null }))).toBe('INVALID_ACCOUNT');
+  });
+
+  it('rejects categories of another workspace or kind (BR-4)', () => {
+    expect(referenceError(referenceFacts({ kind: 'income' }))).toBe('INVALID_CATEGORY');
+    expect(
+      referenceError(
+        referenceFacts({ category: { workspaceId: 'personal', kind: 'expense', archived: false } }),
+      ),
+    ).toBe('INVALID_CATEGORY');
+    expect(referenceError(referenceFacts({ category: null }))).toBe('INVALID_CATEGORY');
+  });
+
+  it('allows archived references only when already used', () => {
+    const archived = {
+      account: { workspaceId: 'family', archived: true },
+      category: { workspaceId: 'family', kind: 'expense' as const, archived: true },
+    };
+    expect(referenceError(referenceFacts({ ...archived }))).toBe('INVALID_ACCOUNT');
+    expect(referenceError(referenceFacts({ ...archived, accountId: null }))).toBe(
+      'INVALID_CATEGORY',
+    );
+    expect(
+      referenceError(
+        referenceFacts({ ...archived, current: { accountId: 'acc', categoryId: 'cat' } }),
+      ),
+    ).toBeNull();
   });
 });

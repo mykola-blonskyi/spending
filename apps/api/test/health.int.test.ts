@@ -41,4 +41,16 @@ describe('API process', () => {
       error: { code: 'PAYLOAD_TOO_LARGE', message: 'PAYLOAD_TOO_LARGE' },
     });
   });
+
+  it('rejects an unsupported body encoding as a client error', async () => {
+    const response = await fetch(`${t.baseUrl}/api/v1/sync/push`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'content-encoding': 'compress' },
+      body: '{}',
+    });
+    expect(response.status).toBe(415);
+    expect(await response.json()).toEqual({
+      error: { code: 'VALIDATION_FAILED', message: 'VALIDATION_FAILED' },
+    });
+  });
 });

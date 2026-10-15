@@ -5,11 +5,13 @@ import { loginAttempts, memberships, sessions, users, workspaces } from '../src/
 import { type FakeOidc, startFakeOidc, type Tamper } from './fake-oidc/server';
 import {
   api,
+  as,
   callback,
   freshIp,
   login,
   loginAs,
   resetData,
+  type Session,
   sessionCookieFrom,
   startTestApp,
   TEST_CLIENT,
@@ -173,6 +175,21 @@ describe('authentication', () => {
       },
     );
 
+    it('sends a login that fails after the exchange back to sign-in', async () => {
+      await t.db.execute(sql`
+        create function refuse_session() returns trigger language plpgsql
+          as $$ begin raise exception 'refused'; end $$;
+        create trigger refuse_session before insert on sessions
+          for each row execute function refuse_session();`);
+      try {
+        const outcome = await login(t, ann.sub);
+        expect(outcome.location).toBe('/signin?error=login_failed');
+        expect(outcome.cookie).toBeUndefined();
+      } finally {
+        await t.db.execute(sql`drop function refuse_session() cascade`);
+      }
+    });
+
     it('rejects a callback with an unknown state or a provider error', async () => {
       const unknown = await callback(`${t.baseUrl}/api/v1/auth/callback?code=x&state=nope`);
       expect(unknown.location).toBe('/signin?error=login_failed');
@@ -210,6 +227,17 @@ describe('authentication', () => {
       }
       expect(statuses.slice(0, 20).every((status) => status === 302)).toBe(true);
       expect(statuses[20]).toBe(429);
+    });
+
+    it('rate-limits each signed-in user on their own budget, whatever their IP', async () => {
+      const [annSession, bobSession] = [await signedIn(ann.sub), await signedIn(bob.sub)];
+      const invite = (session: Session) =>
+        as(t, session, '/v1/family/invitations', { method: 'POST', body: {} });
+      const statuses: number[] = [];
+      for (let i = 0; i < 31; i += 1) statuses.push((await invite(annSession)).status);
+      expect(statuses.slice(0, 30)).not.toContain(429);
+      expect(statuses[30]).toBe(429);
+      expect((await invite(bobSession)).status).not.toBe(429);
     });
   });
 
@@ -252,7 +280,9 @@ describe('authentication', () => {
       expect(((await fresh.json()) as { csrfToken: string }).csrfToken).toBe(csrf);
 
       await ageSession(next, 'rotated_at', '61 seconds');
-      expect((await api(t, '/v1/me', { cookie })).status).toBe(401);
+      const superseded = await api(t, '/v1/me', { cookie });
+      expect(superseded.status).toBe(401);
+      expect(sessionCookieFrom(superseded)).toBeUndefined();
       expect((await api(t, '/v1/me', { cookie: next })).status).toBe(200);
       expect(await t.db.select().from(sessions)).toHaveLength(1);
     });

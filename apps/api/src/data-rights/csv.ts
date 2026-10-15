@@ -1,4 +1,4 @@
-import { BASE_CURRENCY, currencyExponent, formatMinor, parseCurrency } from '../common/money';
+import { BASE_CURRENCY, currencyExponent, formatMinor } from '../common/money';
 import type { DataExport } from './export-sections';
 
 /** Leading characters a spreadsheet may evaluate as a formula. */
@@ -41,12 +41,6 @@ const FORMER_MEMBER = {
   es: 'antiguo miembro',
 } as const;
 
-function exponentOf(currency: string): number {
-  const code = parseCurrency(currency);
-  if (!code) throw new Error(`Stored currency ${currency} is not a known ISO 4217 code`);
-  return currencyExponent(code);
-}
-
 /**
  * The confirmed transactions of an export as CSV (BR-31), one row each, oldest first. Amounts are
  * unsigned major units ("kind" carries the sign, BR-13). Names resolve through the export's own
@@ -68,7 +62,7 @@ export function transactionsCsv(document: DataExport): string {
       csvRow([
         t.occurredOn,
         t.kind,
-        formatMinor(t.amountMinor, exponentOf(t.currency)),
+        formatMinor(t.amountMinor, currencyExponent(t.currency)),
         t.currency,
         t.baseAmountMinor === null ? '' : formatMinor(t.baseAmountMinor, eurExponent),
         t.fx?.rate ?? '',

@@ -62,7 +62,7 @@ export class ErrorFilter implements ExceptionFilter {
     const status =
       exception instanceof HttpException ? exception.getStatus() : exposedStatus(exception);
     if (status !== undefined) {
-      const code = STATUS_CODES[status] ?? 'INTERNAL';
+      const code = STATUS_CODES[status] ?? (status < 500 ? 'VALIDATION_FAILED' : 'INTERNAL');
       return [status, { error: { code, message: code } }];
     }
     this.logger.error(describeUnexpected(exception));
@@ -80,7 +80,7 @@ function exposedStatus(exception: unknown): number | undefined {
 }
 
 /** Drizzle puts query parameters (tokens, amounts, notes) in its message; log only the cause. */
-function describeUnexpected(exception: unknown): string {
+export function describeUnexpected(exception: unknown): string {
   if (exception instanceof DrizzleQueryError) {
     const cause = exception.cause as { code?: string; message?: string } | undefined;
     return `Query failed: ${cause?.code ?? 'unknown'} ${cause?.message ?? ''}`.trim();
