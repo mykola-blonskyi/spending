@@ -288,6 +288,20 @@ action Skip (all remaining custom rules, and Bot Fight Mode / Super Bot Fight Mo
   `RCLONE_S3_ENDPOINT`, `RCLONE_S3_REGION` (if the provider needs it), `RCLONE_S3_ACCESS_KEY_ID`
   and `RCLONE_S3_SECRET_ACCESS_KEY`. Nothing is printed except file names. Off-host dumps are
   restored by downloading the file and following the restore steps below.
+- Current target: the MinIO service on the same VPS, bucket `spending-backups` (private, objects
+  expire after 30 days). The key `spending-backup` may list, read and write that bucket but not
+  delete, so a compromised app cannot wipe the copies. The six variables are in
+  `~/spending-backup-s3.env` on the VPS (mode 600); paste them into the Coolify resource. Two
+  settings are required:
+  - Turn on "Connect to Predefined Network" on the resource. The endpoint is
+    `http://minio:9000` on the `coolify` network; `s3.blonskyi.dev` goes through Cloudflare,
+    which breaks S3 request signatures and caps uploads at 100 MB.
+  - Keep `no_check_bucket=true` in `BACKUP_OFFSITE_REMOTE`
+    (`:s3,no_check_bucket=true:spending-backups/spending`); without it rclone tries to create
+    the bucket and the restricted key gets 403.
+- This copy survives a deleted `spending-backups` volume or `down -v`, not the loss of the VPS
+  disk, because MinIO stores its data on the same disk. For disaster recovery, point the same
+  variables at a provider on another machine.
 
 Restore into a scratch database first, verify, then swap. On the VPS (`ssh blonskyi`); the
 backup container name comes from `docker ps --format '{{.Names}}' | grep '^backup-'`:

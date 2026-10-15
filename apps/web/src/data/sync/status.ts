@@ -5,7 +5,7 @@ import { countMutations } from './queue';
 
 /**
  * The one sync state the user sees, by priority: a lost session, then conflicts, failed
- * changes, being offline, an active sync, a retry wait, pending changes, and finally synced.
+ * changes, being offline, an active sync, a retry wait, a device that has never finished a pull, pending changes, and finally synced.
  */
 export function deriveSyncStatus(
   engine: EngineStatus,
@@ -20,6 +20,7 @@ export function deriveSyncStatus(
   if (!online) return { state: 'offline', count: pending };
   if (engine.phase === 'syncing') return { state: 'syncing' };
   if (engine.phase === 'retrying') return { state: 'retrying' };
+  if (state.meta.lastSyncedAt === null) return { state: 'syncing' };
   if (pending > 0) return { state: 'pending', count: pending };
   return { state: 'synced' };
 }
