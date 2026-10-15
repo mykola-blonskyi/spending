@@ -116,6 +116,15 @@ describe('useSignOut', () => {
     await waitFor(() => expect(loadPage).toHaveBeenCalledWith('/signin'));
   });
 
+  it('asks first when the local store is not open to count unsent changes', async () => {
+    vi.mocked(countUnsentMutations).mockReturnValue(null);
+    renderButton();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    expect(await screen.findByRole('alertdialog')).toBeInTheDocument();
+    expect(logout).not.toHaveBeenCalled();
+  });
+
   it('asks first when the local store cannot tell whether changes are unsent', async () => {
     vi.mocked(countUnsentMutations).mockImplementation(() => {
       throw new Error('IndexedDB unavailable');

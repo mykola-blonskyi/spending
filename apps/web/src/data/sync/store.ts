@@ -261,9 +261,9 @@ export function releaseLocalStore(userId: string): void {
   );
 }
 
-/** Mutations the server has not accepted: queued, in flight or failed. Sign-out runs with the store open. */
-export function countUnsentMutations(userId: string): number {
-  return liveStore(userId)?.state.mutations.size ?? 0;
+/** Mutations the server has not accepted: queued, in flight or failed. Null while no store is open. */
+export function countUnsentMutations(userId: string): number | null {
+  return liveStore(userId)?.state.mutations.size ?? null;
 }
 
 export async function deleteUserDatabase(userId: string): Promise<void> {

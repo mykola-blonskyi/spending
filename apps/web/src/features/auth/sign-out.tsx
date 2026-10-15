@@ -14,7 +14,7 @@ import { useSession } from './session-context';
 /**
  * Explicit sign-out: ends the server session, removes this user's local data, then leaves
  * through the provider's end-session URL. The caller renders `dialog`; it opens only when
- * changes on this device have not reached the server and would be deleted.
+ * changes on this device have not reached the server, or cannot be counted, and would be deleted.
  */
 export function useSignOut() {
   const t = useTranslations();
@@ -40,14 +40,14 @@ export function useSignOut() {
   });
 
   const request = () => {
-    let unsent: number;
+    let unsent: number | null;
     try {
       unsent = countUnsentMutations(user.id);
     } catch {
-      // Losing unsynced work silently is worse than one extra question.
-      unsent = 1;
+      unsent = null;
     }
-    if (unsent > 0) setConfirming(true);
+    // Unknown counts ask too: losing unsynced work silently is worse than one extra question.
+    if (unsent !== 0) setConfirming(true);
     else mutation.mutate();
   };
 

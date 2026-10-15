@@ -168,7 +168,16 @@ export class SyncEngine {
       }
       if (batch.length > 1) {
         const results: PushResult[] = [];
-        for (const mutation of batch) results.push(...(await this.#send([mutation])));
+        try {
+          for (const mutation of batch) results.push(...(await this.#send([mutation])));
+        } catch (failure) {
+          // Keep what the server already applied; reducePush requeues the rest.
+          if (results.length > 0) {
+            const now = new Date().toISOString();
+            await this.#store.commit((state) => reducePush(state, results, now));
+          }
+          throw failure;
+        }
         return results;
       }
       return [

@@ -90,4 +90,12 @@ describe('local user data', () => {
     expect(localDatabaseNames()).toEqual([]);
     releaseLocalStore('ann');
   });
+
+  it('cannot count unsent changes while no store is open', async () => {
+    expect(countUnsentMutations('ann')).toBeNull();
+    const store = await acquireLocalStore('ann');
+    store.close();
+    expect(countUnsentMutations('ann')).toBeNull();
+    releaseLocalStore('ann');
+  });
 });

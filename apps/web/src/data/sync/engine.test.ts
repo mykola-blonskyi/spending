@@ -106,6 +106,53 @@ describe('SyncEngine', () => {
     expect(left.map((m) => [m.transactionId, m.state.status])).toEqual([[bad, 'failed']]);
   });
 
+  it('keeps the single results already applied when the one-at-a-time retry is rate limited', async () => {
+    store = await LocalStore.open('ann');
+    const ids: string[] = [];
+    for (const description of ['a', 'b', 'c', 'd']) {
+      ids.push(await recordTransaction(store, { ...draft, description }));
+    }
+    let limited = true;
+    let singles = 0;
+    const server = fakeServer({
+      refuse: (m) => m.length > 1,
+      onPush: (m) => {
+        if (m.length === 1 && limited && ++singles > 2) {
+          throw new ApiError({ status: 429, code: 'RATE_LIMITED', message: 'slow down' });
+        }
+      },
+    });
+    const pull = vi.spyOn(server.transport, 'pull');
+    const engine = new SyncEngine(store, server.transport);
+
+    await engine.flush();
+
+    expect(engine.getStatus().phase).toBe('retrying');
+    expect(pull).not.toHaveBeenCalled();
+    const shown = (id: string) => store?.state.transactions.get(id)?.server?.description;
+    expect(ids.map(shown)).toEqual(['a', 'b', undefined, undefined]);
+    const left = [...store.state.mutations.values()];
+    expect(left.map((m) => [m.transactionId, m.state.status])).toEqual([
+      [ids[2], 'queued'],
+      [ids[3], 'queued'],
+    ]);
+
+    limited = false;
+    await engine.flush();
+
+    expect(ids.map(shown)).toEqual(['a', 'b', 'c', 'd']);
+    expect(store.state.mutations.size).toBe(0);
+    expect(server.pushes.filter((m) => m.length === 1).map(described)).toEqual([
+      ['a'],
+      ['b'],
+      ['c'],
+      ['c'],
+      ['d'],
+    ]);
+    expect(pull).toHaveBeenCalled();
+    engine.stop();
+  });
+
   it('sends a change queued behind a refused mutation instead of stranding it', async () => {
     store = await LocalStore.open('ann');
     const local = store;
