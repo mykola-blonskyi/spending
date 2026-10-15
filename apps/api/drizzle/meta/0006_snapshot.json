@@ -1,5 +1,5 @@
 {
-  "id": "8919cbac-9db7-480f-9b43-25e07f5baa04",
+  "id": "4a7f916e-a47c-4766-b9cc-c669e8259093",
   "prevId": "2f8fa68a-e658-4535-8831-8ae8621e4e04",
   "version": "7",
   "dialect": "postgresql",
@@ -1493,23 +1493,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "sync_mutations_created_idx": {
-          "name": "sync_mutations_created_idx",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "sync_mutations_user_id_users_id_fk": {
           "name": "sync_mutations_user_id_users_id_fk",

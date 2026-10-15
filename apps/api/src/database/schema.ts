@@ -370,18 +370,14 @@ export const transactions = pgTable(
   ],
 );
 
-export const syncMutations = pgTable(
-  'sync_mutations',
-  {
-    id: uuid('id').primaryKey(),
-    userId: uuid('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    result: jsonb('result').notNull(),
-    createdAt: createdAt(),
-  },
-  (t) => [index('sync_mutations_created_idx').on(t.createdAt)],
-);
+export const syncMutations = pgTable('sync_mutations', {
+  id: uuid('id').primaryKey(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  result: jsonb('result').notNull(),
+  createdAt: createdAt(),
+});
 
 export const syncConflicts = pgTable(
   'sync_conflicts',
