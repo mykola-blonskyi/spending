@@ -321,6 +321,7 @@ export const es = {
         'Pasarás a ser un miembro normal. Solo {name} podrá invitar, quitar miembros y eliminar la familia.',
       transferConfirm: 'Transferir la propiedad',
       transferred: '{name} ahora es el propietario',
+      actionsFor: 'Acciones para {name}',
     },
     invitations: {
       title: 'Invitaciones',

@@ -1,9 +1,9 @@
 import { MailOpen, MailX, Users } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { ApiError, errorCode } from '@data/api-error';
-import { acceptInvitation, invitationPreviewQuery } from '@data/family';
+import { acceptInvitation, FAMILY_KEY, invitationPreviewQuery } from '@data/family';
 import { sessionQuery } from '@data/session';
 import { loginHref } from '@features/auth';
 import { useTranslations } from '@i18n/index';
@@ -11,7 +11,7 @@ import { EmptyState, ErrorState, LoadingState } from '@shared/components';
 import { formatDate } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import { Button } from '@shared/ui/button';
-import { useFamily, useFamilyMutation } from './family';
+import { useFamily } from './family';
 
 const card = 'w-full border-solid bg-card';
 
@@ -35,9 +35,16 @@ export function InviteFlow({ token }: { token: string }) {
     ...invitationPreviewQuery(token),
     enabled: !signedIn || family.data === null,
   });
-  const accept = useFamilyMutation(acceptInvitation, (joined) => {
-    toast.success(t('invite.joined', { family: joined.name }));
-    void navigate('/family', { replace: true });
+  const queryClient = useQueryClient();
+  // Not `useFamilyMutation`: this page lives outside the shell, so there is no sync engine to
+  // nudge (the family page pulls when it mounts), and a failure is shown below, not toasted.
+  const accept = useMutation({
+    mutationFn: acceptInvitation,
+    onSuccess: async (joined) => {
+      await queryClient.invalidateQueries({ queryKey: FAMILY_KEY });
+      toast.success(t('invite.joined', { family: joined.name }));
+      void navigate('/family', { replace: true });
+    },
   });
 
   if (family.data) {
@@ -77,7 +84,10 @@ export function InviteFlow({ token }: { token: string }) {
         className={card}
         title={t('states.error.title')}
         description={t(`errors.${errorCode(error)}`)}
-        onRetry={() => void (family.error ? family.refetch() : preview.refetch())}
+        onRetry={() => {
+          if (accept.error) accept.reset();
+          else void (family.error ? family.refetch() : preview.refetch());
+        }}
       />
     );
   }

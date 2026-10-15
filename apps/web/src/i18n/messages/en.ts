@@ -309,6 +309,7 @@ export const en = {
         'You become a regular member. Only {name} can then invite, remove members and delete the family.',
       transferConfirm: 'Transfer ownership',
       transferred: '{name} is now the owner',
+      actionsFor: 'Actions for {name}',
     },
     invitations: {
       title: 'Invitations',

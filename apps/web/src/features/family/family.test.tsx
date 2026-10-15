@@ -182,7 +182,7 @@ describe('FamilyPage', () => {
 
     expect(await screen.findByRole('button', { name: 'Leave family' })).toBeInTheDocument();
     expect(screen.queryByText('Invitations')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Bob' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Actions for Bob' })).not.toBeInTheDocument();
 
     vi.mocked(leaveFamily).mockResolvedValue();
     await userEvent.click(screen.getByRole('button', { name: 'Leave family' }));
@@ -269,6 +269,35 @@ describe('InviteFlow', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Join Home' }));
     await waitFor(() => expect(vi.mocked(acceptInvitation).mock.calls[0]?.[0]).toEqual(token));
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Welcome to Home'));
+  });
+
+  it('lets a failed join be retried without reloading, reporting it once', async () => {
+    vi.mocked(acceptInvitation)
+      .mockRejectedValueOnce(new ApiError({ status: 500, code: 'INTERNAL', message: 'boom' }))
+      .mockResolvedValue(family('member'));
+    setup(
+      <InviteFlow token={token} />,
+      (client) => {
+        seeded([PERSONAL])(client);
+        client.setQueryData(invitationPreviewQuery(token).queryKey, {
+          familyName: 'Home',
+          ownerName: 'Bob',
+          expiresAt: '2026-10-22T00:00:00.000Z',
+          state: 'pending',
+        });
+      },
+      `/invite/${token}`,
+    );
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Join Home' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Something went wrong on our side');
+    expect(toast.error).not.toHaveBeenCalled();
+
+    await userEvent.click(within(alert).getByRole('button', { name: 'Try again' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Join Home' }));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Welcome to Home'));
+    expect(acceptInvitation).toHaveBeenCalledTimes(2);
   });
 
   it('sends a signed-out visitor through sign-in and back to the link', async () => {

@@ -37,7 +37,7 @@ function Row({
         <span className="truncate text-sm font-medium">{title}</span>
         <span className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
           <span className="truncate">{details}</span>
-          <AuthorBadge entry={entry} className="shrink-0" />
+          <AuthorBadge entry={entry} className="max-w-[45%]" />
           <SyncMarker sync={entry.sync} className="shrink-0" />
         </span>
       </span>

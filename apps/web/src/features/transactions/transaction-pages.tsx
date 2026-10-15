@@ -77,10 +77,8 @@ export function NewTransactionPage() {
         <div className="flex max-w-xl flex-col gap-5">
           <ScopeField value={scope} onValueChange={setScope} />
           <TransactionForm
-            // A family entry may also use the author's own personal account (BR-3). The form
-            // restarts on a scope change because the other workspace's categories do not apply.
-            key={target.id}
             initial={initial}
+            // A family entry may also use the author's own personal account (BR-3).
             accounts={accounts.items.filter(
               (a) => a.workspaceId === target.id || a.workspaceId === personal.id,
             )}
@@ -107,6 +105,7 @@ export function EditTransactionPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const { ready, entry } = useLocalTransaction(id);
+  const profile = useProfile();
   const personal = useWorkspaces().items.find((workspace) => workspace.kind === 'personal');
   const accounts = useAccounts();
   const categories = useCategories();
@@ -142,6 +141,9 @@ export function EditTransactionPage() {
     );
   }
 
+  // Only the author may put a family entry on a personal account (BR-3). A row this device
+  // created has no server author yet and is the signed-in user's own.
+  const own = !entry.author || entry.author.userId === profile.id;
   return (
     <div className="flex flex-col gap-8">
       {header}
@@ -149,7 +151,7 @@ export function EditTransactionPage() {
         key={entry.id}
         initial={valuesFromDraft(entry)}
         accounts={accounts.items.filter(
-          (a) => a.workspaceId === entry.workspaceId || a.workspaceId === personal?.id,
+          (a) => a.workspaceId === entry.workspaceId || (own && a.workspaceId === personal?.id),
         )}
         categories={categories.items.filter((c) => c.workspaceId === entry.workspaceId)}
         onSubmit={async (values) => {

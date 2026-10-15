@@ -157,14 +157,14 @@ test('the owner manages members, reads the log and deletes the family, returning
   await expect(log.first()).toHaveText(/Bob Example joined/);
   await expect(log.last()).toHaveText(/Ann Example created the family/);
 
-  await page.getByRole('button', { name: bob.name }).click();
+  await page.getByRole('button', { name: `Actions for ${bob.name}` }).click();
   await page.getByRole('menuitem', { name: 'Make owner' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Transfer ownership' }).click();
   await expect(page.getByRole('button', { name: 'Leave family' })).toBeVisible();
   await expect(log.first()).toHaveText(/Ann Example made Bob Example the owner/);
 
   await bobPage.goto('/family');
-  await bobPage.getByRole('button', { name: ann.name }).click();
+  await bobPage.getByRole('button', { name: `Actions for ${ann.name}` }).click();
   await bobPage.getByRole('menuitem', { name: 'Remove' }).click();
   await bobPage.getByRole('alertdialog').getByRole('button', { name: 'Remove' }).click();
   await expect(bobPage.getByRole('list', { name: 'Members' })).not.toContainText(ann.name);

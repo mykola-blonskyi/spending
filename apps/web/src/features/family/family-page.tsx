@@ -141,7 +141,12 @@ function MemberRow({
       {canManage && !isSelf && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="size-11" aria-label={name}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-11"
+              aria-label={t('members.actionsFor', { name })}
+            >
               <MoreHorizontal aria-hidden />
             </Button>
           </DropdownMenuTrigger>

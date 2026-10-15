@@ -322,6 +322,7 @@ export const uk = {
         'Ви станете звичайним учасником. Лише {name} зможе запрошувати, вилучати учасників і видаляти сімʼю.',
       transferConfirm: 'Передати право власності',
       transferred: 'Тепер власник: {name}',
+      actionsFor: 'Дії: {name}',
     },
     invitations: {
       title: 'Запрошення',

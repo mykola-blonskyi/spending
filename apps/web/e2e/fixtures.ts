@@ -9,7 +9,7 @@ type WorkerFixtures = { db: E2EDatabase };
  * Signs `page` in through the fake provider and waits to land wherever sign-in returns to,
  * which may be outside the shell (an invitation link). `signInAs` also checks the shell.
  */
-export async function signIn(page: Page, user: E2EUser): Promise<void> {
+async function signIn(page: Page, user: E2EUser): Promise<void> {
   const { name } = E2E_USERS[user];
   if (new URL(page.url()).pathname !== '/signin') await page.goto('/signin');
   await page.locator('a[href^="/api/v1/auth/login"]').click();
