@@ -62,7 +62,7 @@ export class DataRightsService {
    * BR-32. One ledger transaction leaves or deletes the family, keeps the family transactions the
    * user authored as a former member's, and deletes the personal workspace and the user. The
    * schema's cascades remove what hangs off them: accounts, categories, transactions, budgets,
-   * rules, imports, memberships, sync mutations and conflicts. Provider refresh tokens are
+   * rules, imports, memberships, sync mutations, conflicts and tombstones. Family rows stay visible, so they need no tombstone. Provider refresh tokens are
    * revoked only after commit, and their failure never undoes the deletion.
    */
   async deleteUser(actorId: string, confirmation: string): Promise<void> {

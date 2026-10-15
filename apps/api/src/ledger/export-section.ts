@@ -6,8 +6,7 @@ import { accountColumns, categoryColumns, selectViewRows } from './ledger.servic
 import {
   accountViewSchema,
   categoryViewSchema,
-  toAccountView,
-  toCategoryView,
+  toView,
   toLedgerRow,
   type TransactionView,
   transactionViewSchema,
@@ -21,7 +20,7 @@ export const accountsExport = exportSection({
       .from(accounts)
       .where(inArray(accounts.workspaceId, [...scope.visible]))
       .orderBy(accounts.createdAt, accounts.id);
-    return rows.map(toAccountView);
+    return rows.map(toView);
   },
 });
 
@@ -33,7 +32,7 @@ export const categoriesExport = exportSection({
       .from(categories)
       .where(inArray(categories.workspaceId, [...scope.visible]))
       .orderBy(categories.workspaceId, categories.kind, categories.name, categories.id);
-    return rows.map(toCategoryView);
+    return rows.map(toView);
   },
 });
 
