@@ -11,7 +11,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBody, ApiNoContentResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiBody, ApiNoContentResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { createZodDto, ZodResponse } from 'nestjs-zod';
 import { type Actor, CurrentActor } from '../common/actor';
 import { RateLimit } from '../common/rate-limit';
@@ -25,7 +25,7 @@ class RuleDto extends createZodDto(ruleViewSchema) {}
 class CreateRuleDto extends createZodDto(createRuleSchema) {}
 class UpdateRuleDto extends createZodDto(updateRuleSchema) {}
 
-// @ApiBody and @ApiQuery are explicit because tsx, which writes the OpenAPI file, emits no
+// @ApiBody, @ApiParam and @ApiQuery are explicit because tsx, which writes the OpenAPI file, emits no
 // parameter metadata. Writes are rate limited because one can generate many transactions.
 @Controller('v1/recurring-rules')
 export class RecurringController {
@@ -49,6 +49,7 @@ export class RecurringController {
   @Patch(':id')
   @RateLimit('sensitive')
   @ApiBody({ type: UpdateRuleDto })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
   @ZodResponse({ status: 200, type: RuleDto })
   update(
     @CurrentActor() actor: Actor,
@@ -61,6 +62,7 @@ export class RecurringController {
   @Delete(':id')
   @HttpCode(204)
   @ApiNoContentResponse()
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
   remove(@CurrentActor() actor: Actor, @Param('id', ParseUUIDPipe) id: string) {
     return this.recurring.remove(actor.userId, id);
   }

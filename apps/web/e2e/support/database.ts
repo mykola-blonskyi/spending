@@ -40,6 +40,21 @@ export class E2EDatabase {
     return rows.map((row) => ({ ...row, amount_minor: Number(row.amount_minor) }));
   }
 
+  /** The user's recurring rules as the server holds them. */
+  async recurringRules(email: string) {
+    const { rows } = await this.pool.query<{
+      id: string;
+      paused: boolean;
+      next_occurrence: string | null;
+    }>(
+      `select r.id, r.paused_at is not null as paused, r.next_occurrence::text as next_occurrence
+         from recurring_rules r join users u on u.id = r.created_by
+        where u.email = $1 order by r.created_at`,
+      [email],
+    );
+    return rows;
+  }
+
   close(): Promise<void> {
     return this.pool.end();
   }
