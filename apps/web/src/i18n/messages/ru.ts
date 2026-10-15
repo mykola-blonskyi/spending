@@ -153,6 +153,7 @@ export const ru = {
       firstSync: 'Переносим вашу историю на это устройство…',
       firstSyncLoaded:
         '{count, plural, one {Уже # запись} few {Уже # записи} many {Уже # записей} other {Уже # записи}}',
+      conversionPending: 'Конвертация ожидается',
       totalSpent: 'Потрачено',
       totalReceived: 'Получено',
       uncategorized: 'Без категории',

@@ -35,9 +35,15 @@ export function userFlushLock(userId: string, locks: LockManager | undefined): F
 
 export const WRITE_DEBOUNCE_MS = 500;
 
-/** Doubling from 1 s up to 5 min. #26 adds jitter. */
-export function backoffDelay(attempt: number): number {
-  return Math.min(1000 * 2 ** Math.max(0, attempt - 1), 300_000);
+export const HEARTBEAT_MS = 60_000;
+
+/**
+ * Doubling from 1 s up to 5 min, each wait drawn from its upper half so that devices failing
+ * together do not retry together.
+ */
+export function backoffDelay(attempt: number, random: () => number = Math.random): number {
+  const ceiling = Math.min(1000 * 2 ** Math.max(0, attempt - 1), 300_000);
+  return Math.round(ceiling * (0.5 + random() / 2));
 }
 
 /** Errors that come from the connection or the server's health, not from what was sent. */
@@ -171,6 +177,28 @@ export class SyncEngine {
    * invalid one is rejected; a refused single mutation becomes a `rejected` result.
    */
   async #send(batch: readonly QueuedMutation[]): Promise<PushResult[]> {
+    // A mutation that cannot even be put on the wire is a bug in it, not a transport problem:
+    // it fails on its own instead of stalling the queue behind endless retries.
+    const unsendable: PushResult[] = [];
+    const sendable: QueuedMutation[] = [];
+    for (const mutation of batch) {
+      try {
+        toWire(mutation);
+        sendable.push(mutation);
+      } catch (error) {
+        unsendable.push({
+          mutationId: mutation.mutationId,
+          status: 'rejected',
+          code: 'INTERNAL',
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+    if (sendable.length === 0) return unsendable;
+    return [...unsendable, ...(await this.#push(sendable))];
+  }
+
+  async #push(batch: readonly QueuedMutation[]): Promise<PushResult[]> {
     try {
       return await this.#transport.push(batch.map(toWire));
     } catch (error) {
@@ -180,7 +208,7 @@ export class SyncEngine {
       if (batch.length > 1) {
         const results: PushResult[] = [];
         try {
-          for (const mutation of batch) results.push(...(await this.#send([mutation])));
+          for (const mutation of batch) results.push(...(await this.#push([mutation])));
         } catch (failure) {
           // Keep what the server already applied; reducePush requeues the rest.
           if (results.length > 0) {

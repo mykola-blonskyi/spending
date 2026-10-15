@@ -149,6 +149,7 @@ export const es = {
       noMatchesDescription: 'Prueba con otra búsqueda u otro tipo.',
       firstSync: 'Trayendo tu historial a este dispositivo…',
       firstSyncLoaded: '{count, plural, one {# registro por ahora} other {# registros por ahora}}',
+      conversionPending: 'Conversión pendiente',
       totalSpent: 'Gastado',
       totalReceived: 'Recibido',
       uncategorized: 'Sin categoría',

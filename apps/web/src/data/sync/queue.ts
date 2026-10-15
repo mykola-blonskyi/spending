@@ -43,7 +43,9 @@ export function applyLocalChange(
 
   if (change.type === 'delete') {
     if (!record || isDeleted(record.local)) return state;
-    const inFlight = pending.some((mutation) => mutation.state.status === 'sending');
+    const inFlight = pending.some(
+      (mutation) => mutation.state.status === 'sending' || mutation.state.status === 'retrying',
+    );
     if (record.server === null && !inFlight) {
       return {
         ...state,
@@ -109,7 +111,9 @@ export function selectBatch(state: LocalState, limit: number = PUSH_LIMIT): Queu
     if (batch.length === limit) break;
     if (seen.has(mutation.transactionId)) continue;
     seen.add(mutation.transactionId);
-    if (mutation.state.status === 'queued') batch.push(mutation);
+    if (mutation.state.status === 'queued' || mutation.state.status === 'retrying') {
+      batch.push(mutation);
+    }
   }
   return batch;
 }
@@ -132,7 +136,7 @@ export function requeueInFlight(state: LocalState): LocalState {
   const sending = [...state.mutations.values()]
     .filter((mutation) => mutation.state.status === 'sending')
     .map((mutation) => mutation.mutationId);
-  return sending.length === 0 ? state : setMutationState(state, sending, { status: 'queued' });
+  return sending.length === 0 ? state : setMutationState(state, sending, { status: 'retrying' });
 }
 
 export function countMutations(state: LocalState): { pending: number; failed: number } {

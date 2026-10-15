@@ -1,4 +1,13 @@
-import { createContext, use, useCallback, useMemo, useSyncExternalStore } from 'react';
+import {
+  createContext,
+  use,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import type { SyncStatus } from '@shared/components';
 import { useOnlineStatus } from '@shared/lib/network';
 import type { EngineStatus, SyncEngine } from './engine';
@@ -9,7 +18,7 @@ import {
   type TransactionEntry,
   type TransactionFilter,
 } from './query';
-import { deriveSyncStatus } from './status';
+import { deriveSyncStatus, smoothingDelay } from './status';
 import type { LocalStore } from './store';
 import {
   deleteTransaction,
@@ -90,7 +99,30 @@ export function useSyncStatus(): SyncStatus | null {
   const state = useLocalState();
   const engine = useEngineStatus();
   const online = useOnlineStatus();
-  return state && engine ? deriveSyncStatus(engine, state, online) : null;
+  return useSmoothed(state && engine ? deriveSyncStatus(engine, state, online) : null);
+}
+
+/** Holds statuses as JSON strings so a re-render with an equal status never restarts a timer. */
+function useSmoothed(next: SyncStatus | null): SyncStatus | null {
+  const nextKey = next && JSON.stringify(next);
+  const [shown, setShown] = useState(nextKey);
+  const shownAt = useRef(0);
+
+  useEffect(() => {
+    if (nextKey === shown) return;
+    const parse = (key: string) => JSON.parse(key) as SyncStatus;
+    const delay =
+      nextKey && shown
+        ? smoothingDelay(parse(nextKey), parse(shown), performance.now() - shownAt.current)
+        : 0;
+    const timer = setTimeout(() => {
+      shownAt.current = performance.now();
+      setShown(nextKey);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [nextKey, shown]);
+
+  return useMemo(() => (shown ? (JSON.parse(shown) as SyncStatus) : null), [shown]);
 }
 
 /** The first sync on an empty device: active until a pull first reaches the end. */

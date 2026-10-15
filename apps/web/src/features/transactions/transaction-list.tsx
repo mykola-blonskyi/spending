@@ -39,12 +39,17 @@ function Row({
           <SyncMarker sync={entry.sync} className="shrink-0" />
         </span>
       </span>
-      <MoneyText
-        amountMinor={entry.kind === 'expense' ? -entry.amountMinor : entry.amountMinor}
-        currency={entry.currency}
-        colored
-        className="text-sm font-medium"
-      />
+      <span className="flex shrink-0 flex-col items-end gap-0.5">
+        <MoneyText
+          amountMinor={entry.kind === 'expense' ? -entry.amountMinor : entry.amountMinor}
+          currency={entry.currency}
+          colored
+          className="text-sm font-medium"
+        />
+        {entry.baseAmountMinor === null && (
+          <span className="text-xs text-muted-foreground">{t('conversionPending')}</span>
+        )}
+      </span>
     </Link>
   );
 }

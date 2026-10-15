@@ -142,6 +142,7 @@ export const en = {
       noMatchesDescription: 'Try another search or type.',
       firstSync: 'Bringing your history to this device…',
       firstSyncLoaded: '{count, plural, one {# entry so far} other {# entries so far}}',
+      conversionPending: 'Conversion pending',
       totalSpent: 'Spent',
       totalReceived: 'Received',
       uncategorized: 'Uncategorized',

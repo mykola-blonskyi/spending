@@ -209,10 +209,10 @@ describe('reducePush', () => {
     ]);
   });
 
-  it('returns anything left in flight to the queue', () => {
+  it('freezes anything left in flight for a replay', () => {
     const state = setMutationState(editLocally(syncedState(serverRow()), {}), ['m-1'], {
       status: 'sending',
     });
-    expect(queueOrder(reducePush(state, [], now))[0]?.state).toEqual({ status: 'queued' });
+    expect(queueOrder(reducePush(state, [], now))[0]?.state).toEqual({ status: 'retrying' });
   });
 });

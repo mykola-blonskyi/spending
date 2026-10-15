@@ -44,11 +44,14 @@ export type TransactionRecord = Readonly<{
 
 /**
  * Where a queued mutation is in its lifecycle. `applied` and `conflict` are terminal: the
- * mutation leaves the queue, so they never appear here. Transport errors leave it `queued`.
+ * mutation leaves the queue, so they never appear here. A push that never completed leaves it
+ * `retrying`: the server may already hold its result under this ID, so, like `sending`, its
+ * payload is frozen and it is replayed as is.
  */
 export type MutationState =
   | { readonly status: 'queued' }
   | { readonly status: 'sending' }
+  | { readonly status: 'retrying' }
   | { readonly status: 'failed'; readonly code: string; readonly message: string };
 
 export type MutationChange =

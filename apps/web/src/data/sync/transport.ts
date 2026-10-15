@@ -1,9 +1,10 @@
 import { api } from '../client';
-import { present } from '../session';
+import { ensureCsrfToken, present } from '../session';
 import type { SyncTransport } from './engine';
 
 export const apiTransport: SyncTransport = {
   async push(mutations) {
+    await ensureCsrfToken();
     const { data } = await api.POST('/api/v1/sync/push', { body: { mutations } });
     return present(data).results;
   },

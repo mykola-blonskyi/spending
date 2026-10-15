@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../api-error';
-import { SyncEngine, type SyncTransport, userFlushLock } from './engine';
+import { backoffDelay, SyncEngine, type SyncTransport, userFlushLock } from './engine';
 import { localRow, page, sequentialIds, serverRow } from './fixtures';
 import {
   emptyLocalState,
@@ -145,8 +145,8 @@ describe('SyncEngine', () => {
     expect(ids.map(shown)).toEqual(['a', 'b', undefined, undefined]);
     const left = queueOrder(store.state);
     expect(left.map((m) => [m.transactionId, m.state.status])).toEqual([
-      [ids[2], 'queued'],
-      [ids[3], 'queued'],
+      [ids[2], 'retrying'],
+      [ids[3], 'retrying'],
     ]);
 
     limited = false;
@@ -205,6 +205,7 @@ describe('SyncEngine', () => {
 
   it('keeps waiting out the backoff when a local write arrives while retrying', async () => {
     vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(1);
     let state = applyLocalChange(
       emptyLocalState(),
       { type: 'upsert', row: localRow() },
@@ -257,6 +258,41 @@ describe('SyncEngine', () => {
     expect(server.pushes).toHaveLength(1);
     expect(pull).not.toHaveBeenCalled();
   });
+
+  it('fails a mutation that cannot be sent and still sends the rest', async () => {
+    let state = applyLocalChange(
+      emptyLocalState(),
+      { type: 'upsert', row: localRow({ id: 'good' }) },
+      sequentialIds(),
+    );
+    state = {
+      ...state,
+      mutations: new Map(state.mutations).set('broken', {
+        mutationId: 'broken',
+        seq: 2,
+        transactionId: 'gone',
+        baseVersion: null,
+        change: { type: 'transaction.delete' },
+        state: { status: 'queued' },
+      }),
+    };
+    const memory = {
+      get state() {
+        return state;
+      },
+      closed: false,
+      commit: (transition: (current: LocalState) => LocalState) =>
+        Promise.resolve((state = transition(state))),
+    } as unknown as LocalStore;
+    const server = fakeServer();
+
+    await new SyncEngine(memory, server.transport).flush();
+
+    expect(server.pushes.flat().map((m) => m.mutationId)).toEqual(['m-1']);
+    expect(queueOrder(state).map((m) => [m.mutationId, m.state.status])).toEqual([
+      ['broken', 'failed'],
+    ]);
+  });
 });
 
 describe('userFlushLock', () => {
@@ -272,5 +308,18 @@ describe('userFlushLock', () => {
     const flushed = vi.fn(run);
     await userFlushLock('ann', undefined)(flushed);
     expect(flushed).toHaveBeenCalledOnce();
+  });
+});
+
+describe('backoffDelay', () => {
+  it.each([
+    [1, 0, 500],
+    [1, 1, 1000],
+    [4, 0, 4000],
+    [4, 1, 8000],
+    [10, 0.5, 225_000],
+    [30, 1, 300_000],
+  ])('attempt %i with random %d waits %i ms', (attempt, random, expected) => {
+    expect(backoffDelay(attempt, () => random)).toBe(expected);
   });
 });

@@ -152,6 +152,7 @@ export const uk = {
       firstSync: 'Переносимо вашу історію на цей пристрій…',
       firstSyncLoaded:
         '{count, plural, one {Уже # запис} few {Уже # записи} many {Уже # записів} other {Уже # запису}}',
+      conversionPending: 'Конвертація очікується',
       totalSpent: 'Витрачено',
       totalReceived: 'Отримано',
       uncategorized: 'Без категорії',

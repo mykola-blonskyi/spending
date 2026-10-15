@@ -1,4 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
+import { forgetLastUser } from './session';
 import { deleteUserDatabase } from './sync/store';
 
 /** Per-user keys live under this prefix; device-wide preferences (`spending.locale`, `spending.theme`) do not. */
@@ -11,6 +12,7 @@ const userStoragePrefix = (userId: string) => `spending.user.${userId}.`;
  */
 export async function clearLocalUserData(queryClient: QueryClient, userId: string): Promise<void> {
   queryClient.clear();
+  forgetLastUser();
   try {
     const prefix = userStoragePrefix(userId);
     const keys = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index));
