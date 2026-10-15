@@ -51,6 +51,25 @@ describe('CSRF header', () => {
     expect(write!.headers.get('X-CSRF-Token')).toBe('fresh');
     expect(getCsrfToken()).toBe('fresh');
   });
+
+  it('is fetched again after the server refuses a stale one', async () => {
+    setCsrfToken('stale');
+    const responses = [
+      json(403, { error: { code: 'CSRF_FAILED', message: 'bad token' } }),
+      json(200, { csrfToken: 'fresh' }),
+      json(200, {}),
+    ];
+    const { fetchMock, loose } = setup(() => responses.shift()!);
+
+    const error = (await loose.POST('/api/x').catch((e: unknown) => e)) as ApiError;
+    expect(error.code).toBe('CSRF_FAILED');
+    expect(getCsrfToken()).toBeUndefined();
+
+    await loose.POST('/api/x');
+    const [, session, retry] = fetchMock.mock.calls.map(([request]) => request);
+    expect(new URL(session!.url).pathname).toBe('/api/v1/auth/session');
+    expect(retry!.headers.get('X-CSRF-Token')).toBe('fresh');
+  });
 });
 
 describe('error handling', () => {
