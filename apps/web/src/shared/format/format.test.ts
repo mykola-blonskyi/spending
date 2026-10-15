@@ -36,10 +36,20 @@ describe('minorToDecimalString', () => {
 });
 
 describe('formatMoney', () => {
-  it('uses the ISO exponent of each currency', () => {
-    expect(currencyExponent('EUR')).toBe(2);
-    expect(currencyExponent('JPY')).toBe(0);
-    expect(currencyExponent('KWD')).toBe(3);
+  it.each([
+    ['EUR', 2],
+    ['JPY', 0],
+    ['KWD', 3],
+    ['HUF', 2],
+    ['IDR', 2],
+    ['COP', 2],
+    ['ISK', 0],
+    ['CLP', 0],
+    ['IQD', 3],
+    ['KRW', 0],
+    ['TND', 3],
+  ] as const)('uses the ISO 4217 exponent, not Intl, for %s', (code, digits) => {
+    expect(currencyExponent(code)).toBe(digits);
   });
 
   it('formats EUR, USD and JPY in English', () => {

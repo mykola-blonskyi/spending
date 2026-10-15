@@ -20,10 +20,20 @@ describe('parseCurrency', () => {
 });
 
 describe('currencyExponent', () => {
-  it('follows ISO 4217 minor units', () => {
-    expect(currencyExponent(c('EUR'))).toBe(2);
-    expect(currencyExponent(c('JPY'))).toBe(0);
-    expect(currencyExponent(c('KWD'))).toBe(3);
+  it.each([
+    ['EUR', 2],
+    ['JPY', 0],
+    ['KWD', 3],
+    ['HUF', 2],
+    ['IDR', 2],
+    ['COP', 2],
+    ['ISK', 0],
+    ['CLP', 0],
+    ['IQD', 3],
+    ['KRW', 0],
+    ['TND', 3],
+  ] as const)('follows ISO 4217 minor units, not Intl, for %s', (code, digits) => {
+    expect(currencyExponent(c(code))).toBe(digits);
   });
 });
 
