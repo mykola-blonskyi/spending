@@ -193,9 +193,10 @@ edited through REST and arrive through pull like transactions.
   of the row touch only `transactions`, so they never reach the old workspace (BR-2). A tombstone
   is skipped for a viewer who can see the row live again. Family deletion writes none, because
   the workspace and its tombstones are deleted with it.
-- **Client duties.** Drop local rows of workspaces missing from `workspaces` (BR-17). When a new
-  workspace id appears (the user joined a family), reset the cursor to 0, because that
-  workspace's rows predate the cursor.
+- **Client duties.** Drop local rows of workspaces missing from `workspaces` (BR-17). An entry
+  there with a pending change stays, its latest change failed with the client-only code
+  `NO_ACCESS` until the user discards it. When a new workspace id appears (the user joined a
+  family), reset the cursor to 0, because that workspace's rows predate the cursor.
 - **Account references (BR-3).** A viewer who cannot see a row's account receives
   `accountId: null`. Sending that null back in an upsert keeps the author's account. Only the
   author may choose an account from their own personal workspace.

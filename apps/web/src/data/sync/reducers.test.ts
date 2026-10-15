@@ -101,7 +101,7 @@ describe('reducePull', () => {
     expect(reducePull(withConflict, page({ conflicts: [] }), now).state.conflicts.size).toBe(0);
   });
 
-  it("drops a vanished workspace's rows but keeps entries with pending changes (BR-17)", () => {
+  it("drops a vanished workspace's rows and fails its pending changes with NO_ACCESS (BR-17)", () => {
     const base: LocalState = {
       ...syncedState(
         serverRow({ id: 'mine' }),
@@ -128,6 +128,46 @@ describe('reducePull', () => {
     );
     expect([...state.transactions.keys()].sort()).toEqual(['fam-edit', 'mine']);
     expect([...state.workspaces.keys()]).toEqual([PERSONAL.id]);
+    expect(localEntries(state).find((entry) => entry.id === 'fam-edit')?.sync).toEqual({
+      state: 'failed',
+      code: 'NO_ACCESS',
+    });
+
+    const again = reducePull(state, page(), now).state;
+    expect(again.mutations).toEqual(state.mutations);
+    const discarded = reducePull(discardFailed(again, 'fam-edit'), page(), now).state;
+    expect([...discarded.transactions.keys()]).toEqual(['mine']);
+    expect(discarded.mutations.size).toBe(0);
+  });
+
+  it('keeps only the latest pending change of an entry whose workspace vanished', () => {
+    const base: LocalState = {
+      ...syncedState(serverRow({ id: 'fam', workspaceId: FAMILY.id, scope: 'family' })),
+      workspaces: new Map([
+        [PERSONAL.id, PERSONAL],
+        [FAMILY.id, FAMILY],
+      ]),
+    };
+    const ids = sequentialIds();
+    const sending = setMutationState(
+      applyLocalChange(
+        base,
+        { type: 'upsert', row: localRow({ id: 'fam', workspaceId: FAMILY.id, amountMinor: 1 }) },
+        ids,
+      ),
+      ['m-1'],
+      { status: 'sending' },
+    );
+    const twoPending = applyLocalChange(
+      sending,
+      { type: 'upsert', row: localRow({ id: 'fam', workspaceId: FAMILY.id, amountMinor: 2 }) },
+      ids,
+    );
+    const { state } = reducePull(twoPending, page(), now);
+    expect(queueOrder(state)).toMatchObject([
+      { mutationId: 'm-2', state: { status: 'failed', code: 'NO_ACCESS' } },
+    ]);
+    expect(localEntries(state)).toMatchObject([{ id: 'fam', amountMinor: 2 }]);
   });
 
   it('restarts from cursor 0 when a workspace appears after the first sync', () => {

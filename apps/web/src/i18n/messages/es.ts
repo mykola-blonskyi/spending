@@ -876,5 +876,6 @@ export const es = {
     INVALID_CATEGORY: 'Esta categoría está archivada o no encaja con este tipo. Elige otra.',
     REVIEW_REQUIRED: 'Este registro espera revisión en una importación y aún no se puede cambiar.',
     MUTATION_ID_REUSED: 'No hemos podido asociar este cambio a tu cuenta. Vuelve a hacerlo.',
+    NO_ACCESS: 'Ya no eres miembro de esta familia, así que este cambio no se puede guardar.',
   },
 } satisfies Messages;

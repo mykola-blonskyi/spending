@@ -853,6 +853,7 @@ export const en = {
     INVALID_CATEGORY: 'This category is archived or does not fit this type. Pick another one.',
     REVIEW_REQUIRED: 'This entry is waiting for review in an import and cannot be changed yet.',
     MUTATION_ID_REUSED: 'This change could not be matched to your account. Make it again.',
+    NO_ACCESS: 'You are no longer a member of this family, so this change cannot be saved.',
   },
 };
 

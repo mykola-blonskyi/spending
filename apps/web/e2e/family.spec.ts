@@ -1,5 +1,5 @@
 import type { Browser, Page } from '@playwright/test';
-import { clientHeaders, expect, test } from './fixtures';
+import { clientHeaders, expect, signInAs as signInPageAs, test } from './fixtures';
 import { E2E_USERS } from './support/env';
 
 const ann = E2E_USERS.ann;
@@ -198,5 +198,75 @@ test('the owner manages members, reads the log and deletes the family, returning
   await page.goto('/transactions');
   await expect(page.getByRole('link', { name: /Ann rent/ })).toBeVisible();
   await expect(page.getByRole('link', { name: /Ann rent/ })).not.toContainText(ann.name);
+  await bobPage.context().close();
+});
+
+test('joining a family brings its earlier entries to a device that already synced', async ({
+  page,
+  signInAs,
+  browser,
+}) => {
+  await signInAs('ann');
+  await createFamily(page, 'Home');
+  await addEntry(page, 'Family dinner', 'Family');
+  const url = await inviteLink(page);
+
+  const bobPage = await secondDevice(browser);
+  await signInPageAs(bobPage, 'bob');
+  await addEntry(bobPage, 'Bob lunch');
+  await bobPage.goto(url);
+  await bobPage.getByRole('button', { name: 'Join Home' }).click();
+  await expect(bobPage).toHaveURL('/family');
+
+  await bobPage.goto('/transactions');
+  await expect(bobPage.getByRole('link', { name: /Family dinner/ })).toContainText(
+    `Paid by ${ann.name}`,
+  );
+  await expect(bobPage.getByRole('link', { name: /Bob lunch/ })).toBeVisible();
+  await bobPage.context().close();
+});
+
+test('leaving a family removes its entries and fails a pending edit with no access', async ({
+  page,
+  signInAs,
+  browser,
+  db,
+}) => {
+  await signInAs('ann');
+  await createFamily(page, 'Home');
+  const bobPage = await secondDevice(browser);
+  await joinThroughLink(bobPage, await inviteLink(page), 'Home');
+  await addEntry(page, 'Family dinner', 'Family');
+  await addEntry(page, 'Family rent', 'Family');
+  await expect.poll(() => db.transactions(ann.email)).toHaveLength(2);
+
+  await bobPage.goto('/transactions');
+  const dinner = bobPage.getByRole('link', { name: /Family dinner/ });
+  const rent = bobPage.getByRole('link', { name: /Family rent/ });
+  await expect(rent).toBeVisible();
+  await bobPage.route('**/api/v1/sync/push', (route) => route.abort());
+  await dinner.click();
+  await bobPage.getByLabel('Amount').fill('9');
+  await bobPage.getByRole('button', { name: 'Save' }).click();
+  await expect(dinner).toContainText('Waiting to sync');
+
+  await bobPage.goto('/family');
+  await bobPage.getByRole('button', { name: 'Leave family' }).click();
+  await bobPage.getByRole('alertdialog').getByRole('button', { name: 'Leave family' }).click();
+  await expect(bobPage.getByRole('button', { name: 'Create family' })).toBeVisible();
+  await bobPage.unroute('**/api/v1/sync/push');
+  await bobPage.context().setOffline(true);
+  await bobPage.context().setOffline(false);
+
+  await bobPage.goto('/transactions');
+  await expect(dinner).toContainText(
+    'Not synced: You are no longer a member of this family, so this change cannot be saved.',
+  );
+  await expect(dinner).toContainText('-€9.00');
+  await expect(rent).toHaveCount(0);
+  expect(await db.transactions(ann.email)).toMatchObject([
+    { description: 'Family dinner', amount_minor: 500, version: 1 },
+    { description: 'Family rent' },
+  ]);
   await bobPage.context().close();
 });
