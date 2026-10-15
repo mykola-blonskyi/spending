@@ -165,6 +165,7 @@ describe('reducePush', () => {
         },
       ],
       now,
+      ['m-1'],
     );
     expect(next.transactions.get('tx-1')).toMatchObject({ local: null, server: { version: 2 } });
     expect(next.mutations.size).toBe(0);
@@ -181,6 +182,7 @@ describe('reducePush', () => {
       state,
       [{ mutationId: 'm-1', status: 'applied', transaction: tombstone('tx-1') }],
       now,
+      ['m-1'],
     );
     expect(next.transactions.size).toBe(0);
     expect(next.mutations.size).toBe(0);
@@ -199,6 +201,7 @@ describe('reducePush', () => {
         },
       ],
       now,
+      ['m-1'],
     );
     expect(next.transactions.get('tx-1')).toMatchObject({ local: null, server: { version: 3 } });
     expect(next.conflicts.get('c-9')).toMatchObject({
@@ -215,6 +218,7 @@ describe('reducePush', () => {
       state,
       [{ mutationId: 'm-1', status: 'rejected', code: 'INVALID_CATEGORY', message: 'archived' }],
       now,
+      ['m-1'],
     );
     expect(queueOrder(next)).toMatchObject([
       { state: { status: 'failed', code: 'INVALID_CATEGORY' } },
@@ -224,10 +228,11 @@ describe('reducePush', () => {
     ]);
   });
 
-  it('returns anything left in flight to the queue', () => {
+  it('returns what is left of its own batch to the queue, never another tab’s push', () => {
     const state = setMutationState(editLocally(syncedState(serverRow()), {}), ['m-1'], {
       status: 'sending',
     });
-    expect(queueOrder(reducePush(state, [], now))[0]?.state).toEqual({ status: 'queued' });
+    expect(queueOrder(reducePush(state, [], now, ['m-1']))[0]?.state).toEqual({ status: 'queued' });
+    expect(queueOrder(reducePush(state, [], now, []))[0]?.state).toEqual({ status: 'sending' });
   });
 });

@@ -108,6 +108,11 @@ stored lucide icon name to a curated icon set (`category-icons.ts`).
   transaction. Pull and push results are applied by pure reducers (`pull.ts`, `push.ts`), and
   the flusher (`engine.ts`) pushes up to 200 queued mutations in order, then pulls until
   `hasMore` is false.
+- **Tabs.** Every commit re-reads the database inside its own IndexedDB transaction, so tabs never
+  build on a stale copy. After a commit the store posts on the `BroadcastChannel`
+  `spending-sync:<userId>`, and other tabs re-read. Any tab may flush, but each flush holds the Web
+  Lock of the same name, so flushes never overlap. Without Web Locks, flushes run uncoordinated;
+  the server applies each mutation ID once, so an overlapping push is harmless.
 - **Conflicts.** The server keeps its row and records the client's version (BR-19). The client
   shows both and lets the user pick or merge.
 

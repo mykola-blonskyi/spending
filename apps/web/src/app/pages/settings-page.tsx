@@ -1,6 +1,7 @@
 import { LogOut, Monitor, Moon, Sun, type LucideIcon } from 'lucide-react';
 import { useId } from 'react';
 import { useSignOut } from '@features/auth';
+import { DataRightsSection } from '@features/data-rights';
 import { TimezoneSelect, useProfile, useUpdateProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
 import { PageHeader, UserAvatar } from '@shared/components';
@@ -214,6 +215,7 @@ export function SettingsPage() {
         </Card>
         {signOut.dialog}
       </section>
+      <DataRightsSection />
     </div>
   );
 }

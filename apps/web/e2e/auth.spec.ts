@@ -77,6 +77,8 @@ test('an ended session sends the user to sign-in and back to where they were', a
   await signInAs('ann');
   await page.goto('/settings');
   await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+  // End the session after the first sync, so the click below is what meets the 401.
+  await expect(page.getByRole('banner').getByRole('status')).toHaveText('Up to date');
 
   expect(await db.endSessions(ann.email)).toBe(1);
   await page.getByRole('radio', { name: 'Dark' }).click();
