@@ -20,6 +20,7 @@ import {
   type WorkspaceView,
 } from '@data/family';
 import { useSession } from '@features/auth';
+import { useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
 import {
   ConfirmDialog,
@@ -111,6 +112,7 @@ function MemberRow({
 }) {
   const t = useTranslations('family');
   const { locale } = useSharedLocale();
+  const timeZone = useProfile().timezone;
   const [confirming, setConfirming] = useState<'remove' | 'transfer' | null>(null);
   const remove = useFamilyMutation(removeMember, () =>
     toast.success(t('members.removed', { name: member.displayName })),
@@ -135,7 +137,7 @@ function MemberRow({
           </Badge>
         </span>
         <span className="truncate text-sm text-muted-foreground">
-          {t('members.joined', { date: formatDate(member.joinedAt, locale) })}
+          {t('members.joined', { date: formatDate(member.joinedAt, locale, { timeZone }) })}
         </span>
       </div>
       {canManage && !isSelf && (
@@ -235,13 +237,16 @@ const STATE_VARIANT = {
 function InvitationRow({ invitation }: { invitation: Invitation }) {
   const t = useTranslations('family.invitations');
   const { locale } = useSharedLocale();
+  const timeZone = useProfile().timezone;
   const revoke = useFamilyMutation(revokeInvitation, () => toast.success(t('revoked')));
   const detail =
     invitation.state === 'accepted' && invitation.acceptedBy
       ? t('acceptedBy', { name: invitation.acceptedBy.displayName })
       : invitation.state === 'pending'
-        ? t('expires', { date: formatDate(invitation.expiresAt, locale, { timeStyle: 'short' }) })
-        : t('createdOn', { date: formatDate(invitation.createdAt, locale) });
+        ? t('expires', {
+            date: formatDate(invitation.expiresAt, locale, { timeStyle: 'short', timeZone }),
+          })
+        : t('createdOn', { date: formatDate(invitation.createdAt, locale, { timeZone }) });
 
   return (
     <li className="flex items-center gap-3 p-4 sm:px-5">
@@ -323,6 +328,7 @@ function Invitations() {
 function EventRow({ event }: { event: FamilyEvent }) {
   const t = useTranslations('family.events');
   const { locale } = useSharedLocale();
+  const timeZone = useProfile().timezone;
   const name = (person: FamilyEvent['actor']) => person?.displayName ?? t('formerMember');
   return (
     <li className="flex flex-col gap-0.5 px-4 py-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4 sm:px-5">
@@ -330,7 +336,7 @@ function EventRow({ event }: { event: FamilyEvent }) {
         {t(event.type, { actor: name(event.actor), subject: name(event.subject) })}
       </span>
       <time dateTime={event.createdAt} className="shrink-0 text-xs text-muted-foreground">
-        {formatDate(event.createdAt, locale, { timeStyle: 'short' })}
+        {formatDate(event.createdAt, locale, { timeStyle: 'short', timeZone })}
       </time>
     </li>
   );

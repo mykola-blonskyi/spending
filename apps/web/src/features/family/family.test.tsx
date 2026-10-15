@@ -214,9 +214,9 @@ describe('FamilyPage', () => {
     Reflect.deleteProperty(navigator, 'clipboard');
   });
 
-  it('reads the event log in the order given, naming former members', async () => {
-    setup(
-      <FamilyPage />,
+  it('reads the event log in the order given, naming former members, in the profile time zone', async () => {
+    setup(<FamilyPage />, (client) => {
+      client.setQueryData(meQuery.queryKey, { ...testProfile, timezone: 'Asia/Tokyo' });
       seeded([PERSONAL, family('member')], {
         events: [
           {
@@ -234,12 +234,13 @@ describe('FamilyPage', () => {
             createdAt: '2026-10-01T10:00:00.000Z',
           },
         ],
-      }),
-    );
+      })(client);
+    });
     const items = within(await screen.findByRole('list', { name: 'Activity' })).getAllByRole(
       'listitem',
     );
     expect(items[0]).toHaveTextContent('Ann Example removed A former member');
+    expect(items[0]).toHaveTextContent('7:00 PM');
     expect(items[1]).toHaveTextContent('Ann Example created the family');
   });
 });
