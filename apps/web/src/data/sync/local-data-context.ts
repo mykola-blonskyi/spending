@@ -148,6 +148,11 @@ function useSmoothed(next: SyncStatus | null): SyncStatus | null {
   return shown;
 }
 
+/** When a pull last reached the end; undefined while there is no local store. */
+export function useLastSyncedAt(): string | null | undefined {
+  return useLocalState()?.meta.lastSyncedAt;
+}
+
 /** The first sync on an empty device: active until a pull first reaches the end. */
 export function useInitialSync(): { active: boolean; loaded: number } {
   const state = useLocalState();

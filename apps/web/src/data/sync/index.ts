@@ -5,6 +5,7 @@ export {
   useDeleteTransaction,
   useDiscardChange,
   useInitialSync,
+  useLastSyncedAt,
   useLocalTransaction,
   useLocalDataStatus,
   useLocalTransactions,
