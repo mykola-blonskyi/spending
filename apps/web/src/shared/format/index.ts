@@ -1,4 +1,11 @@
-export { formatDate, formatMonth, formatRelativeDay, parseDateOnly, type DateInput } from './date';
+export {
+  formatDate,
+  formatMonth,
+  formatRelativeDay,
+  parseDateOnly,
+  todayIn,
+  type DateInput,
+} from './date';
 export {
   currencyExponent,
   formatMoney,
