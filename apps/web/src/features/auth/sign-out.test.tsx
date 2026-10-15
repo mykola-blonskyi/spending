@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@data/api-error';
 import { createQueryClient } from '@data/query-client';
 import { logout } from '@data/session';
-import { countUnsentMutations } from '@data/sync';
+import { countUnsentMutations, useSyncNow } from '@data/sync';
 import { testSession } from '@data/testing';
 import { I18nProvider } from '@i18n/index';
 import { loadPage } from '@shared/lib/navigation';
@@ -22,7 +22,10 @@ vi.mock(import('@data/session'), async (importOriginal) => ({
 vi.mock(import('@data/sync'), async (importOriginal) => ({
   ...(await importOriginal()),
   countUnsentMutations: vi.fn(),
+  useSyncNow: vi.fn(),
 }));
+
+const syncNow = vi.fn();
 
 function SignOutButton() {
   const signOut = useSignOut();
@@ -56,6 +59,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
   vi.mocked(countUnsentMutations).mockReturnValue(0);
+  vi.mocked(useSyncNow).mockReturnValue(syncNow);
 });
 
 describe('useSignOut', () => {
@@ -114,6 +118,19 @@ describe('useSignOut', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Sign out anyway' }));
     await waitFor(() => expect(loadPage).toHaveBeenCalledWith('/signin'));
+  });
+
+  it('offers to sync the unsent changes instead of signing out', async () => {
+    vi.mocked(countUnsentMutations).mockReturnValue(1);
+    renderButton();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Sync now' }));
+
+    expect(syncNow).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(logout).not.toHaveBeenCalled();
+    expect(localStorage.length).toBe(1);
   });
 
   it('asks first when the local store is not open to count unsent changes', async () => {

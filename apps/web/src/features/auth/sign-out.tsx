@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { errorCode } from '@data/api-error';
 import { clearLocalUserData } from '@data/local-data';
 import { isSignedOutError, logout } from '@data/session';
-import { countUnsentMutations } from '@data/sync';
+import { countUnsentMutations, useSyncNow } from '@data/sync';
 import { useTranslations } from '@i18n/index';
 import { ConfirmDialog } from '@shared/components';
 import { loadPage } from '@shared/lib/navigation';
@@ -14,12 +14,14 @@ import { useSession } from './session-context';
 /**
  * Explicit sign-out: ends the server session, removes this user's local data, then leaves
  * through the provider's end-session URL. The caller renders `dialog`; it opens only when
- * changes on this device have not reached the server, or cannot be counted, and would be deleted.
+ * changes on this device have not reached the server, or cannot be counted, and would be deleted,
+ * and offers to sync them first.
  */
 export function useSignOut() {
   const t = useTranslations();
   const queryClient = useQueryClient();
   const { user } = useSession();
+  const syncNow = useSyncNow();
   const [confirming, setConfirming] = useState(false);
 
   const leave = async (endSessionUrl: string | null) => {
@@ -58,6 +60,7 @@ export function useSignOut() {
       title={t('signOut.pendingTitle')}
       description={t('signOut.pendingDescription')}
       confirmLabel={t('signOut.pendingConfirm')}
+      alternative={{ label: t('signOut.syncNow'), onSelect: () => void syncNow() }}
       onConfirm={() => {
         setConfirming(false);
         mutation.mutate();

@@ -10,6 +10,7 @@ import {
   LocalStore,
   releaseLocalStore,
   countUnsentMutations,
+  deleteOtherUserDatabases,
 } from './store';
 import { recordTransaction } from './writes';
 
@@ -131,6 +132,22 @@ describe('local user data', () => {
     expect(await databases()).not.toContain(databaseName('ann'));
     expect(localDatabaseNames()).toEqual([]);
     releaseLocalStore('ann');
+  });
+
+  it('deletes every other user database when a user signs in, keeping their own', async () => {
+    for (const user of ['ann', 'bob', 'cid']) {
+      const store = await LocalStore.open(user);
+      await recordTransaction(store, draft);
+      store.close();
+    }
+
+    await deleteOtherUserDatabases('bob');
+
+    expect(await databases()).toEqual([databaseName('bob')]);
+    expect(localDatabaseNames()).toEqual([databaseName('bob')]);
+    const bob = await LocalStore.open('bob');
+    expect(bob.state.transactions.size).toBe(1);
+    bob.close();
   });
 
   it('cannot count unsent changes while no store is open', async () => {

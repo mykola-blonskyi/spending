@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { HEARTBEAT_MS, SyncEngine, userFlushLock } from './engine';
 import { type LocalData, LocalDataContext } from './local-data-context';
-import { acquireLocalStore, releaseLocalStore } from './store';
+import { acquireLocalStore, deleteOtherUserDatabases, releaseLocalStore } from './store';
 import { apiTransport } from './transport';
 
 const visible = () => document.visibilityState === 'visible';
@@ -25,7 +25,10 @@ function flushTriggers(engine: SyncEngine): () => void {
   };
 }
 
-/** Opens the signed-in user's local store and runs its flusher while mounted. */
+/**
+ * Opens the signed-in user's local store, after deleting any other user's, and runs its flusher
+ * while mounted.
+ */
 export function LocalDataProvider({
   userId,
   children,
@@ -39,24 +42,32 @@ export function LocalDataProvider({
     let cancelled = false;
     let engine: SyncEngine | undefined;
     let stopTriggers: (() => void) | undefined;
-    acquireLocalStore(userId).then(
-      (store) => {
-        if (cancelled) return;
-        const ready = new SyncEngine(store, apiTransport, userFlushLock(userId, navigator.locks));
-        engine = ready;
-        setData({ status: 'ready', store, engine: ready });
-        void ready.flush();
-        stopTriggers = flushTriggers(ready);
-      },
-      () => {
-        if (!cancelled) setData({ status: 'unavailable' });
-      },
-    );
+    let acquired = false;
+    deleteOtherUserDatabases(userId)
+      .then(() => {
+        if (cancelled) return null;
+        acquired = true;
+        return acquireLocalStore(userId);
+      })
+      .then(
+        (store) => {
+          if (cancelled || !store) return;
+          const ready = new SyncEngine(store, apiTransport, userFlushLock(userId, navigator.locks));
+          engine = ready;
+          setData({ status: 'ready', store, engine: ready });
+          void ready.flush();
+          stopTriggers = flushTriggers(ready);
+          void navigator.storage?.persist().catch(() => false);
+        },
+        () => {
+          if (!cancelled) setData({ status: 'unavailable' });
+        },
+      );
     return () => {
       cancelled = true;
       stopTriggers?.();
       engine?.stop();
-      releaseLocalStore(userId);
+      if (acquired) releaseLocalStore(userId);
       setData({ status: 'opening' });
     };
   }, [userId]);

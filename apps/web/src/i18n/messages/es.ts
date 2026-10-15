@@ -114,6 +114,7 @@ export const es = {
     pendingDescription:
       'Algunos cambios de este dispositivo aún no han llegado al servidor. Si cierras sesión, se borrarán de este dispositivo.',
     pendingConfirm: 'Cerrar sesión de todos modos',
+    syncNow: 'Sincronizar ahora',
   },
   userMenu: {
     label: 'Cuenta: {name}',
