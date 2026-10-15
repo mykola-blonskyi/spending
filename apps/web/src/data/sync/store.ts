@@ -22,7 +22,6 @@ interface LocalSchema extends DBSchema {
 }
 
 type Database = IDBPDatabase<LocalSchema>;
-type KeyedStore = 'transactions' | 'accounts' | 'categories' | 'workspaces' | 'conflicts';
 
 const STORES = [
   'transactions',
@@ -88,23 +87,13 @@ async function persist(db: Database, prev: LocalState, next: LocalState): Promis
   const tx = db.transaction(STORES, 'readwrite');
   const writes: Promise<unknown>[] = [];
   try {
-    const keyed: KeyedStore[] = [
-      'transactions',
-      'accounts',
-      'categories',
-      'workspaces',
-      'conflicts',
-    ];
-    for (const name of keyed) {
+    for (const name of STORES) {
+      if (name === 'meta') continue;
       const store = tx.objectStore(name);
       const { puts, deletes } = diff<unknown>(prev[name], next[name]);
-      for (const value of puts) writes.push(store.put(value as never));
       for (const key of deletes) writes.push(store.delete(key));
+      for (const value of puts) writes.push(store.put(value as never));
     }
-    const mutations = tx.objectStore('mutations');
-    const changed = diff(prev.mutations, next.mutations);
-    for (const key of changed.deletes) writes.push(mutations.delete(key));
-    for (const value of changed.puts) writes.push(mutations.put(value));
     if (prev.meta !== next.meta) writes.push(tx.objectStore('meta').put(next.meta, 'sync'));
     await Promise.all([...writes, tx.done]);
   } catch (error) {
@@ -159,15 +148,13 @@ export class StoreClosedError extends Error {
  * (thousands of rows), move reads to indexes if one user's history nears 100k rows.
  */
 export class LocalStore {
-  readonly userId: string;
   #db: Database;
   #state: LocalState;
   #closed = false;
   #chain: Promise<unknown> = Promise.resolve();
   #listeners = new Set<() => void>();
 
-  private constructor(userId: string, db: Database, state: LocalState) {
-    this.userId = userId;
+  private constructor(db: Database, state: LocalState) {
     this.#db = db;
     this.#state = state;
   }
@@ -181,7 +168,7 @@ export class LocalStore {
     });
     const names = localDatabaseNames();
     if (!names.includes(name)) writeRegistry([...names, name]);
-    const store = new LocalStore(userId, db, await load(db));
+    const store = new LocalStore(db, await load(db));
     // Deleting the database (sign-out, another tab) asks open connections to step aside.
     db.addEventListener('versionchange', () => store.close());
     db.addEventListener('close', () => store.close());

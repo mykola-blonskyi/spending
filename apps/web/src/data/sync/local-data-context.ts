@@ -43,7 +43,7 @@ function useEngineStatus(): EngineStatus | null {
   return useSyncExternalStore(engine?.subscribe ?? subscribeNothing, engine?.getStatus ?? nothing);
 }
 
-export type LocalList<T> = { readonly ready: boolean; readonly items: readonly T[] };
+type LocalList<T> = { readonly ready: boolean; readonly items: readonly T[] };
 
 /** History from the local store. Pass a memoized filter: a new object recomputes the list. */
 export function useLocalTransactions(filter: TransactionFilter): LocalList<TransactionEntry> {

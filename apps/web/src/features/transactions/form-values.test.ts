@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { amountText, parseAmount } from './form-values';
+import { minorToDecimalString } from '@shared/format';
+import { parseAmount } from './form-values';
 
 describe('parseAmount', () => {
   it.each([
@@ -20,7 +21,7 @@ describe('parseAmount', () => {
   });
 
   it('round-trips through the editable text', () => {
-    expect(parseAmount(amountText(1250, 2), 2)).toBe(1250);
-    expect(amountText(5, 2)).toBe('0.05');
+    expect(parseAmount(minorToDecimalString(1250, 2), 2)).toBe(1250);
+    expect(minorToDecimalString(5, 2)).toBe('0.05');
   });
 });

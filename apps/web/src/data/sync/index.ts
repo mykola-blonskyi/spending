@@ -9,13 +9,12 @@ export {
   useSyncStatus,
   useUpdateTransaction,
   useWorkspaces,
-  type LocalList,
 } from './local-data-context';
 export { LocalDataProvider } from './local-data-provider';
+export { countUnsentMutations } from './store';
 export type { Account, Category, Workspace } from './model';
 export {
   totalsByCurrency,
-  type CurrencyTotals,
   type EntrySync,
   type TransactionEntry,
   type TransactionFilter,

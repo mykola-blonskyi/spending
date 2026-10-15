@@ -40,21 +40,15 @@ function draftOf(
   };
 }
 
-/** Saving failed on this device (storage full or unavailable): the form keeps what was typed. */
-function useSaveFailure() {
-  const t = useTranslations('transactionForm');
-  return () => toast.error(t('saveFailed'));
-}
-
 export function NewTransactionPage() {
-  const t = useTranslations('pages.addTransaction');
+  const t = useTranslations();
   const navigate = useNavigate();
   const profile = useProfile();
   const workspaces = useWorkspaces();
   const accounts = useAccounts();
   const categories = useCategories();
   const record = useRecordTransaction();
-  const saveFailed = useSaveFailure();
+  const saveFailed = () => toast.error(t('transactionForm.saveFailed'));
   const personal = workspaces.items.find((workspace) => workspace.kind === 'personal');
   const initial = useMemo<FormValues>(
     () => ({
@@ -71,7 +65,10 @@ export function NewTransactionPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader title={t('title')} description={t('description')} />
+      <PageHeader
+        title={t('pages.addTransaction.title')}
+        description={t('pages.addTransaction.description')}
+      />
       {personal ? (
         <TransactionForm
           initial={initial}
@@ -102,7 +99,7 @@ export function EditTransactionPage() {
   const categories = useCategories();
   const update = useUpdateTransaction();
   const remove = useDeleteTransaction();
-  const saveFailed = useSaveFailure();
+  const saveFailed = () => toast.error(t('transactionForm.saveFailed'));
   const [confirming, setConfirming] = useState(false);
 
   const header = (

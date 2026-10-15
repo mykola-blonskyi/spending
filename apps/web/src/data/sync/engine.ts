@@ -1,6 +1,6 @@
 import { ApiError } from '../api-error';
 import { isSignedOutError } from '../session';
-import type { PullPage, PushResult, WireMutation } from './model';
+import type { PullPage, PushResult, QueuedMutation, WireMutation } from './model';
 import { toWire } from './model';
 import { reducePull } from './pull';
 import { reducePush } from './push';
@@ -15,7 +15,7 @@ export type SyncTransport = {
 export type EngineStatus =
   | { readonly phase: 'idle' }
   | { readonly phase: 'syncing' }
-  | { readonly phase: 'retrying'; readonly attempt: number }
+  | { readonly phase: 'retrying' }
   | { readonly phase: 'authRequired' }
   | { readonly phase: 'stopped' };
 
@@ -30,8 +30,7 @@ export function backoffDelay(attempt: number): number {
 }
 
 /** Errors that come from the connection or the server's health, not from what was sent. */
-function isTransient(error: unknown): boolean {
-  if (!(error instanceof ApiError)) return true;
+function isTransient(error: ApiError): boolean {
   return (
     error.code === 'NETWORK' ||
     error.code === 'CSRF_FAILED' ||
@@ -62,10 +61,6 @@ export class SyncEngine {
     this.#lock = lock;
   }
 
-  get status(): EngineStatus {
-    return this.#status;
-  }
-
   getStatus = (): EngineStatus => this.#status;
 
   subscribe = (listener: () => void): (() => void) => {
@@ -75,10 +70,6 @@ export class SyncEngine {
     };
   };
 
-  start(): Promise<void> {
-    return this.flush();
-  }
-
   stop(): void {
     this.#schedule(undefined);
     this.#setStatus({ phase: 'stopped' });
@@ -86,7 +77,8 @@ export class SyncEngine {
 
   /** A local write was committed: flush once writes settle. */
   notifyLocalWrite(): void {
-    if (this.#halted()) return;
+    // A retry already has a flush scheduled; flushing sooner would only shorten the backoff.
+    if (this.#halted() || this.#status.phase === 'retrying') return;
     this.#schedule(WRITE_DEBOUNCE_MS);
   }
 
@@ -141,7 +133,7 @@ export class SyncEngine {
       } else {
         await this.#store.commit(requeueInFlight).catch(() => undefined);
         this.#attempt += 1;
-        this.#setStatus({ phase: 'retrying', attempt: this.#attempt });
+        this.#setStatus({ phase: 'retrying' });
         this.#schedule(backoffDelay(this.#attempt));
       }
     }
@@ -149,28 +141,44 @@ export class SyncEngine {
 
   async #pushAll(): Promise<void> {
     for (;;) {
-      const batch = selectBatch(this.#store.state);
+      let batch: QueuedMutation[] = [];
+      // Selecting inside the commit sends the payloads as they are when marked sending.
+      await this.#store.commit((state) => {
+        batch = selectBatch(state);
+        const ids = batch.map((mutation) => mutation.mutationId);
+        return ids.length === 0 ? state : setMutationState(state, ids, { status: 'sending' });
+      });
       if (batch.length === 0) return;
-      const ids = batch.map((mutation) => mutation.mutationId);
-      await this.#store.commit((state) => setMutationState(state, ids, { status: 'sending' }));
-      let results: PushResult[];
-      try {
-        results = await this.#transport.push(batch.map(toWire));
-      } catch (error) {
-        if (isTransient(error) || isSignedOutError(error)) throw error;
-        // The server refused the request as a whole; keep the changes for the user to fix.
-        const failure = error instanceof ApiError ? error : undefined;
-        await this.#store.commit((state) =>
-          setMutationState(state, ids, {
-            status: 'failed',
-            code: failure?.code ?? 'INTERNAL',
-            message: failure?.message ?? '',
-          }),
-        );
-        continue;
-      }
+      const results = await this.#send(batch);
       const now = new Date().toISOString();
       await this.#store.commit((state) => reducePush(state, results, now));
+    }
+  }
+
+  /**
+   * A request the server refuses as a whole is retried one mutation at a time, so only the
+   * invalid one is rejected; a refused single mutation becomes a `rejected` result.
+   */
+  async #send(batch: readonly QueuedMutation[]): Promise<PushResult[]> {
+    try {
+      return await this.#transport.push(batch.map(toWire));
+    } catch (error) {
+      if (!(error instanceof ApiError) || isTransient(error) || isSignedOutError(error)) {
+        throw error;
+      }
+      if (batch.length > 1) {
+        const results: PushResult[] = [];
+        for (const mutation of batch) results.push(...(await this.#send([mutation])));
+        return results;
+      }
+      return [
+        {
+          mutationId: batch[0]!.mutationId,
+          status: 'rejected',
+          code: error.code,
+          message: error.message,
+        },
+      ];
     }
   }
 

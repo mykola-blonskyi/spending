@@ -2,8 +2,6 @@ import { api } from '../client';
 import { present } from '../session';
 import type { SyncTransport } from './engine';
 
-export const PULL_LIMIT = 500;
-
 export const apiTransport: SyncTransport = {
   async push(mutations) {
     const { data } = await api.POST('/api/v1/sync/push', { body: { mutations } });
@@ -11,7 +9,7 @@ export const apiTransport: SyncTransport = {
   },
   async pull(cursor) {
     const { data } = await api.GET('/api/v1/sync/pull', {
-      params: { query: { cursor, limit: PULL_LIMIT } },
+      params: { query: { cursor } },
     });
     return present(data);
   },

@@ -96,7 +96,7 @@ describe('deriveSyncStatus', () => {
     ['synced', idle, emptyLocalState(), true, { state: 'synced' }],
     ['pending', idle, pending, true, { state: 'pending', count: 1 }],
     ['syncing', { phase: 'syncing' }, pending, true, { state: 'syncing' }],
-    ['retrying', { phase: 'retrying', attempt: 2 }, pending, true, { state: 'retrying' }],
+    ['retrying', { phase: 'retrying' }, pending, true, { state: 'retrying' }],
     ['offline over syncing', { phase: 'syncing' }, pending, false, { state: 'offline', count: 1 }],
     ['failed over offline', idle, failed, false, { state: 'failed', count: 1 }],
     ['conflict over failed', idle, conflicted, true, { state: 'conflict', count: 1 }],

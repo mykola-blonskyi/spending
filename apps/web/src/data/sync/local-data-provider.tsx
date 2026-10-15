@@ -22,7 +22,7 @@ export function LocalDataProvider({
         if (cancelled) return;
         engine = new SyncEngine(store, apiTransport);
         setData({ status: 'ready', store, engine });
-        void engine.start();
+        void engine.flush();
       },
       () => {
         if (!cancelled) setData({ status: 'unavailable' });

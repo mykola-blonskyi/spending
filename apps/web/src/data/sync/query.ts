@@ -94,7 +94,7 @@ export function localEntries(state: LocalState): TransactionEntry[] {
   return entries;
 }
 
-export function matchesFilter(entry: TransactionEntry, filter: TransactionFilter): boolean {
+function matchesFilter(entry: TransactionEntry, filter: TransactionFilter): boolean {
   if (filter.kind && entry.kind !== filter.kind) return false;
   if (filter.scope && entry.scope !== filter.scope) return false;
   if (filter.currency && entry.currency !== filter.currency) return false;
@@ -111,7 +111,7 @@ export function matchesFilter(entry: TransactionEntry, filter: TransactionFilter
 }
 
 /** Newest first: by `occurredOn`, then by creation. */
-export function compareEntries(a: TransactionEntry, b: TransactionEntry): number {
+function compareEntries(a: TransactionEntry, b: TransactionEntry): number {
   if (a.occurredOn !== b.occurredOn) return a.occurredOn < b.occurredOn ? 1 : -1;
   if (a.createdAt !== b.createdAt) return a.createdAt < b.createdAt ? 1 : -1;
   return a.id < b.id ? 1 : -1;
@@ -126,7 +126,7 @@ export function queryTransactions(
     .sort(compareEntries);
 }
 
-export type CurrencyTotals = { income: number; expense: number };
+type CurrencyTotals = { income: number; expense: number };
 
 /** Sums per currency in minor units. Entries are already one per transaction, so none counts twice. */
 export function totalsByCurrency(

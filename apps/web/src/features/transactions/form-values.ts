@@ -13,11 +13,6 @@ export function parseAmount(text: string, exponent: number): number | null {
   return Number.isSafeInteger(minor) && minor > 0 ? minor : null;
 }
 
-/** The editable text for an amount, using a dot for decimals. */
-export function amountText(minor: number, exponent: number): string {
-  return minorToDecimalString(minor, exponent);
-}
-
 export type FormValues = {
   kind: 'income' | 'expense';
   amount: string;
@@ -31,7 +26,7 @@ export type FormValues = {
 export function valuesFromDraft(draft: TransactionDraft): FormValues {
   return {
     kind: draft.kind,
-    amount: amountText(draft.amountMinor, currencyExponent(draft.currency)),
+    amount: minorToDecimalString(draft.amountMinor, currencyExponent(draft.currency)),
     currency: draft.currency,
     occurredOn: draft.occurredOn,
     accountId: draft.accountId,
