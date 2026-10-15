@@ -1,5 +1,5 @@
 #!/bin/sh
-# Post-deploy check: the API is ready through nginx and the security headers are served.
+# Post-deploy check: the API is ready through nginx, and the security and cache headers are served.
 #
 #   APP_URL=https://spending.blonskyi.dev sh scripts/check-deploy.sh
 #
@@ -57,5 +57,13 @@ grep -qi "^content-security-policy:.*frame-ancestors 'none'" "$work/headers" || 
   echo "The served CSP is not the one in deploy/security-headers.conf." >&2
   missing=1
 }
+for path in /index.html /sw.js /manifest.webmanifest; do
+  curl --fail --silent --show-error --max-time 10 --dump-header "$work/headers" \
+    --output /dev/null "$APP_URL$path"
+  grep -qi '^cache-control:.*no-cache' "$work/headers" || {
+    echo "$path is not served with Cache-Control: no-cache." >&2
+    missing=1
+  }
+done
 [ "$missing" -eq 0 ] || exit 1
-echo "Security headers present."
+echo "Security headers and cache headers present."

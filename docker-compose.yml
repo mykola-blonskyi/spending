@@ -91,6 +91,9 @@ services:
       context: .
       dockerfile: deploy/backup.Dockerfile
     command: ['schedule']
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     environment:
       DATABASE_URL: ${DATABASE_URL:?}
       # Optional off-host copy, off unless BACKUP_OFFSITE_REMOTE is set (docs/operations.md).
