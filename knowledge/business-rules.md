@@ -77,7 +77,8 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   except sync pull.
 - **BR-17.** Every write increments `version` and takes a new global `revision`. Sync pull returns
   rows with `revision > cursor` that the actor may see, plus the actor's current workspace list.
-  The client drops local rows of workspaces it no longer belongs to.
+  The client drops local rows of workspaces it no longer belongs to; its pending changes there
+  are shown as failed with no access, never dropped silently.
 - **BR-18.** A sync mutation is applied at most once, keyed by its client mutation ID. A replay
   returns the stored outcome with the row's current view. A mutation ID already used by another
   user is rejected (`MUTATION_ID_REUSED`). A create (`baseVersion: null`) whose transaction ID
