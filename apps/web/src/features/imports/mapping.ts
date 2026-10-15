@@ -159,12 +159,11 @@ export function parseDate(text: string, format: DateFormat): string | null {
 }
 
 /**
- * The only money parser on the import path: the server validates `amountMinor` alone, so this
- * must keep the semantics of `parseAmountToMinor` in apps/api/src/common/money.ts. "1.234,56",
- * "-12.5", "1 234.5" to signed minor units. Grouping characters are accepted only between groups
- * of three digits, so a wrong separator choice fails ("12,50" with "." as decimal) instead of
- * scaling the amount. A leading U+2212 minus is read as "-"; parentheses, a trailing minus or a
- * currency suffix are not amounts. Null for anything else.
+ * The only money parser on the import path: the server validates `amountMinor` alone.
+ * "1.234,56", "-12.5", "1 234.5" to signed minor units. Grouping characters are accepted only
+ * between groups of three digits, so a wrong separator choice fails ("12,50" with "." as decimal)
+ * instead of scaling the amount. A leading U+2212 minus is read as "-"; parentheses, a trailing
+ * minus or a currency suffix are not amounts. Null for anything else.
  */
 export function parseAmountToMinor(
   text: string,

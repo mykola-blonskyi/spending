@@ -104,7 +104,8 @@ of the transaction never touch it (BR-2).
 Created when an offline edit was based on a stale version.
 
 - `id`, `transactionId`, `userId` (who must resolve it), `baseVersion`, `serverVersion`
-- `local` (the client's intended write as JSON, or `{ deleted: true }`) and `server` (a snapshot)
+- `local` (the client's intended write as JSON, or `{ deleted: true }`). The server side is always
+  the live row, read when the conflict is shown.
 - `status` (`open|resolved`), `resolution` (`server|local|merged`), `createdAt`, `resolvedAt`
 
 ## FxRate

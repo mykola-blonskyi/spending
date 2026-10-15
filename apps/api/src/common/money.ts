@@ -89,30 +89,6 @@ export function convertToEurMinor(
 }
 
 /**
- * Parses a human amount ("1.234,56", "-12.5", "1 234.5") into a signed minor-unit integer.
- * Grouping characters are accepted only between valid groups of three digits, so a wrong
- * separator choice fails loudly ("12,50" with "." as decimal separator) instead of scaling the
- * amount. Returns null for anything that is not a plain amount or has too many fraction digits.
- */
-export function parseAmountToMinor(
-  text: string,
-  exponent: number,
-  decimalSeparator: '.' | ',',
-): number | null {
-  const groupChars = decimalSeparator === ',' ? ". \\u00a0\\u202f'" : ", \\u00a0\\u202f'";
-  const match = new RegExp(
-    `^([+-]?)(\\d{1,3}(?:([${groupChars}])\\d{3}(?:\\3\\d{3})*)?|\\d+)(?:\\${decimalSeparator}(\\d+))?$`,
-  ).exec(text.trim());
-  if (!match) return null;
-  const integer = match[2]!.replace(/\D/g, '');
-  const fraction = match[4] ?? '';
-  if (fraction.length > exponent) return null;
-  const minor = BigInt(integer + fraction.padEnd(exponent, '0'));
-  if (minor > BigInt(Number.MAX_SAFE_INTEGER)) return null;
-  return Number(match[1] === '-' ? -minor : minor);
-}
-
-/**
  * Renders minor units as a plain decimal string with "." (JPY 1234 → "1234", KWD 5 → "0.005",
  * EUR -150 → "-1.50"). String arithmetic only, so no amount ever passes through a float.
  */

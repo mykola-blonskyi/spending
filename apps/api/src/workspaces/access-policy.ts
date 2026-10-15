@@ -47,12 +47,6 @@ export class AccessPolicy {
     return row;
   }
 
-  async requireOwner(actorId: string, workspaceId: string, tx: Tx = this.db): Promise<Membership> {
-    const membership = await this.requireMember(actorId, workspaceId, tx);
-    if (membership.role !== 'owner') throw new ApiError('FORBIDDEN');
-    return membership;
-  }
-
   async personalWorkspaceId(actorId: string, tx: Tx = this.db): Promise<string> {
     const [row] = await tx
       .select({ workspaceId: memberships.workspaceId })

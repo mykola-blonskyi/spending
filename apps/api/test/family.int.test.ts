@@ -408,10 +408,6 @@ describe('family workspaces', () => {
     await expect(policy.requireMember(ann.userId, catFamily.id)).rejects.toMatchObject({
       code: 'NOT_FOUND',
     });
-    const annFamily = (await workspacesOf(ann)).find((w) => w.kind === 'family')!;
-    await expect(policy.requireOwner(bob.userId, annFamily.id)).rejects.toMatchObject({
-      code: 'FORBIDDEN',
-    });
     expect(await policy.personalWorkspaceId(ann.userId)).toBe(annPersonal.id);
     expect((await policy.memberships(bob.userId)).map((m) => m.kind)).toEqual([
       'personal',
@@ -485,7 +481,6 @@ describe('family workspaces', () => {
       baseVersion: 1,
       serverVersion: 1,
       local: {},
-      server: {},
     });
     const [annConflict] = await t.db
       .insert(syncConflicts)

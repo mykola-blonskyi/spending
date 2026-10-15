@@ -1,0 +1,1 @@
+ALTER TABLE "sync_conflicts" ALTER COLUMN "server" DROP NOT NULL;

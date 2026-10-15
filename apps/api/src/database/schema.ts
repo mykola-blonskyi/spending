@@ -396,7 +396,8 @@ export const syncConflicts = pgTable(
     baseVersion: integer('base_version').notNull(),
     serverVersion: integer('server_version').notNull(),
     local: jsonb('local').notNull(),
-    server: jsonb('server').notNull(),
+    /** Unused (conflicts read the live row); drop once no rollback target writes it. */
+    server: jsonb('server'),
     status: conflictStatusEnum('status').notNull().default('open'),
     resolution: conflictResolutionEnum('resolution'),
     createdAt: createdAt(),

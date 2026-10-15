@@ -3,7 +3,6 @@ import {
   convertToEurMinor,
   currencyExponent,
   formatMinor,
-  parseAmountToMinor,
   parseCurrency,
   type CurrencyCode,
 } from './money';
@@ -66,36 +65,6 @@ describe('convertToEurMinor', () => {
   it('rejects malformed or zero rates', () => {
     expect(() => convertToEurMinor(100, c('USD'), '0')).toThrow(RangeError);
     expect(() => convertToEurMinor(100, c('USD'), '1e3')).toThrow(RangeError);
-  });
-});
-
-describe('parseAmountToMinor', () => {
-  it.each([
-    ['1.234,56', ',', 2, 123_456],
-    ['-12,5', ',', 2, -1_250],
-    ['1 234.5', '.', 2, 123_450],
-    ['1,234.56', '.', 2, 123_456],
-    ['+7', '.', 2, 700],
-    ['1500', ',', 0, 1_500],
-  ] as const)('parses %s', (text, sep, exponent, expected) => {
-    expect(parseAmountToMinor(text, exponent, sep)).toBe(expected);
-  });
-
-  it.each([
-    ['', ','],
-    ['abc', ','],
-    ['1,2,3', ','],
-    ['12.345,678', ','],
-    ['9'.repeat(20), ','],
-    ['12,50', '.'],
-    ['1.5', ','],
-    ['1 2 3', '.'],
-    ['1,2,3.4', '.'],
-    ['1,234 567.00', '.'],
-    ['1\t234', '.'],
-    ['5.', '.'],
-  ] as const)('rejects %s with %s as decimal separator', (text, sep) => {
-    expect(parseAmountToMinor(text, 2, sep)).toBeNull();
   });
 });
 

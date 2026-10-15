@@ -425,12 +425,10 @@ export class SyncService {
     existing: ExistingRow,
     local: ConflictLocal,
   ): Promise<Outcome> {
-    const server = (await this.ledger.ledgerRows(tx, actorId, [transactionId])).get(transactionId)!;
     const values = {
       baseVersion: typeof base === 'number' ? base : 0,
       serverVersion: existing.version,
       local,
-      server,
     };
     const [row] = await tx
       .insert(syncConflicts)
