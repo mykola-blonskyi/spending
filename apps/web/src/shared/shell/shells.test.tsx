@@ -85,6 +85,11 @@ describe.each(shells)('%s shell', (_name, Shell) => {
     );
   });
 
+  it('gives every link real classes, not a stringified className function', () => {
+    renderShell(Shell);
+    for (const link of screen.getAllByRole('link')) expect(link.className).not.toMatch(/=>/);
+  });
+
   it('offers a skip link to the main landmark', () => {
     renderShell(Shell);
     expect(screen.getByRole('link', { name: 'Skip to content' })).toHaveAttribute('href', '#main');

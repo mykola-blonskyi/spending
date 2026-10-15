@@ -69,7 +69,7 @@ export function SoftShell({
             <NavLink
               to={primaryAction.to}
               className={cn(
-                'flex h-12 items-center gap-2 rounded-full bg-primary pr-6 pl-5 text-[15px] font-semibold text-primary-foreground transition-transform duration-150 ease-out active:scale-[0.97]',
+                'flex h-12 items-center gap-2 rounded-full bg-primary pr-6 pl-5 text-[15px] font-semibold whitespace-nowrap text-primary-foreground transition-transform duration-150 ease-out active:scale-[0.97]',
                 focusRing,
               )}
             >
@@ -131,8 +131,8 @@ export function SoftShell({
 
 const pillTab = (active: boolean) =>
   cn(
-    'flex h-[3.25rem] min-w-[3.25rem] items-center justify-center gap-2 rounded-full text-[15px] font-medium transition-colors duration-150',
-    active ? 'bg-accent px-4 text-accent-foreground' : 'px-3 text-muted-foreground',
+    'flex h-12 min-w-12 items-center justify-center gap-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-150',
+    active ? 'bg-accent px-3 text-accent-foreground' : 'px-2.5 text-muted-foreground',
     focusRing,
   );
 

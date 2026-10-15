@@ -87,7 +87,7 @@ export function PlayfulShell({
           <NavLink
             to={primaryAction.to}
             className={cn(
-              'flex h-10 items-center gap-2 rounded-full bg-primary pr-4 pl-3 text-sm font-semibold text-primary-foreground ring-4 ring-primary/15 transition-transform duration-150 ease-out active:scale-[0.97]',
+              'flex h-10 items-center gap-2 rounded-full bg-primary pr-4 pl-3 text-sm font-semibold whitespace-nowrap text-primary-foreground ring-4 ring-primary/15 transition-transform duration-150 ease-out active:scale-[0.97]',
               focusRing,
             )}
           >

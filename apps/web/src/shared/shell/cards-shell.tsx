@@ -49,7 +49,7 @@ export function CardsShell({
         <NavLink
           to={primaryAction.to}
           className={cn(
-            'absolute right-4 bottom-[calc(100%+12px)] flex h-14 items-center gap-2 rounded-2xl bg-primary pr-5 pl-4 text-[15px] font-semibold text-primary-foreground shadow-[0_10px_24px_-10px_var(--primary)] transition-transform duration-150 ease-out active:scale-[0.96]',
+            'absolute right-4 bottom-[calc(100%+12px)] flex h-14 items-center gap-2 rounded-2xl bg-primary pr-5 pl-4 text-[15px] font-semibold whitespace-nowrap text-primary-foreground shadow-[0_10px_24px_-10px_var(--primary)] transition-transform duration-150 ease-out active:scale-[0.96]',
             focusRing,
           )}
         >

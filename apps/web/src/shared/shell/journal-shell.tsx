@@ -104,7 +104,7 @@ export function JournalShell({
               <NavLink
                 to={primaryAction.to}
                 className={cn(
-                  'flex h-9 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-transform duration-150 ease-out active:scale-[0.97]',
+                  'flex h-9 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-medium whitespace-nowrap text-primary-foreground transition-transform duration-150 ease-out active:scale-[0.97]',
                   focusRing,
                 )}
               >

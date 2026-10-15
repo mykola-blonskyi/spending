@@ -63,7 +63,8 @@ const CONTROL_PAIRS: [string, string][] = [
 ];
 
 const sets = PALETTES.flatMap((palette) => {
-  const light = palette === 'emerald' ? ':root' : `[data-palette='${palette}']`;
+  const light =
+    palette === 'emerald' ? ":root,\n[data-palette='emerald']" : `[data-palette='${palette}']`;
   const dark = palette === 'emerald' ? '.dark' : `.dark[data-palette='${palette}']`;
   return [
     { name: `${palette} light`, tokens: tokensOf(light) },

@@ -3,7 +3,8 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-:root {
+:root,
+[data-palette='emerald'] {
   --radius: 0.75rem;
   --background: oklch(0.985 0.002 95);
   --foreground: oklch(0.2 0.01 260);

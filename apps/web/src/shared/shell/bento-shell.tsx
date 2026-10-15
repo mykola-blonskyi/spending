@@ -6,14 +6,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@shared/ui/tooltip';
 import { focusRing, isEnd, MAIN_ID, type NavItem, type ShellProps, splitNav, useMore } from './nav';
 import { MoreSheet, SkipLink } from './shell-primitives';
 
-const railButton = (active: boolean) =>
-  cn(
-    'flex size-10 items-center justify-center rounded-xl transition-colors duration-150',
-    active
-      ? 'bg-accent text-accent-foreground'
-      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-    focusRing,
-  );
+// A static string: the tooltip's Slot would stringify a className function.
+const railButton = cn(
+  'flex size-10 items-center justify-center rounded-xl text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground',
+  focusRing,
+);
 
 const slotClass = (active: boolean) =>
   cn(
@@ -89,7 +86,7 @@ export function BentoShell({
                       to={item.to}
                       end={isEnd(item.to)}
                       aria-label={item.label}
-                      className={({ isActive }) => railButton(isActive)}
+                      className={railButton}
                     >
                       <item.icon aria-hidden className="size-[18px]" strokeWidth={1.9} />
                     </NavLink>
