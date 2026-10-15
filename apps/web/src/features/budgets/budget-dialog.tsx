@@ -21,15 +21,14 @@ import { type Budget, budgetableCategories, usePutBudget } from './budgets';
 /** BR-22: limits and progress are in EUR. */
 export const BUDGET_CURRENCY = 'EUR';
 
-export type BudgetDialogMode = { kind: 'create' } | { kind: 'edit'; budget: Budget };
+export type BudgetDialogMode =
+  { kind: 'create'; budgets: readonly Budget[] } | { kind: 'edit'; budget: Budget };
 
 export function BudgetDialog({
   mode,
-  budgets,
   trigger,
 }: {
   mode: BudgetDialogMode;
-  budgets: readonly Budget[];
   trigger: React.ReactNode;
 }) {
   const t = useTranslations('budgets');
@@ -41,24 +40,16 @@ export function BudgetDialog({
         <DialogHeader>
           <DialogTitle>{t(mode.kind === 'create' ? 'createTitle' : 'editTitle')}</DialogTitle>
           <DialogDescription>
-            {t(mode.kind === 'create' ? 'createDescription' : 'editDescription')}
+            {t(mode.kind === 'create' ? 'createDescription' : 'editDescription')} {t('nearNote')}
           </DialogDescription>
         </DialogHeader>
-        <BudgetForm mode={mode} budgets={budgets} onDone={() => setOpen(false)} />
+        <BudgetForm mode={mode} onDone={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   );
 }
 
-function BudgetForm({
-  mode,
-  budgets,
-  onDone,
-}: {
-  mode: BudgetDialogMode;
-  budgets: readonly Budget[];
-  onDone: () => void;
-}) {
+function BudgetForm({ mode, onDone }: { mode: BudgetDialogMode; onDone: () => void }) {
   const t = useTranslations();
   const base = useId();
   const workspaces = useWorkspaces().items;
@@ -69,7 +60,8 @@ function BudgetForm({
   const family = workspaces.find((workspace) => workspace.kind === 'family');
 
   const [workspaceId, setWorkspaceId] = useState(editing?.workspaceId ?? personal?.id ?? '');
-  const choices = editing ? [] : budgetableCategories(categories, workspaceId, budgets);
+  const choices =
+    mode.kind === 'create' ? budgetableCategories(categories, workspaceId, mode.budgets) : [];
   const [chosenId, setChosenId] = useState<string | null>(null);
   const categoryId =
     editing?.categoryId ?? choices.find((c) => c.id === chosenId)?.id ?? choices[0]?.id;

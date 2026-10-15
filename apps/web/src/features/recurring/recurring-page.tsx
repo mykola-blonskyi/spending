@@ -1,50 +1,18 @@
-import { type UseQueryResult, useQuery } from '@tanstack/react-query';
-import { CloudOff, Pause, Pencil, Play, Plus, Repeat, Trash2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Pause, Pencil, Play, Plus, Repeat, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { errorCode } from '@data/api-error';
+import { QueryUnavailable } from '@data/query-unavailable';
+import { useRefetchErrorToast } from '@data/refetch-error-toast';
 import { useCategories } from '@data/sync';
-import { useRefetchErrorToast } from '@features/budgets';
 import { useTranslations } from '@i18n/index';
-import {
-  ConfirmDialog,
-  EmptyState,
-  ErrorState,
-  LoadingState,
-  MoneyText,
-  PageHeader,
-} from '@shared/components';
+import { ConfirmDialog, EmptyState, MoneyText, PageHeader } from '@shared/components';
 import { formatDate, formatRelativeDay } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
 import { RECURRING_PATH, type Rule, rulesQuery, useDeleteRule, useUpdateRule } from './rules';
 import { scheduleWords } from './schedule-text';
-
-export function RulesUnavailable({ query }: { query: UseQueryResult<Rule[]> }) {
-  const t = useTranslations();
-  const offline =
-    (query.fetchStatus === 'paused' && query.data === undefined) ||
-    (query.isError && errorCode(query.error) === 'NETWORK');
-  if (offline) {
-    return (
-      <EmptyState
-        icon={CloudOff}
-        title={t('recurring.offlineTitle')}
-        description={t('recurring.offlineDescription')}
-      />
-    );
-  }
-  if (query.isError) {
-    return (
-      <ErrorState
-        title={t(`errors.${errorCode(query.error)}`)}
-        onRetry={() => void query.refetch()}
-      />
-    );
-  }
-  return <LoadingState variant="cards" rows={3} />;
-}
 
 /** BR-24: deleting a rule keeps the entries it generated. */
 export function DeleteRuleDialog({
@@ -91,7 +59,13 @@ export function RecurringPage() {
 
   let body: React.ReactNode;
   if (rules === undefined) {
-    body = <RulesUnavailable query={query} />;
+    body = (
+      <QueryUnavailable
+        query={query}
+        offlineTitle={t('recurring.offlineTitle')}
+        offlineDescription={t('recurring.offlineDescription')}
+      />
+    );
   } else if (rules.length === 0) {
     body = (
       <EmptyState
@@ -145,9 +119,7 @@ function RuleRow({ rule, onDelete }: { rule: Rule; onDelete: () => void }) {
               <Badge variant="secondary">{t('recurring.form.family')}</Badge>
             )}
           </h3>
-          <p className="text-sm text-muted-foreground">
-            {schedule.clampNote ? `${schedule.every}, ${schedule.clampNote}` : schedule.every}
-          </p>
+          <p className="text-sm text-muted-foreground">{schedule}</p>
         </div>
         <MoneyText
           amountMinor={rule.kind === 'expense' ? -rule.amountMinor : rule.amountMinor}
@@ -192,12 +164,18 @@ function RuleRow({ rule, onDelete }: { rule: Rule; onDelete: () => void }) {
           </Button>
         )}
         <Button asChild variant="ghost" size="sm" className="h-10 min-w-10">
-          <Link to={`${RECURRING_PATH}/${rule.id}`}>
+          <Link to={`${RECURRING_PATH}/${rule.id}`} title={t('recurring.edit')}>
             <Pencil aria-hidden />
             <span className="sr-only sm:not-sr-only">{t('recurring.edit')}</span>
           </Link>
         </Button>
-        <Button variant="ghost" size="sm" className="h-10 min-w-10" onClick={onDelete}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-10 min-w-10"
+          title={t('recurring.delete')}
+          onClick={onDelete}
+        >
           <Trash2 aria-hidden />
           <span className="sr-only sm:not-sr-only">{t('recurring.delete')}</span>
         </Button>

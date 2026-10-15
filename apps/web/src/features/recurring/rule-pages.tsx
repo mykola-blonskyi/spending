@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Info, SearchX, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
+import { QueryUnavailable } from '@data/query-unavailable';
 import { useWorkspaces } from '@data/sync';
 import { useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
@@ -10,7 +11,7 @@ import { todayIn } from '@shared/format';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Button } from '@shared/ui/button';
 import { type RuleFormValues, valuesFromRule } from './form-values';
-import { DeleteRuleDialog, RulesUnavailable } from './recurring-page';
+import { DeleteRuleDialog } from './recurring-page';
 import { RuleForm } from './rule-form';
 import { RECURRING_PATH, rulesQuery, useCreateRule, useUpdateRule } from './rules';
 
@@ -87,7 +88,11 @@ export function EditRulePage() {
       <div className="flex flex-col gap-8">
         {header}
         {query.data === undefined ? (
-          <RulesUnavailable query={query} />
+          <QueryUnavailable
+            query={query}
+            offlineTitle={t('recurring.offlineTitle')}
+            offlineDescription={t('recurring.offlineDescription')}
+          />
         ) : (
           <EmptyState
             icon={SearchX}

@@ -305,9 +305,14 @@ export const ru = {
     createDescription: 'Месячный лимит для одной категории расходов.',
     editTitle: 'Изменить лимит',
     editDescription: 'Новый лимит действует для каждого месяца.',
+    nearNote: 'С 80% потраченного бюджет считается близким к лимиту.',
     progress: '{spent} из {limit}',
     left: 'Осталось {amount}',
-    status: { ok: 'В пределах', near: 'Почти лимит', over: 'Превышено на {amount}' },
+    status: {
+      ok: 'В пределах лимита',
+      near: 'Близко к лимиту',
+      over: 'Превышено на {amount}',
+    },
     unconverted: 'Ещё {amount} не переведено в EUR',
     edit: 'Изменить лимит',
     delete: 'Удалить бюджет',
@@ -322,12 +327,22 @@ export const ru = {
       daily:
         '{interval, plural, =1 {Каждый день} one {Каждый # день} few {Каждые # дня} many {Каждые # дней} other {Каждые # дня}}',
       weekly:
-        '{interval, plural, =1 {Каждую неделю} one {Каждую # неделю} few {Каждые # недели} many {Каждые # недель} other {Каждые # недели}}',
+        '{interval, plural, =1 {Каждую неделю} one {Каждую # неделю} few {Каждые # недели} many {Каждые # недель} other {Каждые # недели}} {weekday}',
       monthly:
         '{interval, plural, =1 {Каждый месяц} one {Каждый # месяц} few {Каждые # месяца} many {Каждые # месяцев} other {Каждые # месяца}} {day}-го',
       yearly:
         '{interval, plural, =1 {Каждый год} one {Каждый # год} few {Каждые # года} many {Каждые # лет} other {Каждые # года}} {date}',
     },
+    weekday: {
+      mon: 'в понедельник',
+      tue: 'во вторник',
+      wed: 'в среду',
+      thu: 'в четверг',
+      fri: 'в пятницу',
+      sat: 'в субботу',
+      sun: 'в воскресенье',
+    },
+    scheduleNote: '{every} {note}',
     monthClamp: 'или в последний день более короткого месяца',
     leapClamp: 'или 28 февраля в невисокосные годы',
     next: 'Следующая запись: {date}',

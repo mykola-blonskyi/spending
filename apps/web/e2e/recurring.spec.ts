@@ -3,10 +3,19 @@ import { E2E_USERS } from './support/env';
 
 const ann = E2E_USERS.ann;
 
+/** The seed user's profile timezone (the API default), so "last month" matches the server's. */
+const SEED_TIMEZONE = 'Europe/Madrid';
+
 function firstOfLastMonth(): string {
-  const now = new Date();
-  const date = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
+  const [year = 0, month = 1] = new Intl.DateTimeFormat('en-CA', {
+    timeZone: SEED_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+  })
+    .format(new Date())
+    .split('-')
+    .map(Number);
+  return new Date(Date.UTC(year, month - 2, 1)).toISOString().slice(0, 10);
 }
 
 test('a monthly rule records past dates, pauses, edits only the future and goes', async ({

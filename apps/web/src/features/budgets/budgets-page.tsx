@@ -3,7 +3,6 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleAlert,
-  CloudOff,
   Pencil,
   PiggyBank,
   Plus,
@@ -11,30 +10,19 @@ import {
   TriangleAlert,
 } from 'lucide-react';
 import { useState } from 'react';
-import { errorCode } from '@data/api-error';
+import { QueryUnavailable } from '@data/query-unavailable';
+import { useRefetchErrorToast } from '@data/refetch-error-toast';
 import { useCategories, useWorkspaces } from '@data/sync';
 import { useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
-import {
-  ConfirmDialog,
-  EmptyState,
-  ErrorState,
-  LoadingState,
-  PageHeader,
-} from '@shared/components';
+import { ConfirmDialog, EmptyState, PageHeader } from '@shared/components';
 import { formatMoney, formatMonth } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import { cn } from '@shared/lib/utils';
 import { Button } from '@shared/ui/button';
 import { Progress } from '@shared/ui/progress';
 import { BUDGET_CURRENCY, BudgetDialog } from './budget-dialog';
-import {
-  type Budget,
-  budgetsQuery,
-  useDeleteBudget,
-  useRefetchErrorToast,
-  useRefreshBudgetsOnSync,
-} from './budgets';
+import { type Budget, budgetsQuery, useDeleteBudget, useRefreshBudgetsOnSync } from './budgets';
 import { currentMonth, type Month, shiftMonth } from './month';
 import { budgetBar } from './progress';
 
@@ -56,11 +44,11 @@ export function BudgetsPage() {
   useRefreshBudgetsOnSync();
   useRefetchErrorToast(query);
 
-  // Another month's rows are no answer for this one; a failed refetch keeps this month's list.
-  const budgets = query.isError && query.isPlaceholderData ? undefined : query.data;
-  const offline =
-    budgets === undefined &&
-    (query.fetchStatus === 'paused' || (query.isError && errorCode(query.error) === 'NETWORK'));
+  // Another month's rows are no answer for this one: once the switch is paused or fails, they go.
+  const stale = query.isPlaceholderData && (query.isError || query.fetchStatus === 'paused');
+  const budgets = stale ? undefined : query.data;
+  // Being away from this month proves the switcher was there; an error must not remove the way back.
+  const canSwitch = month !== thisMonth || (budgets !== undefined && budgets.length > 0);
   const addButton = (
     <Button size="lg">
       <Plus aria-hidden />
@@ -69,30 +57,21 @@ export function BudgetsPage() {
   );
 
   let body: React.ReactNode;
-  if (offline) {
+  if (budgets === undefined) {
     body = (
-      <EmptyState
-        icon={CloudOff}
-        title={t('budgets.offlineTitle')}
-        description={t('budgets.offlineDescription')}
+      <QueryUnavailable
+        query={query}
+        offlineTitle={t('budgets.offlineTitle')}
+        offlineDescription={t('budgets.offlineDescription')}
       />
     );
-  } else if (budgets === undefined && query.isError) {
-    body = (
-      <ErrorState
-        title={t(`errors.${errorCode(query.error)}`)}
-        onRetry={() => void query.refetch()}
-      />
-    );
-  } else if (budgets === undefined) {
-    body = <LoadingState variant="cards" rows={4} />;
   } else if (budgets.length === 0) {
     body = (
       <EmptyState
         icon={PiggyBank}
         title={t('pages.budgets.emptyTitle')}
         description={t('pages.budgets.emptyDescription')}
-        action={<BudgetDialog mode={{ kind: 'create' }} budgets={budgets} trigger={addButton} />}
+        action={<BudgetDialog mode={{ kind: 'create', budgets }} trigger={addButton} />}
       />
     );
   } else {
@@ -120,12 +99,7 @@ export function BudgetsPage() {
               )}
               <ul className="grid gap-3 sm:grid-cols-2">
                 {group.items.map((budget) => (
-                  <BudgetRow
-                    key={budget.id}
-                    budget={budget}
-                    budgets={budgets}
-                    onDelete={() => setDeleting(budget)}
-                  />
+                  <BudgetRow key={budget.id} budget={budget} onDelete={() => setDeleting(budget)} />
                 ))}
               </ul>
             </section>
@@ -142,13 +116,11 @@ export function BudgetsPage() {
         actions={
           budgets &&
           budgets.length > 0 && (
-            <BudgetDialog mode={{ kind: 'create' }} budgets={budgets} trigger={addButton} />
+            <BudgetDialog mode={{ kind: 'create', budgets }} trigger={addButton} />
           )
         }
       />
-      {budgets && budgets.length > 0 && (
-        <MonthSwitcher month={month} thisMonth={thisMonth} onChange={setMonth} />
-      )}
+      {canSwitch && <MonthSwitcher month={month} thisMonth={thisMonth} onChange={setMonth} />}
       {body}
       <ConfirmDialog
         open={deleting !== null}
@@ -207,15 +179,7 @@ function MonthSwitcher({
   );
 }
 
-function BudgetRow({
-  budget,
-  budgets,
-  onDelete,
-}: {
-  budget: Budget;
-  budgets: readonly Budget[];
-  onDelete: () => void;
-}) {
+function BudgetRow({ budget, onDelete }: { budget: Budget; onDelete: () => void }) {
   const t = useTranslations();
   const { locale } = useSharedLocale();
   const categories = useCategories().items;
@@ -259,15 +223,20 @@ function BudgetRow({
       <div className="-mx-2 mt-auto -mb-2 flex justify-end gap-1">
         <BudgetDialog
           mode={{ kind: 'edit', budget }}
-          budgets={budgets}
           trigger={
-            <Button variant="ghost" size="sm" className="h-10 min-w-10">
+            <Button variant="ghost" size="sm" className="h-10 min-w-10" title={t('budgets.edit')}>
               <Pencil aria-hidden />
               <span className="sr-only sm:not-sr-only">{t('budgets.edit')}</span>
             </Button>
           }
         />
-        <Button variant="ghost" size="sm" className="h-10 min-w-10" onClick={onDelete}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-10 min-w-10"
+          title={t('budgets.delete')}
+          onClick={onDelete}
+        >
           <Trash2 aria-hidden />
           <span className="sr-only sm:not-sr-only">{t('budgets.delete')}</span>
         </Button>

@@ -302,9 +302,14 @@ export const uk = {
     createDescription: 'Місячний ліміт для однієї категорії витрат.',
     editTitle: 'Змінити ліміт',
     editDescription: 'Новий ліміт діє для кожного місяця.',
+    nearNote: 'Від 80% витраченого бюджет вважається близьким до ліміту.',
     progress: '{spent} з {limit}',
     left: 'Залишилося {amount}',
-    status: { ok: 'У межах', near: 'Майже ліміт', over: 'Перевищено на {amount}' },
+    status: {
+      ok: 'У межах ліміту',
+      near: 'Близько до ліміту',
+      over: 'Перевищено на {amount}',
+    },
     unconverted: 'Ще {amount} не переведено в EUR',
     edit: 'Змінити ліміт',
     delete: 'Видалити бюджет',
@@ -319,12 +324,22 @@ export const uk = {
       daily:
         '{interval, plural, =1 {Щодня} one {Кожен # день} few {Кожні # дні} many {Кожні # днів} other {Кожні # дня}}',
       weekly:
-        '{interval, plural, =1 {Щотижня} one {Кожен # тиждень} few {Кожні # тижні} many {Кожні # тижнів} other {Кожні # тижня}}',
+        '{interval, plural, =1 {Щотижня} one {Кожен # тиждень} few {Кожні # тижні} many {Кожні # тижнів} other {Кожні # тижня}} {weekday}',
       monthly:
         '{interval, plural, =1 {Щомісяця} one {Кожен # місяць} few {Кожні # місяці} many {Кожні # місяців} other {Кожні # місяця}} {day}-го',
       yearly:
         '{interval, plural, =1 {Щороку} one {Кожен # рік} few {Кожні # роки} many {Кожні # років} other {Кожні # року}} {date}',
     },
+    weekday: {
+      mon: 'в понеділок',
+      tue: 'у вівторок',
+      wed: 'в середу',
+      thu: 'в четвер',
+      fri: 'в п’ятницю',
+      sat: 'в суботу',
+      sun: 'в неділю',
+    },
+    scheduleNote: '{every} {note}',
     monthClamp: 'або в останній день коротшого місяця',
     leapClamp: 'або 28 лютого в невисокосні роки',
     next: 'Наступний запис: {date}',
