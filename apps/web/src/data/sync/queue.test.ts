@@ -85,6 +85,7 @@ describe('applyLocalChange', () => {
       state,
       [{ mutationId: 'm-1', status: 'applied', transaction: serverRow({ version: 1 }) }],
       now,
+      ['m-1'],
     );
     expect(queueOrder(state)).toMatchObject([
       { mutationId: 'm-2', baseVersion: 1, change: { type: 'transaction.delete' } },

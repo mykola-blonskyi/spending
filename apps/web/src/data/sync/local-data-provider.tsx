@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { SyncEngine } from './engine';
+import { SyncEngine, userFlushLock } from './engine';
 import { type LocalData, LocalDataContext } from './local-data-context';
 import { acquireLocalStore, releaseLocalStore } from './store';
 import { apiTransport } from './transport';
@@ -20,7 +20,7 @@ export function LocalDataProvider({
     acquireLocalStore(userId).then(
       (store) => {
         if (cancelled) return;
-        engine = new SyncEngine(store, apiTransport);
+        engine = new SyncEngine(store, apiTransport, userFlushLock(userId, navigator.locks));
         setData({ status: 'ready', store, engine });
         void engine.flush();
       },

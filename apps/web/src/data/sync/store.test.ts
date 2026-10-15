@@ -74,6 +74,48 @@ describe('LocalStore', () => {
     expect(reopened.state.mutations.size).toBe(0);
     reopened.close();
   });
+
+  it('builds each write from the disk, so two tabs never reuse a queue position', async () => {
+    const tabA = await LocalStore.open('ann');
+    const tabB = await LocalStore.open('ann');
+    await recordTransaction(tabA, draft);
+    await recordTransaction(tabB, draft);
+
+    expect(queueOrder(tabB.state).map((mutation) => mutation.seq)).toEqual([1, 2]);
+    expect(tabB.state.transactions.size).toBe(2);
+    tabA.close();
+    tabB.close();
+  });
+
+  it('keeps a commit that is already on disk when the store closes meanwhile', async () => {
+    const store = await LocalStore.open('ann');
+    const written = store.commit((state) => {
+      store.close();
+      return { ...state, meta: { ...state.meta, cursor: 7 } };
+    });
+
+    await expect(written).resolves.toMatchObject({ meta: { cursor: 7 } });
+    const reopened = await LocalStore.open('ann');
+    expect(reopened.state.meta.cursor).toBe(7);
+    reopened.close();
+  });
+
+  it('tells listeners about real changes and other tabs’ commits, not about no-op commits', async () => {
+    const tabA = await LocalStore.open('ann');
+    const tabB = await LocalStore.open('ann');
+    const heard = vi.fn();
+    tabB.subscribe(heard);
+
+    await tabB.commit((state) => state);
+    expect(heard).not.toHaveBeenCalled();
+
+    const reloaded = new Promise<void>((resolve) => tabB.subscribe(resolve));
+    await recordTransaction(tabA, draft);
+    await reloaded;
+    expect(tabB.state.transactions.size).toBe(1);
+    tabA.close();
+    tabB.close();
+  });
 });
 
 describe('local user data', () => {

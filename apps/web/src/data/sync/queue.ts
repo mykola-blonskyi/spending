@@ -127,10 +127,14 @@ export function setMutationState(
   return { ...state, mutations };
 }
 
-/** A push that never completed may or may not have reached the server; replaying it is safe (BR-18). */
-export function requeueInFlight(state: LocalState): LocalState {
+/**
+ * A push that never completed may or may not have reached the server; replaying it is safe (BR-18).
+ * `only` limits this to one flush's batch, so another tab's push in flight is left alone.
+ */
+export function requeueInFlight(state: LocalState, only?: readonly string[]): LocalState {
   const sending = [...state.mutations.values()]
     .filter((mutation) => mutation.state.status === 'sending')
+    .filter((mutation) => !only || only.includes(mutation.mutationId))
     .map((mutation) => mutation.mutationId);
   return sending.length === 0 ? state : setMutationState(state, sending, { status: 'queued' });
 }
