@@ -30,6 +30,9 @@ async function importFile(page: Page, name: string, rows: number) {
   await expect(page.getByRole('heading', { name: 'Import finished' })).toBeVisible();
 }
 
+const categoryOf = (page: Page, description: string) =>
+  page.getByRole('combobox', { name: `Category: ${description}` });
+
 const stat = (page: Page, label: string) =>
   page
     .locator('dl > div')
@@ -86,7 +89,10 @@ test('a simple UTF-8 statement is mapped, imported and shows up in history', asy
   ]);
 });
 
-test('a BBVA statement is read as the bank exports it', async ({ page, signInAs }) => {
+test('a BBVA statement is read as the bank exports it and categorized', async ({
+  page,
+  signInAs,
+}) => {
   await signInAs('ann');
   await createAccount(page, 'BBVA');
   await page.goto('/imports/new');
@@ -103,6 +109,10 @@ test('a BBVA statement is read as the bank exports it', async ({ page, signInAs 
   await expect(stat(page, 'Imported')).toHaveText('5');
   await expect(stat(page, 'Rejected')).toHaveText('1');
   await expect(page.getByRole('row', { name: /^10 / })).toContainText('The date could not be read');
+  await expect(categoryOf(page, 'COMPRA TARJ. 5489XXXX1234 MERCADONA S.A.')).toHaveText(
+    'Groceries',
+  );
+  await expect(categoryOf(page, 'NÓMINA ACME SL')).toHaveText('Salary');
 
   await page.getByRole('link', { name: 'Open history' }).click();
   const mercadona = page.getByRole('link', { name: /MERCADONA/ });
@@ -127,6 +137,7 @@ test('a Santander statement is read with its preset, and its reference is the de
   await expect(page.getByLabel('Transaction ID')).toHaveText(/Referencia/);
   await page.getByRole('button', { name: 'Import 3 rows' }).click();
   await expect(stat(page, 'Imported')).toHaveText('3');
+  await expect(categoryOf(page, 'PAGO MOVIL EN LIDL')).toHaveText('Groceries');
 
   await importFile(page, 'santander.csv', 3);
   await expect(stat(page, 'Imported')).toHaveText('0');
@@ -175,4 +186,41 @@ test('importing the same statement again adds nothing', async ({ page, signInAs,
     page.getByText('Rows that were imported before, or deleted since, are skipped.'),
   ).toBeVisible();
   expect(await db.history(ann.email)).toHaveLength(5);
+});
+
+test('a corrected category teaches the next import', async ({ page, signInAs, db }) => {
+  await signInAs('ann');
+  await createAccount(page, 'Santander');
+  await importFile(page, 'santander.csv', 3);
+
+  const fruteria = 'COMPRA EN FRUTERÍA PEPE, MÁLAGA';
+  await expect(categoryOf(page, fruteria)).toHaveText('Uncategorized');
+  await page.getByRole('switch', { name: 'Uncategorized only' }).click();
+  await expect(
+    page.getByRole('list', { name: 'Imported entries' }).getByRole('listitem'),
+  ).toHaveCount(2);
+
+  // Fix the expense in bulk; the income row keeps its kind and is left alone.
+  await page.getByRole('checkbox', { name: 'Select all rows' }).click();
+  await page.getByRole('combobox', { name: 'Category for selected' }).click();
+  await page.getByRole('option', { name: 'Groceries' }).click();
+  await page.getByRole('button', { name: 'Apply' }).click();
+  await expect(categoryOf(page, fruteria)).toHaveCount(0);
+  await page.getByRole('switch', { name: 'Uncategorized only' }).click();
+  await expect(categoryOf(page, fruteria)).toHaveText('Groceries');
+  await expect(categoryOf(page, 'TRANSFERENCIA DE JUAN PÉREZ')).toHaveText('Uncategorized');
+  await categoryOf(page, 'TRANSFERENCIA DE JUAN PÉREZ').click();
+  await page.getByRole('option', { name: 'Gifts received' }).click();
+  await expect(page.getByText('Every imported entry has a category.')).toBeVisible();
+  await expect
+    .poll(() => db.categoryRules(ann.email))
+    .toEqual([
+      { merchant_key: 'fruteria pepe malaga', category: 'Groceries' },
+      { merchant_key: 'transferencia juan perez', category: 'Gifts received' },
+    ]);
+
+  // A later statement with the same merchant uses what was learned (BR-29).
+  await importFile(page, 'santander-later.csv', 1);
+  await expect(stat(page, 'Imported')).toHaveText('1');
+  await expect(categoryOf(page, fruteria)).toHaveText('Groceries');
 });

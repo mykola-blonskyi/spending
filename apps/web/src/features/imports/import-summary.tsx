@@ -1,9 +1,31 @@
 import { ArrowRight } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import type { ImportResult } from '@data/imports';
+import {
+  type Category,
+  type TransactionEntry,
+  useCategories,
+  useLocalTransactions,
+  useUpdateTransaction,
+} from '@data/sync';
 import { useTranslations } from '@i18n/index';
+import { MoneyText } from '@shared/components';
+import { formatDate } from '@shared/format';
+import { useSharedLocale } from '@shared/lib/locale-context';
+import { cn } from '@shared/lib/utils';
 import { Button } from '@shared/ui/button';
+import { Checkbox } from '@shared/ui/checkbox';
+import { Label } from '@shared/ui/label';
+import { Switch } from '@shared/ui/switch';
+import { CategorySelect } from './category-select';
 import { Table, Td, Th, Tr } from './table';
+
+/** Checkbox, description, amount; the category sits beside them on wide screens, under them on phones. */
+const ROW =
+  'grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-4 py-3 text-sm sm:grid-cols-[auto_minmax(0,1fr)_auto_14rem]';
+
+const ALL = {};
 
 function Stat({ label, value, hint }: { label: string; value: number; hint?: string }) {
   return (
@@ -12,6 +34,162 @@ function Stat({ label, value, hint }: { label: string; value: number; hint?: str
       <dd className="text-2xl font-semibold tabular-nums">{value}</dd>
       {hint && <dd className="text-xs text-pretty text-muted-foreground">{hint}</dd>}
     </div>
+  );
+}
+
+/**
+ * The imported rows, read back from the local store once the pull lands. Changing a category
+ * here goes through the sync queue like any edit, which teaches the categorizer (BR-29).
+ */
+function ImportedEntries({ ids }: { ids: readonly string[] }) {
+  const t = useTranslations('imports.summary');
+  const tf = useTranslations('transactionForm');
+  const { locale } = useSharedLocale();
+  const all = useLocalTransactions(ALL);
+  const categories = useCategories();
+  const update = useUpdateTransaction();
+  const [uncategorizedOnly, setUncategorizedOnly] = useState(false);
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [bulkCategory, setBulkCategory] = useState<string | null>(null);
+
+  const entries = useMemo(() => {
+    const wanted = new Set(ids);
+    return all.items.filter((entry) => wanted.has(entry.id));
+  }, [all.items, ids]);
+  const shown = uncategorizedOnly ? entries.filter((e) => e.categoryId === null) : entries;
+  const workspaceId = entries[0]?.workspaceId;
+  const options = useMemo(
+    () => categories.items.filter((c) => c.workspaceId === workspaceId && !c.archivedAt),
+    [categories.items, workspaceId],
+  );
+  const byId = useMemo(() => new Map(options.map((c) => [c.id, c])), [options]);
+  const uncategorized = entries.filter((e) => e.categoryId === null).length;
+  const allShownSelected = shown.length > 0 && shown.every((e) => selected.has(e.id));
+
+  const setCategory = (entry: TransactionEntry, categoryId: string | null) => {
+    const {
+      id,
+      scope: _scope,
+      baseAmountMinor: _base,
+      sync: _sync,
+      createdAt: _at,
+      ...draft
+    } = entry;
+    return update(id, { ...draft, categoryId });
+  };
+  const applyBulk = async () => {
+    const category = bulkCategory ? byId.get(bulkCategory) : undefined;
+    for (const entry of shown) {
+      if (!selected.has(entry.id)) continue;
+      if (category && category.kind !== entry.kind) continue;
+      await setCategory(entry, category?.id ?? null);
+    }
+    setSelected(new Set());
+  };
+  const optionsFor = (entry: TransactionEntry, extra: Category | undefined) =>
+    options.filter((c) => c.kind === entry.kind || c.id === extra?.id);
+
+  if (entries.length === 0) return null;
+
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-3 px-1">
+        <div className="flex flex-col gap-0.5">
+          <h2 className="text-sm font-medium text-muted-foreground">{t('entriesTitle')}</h2>
+          <p className="text-xs text-muted-foreground">
+            {uncategorized === 0 ? t('allCategorized') : t('entriesHint')}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Switch
+            id="uncategorized-only"
+            checked={uncategorizedOnly}
+            onCheckedChange={setUncategorizedOnly}
+          />
+          <Label htmlFor="uncategorized-only" className="text-sm">
+            {t('uncategorizedOnly')}
+          </Label>
+        </div>
+      </div>
+
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-muted/40 px-4 py-3">
+          <span className="text-sm font-medium">{t('selected', { count: selected.size })}</span>
+          <CategorySelect
+            value={bulkCategory}
+            categories={options}
+            onChange={setBulkCategory}
+            label={t('bulkCategory')}
+            noneLabel={t('noCategory')}
+            className="min-w-44"
+          />
+          <Button size="sm" onClick={() => void applyBulk()}>
+            {t('apply')}
+          </Button>
+        </div>
+      )}
+
+      <div className="rounded-xl border">
+        <div className={cn(ROW, 'py-2 text-xs font-medium text-muted-foreground')}>
+          <Checkbox
+            aria-label={t('selectAll')}
+            checked={allShownSelected}
+            onCheckedChange={(checked) =>
+              setSelected(checked === true ? new Set(shown.map((e) => e.id)) : new Set())
+            }
+          />
+          <span>{tf('description')}</span>
+          <span className="justify-self-end">{tf('amount')}</span>
+          <span className="hidden sm:block">{tf('category')}</span>
+        </div>
+        <ul aria-label={t('entriesTitle')} className="divide-y border-t">
+          {shown.map((entry) => {
+            const current = entry.categoryId ? byId.get(entry.categoryId) : undefined;
+            return (
+              <li key={entry.id} data-category={current ? 'set' : 'none'} className={ROW}>
+                <Checkbox
+                  aria-label={t('selectRow', { line: entry.description || entry.occurredOn })}
+                  checked={selected.has(entry.id)}
+                  onCheckedChange={(checked) =>
+                    setSelected((prev) => {
+                      const next = new Set(prev);
+                      if (checked === true) next.add(entry.id);
+                      else next.delete(entry.id);
+                      return next;
+                    })
+                  }
+                />
+                <div className="min-w-0">
+                  <span className="block truncate font-medium">{entry.description}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {formatDate(entry.occurredOn, locale)}
+                  </span>
+                </div>
+                <MoneyText
+                  amountMinor={entry.kind === 'expense' ? -entry.amountMinor : entry.amountMinor}
+                  currency={entry.currency}
+                  colored
+                  className="justify-self-end"
+                />
+                <div className="col-span-2 col-start-2 sm:col-span-1 sm:col-start-auto">
+                  <CategorySelect
+                    value={entry.categoryId}
+                    categories={optionsFor(entry, current)}
+                    onChange={(categoryId) => void setCategory(entry, categoryId)}
+                    label={`${tf('category')}: ${entry.description}`}
+                    noneLabel={t('uncategorized')}
+                    className={cn(
+                      'w-full',
+                      !entry.categoryId && 'border-warning text-warning-foreground',
+                    )}
+                  />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </section>
   );
 }
 
@@ -68,6 +246,8 @@ export function ImportSummary({
           </Table>
         </section>
       )}
+
+      {imported.count > 0 && <ImportedEntries ids={imported.transactionIds} />}
 
       <div className="flex flex-wrap gap-3">
         <Button variant="outline" onClick={onImportAnother}>
