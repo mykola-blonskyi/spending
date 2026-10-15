@@ -88,3 +88,46 @@ export async function createAccount(
   });
   if (!created.ok()) throw new Error(`account failed: ${created.status()} ${await created.text()}`);
 }
+
+type Entry = {
+  kind?: 'expense' | 'income';
+  amountMinor: number;
+  currency?: string;
+  occurredOn: string;
+  /** A default category of the personal workspace, by English name. */
+  category?: string;
+  description: string;
+};
+
+/** Pushes exact entries into the signed-in user's personal workspace, as another device would. */
+export async function pushEntries(page: Page, entries: readonly Entry[]): Promise<void> {
+  const session = await (await page.request.get('/api/v1/auth/session')).json();
+  const pull = await (await page.request.get('/api/v1/sync/pull?cursor=0&limit=1000')).json();
+  const personal = pull.workspaces.find((w: { kind: string }) => w.kind === 'personal');
+  const categoryId = (name: string | undefined, kind: string) =>
+    pull.categories.find(
+      (c: { workspaceId: string; name: string; kind: string }) =>
+        c.workspaceId === personal.id && c.name === name && c.kind === kind,
+    )?.id ?? null;
+  const response = await page.request.post('/api/v1/sync/push', {
+    headers: { 'X-CSRF-Token': session.csrfToken, Origin: APP_ORIGIN },
+    data: {
+      mutations: entries.map(({ kind = 'expense', currency = 'EUR', category, ...entry }) => ({
+        mutationId: crypto.randomUUID(),
+        type: 'transaction.upsert',
+        baseVersion: null,
+        transaction: {
+          id: crypto.randomUUID(),
+          workspaceId: personal.id,
+          kind,
+          currency,
+          accountId: null,
+          categoryId: categoryId(category, kind),
+          note: '',
+          ...entry,
+        },
+      })),
+    },
+  });
+  if (!response.ok()) throw new Error(`push failed: ${response.status()} ${await response.text()}`);
+}

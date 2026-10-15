@@ -145,9 +145,7 @@ export const uk = {
   pages: {
     dashboard: {
       title: 'Огляд',
-      description: 'На що пішли гроші цього місяця.',
-      emptyTitle: 'Ваш місяць з першого погляду',
-      emptyDescription: 'Додайте першу операцію, щоб бачити тут витрати, доходи й бюджети.',
+      description: 'Доходи, витрати й бюджети за будь-який період.',
     },
     transactions: {
       title: 'Операції',
@@ -580,6 +578,60 @@ export const uk = {
       confirmed:
         '{count, plural, one {# рядок опубліковано} few {# рядки опубліковано} other {# рядків опубліковано}}.',
     },
+  },
+  dashboard: {
+    period: {
+      label: 'Період',
+      month: 'Місяць',
+      quarter: 'Квартал',
+      year: 'Рік',
+      custom: 'Свій',
+      from: 'Від',
+      to: 'До',
+      previous: 'Попередній період',
+      next: 'Наступний період',
+      range: '{from} – {to}',
+      quarterName: '{quarter} кв. {year}',
+      order: 'Кінцева дата раніша за початкову.',
+      length: 'Виберіть період не довший за десять років.',
+    },
+    scope: { label: 'Чиї гроші', all: 'Разом', personal: 'Особисті', family: 'Сімейні' },
+    totals: {
+      title: 'Підсумки',
+      income: 'Доходи',
+      expense: 'Витрати',
+      balance: 'Баланс',
+      change: '{amount} порівняно з попереднім періодом',
+      comparedWith: 'Порівняно з {period}',
+    },
+    trend: {
+      title: 'Динаміка',
+      chart: 'Доходи й витрати в часі. Найвищий стовпчик: {amount}.',
+      table: 'Показати таблицею',
+      bucket: 'Період',
+      weekOf: 'Тиждень від {date}',
+    },
+    categories: {
+      title: 'За категоріями',
+      expense: 'Витрати',
+      income: 'Доходи',
+      share: '{share} від загальної суми',
+      change: '{amount} порівняно з попереднім періодом',
+      empty: 'За цей період нічого не записано.',
+    },
+    budgets: {
+      title: 'Бюджети на {month}',
+      empty: 'На цей місяць бюджетів немає.',
+      manage: 'Керувати бюджетами',
+    },
+    unconverted: {
+      title: 'Не конвертовано',
+      description: 'Курсу EUR ще немає, тож ці суми не входять у підсумки вище.',
+      spent: 'Витрачено {amount}',
+      received: 'Отримано {amount}',
+    },
+    offlineTitle: 'Для огляду потрібне зʼєднання',
+    offlineDescription: 'Підсумки й графіки надходять із сервера. Підключіться, щоб їх побачити.',
   },
   budgets: {
     add: 'Встановити бюджет',

@@ -1,4 +1,3 @@
-import { LayoutDashboard } from 'lucide-react';
 import type { ComponentType } from 'react';
 import type { Profile } from '@data/session';
 import {
@@ -11,8 +10,8 @@ import {
   SoftShell,
   SplitShell,
 } from '@shared/shell';
+import { DASHBOARD_SCREENS } from '@features/dashboard';
 import { TRANSACTION_SCREENS } from '@features/transactions';
-import { PlaceholderPage } from '../pages/placeholder-page';
 
 export type Layout = Profile['layout'];
 export type LayoutScreen = 'dashboard' | 'history' | 'entry' | 'detail';
@@ -23,22 +22,23 @@ type LayoutDefinition = {
   screens: Partial<Record<LayoutScreen, ComponentType>>;
 };
 
-const calmScreens = {
-  dashboard: () => <PlaceholderPage page="dashboard" icon={LayoutDashboard} />,
-  ...TRANSACTION_SCREENS.calm,
-} satisfies Partial<Record<LayoutScreen, ComponentType>>;
+const screensOf = (layout: Layout) => ({
+  dashboard: DASHBOARD_SCREENS[layout],
+  ...TRANSACTION_SCREENS[layout],
+});
+const calmScreens = screensOf('calm');
 
 /** Order is the order in the settings picker. */
 export const LAYOUTS: Record<Layout, LayoutDefinition> = {
   calm: { shell: CalmShell, screens: calmScreens },
-  cards: { shell: CardsShell, screens: TRANSACTION_SCREENS.cards },
-  soft: { shell: SoftShell, screens: TRANSACTION_SCREENS.soft },
-  journal: { shell: JournalShell, screens: TRANSACTION_SCREENS.journal },
-  bento: { shell: BentoShell, screens: TRANSACTION_SCREENS.bento },
-  split: { shell: SplitShell, screens: TRANSACTION_SCREENS.split },
-  playful: { shell: PlayfulShell, screens: TRANSACTION_SCREENS.playful },
-  // Calm base; its bento dashboard arrives with that feature.
-  hybrid: { shell: CalmShell, screens: TRANSACTION_SCREENS.hybrid },
+  cards: { shell: CardsShell, screens: screensOf('cards') },
+  soft: { shell: SoftShell, screens: screensOf('soft') },
+  journal: { shell: JournalShell, screens: screensOf('journal') },
+  bento: { shell: BentoShell, screens: screensOf('bento') },
+  split: { shell: SplitShell, screens: screensOf('split') },
+  playful: { shell: PlayfulShell, screens: screensOf('playful') },
+  // Calm base with the bento dashboard.
+  hybrid: { shell: CalmShell, screens: screensOf('hybrid') },
 };
 
 export const LAYOUT_IDS = Object.keys(LAYOUTS) as Layout[];

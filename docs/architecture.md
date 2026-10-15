@@ -88,6 +88,16 @@ presentation only: an ESLint rule bans `@data/*` and `@tanstack/*` there. `layou
 is the per-layout table the registry reads. Split and hybrid register their master-detail
 history for both `history` and `detail`, so selecting a row keeps the list mounted.
 
+**Dashboard feature** (`features/dashboard`). Same shape as transactions: `dashboard-model.ts`
+holds the period math (calendar month, quarter, year or a custom range, and stepping) and pairs
+each category with its previous-period amount; `useDashboard` owns the period and scope and reads
+`/analytics/summary` and `/budgets` (budgets of the chosen month, otherwise this month), refetching
+both after a sync (`useRefreshOnSync`). `blocks/` are self-titled sections (totals, trend,
+categories, budgets via `BudgetProgress`, unconverted amounts); `layouts/<layout>-dashboard.tsx`
+only arrange them, under the same ESLint rule, and hybrid uses the bento one. Charts are plain SVG
+in theme tokens; the trend has a table under "Show as a table" and category bars carry their
+figures as text.
+
 **Ledger feature** (`features/ledger`). Accounts and categories screens write through REST
 (`data/ledger.ts`) and then call `useRefreshLocalData()` (a push and pull), so the local store
 stays the only inbound path and every picker updates from it. `categoryView` localizes a default

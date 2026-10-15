@@ -142,10 +142,7 @@ export const es = {
   pages: {
     dashboard: {
       title: 'Resumen',
-      description: 'En qué se ha ido tu dinero este mes.',
-      emptyTitle: 'Tu mes de un vistazo',
-      emptyDescription:
-        'Añade tu primer movimiento para ver aquí tus gastos, ingresos y presupuestos.',
+      description: 'Ingresos, gastos y presupuestos de cualquier periodo.',
     },
     transactions: {
       title: 'Movimientos',
@@ -582,6 +579,61 @@ export const es = {
       confirming: 'Publicando…',
       confirmed: '{count, plural, one {# fila publicada} other {# filas publicadas}}.',
     },
+  },
+  dashboard: {
+    period: {
+      label: 'Periodo',
+      month: 'Mes',
+      quarter: 'Trimestre',
+      year: 'Año',
+      custom: 'Personalizado',
+      from: 'Desde',
+      to: 'Hasta',
+      previous: 'Periodo anterior',
+      next: 'Periodo siguiente',
+      range: '{from} – {to}',
+      quarterName: 'T{quarter} {year}',
+      order: 'La fecha final es anterior a la inicial.',
+      length: 'Elige un periodo de diez años como máximo.',
+    },
+    scope: { label: 'De quién', all: 'Todo', personal: 'Personal', family: 'Familia' },
+    totals: {
+      title: 'Totales',
+      income: 'Ingresos',
+      expense: 'Gastos',
+      balance: 'Saldo',
+      change: '{amount} frente al periodo anterior',
+      comparedWith: 'Comparado con {period}',
+    },
+    trend: {
+      title: 'Evolución',
+      chart: 'Ingresos y gastos en el tiempo. La barra más alta es {amount}.',
+      table: 'Ver como tabla',
+      bucket: 'Periodo',
+      weekOf: 'Semana del {date}',
+    },
+    categories: {
+      title: 'Por categoría',
+      expense: 'Gastos',
+      income: 'Ingresos',
+      share: '{share} del total',
+      change: '{amount} frente al periodo anterior',
+      empty: 'No hay nada registrado en este periodo.',
+    },
+    budgets: {
+      title: 'Presupuestos de {month}',
+      empty: 'No hay presupuestos para este mes.',
+      manage: 'Gestionar presupuestos',
+    },
+    unconverted: {
+      title: 'Sin convertir',
+      description:
+        'Aún no hay tipo de cambio a EUR, así que estos importes no están en los totales.',
+      spent: 'Gastado {amount}',
+      received: 'Recibido {amount}',
+    },
+    offlineTitle: 'El resumen necesita conexión',
+    offlineDescription: 'Los totales y gráficos vienen del servidor. Conéctate para verlos.',
   },
   budgets: {
     add: 'Fijar un presupuesto',
