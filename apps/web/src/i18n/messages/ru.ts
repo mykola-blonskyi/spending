@@ -74,6 +74,10 @@ export const ru = {
       offlineShort:
         '{count, plural, =0 {Офлайн} one {Офлайн, # в очереди} few {Офлайн, # в очереди} many {Офлайн, # в очереди} other {Офлайн, # в очереди}}',
     },
+    update: {
+      available: 'Доступна новая версия',
+      reload: 'Перезагрузить',
+    },
     approval: {
       title: 'Ожидает одобрения',
       description:

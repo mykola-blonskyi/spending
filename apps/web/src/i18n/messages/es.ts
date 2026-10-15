@@ -70,6 +70,10 @@ export const es = {
       offlineShort:
         '{count, plural, =0 {Sin conexión} one {Sin conexión, # pendiente} other {Sin conexión, # pendientes}}',
     },
+    update: {
+      available: 'Hay una nueva versión disponible',
+      reload: 'Recargar',
+    },
     approval: {
       title: 'Pendiente de aprobación',
       description:

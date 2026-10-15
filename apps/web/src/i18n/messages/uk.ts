@@ -73,6 +73,10 @@ export const uk = {
       offlineShort:
         '{count, plural, =0 {Офлайн} one {Офлайн, # в черзі} few {Офлайн, # в черзі} many {Офлайн, # в черзі} other {Офлайн, # в черзі}}',
     },
+    update: {
+      available: 'Доступна нова версія',
+      reload: 'Перезавантажити',
+    },
     approval: {
       title: 'Очікує схвалення',
       description:

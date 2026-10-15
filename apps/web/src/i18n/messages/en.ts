@@ -65,6 +65,10 @@ export const en = {
       offlineShort:
         '{count, plural, =0 {Working offline} one {Working offline, # pending} other {Working offline, # pending}}',
     },
+    update: {
+      available: 'A new version is available',
+      reload: 'Reload',
+    },
     approval: {
       title: 'Waiting for approval',
       description:

@@ -135,6 +135,12 @@ stored lucide icon name to a curated icon set (`category-icons.ts`).
   has no runtime caching. The last signed-in user is kept in `localStorage['spending.lastUser']`
   so an offline start opens their local data; it is removed on sign-out and when the session
   ends. A page started offline fetches the CSRF token before its first write (`client.ts`).
+- **Install and update.** The manifest carries only the brand name "Spending", identical in every
+  locale, so one manifest serves all languages; theme and background colours are the light
+  tokens as hex. A new version installs in the background (the browser checks on navigation,
+  the app hourly) and waits; `app/update-prompt.tsx` offers "Reload" in the user's language.
+  Only that click activates it, and only the clicking tab reloads: other tabs keep their unsaved
+  input and their own prompt. Queued mutations live in IndexedDB, so they survive the reload.
 - **Device privacy.** Signing out with unsent mutations asks first and offers "Sync now"; signing
   out deletes the user's database and the query cache (`clearLocalUserData`). A
   `401` keeps the database, so the queue syncs when the same user signs in again. Only a `401`
