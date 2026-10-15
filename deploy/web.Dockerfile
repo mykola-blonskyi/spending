@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Build context is the repository root (docker-compose.yml).
 
-FROM node:24.21.0-slim AS build
+FROM node:26.11.1-slim AS build
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
 WORKDIR /repo
@@ -12,7 +12,7 @@ COPY apps/web apps/web
 RUN pnpm --filter @spending/web build \
  && find apps/web/dist -name '*.map' -delete
 
-FROM nginx:1.30.0-alpine
+FROM nginx:1.31.0-alpine
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY deploy/nginx.conf /etc/nginx/nginx.conf
 COPY deploy/security-headers.conf /etc/nginx/security-headers.conf
