@@ -15,6 +15,13 @@ export type Authentication = Readonly<{ actor: Actor; rotated: IssuedSession | u
 
 const REVOKE_TIMEOUT_MS = 3000;
 
+/** A replaced token past its grace window; the browser may already hold the live one. */
+export class SupersededTokenError extends ApiError {
+  constructor() {
+    super('AUTH_REQUIRED');
+  }
+}
+
 const olderThan = (column: typeof sessions.lastSeenAt, ms: number) =>
   lt(column, sql`now() - make_interval(secs => ${ms / 1000})`);
 
@@ -58,8 +65,8 @@ export class SessionService {
     const match = row.tokenHash === hash ? 'current' : 'previous';
     const decision = decideSession(row, match, new Date());
     if (decision.status === 'expired') {
-      // A replaced token past its grace window must not take the live session down with it.
-      if (match === 'current') await this.db.delete(sessions).where(eq(sessions.tokenHash, hash));
+      if (match === 'previous') throw new SupersededTokenError();
+      await this.db.delete(sessions).where(eq(sessions.tokenHash, hash));
       throw new ApiError('AUTH_REQUIRED');
     }
     if (decision.checkGrant) await this.recheckGrant(hash);

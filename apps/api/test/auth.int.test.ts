@@ -252,7 +252,9 @@ describe('authentication', () => {
       expect(((await fresh.json()) as { csrfToken: string }).csrfToken).toBe(csrf);
 
       await ageSession(next, 'rotated_at', '61 seconds');
-      expect((await api(t, '/v1/me', { cookie })).status).toBe(401);
+      const superseded = await api(t, '/v1/me', { cookie });
+      expect(superseded.status).toBe(401);
+      expect(sessionCookieFrom(superseded)).toBeUndefined();
       expect((await api(t, '/v1/me', { cookie: next })).status).toBe(200);
       expect(await t.db.select().from(sessions)).toHaveLength(1);
     });

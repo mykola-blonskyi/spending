@@ -11,7 +11,7 @@ import {
   sessionCookieName,
   setSessionCookie,
 } from './session-cookie';
-import { SessionService } from './session.service';
+import { SessionService, SupersededTokenError } from './session.service';
 
 const header = (value: string | string[] | undefined) =>
   typeof value === 'string' ? value : undefined;
@@ -43,7 +43,9 @@ export class SessionGuard implements CanActivate {
       req.actor = actor;
       return true;
     } catch (error) {
-      if (error instanceof ApiError) clearSessionCookie(res, this.config.cookieSecure);
+      if (error instanceof ApiError && !(error instanceof SupersededTokenError)) {
+        clearSessionCookie(res, this.config.cookieSecure);
+      }
       throw error;
     }
   }
