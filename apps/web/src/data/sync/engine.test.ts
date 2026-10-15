@@ -291,8 +291,8 @@ describe('SyncEngine', () => {
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
     timeouts[0]!.abort(new DOMException('timed out', 'TimeoutError'));
     await first;
+    expect(hung.getStatus().phase).toBe('retrying');
     hung.stop();
-    expect(hung.getStatus().phase).toBe('stopped');
     await second;
 
     expect(server.pushes).toHaveLength(1);
