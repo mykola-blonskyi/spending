@@ -22,6 +22,8 @@ import {
   isComplete,
   type Mapping,
   normalizeRow,
+  PRESET_IDS,
+  type PresetId,
   presetMapping,
 } from './mapping';
 import { Table, Td, Th, Tr } from './table';
@@ -150,6 +152,27 @@ function MappingStep({
           count: rows.length,
         })}
       </p>
+
+      <div className="flex flex-col gap-1.5">
+        <Label id={`${base}-preset`}>{t('bank')}</Label>
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          aria-labelledby={`${base}-preset`}
+          value={mapping.preset}
+          onValueChange={(preset) =>
+            PRESET_IDS.includes(preset as PresetId) &&
+            onChange(presetMapping(preset as PresetId, headers))
+          }
+          className="w-full sm:w-auto"
+        >
+          {PRESET_IDS.map((preset) => (
+            <ToggleGroupItem key={preset} value={preset} className="flex-1 px-4 sm:flex-none">
+              {t(`presets.${preset}`)}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      </div>
 
       <fieldset className="grid gap-4 sm:grid-cols-2">
         <legend className="mb-3 text-sm font-medium">{t('columns')}</legend>
@@ -385,7 +408,7 @@ export function NewImportPage() {
     setLoaded({
       file,
       statement,
-      mapping: presetMapping(detectPreset(), statement.headers),
+      mapping: presetMapping(detectPreset(statement.headers), statement.headers),
     });
   };
   const problemText: Record<FileProblem, string> = {

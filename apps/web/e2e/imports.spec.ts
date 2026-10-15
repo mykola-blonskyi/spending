@@ -78,3 +78,70 @@ test('a simple UTF-8 statement is mapped, imported and shows up in history', asy
     '3 imported · 0 duplicates · 1 rejected',
   ]);
 });
+
+test('a BBVA statement is read as the bank exports it', async ({ page, signInAs }) => {
+  await signInAs('ann');
+  await createAccount(page, 'BBVA');
+  await page.goto('/imports/new');
+  await page.getByLabel('Statement file').setInputFiles(fixture('bbva.csv'));
+  await expect(page.getByText('Read as Windows-1252, semicolon-separated: 6 rows.')).toBeVisible();
+  await expect(page.getByRole('radio', { name: 'BBVA' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('#main').getByRole('status')).toHaveText(
+    '5 rows ready. 1 row cannot be read and will be rejected',
+  );
+  await expect(page.getByRole('cell', { name: 'NÓMINA ACME SL' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Import 6 rows' }).click();
+  await expect(page.getByRole('heading', { name: 'Import finished' })).toBeVisible();
+  await expect(stat(page, 'Imported')).toHaveText('5');
+  await expect(stat(page, 'Rejected')).toHaveText('1');
+  await expect(page.getByRole('row', { name: /^10 / })).toContainText('The date could not be read');
+
+  await page.getByRole('link', { name: 'Open history' }).click();
+  const mercadona = page.getByRole('link', { name: /MERCADONA/ });
+  await expect(mercadona).toContainText('-€45.67');
+  await expect(mercadona).toContainText('Groceries');
+  await expect(page.getByRole('link', { name: /CAFÉ PEPE/ })).toHaveCount(2);
+});
+
+test('a Santander statement is read with its preset', async ({ page, signInAs }) => {
+  await signInAs('ann');
+  await createAccount(page, 'Santander');
+  await page.goto('/imports/new');
+  await page.getByLabel('Statement file').setInputFiles(fixture('santander.csv'));
+  await expect(page.getByText('Read as Windows-1252, semicolon-separated: 3 rows.')).toBeVisible();
+  await expect(page.getByRole('radio', { name: 'Santander' })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+  await expect(page.getByLabel('Transaction ID')).toHaveText(/Referencia/);
+  await page.getByRole('button', { name: 'Import 3 rows' }).click();
+  await expect(stat(page, 'Imported')).toHaveText('3');
+});
+
+test('files over the limits are refused before anything is uploaded', async ({
+  page,
+  signInAs,
+}) => {
+  await signInAs('ann');
+  await createAccount(page, 'BBVA');
+  await page.goto('/imports/new');
+  const input = page.getByLabel('Statement file');
+  await input.setInputFiles({
+    name: 'big.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.alloc(2 * 1024 * 1024 + 1, 0x61),
+  });
+  await expect(page.getByRole('alert')).toHaveText(
+    'This file is larger than 2 MiB. Export a shorter period and try again.',
+  );
+  await input.setInputFiles({
+    name: 'long.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('date,amount,memo\n' + '2026-10-01,-1,x\n'.repeat(5001)),
+  });
+  await expect(page.getByRole('alert')).toHaveText(
+    'This file has more than 5,000 rows. Export a shorter period and try again.',
+  );
+  await expect(page.getByRole('button', { name: /^Import/ })).toHaveCount(0);
+});

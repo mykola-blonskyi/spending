@@ -28,12 +28,44 @@ export type Mapping = {
   decimal: DecimalSeparator;
 };
 
-export const PRESET_IDS = ['custom'] as const;
+export const PRESET_IDS = ['bbva', 'santander', 'custom'] as const;
 export type PresetId = (typeof PRESET_IDS)[number];
 
-type Headers = Partial<Record<keyof Columns, readonly string[]>>;
+type Preset = {
+  dateFormat: DateFormat;
+  decimal: DecimalSeparator;
+  /** Lowercase header names, first match wins. */
+  headers: Partial<Record<keyof Columns, readonly string[]>>;
+  /** A header only this bank's export carries. */
+  signature: readonly string[];
+};
 
-const GENERIC: Headers = {
+const SPANISH = { dateFormat: 'dmy', decimal: ',' } as const;
+
+const PRESETS: Record<Exclude<PresetId, 'custom'>, Preset> = {
+  bbva: {
+    ...SPANISH,
+    headers: {
+      date: ['fecha'],
+      description: ['concepto'],
+      amount: ['importe'],
+      currency: ['divisa'],
+    },
+    signature: ['disponible', 'f.valor'],
+  },
+  santander: {
+    ...SPANISH,
+    headers: {
+      date: ['fecha operación', 'fecha operacion', 'fecha'],
+      description: ['concepto'],
+      amount: ['importe'],
+      externalId: ['referencia'],
+    },
+    signature: ['saldo', 'fecha operación', 'fecha operacion'],
+  },
+};
+
+const GENERIC: Preset['headers'] = {
   date: ['date', 'fecha', 'дата'],
   description: ['description', 'concepto', 'concept', 'memo', 'опис', 'описание'],
   amount: ['amount', 'importe', 'сумма', 'сума'],
@@ -45,7 +77,7 @@ const GENERIC: Headers = {
 
 const normalizeHeader = (header: string) => header.trim().toLowerCase();
 
-function matchColumns(headers: readonly string[], names: Headers): Columns {
+function matchColumns(headers: readonly string[], names: Preset['headers']): Columns {
   const lower = headers.map(normalizeHeader);
   const find = (candidates: readonly string[] | undefined) => {
     for (const name of candidates ?? []) {
@@ -65,19 +97,29 @@ function matchColumns(headers: readonly string[], names: Headers): Columns {
   };
 }
 
-export function detectPreset(): PresetId {
+/** The bank whose signature the header row carries, else `custom`. */
+export function detectPreset(headers: readonly string[]): PresetId {
+  const lower = new Set(headers.map(normalizeHeader));
+  for (const [id, preset] of Object.entries(PRESETS)) {
+    if (preset.signature.some((name) => lower.has(name))) return id as PresetId;
+  }
   return 'custom';
 }
 
-/** A full mapping guessed from common header names. */
+/** A full mapping for the preset; `custom` guesses from common header names. */
 export function presetMapping(preset: PresetId, headers: readonly string[]): Mapping {
-  const columns = matchColumns(headers, GENERIC);
+  const columns =
+    preset === 'custom'
+      ? matchColumns(headers, GENERIC)
+      : matchColumns(headers, { ...GENERIC, ...PRESETS[preset].headers });
+  const formats =
+    preset === 'custom' ? { dateFormat: 'ymd' as const, decimal: '.' as const } : PRESETS[preset];
   return {
     preset,
     columns,
     amountLayout: columns.amount === null && columns.debit !== null ? 'split' : 'signed',
-    dateFormat: 'ymd',
-    decimal: '.',
+    dateFormat: formats.dateFormat,
+    decimal: formats.decimal,
   };
 }
 

@@ -9,14 +9,46 @@ import {
   presetMapping,
 } from './mapping';
 
-describe('presetMapping', () => {
+const BBVA = ['Fecha', 'F.Valor', 'Concepto', 'Movimiento', 'Importe', 'Divisa', 'Disponible'];
+const SANTANDER = ['Fecha Operación', 'Fecha Valor', 'Concepto', 'Importe', 'Saldo', 'Referencia'];
+
+describe('presets', () => {
+  it('recognizes each bank by its header row', () => {
+    expect(detectPreset(BBVA)).toBe('bbva');
+    expect(detectPreset(SANTANDER)).toBe('santander');
+    expect(detectPreset(['Date', 'Amount', 'Memo'])).toBe('custom');
+  });
+
+  it('prefills Spanish formats and the mapped columns', () => {
+    expect(presetMapping('bbva', BBVA)).toEqual({
+      preset: 'bbva',
+      columns: {
+        date: 0,
+        amount: 4,
+        debit: null,
+        credit: null,
+        description: 2,
+        externalId: null,
+        currency: 5,
+      },
+      amountLayout: 'signed',
+      dateFormat: 'dmy',
+      decimal: ',',
+    });
+    expect(presetMapping('santander', SANTANDER).columns).toMatchObject({
+      date: 0,
+      description: 2,
+      amount: 3,
+      externalId: 5,
+    });
+  });
+
   it('guesses a custom file from common names and switches to debit/credit when needed', () => {
     const mapping = presetMapping('custom', ['Date', 'Description', 'Debit', 'Credit']);
     expect(mapping.amountLayout).toBe('split');
     expect(mapping.columns).toMatchObject({ date: 0, description: 1, debit: 2, credit: 3 });
     expect(mapping.dateFormat).toBe('ymd');
     expect(mapping.decimal).toBe('.');
-    expect(detectPreset()).toBe('custom');
   });
 });
 
@@ -45,7 +77,7 @@ describe('parseAmountToMinor', () => {
 
 describe('normalizeRow', () => {
   const signed: Mapping = {
-    preset: 'custom',
+    preset: 'bbva',
     columns: {
       date: 0,
       amount: 1,
@@ -110,7 +142,7 @@ describe('normalizeRow', () => {
 
 describe('isComplete', () => {
   it('needs date, description and the amount columns of the layout', () => {
-    const mapping = presetMapping('custom', ['Date', 'Description', 'Amount']);
+    const mapping = presetMapping('bbva', BBVA);
     expect(isComplete(mapping)).toBe(true);
     expect(isComplete({ ...mapping, columns: { ...mapping.columns, amount: null } })).toBe(false);
     expect(isComplete({ ...mapping, amountLayout: 'split' })).toBe(false);
