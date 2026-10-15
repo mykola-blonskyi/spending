@@ -268,6 +268,12 @@ check. Add a WAF custom rule: Security → WAF → Custom rules, expression
 `(http.host eq "spending.blonskyi.dev" and starts_with(http.request.uri.path, "/api/health"))`,
 action Skip (all remaining custom rules, and Bot Fight Mode / Super Bot Fight Mode if offered).
 
+Cloudflare's zone Browser Cache TTL rewrites `Cache-Control` on static files such as `/sw.js`
+(seen as `max-age=14400`), which fails the post-deploy cache-header check. A Cache Rule keeps the
+origin's headers for this host only: Caching → Cache Rules → Create rule, Hostname equals
+`spending.blonskyi.dev`, Eligible for cache, Browser TTL "Respect origin TTL". Verify with
+`curl -sI https://spending.blonskyi.dev/sw.js | grep -i cache-control` (expect `no-cache`).
+
 ## Rollback
 
 - **Code.** Revert the commit on `main`; the revert deploys automatically once CI passes, so it is
