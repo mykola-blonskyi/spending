@@ -150,15 +150,16 @@ function Sentence({
   form,
   open,
   toggle,
+  panelIdPrefix,
 }: {
   form: EntryForm;
   open: Panel | null;
   toggle: (panel: Panel) => void;
+  panelIdPrefix: string;
 }) {
   const t = useTranslations();
   const { locale } = useSharedLocale();
   const amountId = useId();
-  const base = useId();
   const { values } = form;
   const invalid = form.errors.amount === 'invalid';
   const category = form.categories.find((item) => item.id === values.categoryId);
@@ -166,7 +167,7 @@ function Sentence({
   const chip = (panel: Panel, label: string | undefined, fallback: string) => (
     <Chip
       open={open === panel}
-      panelId={`${base}-${panel}`}
+      panelId={`${panelIdPrefix}-${panel}`}
       onClick={() => toggle(panel)}
       muted={!label}
     >
@@ -264,7 +265,7 @@ export function JournalEntryView({ form }: { form: EntryForm }) {
           </div>
 
           <div className="mt-8">
-            <Sentence form={form} open={open} toggle={toggle} />
+            <Sentence form={form} open={open} toggle={toggle} panelIdPrefix={base} />
           </div>
 
           <div className="mt-2 flex">

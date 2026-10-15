@@ -78,7 +78,7 @@ export function CalmShell({
         secondary={secondary}
         tabClass={tabClass}
         icon={tabIcon}
-        className="fixed inset-x-0 bottom-0 z-40 bg-background/90 backdrop-blur-md supports-[backdrop-filter]:bg-background/75 lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 bg-background/90 backdrop-blur-md lg:hidden"
         add={
           <NavLink
             to={primaryAction.to}

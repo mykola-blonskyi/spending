@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import {
   AlertDialog,
@@ -39,6 +39,7 @@ export function ConfirmDialog({
   const { strings } = useSharedLocale();
   const [typed, setTyped] = useState('');
   const inputId = useId();
+  const opener = useRef<HTMLElement | null>(null);
   const blocked = confirmPhrase !== undefined && typed.trim() !== confirmPhrase;
 
   const handleOpenChange = (next: boolean) => {
@@ -48,7 +49,18 @@ export function ConfirmDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
-      <AlertDialogContent>
+      {/* Opened without a Radix trigger, so focus would fall to <body> on close; return it to
+          whatever opened the dialog. */}
+      <AlertDialogContent
+        onOpenAutoFocus={() => {
+          opener.current = document.activeElement as HTMLElement | null;
+        }}
+        onCloseAutoFocus={(event) => {
+          if (!opener.current?.isConnected) return;
+          event.preventDefault();
+          opener.current.focus();
+        }}
+      >
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
