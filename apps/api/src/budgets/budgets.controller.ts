@@ -10,7 +10,7 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { ApiBody, ApiNoContentResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiBody, ApiNoContentResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { createZodDto, ZodResponse } from 'nestjs-zod';
 import { type Actor, CurrentActor } from '../common/actor';
 import { BudgetsService } from './budgets.service';
@@ -21,7 +21,7 @@ class BudgetListDto extends createZodDto(budgetListSchema) {}
 class BudgetDto extends createZodDto(budgetViewSchema) {}
 class PutBudgetDto extends createZodDto(putBudgetSchema) {}
 
-// @ApiBody and @ApiQuery are explicit because tsx, which writes the OpenAPI file, emits no
+// @ApiBody, @ApiParam and @ApiQuery are explicit because tsx, which writes the OpenAPI file, emits no
 // parameter metadata.
 @Controller('v1/budgets')
 export class BudgetsController {
@@ -44,6 +44,7 @@ export class BudgetsController {
   @Delete(':id')
   @HttpCode(204)
   @ApiNoContentResponse()
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
   remove(@CurrentActor() actor: Actor, @Param('id', ParseUUIDPipe) id: string) {
     return this.budgets.remove(actor.userId, id);
   }

@@ -6,6 +6,8 @@ export {
   useLocalTransaction,
   useLocalTransactions,
   useRecordTransaction,
+  useSyncNow,
+  useRequestSync,
   useSyncStatus,
   useUpdateTransaction,
   useWorkspaces,

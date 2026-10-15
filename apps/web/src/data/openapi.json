@@ -350,7 +350,16 @@
     "/api/v1/family/invitations/{id}": {
       "delete": {
         "operationId": "WorkspacesController_revoke",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid"
+            }
+          }
+        ],
         "responses": {
           "204": {
             "description": ""
@@ -378,7 +387,16 @@
     "/api/v1/family/members/{userId}": {
       "delete": {
         "operationId": "WorkspacesController_removeMember",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid"
+            }
+          }
+        ],
         "responses": {
           "204": {
             "description": ""
@@ -444,7 +462,14 @@
     "/api/v1/invitations/{token}": {
       "get": {
         "operationId": "WorkspacesController_preview",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -465,7 +490,14 @@
     "/api/v1/invitations/{token}/accept": {
       "post": {
         "operationId": "WorkspacesController_accept",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -1157,7 +1189,17 @@
     "/api/v1/budgets/{id}": {
       "delete": {
         "operationId": "BudgetsController_remove",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "204": {
             "description": ""
@@ -1232,7 +1274,17 @@
     "/api/v1/recurring-rules/{id}": {
       "patch": {
         "operationId": "RecurringController_update",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1261,7 +1313,17 @@
       },
       "delete": {
         "operationId": "RecurringController_remove",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "204": {
             "description": ""

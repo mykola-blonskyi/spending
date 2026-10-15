@@ -44,9 +44,11 @@ function dateFormat(locale: string, options: Intl.DateTimeFormatOptions) {
 export function formatDate(
   value: DateInput,
   locale: string,
-  options: { dateStyle?: 'short' | 'medium' | 'long' | 'full' } = {},
+  options: { dateStyle?: 'short' | 'medium' | 'long' | 'full'; timeStyle?: 'short' } = {},
 ): string {
-  return dateFormat(locale, { dateStyle: options.dateStyle ?? 'medium' }).format(toDate(value));
+  return dateFormat(locale, { dateStyle: options.dateStyle ?? 'medium', ...options }).format(
+    toDate(value),
+  );
 }
 
 /** A standalone month label such as "October 2026", capitalized for use as a heading. */

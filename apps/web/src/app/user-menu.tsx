@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { useSignOut } from '@features/auth';
 import { useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
+import { UserAvatar } from '@shared/components';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@shared/ui/dropdown-menu';
-import { UserAvatar } from './user-avatar';
 
 export function UserMenu() {
   const t = useTranslations();
@@ -25,7 +25,7 @@ export function UserMenu() {
           aria-label={t('userMenu.label', { name: profile.displayName })}
           className="flex h-10 max-w-56 items-center gap-2 rounded-full p-1 transition-colors duration-150 outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/60 sm:pr-3"
         >
-          <UserAvatar profile={profile} />
+          <UserAvatar user={profile} />
           <span className="hidden truncate text-sm font-medium sm:inline">
             {profile.displayName}
           </span>

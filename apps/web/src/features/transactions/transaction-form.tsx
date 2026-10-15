@@ -1,13 +1,13 @@
 import { useId, useMemo, useState } from 'react';
 import type { Account, Category } from '@data/sync';
 import { useTranslations } from '@i18n/index';
-import { currencyExponent } from '@shared/format';
+import { currencyExponent, parseAmount } from '@shared/format';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
 import { Label } from '@shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@shared/ui/toggle-group';
-import { type FormValues, parseAmount } from './form-values';
+import type { FormValues } from './form-values';
 
 const NONE = 'none';
 const COMMON_CURRENCIES = ['EUR', 'USD', 'GBP', 'UAH', 'PLN'];
@@ -71,6 +71,11 @@ export function TransactionForm({
   const usableCategories = categories.filter(
     (c) => c.kind === values.kind && (!c.archivedAt || c.id === initial.categoryId),
   );
+  // A pick the current scope or kind no longer offers is dropped; everything else typed stays.
+  const accountId = usableAccounts.some((a) => a.id === values.accountId) ? values.accountId : null;
+  const categoryId = usableCategories.some((c) => c.id === values.categoryId)
+    ? values.categoryId
+    : null;
   const currencies = useMemo(
     () =>
       [
@@ -87,7 +92,7 @@ export function TransactionForm({
     setSaving(true);
     try {
       const { amount: _amount, ...rest } = values;
-      await onSubmit({ ...rest, amountMinor });
+      await onSubmit({ ...rest, accountId, categoryId, amountMinor });
     } finally {
       setSaving(false);
     }
@@ -107,9 +112,7 @@ export function TransactionForm({
           aria-labelledby={ids.kind}
           value={values.kind}
           onValueChange={(kind) => {
-            if (kind !== 'income' && kind !== 'expense') return;
-            const category = categories.find((c) => c.id === values.categoryId);
-            set({ kind, categoryId: category?.kind === kind ? values.categoryId : null });
+            if (kind === 'income' || kind === 'expense') set({ kind });
           }}
           className="w-full sm:w-auto"
         >
@@ -165,7 +168,7 @@ export function TransactionForm({
 
       <Field id={ids.account} label={t('account')}>
         <Select
-          value={values.accountId ?? NONE}
+          value={accountId ?? NONE}
           onValueChange={(value) => {
             const account = accounts.find((a) => a.id === value);
             set({ accountId: account?.id ?? null, ...(account && { currency: account.currency }) });
@@ -187,7 +190,7 @@ export function TransactionForm({
 
       <Field id={ids.category} label={t('category')}>
         <Select
-          value={values.categoryId ?? NONE}
+          value={categoryId ?? NONE}
           onValueChange={(value) => set({ categoryId: value === NONE ? null : value })}
         >
           <SelectTrigger id={ids.category} className="w-full">

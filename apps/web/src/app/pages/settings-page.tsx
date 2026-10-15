@@ -3,7 +3,7 @@ import { useId } from 'react';
 import { useSignOut } from '@features/auth';
 import { TimezoneSelect, useProfile, useUpdateProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
-import { PageHeader } from '@shared/components';
+import { PageHeader, UserAvatar } from '@shared/components';
 import { cn } from '@shared/lib/utils';
 import {
   isPalette,
@@ -19,7 +19,6 @@ import { ToggleGroup, ToggleGroupItem } from '@shared/ui/toggle-group';
 import { LanguageSelect } from '../language-select';
 import { LayoutThumbnail } from '../layouts/layout-thumbnail';
 import { LAYOUT_IDS, type Layout } from '../layouts/registry';
-import { UserAvatar } from '../user-avatar';
 
 const THEME_ICONS: Record<ThemePreference, LucideIcon> = {
   light: Sun,
@@ -198,7 +197,7 @@ export function SettingsPage() {
         <Card className="gap-0 py-0">
           <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-3">
-              <UserAvatar profile={profile} className="size-10" />
+              <UserAvatar user={profile} className="size-10" />
               <div className="flex min-w-0 flex-col">
                 <span className="truncate font-medium">{profile.displayName}</span>
                 <span className="truncate text-sm text-muted-foreground">{profile.email}</span>
