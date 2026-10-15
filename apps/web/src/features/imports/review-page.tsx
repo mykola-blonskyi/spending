@@ -2,7 +2,7 @@ import { ClipboardCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { errorCode } from '@data/api-error';
-import type { ConfirmItem, ReviewItem } from '@data/imports';
+import type { ReviewItem } from '@data/imports';
 import { type Category, useCategories, useWorkspaces } from '@data/sync';
 import { useTranslations } from '@i18n/index';
 import { EmptyState, ErrorState, LoadingState, MoneyText, PageHeader } from '@shared/components';
@@ -23,12 +23,10 @@ import {
 } from '@shared/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@shared/ui/toggle-group';
 import { CategorySelect } from './category-select';
-import { useConfirmReview, useReviewQueue } from './imports';
+import { useConfirmReview, useHasFamily, useReviewQueue } from './imports';
+import { bulkCategoryChoice, type Choice, type Scope } from './review-choice';
 
-type Scope = ConfirmItem['scope'];
-type Choice = { scope: Scope; categoryId: string | null };
 const SCOPES: readonly Scope[] = ['personal', 'family'];
-const NONE = 'none';
 
 /** Checkbox, description, amount; scope and category beside them on wide screens, under them on phones. */
 const ROW =
@@ -75,6 +73,7 @@ export function ReviewPage() {
   const t = useTranslations();
   const { locale } = useSharedLocale();
   const online = useOnlineStatus();
+  const hasFamily = useHasFamily();
   const queue = useReviewQueue();
   const workspaces = useWorkspaces();
   const categories = useCategories();
@@ -113,9 +112,13 @@ export function ReviewPage() {
     setChoices((prev) => {
       const next = new Map(prev);
       for (const item of chosen) {
-        if (item.transaction.kind === category.kind) {
-          next.set(item.transaction.id, { scope: bulkScope, categoryId: category.id });
-        }
+        const choice = bulkCategoryChoice(
+          choiceOf(item),
+          item.transaction.kind,
+          bulkScope,
+          category,
+        );
+        next.set(item.transaction.id, choice);
       }
       return next;
     });
@@ -133,18 +136,20 @@ export function ReviewPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={t('imports.review.title')} description={t('imports.review.description')} />
-      {queue.isPending || !workspaces.ready ? (
+      {!workspaces.ready ? (
+        <LoadingState rows={4} />
+      ) : !hasFamily || (queue.isSuccess && items.length === 0) ? (
+        <EmptyState
+          icon={ClipboardCheck}
+          title={t('imports.review.emptyTitle')}
+          description={t('imports.review.emptyDescription')}
+        />
+      ) : queue.isPending ? (
         <LoadingState rows={4} />
       ) : queue.isError ? (
         <ErrorState
           title={t(`errors.${errorCode(queue.error)}`)}
           onRetry={() => void queue.refetch()}
-        />
-      ) : items.length === 0 ? (
-        <EmptyState
-          icon={ClipboardCheck}
-          title={t('imports.review.emptyTitle')}
-          description={t('imports.review.emptyDescription')}
         />
       ) : (
         <>
@@ -158,7 +163,7 @@ export function ReviewPage() {
               label={t('imports.review.bulkScope')}
             />
             <Select
-              value={NONE}
+              value=""
               onValueChange={(id) => {
                 const category = live.find((c) => c.id === id);
                 if (category) applyCategory(category);
@@ -168,9 +173,6 @@ export function ReviewPage() {
                 <SelectValue placeholder={t('imports.review.bulkCategory')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={NONE} className="hidden">
-                  {t('imports.review.bulkCategory')}
-                </SelectItem>
                 {(['expense', 'income'] as const).map((kind) => (
                   <SelectGroup key={kind}>
                     <SelectLabel>{t(`transactionForm.${kind}`)}</SelectLabel>

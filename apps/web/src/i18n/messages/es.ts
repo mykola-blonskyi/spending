@@ -359,6 +359,8 @@ export const es = {
       bulkCategory: 'Categoría para la selección',
       apply: 'Aplicar',
       allCategorized: 'Todos los movimientos importados tienen categoría.',
+      pullStalled:
+        'Los movimientos importados aparecerán aquí cuando este dispositivo vuelva a sincronizar.',
       importAnother: 'Importar otro',
       openHistory: 'Abrir el historial',
     },
@@ -372,7 +374,8 @@ export const es = {
     },
     history: {
       title: 'Importaciones anteriores',
-      counts: '{imported} importadas · {duplicates} duplicadas · {rejected} rechazadas',
+      counts:
+        '{imported, plural, one {# importada} other {# importadas}} · {duplicates, plural, one {# duplicada} other {# duplicadas}} · {rejected, plural, one {# rechazada} other {# rechazadas}}',
       rows: '{count, plural, one {# fila} other {# filas}}',
       undone: 'Deshecha',
       undo: 'Deshacer',

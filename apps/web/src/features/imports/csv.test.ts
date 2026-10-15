@@ -42,6 +42,17 @@ describe('detectDelimiter', () => {
     expect(detectDelimiter(text)).toBe(';');
   });
 
+  it('prefers the separator every line agrees on over one that appears more often', () => {
+    const text = [
+      'Concepto;Importe',
+      'COMPRA, MERCADONA, S.A.;-12,50',
+      'RECIBO, ENDESA;-60,00',
+      'NOMINA, ACME;1.234,56',
+      'LUZ, GAS;-5,00',
+    ].join('\n');
+    expect(detectDelimiter(text)).toBe(';');
+  });
+
   it('handles comma and tab files', () => {
     expect(detectDelimiter('date,amount,memo\n2026-10-01,-1.5,"Shop, Inc"\n')).toBe(',');
     expect(detectDelimiter('date\tamount\n2026-10-01\t-1.5\n')).toBe('\t');

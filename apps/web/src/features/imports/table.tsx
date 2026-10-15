@@ -1,9 +1,13 @@
 import { cn } from '@shared/lib/utils';
 
-/** A plain data table that scrolls sideways on narrow screens instead of squeezing cells. */
+/**
+ * A plain data table that scrolls sideways on narrow screens instead of squeezing cells. The
+ * wrapper is positioned so screen-reader-only text in a cell stays inside the scroll area
+ * instead of widening the page.
+ */
 export function Table({ className, ...props }: React.ComponentProps<'table'>) {
   return (
-    <div className="w-full overflow-x-auto rounded-xl border">
+    <div className="relative w-full overflow-x-auto rounded-xl border">
       <table className={cn('w-full border-collapse text-sm', className)} {...props} />
     </div>
   );

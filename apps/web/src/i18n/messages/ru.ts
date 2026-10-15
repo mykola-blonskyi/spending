@@ -344,7 +344,7 @@ export const ru = {
       title: 'Импорт завершён',
       description: '{fileName} на счёт {account}.',
       imported: 'Импортировано',
-      duplicates: 'Уже были',
+      duplicates: 'Уже импортированы',
       rejected: 'Отклонено',
       duplicatesHint: 'Строки, импортированные раньше или удалённые с тех пор, пропущены.',
       pendingReview:
@@ -363,6 +363,8 @@ export const ru = {
       bulkCategory: 'Категория для выбранных',
       apply: 'Применить',
       allCategorized: 'У всех импортированных записей есть категория.',
+      pullStalled:
+        'Импортированные записи появятся здесь, когда устройство снова сможет синхронизироваться.',
       importAnother: 'Импортировать ещё',
       openHistory: 'Открыть историю',
     },
@@ -377,7 +379,8 @@ export const ru = {
     },
     history: {
       title: 'Предыдущие импорты',
-      counts: '{imported} импортировано · {duplicates} дубликатов · {rejected} отклонено',
+      counts:
+        '{imported, plural, one {# импортирована} few {# импортированы} other {# импортировано}} · {duplicates, plural, one {# дубликат} few {# дубликата} other {# дубликатов}} · {rejected, plural, one {# отклонена} few {# отклонены} other {# отклонено}}',
       rows: '{count, plural, one {# строка} few {# строки} other {# строк}}',
       undone: 'Отменён',
       undo: 'Отменить',
@@ -396,7 +399,7 @@ export const ru = {
       open: 'Проверить',
       emptyTitle: 'Нечего проверять',
       emptyDescription: 'Импортированные строки будут ждать здесь, пока вы их не подтвердите.',
-      scope: 'Пространство',
+      scope: 'Куда',
       personal: 'Личное',
       family: 'Семья',
       category: 'Категория',

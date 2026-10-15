@@ -340,7 +340,7 @@ export const uk = {
       title: 'Імпорт завершено',
       description: '{fileName} на рахунок {account}.',
       imported: 'Імпортовано',
-      duplicates: 'Уже були',
+      duplicates: 'Уже імпортовано',
       rejected: 'Відхилено',
       duplicatesHint: 'Рядки, імпортовані раніше або відтоді видалені, пропущено.',
       pendingReview:
@@ -359,6 +359,7 @@ export const uk = {
       bulkCategory: 'Категорія для вибраних',
       apply: 'Застосувати',
       allCategorized: 'Усі імпортовані записи мають категорію.',
+      pullStalled: 'Імпортовані записи з’являться тут, коли пристрій знову зможе синхронізуватися.',
       importAnother: 'Імпортувати ще',
       openHistory: 'Відкрити історію',
     },
@@ -372,7 +373,8 @@ export const uk = {
     },
     history: {
       title: 'Попередні імпорти',
-      counts: '{imported} імпортовано · {duplicates} дублікатів · {rejected} відхилено',
+      counts:
+        '{imported, plural, one {# імпортований} few {# імпортовані} other {# імпортованих}} · {duplicates, plural, one {# дублікат} few {# дублікати} other {# дублікатів}} · {rejected, plural, one {# відхилений} few {# відхилені} other {# відхилених}}',
       rows: '{count, plural, one {# рядок} few {# рядки} other {# рядків}}',
       undone: 'Скасовано',
       undo: 'Скасувати',
@@ -392,7 +394,7 @@ export const uk = {
       open: 'Переглянути',
       emptyTitle: 'Нічого переглядати',
       emptyDescription: 'Імпортовані рядки чекатимуть тут, доки ви їх не підтвердите.',
-      scope: 'Простір',
+      scope: 'Куди',
       personal: 'Особисте',
       family: 'Сім’я',
       category: 'Категорія',

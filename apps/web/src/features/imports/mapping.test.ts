@@ -61,6 +61,13 @@ describe('parseDate', () => {
     expect(parseDate('2026-10-05', 'dmy')).toBeNull();
     expect(parseDate('', 'dmy')).toBeNull();
   });
+
+  it('rejects years the server refuses', () => {
+    expect(parseDate('31/12/1969', 'dmy')).toBeNull();
+    expect(parseDate('1970-01-01', 'ymd')).toBe('1970-01-01');
+    expect(parseDate('2100-12-31', 'ymd')).toBe('2100-12-31');
+    expect(parseDate('01/01/2101', 'mdy')).toBeNull();
+  });
 });
 
 describe('parseAmountToMinor', () => {
@@ -72,6 +79,13 @@ describe('parseAmountToMinor', () => {
     expect(parseAmountToMinor('1,2345', 2, ',')).toBeNull();
     expect(parseAmountToMinor('1234', 0, '.')).toBe(1234);
     expect(parseAmountToMinor('abc', 2, '.')).toBeNull();
+  });
+
+  it('reads a Unicode minus sign and nothing else that is not a plain sign', () => {
+    expect(parseAmountToMinor('\u221212,50', 2, ',')).toBe(-1250);
+    expect(parseAmountToMinor('(12,50)', 2, ',')).toBeNull();
+    expect(parseAmountToMinor('12,50-', 2, ',')).toBeNull();
+    expect(parseAmountToMinor('12,50 EUR', 2, ',')).toBeNull();
   });
 });
 
@@ -127,6 +141,24 @@ describe('normalizeRow', () => {
     ).toMatchObject({
       amountMinor: 10000,
     });
+  });
+
+  it('normalizes the currency cell and names one the server would refuse', () => {
+    const exponentOf = (currency: string) => (currency === '' || currency === 'EUR' ? 2 : null);
+    expect(
+      normalizeRow(
+        { line: 4, cells: ['01/10/2026', '-1,00', 'Shop', '', ' eur '] },
+        signed,
+        exponentOf,
+      ),
+    ).toMatchObject({ currency: 'EUR', amountMinor: -100, problems: [] });
+    expect(
+      normalizeRow(
+        { line: 5, cells: ['01/10/2026', '-1,00', 'Shop', '', 'XXX'] },
+        signed,
+        exponentOf,
+      ),
+    ).toMatchObject({ currency: 'XXX', amountMinor: -100, problems: ['currency'] });
   });
 
   it('keeps unreadable cells in a form the server rejects, and names the problem', () => {

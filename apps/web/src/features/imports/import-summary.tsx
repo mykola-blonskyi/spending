@@ -1,5 +1,5 @@
 import { ArrowRight, ClipboardCheck } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import type { ImportResult } from '@data/imports';
 import {
@@ -7,10 +7,11 @@ import {
   type TransactionEntry,
   useCategories,
   useLocalTransactions,
+  useSyncStatus,
   useUpdateTransaction,
 } from '@data/sync';
 import { useTranslations } from '@i18n/index';
-import { MoneyText } from '@shared/components';
+import { LoadingState, MoneyText } from '@shared/components';
 import { formatDate } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import { cn } from '@shared/lib/utils';
@@ -48,6 +49,7 @@ function ImportedEntries({ ids }: { ids: readonly string[] }) {
   const tf = useTranslations('transactionForm');
   const { locale } = useSharedLocale();
   const all = useLocalTransactions(ALL);
+  const sync = useSyncStatus();
   const categories = useCategories();
   const update = useUpdateTransaction();
   const [uncategorizedOnly, setUncategorizedOnly] = useState(false);
@@ -91,7 +93,20 @@ function ImportedEntries({ ids }: { ids: readonly string[] }) {
   const optionsFor = (entry: TransactionEntry, extra: Category | undefined) =>
     options.filter((c) => c.kind === entry.kind || c.id === extra?.id);
 
-  if (entries.length === 0) return null;
+  if (entries.length < ids.length) {
+    const stalled = sync?.state === 'offline' || sync?.state === 'authRequired';
+    return (
+      <section className="flex flex-col gap-3">
+        <h2 className="px-1 text-sm font-medium text-muted-foreground">{t('entriesTitle')}</h2>
+        <LoadingState rows={Math.min(ids.length, 3)} />
+        {stalled && (
+          <p role="status" className="px-1 text-sm text-muted-foreground">
+            {t('pullStalled')}
+          </p>
+        )}
+      </section>
+    );
+  }
 
   return (
     <section className="flex flex-col gap-3">
@@ -114,22 +129,20 @@ function ImportedEntries({ ids }: { ids: readonly string[] }) {
         </div>
       </div>
 
-      {selected.size > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-muted/40 px-4 py-3">
-          <span className="text-sm font-medium">{t('selected', { count: selected.size })}</span>
-          <CategorySelect
-            value={bulkCategory}
-            categories={options}
-            onChange={setBulkCategory}
-            label={t('bulkCategory')}
-            noneLabel={t('noCategory')}
-            className="min-w-44"
-          />
-          <Button size="sm" onClick={() => void applyBulk()}>
-            {t('apply')}
-          </Button>
-        </div>
-      )}
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-muted/40 px-4 py-3">
+        <span className="text-sm font-medium">{t('selected', { count: selected.size })}</span>
+        <CategorySelect
+          value={bulkCategory}
+          categories={options}
+          onChange={setBulkCategory}
+          label={t('bulkCategory')}
+          noneLabel={t('noCategory')}
+          className="min-w-44"
+        />
+        <Button size="sm" disabled={selected.size === 0} onClick={() => void applyBulk()}>
+          {t('apply')}
+        </Button>
+      </div>
 
       <div className="rounded-xl border">
         <div className={cn(ROW, 'py-2 text-xs font-medium text-muted-foreground')}>
@@ -208,11 +221,16 @@ export function ImportSummary({
 }) {
   const t = useTranslations('imports');
   const { batch, imported, duplicates, rejected } = result;
+  const heading = useRef<HTMLHeadingElement>(null);
+  // The form that was just submitted is gone; move the reader to the result.
+  useEffect(() => heading.current?.focus(), []);
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h2 className="text-lg font-semibold">{t('summary.title')}</h2>
+        <h2 ref={heading} tabIndex={-1} className="text-lg font-semibold outline-none">
+          {t('summary.title')}
+        </h2>
         <p className="text-sm text-muted-foreground">
           {t('summary.description', { fileName: batch.fileName, account: accountName })}
         </p>

@@ -49,7 +49,7 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex min-w-0 flex-col gap-1.5">
       <Label htmlFor={id}>{label}</Label>
       {children}
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
@@ -77,7 +77,11 @@ function ColumnSelect({
       onValueChange={(next) => onChange(next === NONE ? null : Number(next))}
     >
       <SelectTrigger id={id} className="w-full">
-        <SelectValue />
+        <SelectValue>
+          <span className="truncate">
+            {value === null ? t('notMapped') : headers[value] || `#${value + 1}`}
+          </span>
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         <SelectItem value={NONE}>{t('notMapped')}</SelectItem>
@@ -92,12 +96,13 @@ function ColumnSelect({
   );
 }
 
-function exponentFor(currency: string, fallback: number): number {
+/** Null for a code the server would reject as INVALID_CURRENCY. */
+function exponentFor(currency: string, fallback: number): number | null {
   if (!currency) return fallback;
   try {
     return currencyExponent(currency);
   } catch {
-    return fallback;
+    return null;
   }
 }
 
@@ -175,7 +180,7 @@ function MappingStep({
         </ToggleGroup>
       </div>
 
-      <fieldset className="grid gap-4 sm:grid-cols-2">
+      <fieldset className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <legend className="mb-3 text-sm font-medium">{t('columns')}</legend>
         {columnSelect('date')}
         {columnSelect('description')}
@@ -253,10 +258,12 @@ function MappingStep({
 
       <section className="flex flex-col gap-3">
         <div className="flex flex-col gap-0.5 px-1">
-          <h2 className="text-sm font-medium">{t('preview')}</h2>
+          <h2 id={`${base}-preview`} className="text-sm font-medium">
+            {t('preview')}
+          </h2>
           <p className="text-xs text-muted-foreground">{t('previewHint')}</p>
         </div>
-        <Table>
+        <Table aria-labelledby={`${base}-preview`}>
           <thead>
             <tr>
               <Th className="hidden w-16 sm:table-cell">#</Th>
@@ -268,7 +275,8 @@ function MappingStep({
           <tbody>
             {normalized.slice(0, PREVIEW_ROWS).map((row, index) => {
               const badDate = row.problems.includes('date');
-              const badAmount = row.problems.includes('amount');
+              const badCurrency = row.problems.includes('currency');
+              const badAmount = row.problems.includes('amount') || badCurrency;
               const raw = rows[index]!.cells;
               return (
                 <Tr key={row.line}>
@@ -293,7 +301,11 @@ function MappingStep({
                           ? raw[mapping.columns.amount ?? -1]
                           : `${raw[mapping.columns.debit ?? -1] ?? ''} / ${raw[mapping.columns.credit ?? -1] ?? ''}`) ||
                           '—'}
-                        <span className="sr-only"> ({t('unreadable')})</span>
+                        {badCurrency && ` ${row.currency}`}
+                        <span className="sr-only">
+                          {' '}
+                          ({badCurrency ? t('reasons.INVALID_CURRENCY') : t('unreadable')})
+                        </span>
                       </>
                     ) : (
                       <MoneyText

@@ -129,7 +129,11 @@ const DATE_PATTERNS: Record<DateFormat, RegExp> = {
   ymd: /^(\d{4})[/.-](\d{1,2})[/.-](\d{1,2})$/,
 };
 
-/** `YYYY-MM-DD` for a real calendar date in the format, else null. */
+/** The server's calendarDateSchema range; a year outside it is rejected there anyway. */
+const YEAR_MIN = 1970;
+const YEAR_MAX = 2100;
+
+/** `YYYY-MM-DD` for a real calendar date in the format and the server's range, else null. */
 export function parseDate(text: string, format: DateFormat): string | null {
   const match = DATE_PATTERNS[format].exec(text.trim());
   if (!match) return null;
@@ -142,19 +146,25 @@ export function parseDate(text: string, format: DateFormat): string | null {
         : [parts[2], parts[0], parts[1]];
   const date = new Date(Date.UTC(year, month - 1, day));
   if (
+    year < YEAR_MIN ||
+    year > YEAR_MAX ||
     date.getUTCFullYear() !== year ||
     date.getUTCMonth() !== month - 1 ||
     date.getUTCDate() !== day
   ) {
     return null;
   }
-  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const pad = (n: number, width: number) => String(n).padStart(width, '0');
+  return `${pad(year, 4)}-${pad(month, 2)}-${pad(day, 2)}`;
 }
 
 /**
- * The API's exact parser: "1.234,56", "-12.5", "1 234.5" to signed minor units. Grouping
- * characters are accepted only between groups of three digits, so a wrong separator choice fails
- * ("12,50" with "." as decimal) instead of scaling the amount. Null for anything else.
+ * The only money parser on the import path: the server validates `amountMinor` alone, so this
+ * must keep the semantics of `parseAmountToMinor` in apps/api/src/common/money.ts. "1.234,56",
+ * "-12.5", "1 234.5" to signed minor units. Grouping characters are accepted only between groups
+ * of three digits, so a wrong separator choice fails ("12,50" with "." as decimal) instead of
+ * scaling the amount. A leading U+2212 minus is read as "-"; parentheses, a trailing minus or a
+ * currency suffix are not amounts. Null for anything else.
  */
 export function parseAmountToMinor(
   text: string,
@@ -164,7 +174,7 @@ export function parseAmountToMinor(
   const groupChars = decimalSeparator === ',' ? ". \\u00a0\\u202f'" : ", \\u00a0\\u202f'";
   const match = new RegExp(
     `^([+-]?)(\\d{1,3}(?:([${groupChars}])\\d{3}(?:\\3\\d{3})*)?|\\d+)(?:\\${decimalSeparator}(\\d+))?$`,
-  ).exec(text.trim());
+  ).exec(text.trim().replace(/^\u2212/, '-'));
   if (!match) return null;
   const integer = match[2]!.replace(/\D/g, '');
   const fraction = match[4] ?? '';
@@ -176,7 +186,7 @@ export function parseAmountToMinor(
 
 export type NormalizedRow = ImportRow & {
   /** Which cells could not be read; the server will reject the row for the same reason. */
-  problems: ('date' | 'amount')[];
+  problems: ('date' | 'amount' | 'currency')[];
 };
 
 const cellAt = (cells: readonly string[], index: number | null) =>
@@ -198,20 +208,23 @@ function readAmount(cells: readonly string[], mapping: Mapping, exponent: number
 
 /**
  * `exponentOf` gives the minor-unit digits for the row's currency cell ('' when no currency
- * column is mapped, meaning the account's currency).
+ * column is mapped, meaning the account's currency), or null for a code the server would refuse.
  */
 export function normalizeRow(
   row: { line: number; cells: readonly string[] },
   mapping: Mapping,
-  exponentOf: (currency: string) => number,
+  exponentOf: (currency: string) => number | null,
 ): NormalizedRow {
   const { columns } = mapping;
   const problems: NormalizedRow['problems'] = [];
   const rawDate = cellAt(row.cells, columns.date);
   const occurredOn = parseDate(rawDate, mapping.dateFormat);
   if (occurredOn === null) problems.push('date');
-  const currency = cellAt(row.cells, columns.currency);
-  const amountMinor = readAmount(row.cells, mapping, exponentOf(currency));
+  const currency = cellAt(row.cells, columns.currency).trim().toUpperCase();
+  const exponent = exponentOf(currency);
+  if (exponent === null) problems.push('currency');
+  // An unknown currency is rejected anyway; the account's digits still show the amount.
+  const amountMinor = readAmount(row.cells, mapping, exponent ?? exponentOf('') ?? 0);
   if (amountMinor === null || amountMinor === 0) problems.push('amount');
   const externalId = cellAt(row.cells, columns.externalId);
   return {

@@ -345,6 +345,7 @@ export const en = {
       bulkCategory: 'Category for selected',
       apply: 'Apply',
       allCategorized: 'Every imported entry has a category.',
+      pullStalled: 'The imported entries appear here once this device can sync again.',
       importAnother: 'Import another',
       openHistory: 'Open history',
     },
@@ -358,7 +359,8 @@ export const en = {
     },
     history: {
       title: 'Past imports',
-      counts: '{imported} imported · {duplicates} duplicates · {rejected} rejected',
+      counts:
+        '{imported, plural, one {# imported} other {# imported}} · {duplicates, plural, one {# duplicate} other {# duplicates}} · {rejected, plural, one {# rejected} other {# rejected}}',
       rows: '{count, plural, one {# row} other {# rows}}',
       undone: 'Undone',
       undo: 'Undo',

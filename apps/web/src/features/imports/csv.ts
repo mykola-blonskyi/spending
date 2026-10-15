@@ -20,8 +20,9 @@ export function decodeStatement(bytes: ArrayBuffer): { text: string; encoding: E
 }
 
 /**
- * The delimiter whose count per line is the most stable across the first lines. Bank metadata
- * lines and decimal commas inside amounts are rare per line, so they lose to the real separator.
+ * The delimiter most first lines agree on: the one with the most lines at its median count per
+ * line, the wider median breaking a tie. Bank metadata lines and commas inside descriptions or
+ * amounts vary from line to line, so they lose to the real separator even when they outnumber it.
  */
 export function detectDelimiter(text: string, sampleLines = 50): Delimiter {
   const lines = text
@@ -29,16 +30,18 @@ export function detectDelimiter(text: string, sampleLines = 50): Delimiter {
     .filter((line) => line.trim() !== '')
     .slice(0, sampleLines);
   let best: Delimiter = ',';
-  let bestScore = 0;
+  let bestLines = 0;
+  let bestWidth = 0;
   for (const delimiter of DELIMITERS) {
     const counts = lines.map((line) => line.split(delimiter).length - 1);
     const sorted = [...counts].sort((a, b) => a - b);
     const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
     if (median === 0) continue;
-    const score = counts.filter((count) => count === median).length * median;
-    if (score > bestScore) {
+    const agreeing = counts.filter((count) => count === median).length;
+    if (agreeing > bestLines || (agreeing === bestLines && median > bestWidth)) {
       best = delimiter;
-      bestScore = score;
+      bestLines = agreeing;
+      bestWidth = median;
     }
   }
   return best;
