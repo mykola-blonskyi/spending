@@ -42,7 +42,7 @@ function SignOutButton() {
 function renderButton() {
   const client = createQueryClient();
   client.setQueryData(['me'], testSession().user);
-  localStorage.setItem(`spending.user.${testSession().user.id}.queue`, '[]');
+  localStorage.setItem('spending.lastUser', JSON.stringify(testSession().user));
   render(
     <QueryClientProvider client={client}>
       <I18nProvider locale="en">

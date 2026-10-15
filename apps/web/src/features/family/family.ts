@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { errorCode } from '@data/api-error';
 import { FAMILY_KEY, type WorkspaceView, workspacesQuery } from '@data/family';
 import { isSignedOutError } from '@data/session';
-import { useRequestSync } from '@data/sync';
+import { useSyncNow } from '@data/sync';
 import { useTranslations } from '@i18n/index';
 
 export const findFamily = (workspaces: readonly WorkspaceView[]): WorkspaceView | null =>
@@ -24,12 +24,12 @@ export function useFamilyMutation<A, R>(
 ) {
   const t = useTranslations();
   const queryClient = useQueryClient();
-  const requestSync = useRequestSync();
+  const syncNow = useSyncNow();
   return useMutation({
     mutationFn,
     onSuccess: async (result, arg) => {
       await queryClient.invalidateQueries({ queryKey: FAMILY_KEY });
-      void requestSync();
+      void syncNow();
       onSuccess?.(result, arg);
     },
     onError: (error) => {

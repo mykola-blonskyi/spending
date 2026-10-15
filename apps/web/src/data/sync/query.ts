@@ -138,18 +138,3 @@ export function queryTransactions(
     .filter((entry) => matchesFilter(entry, filter))
     .sort(compareEntries);
 }
-
-type CurrencyTotals = { income: number; expense: number };
-
-/** Sums per currency in minor units. Entries are already one per transaction, so none counts twice. */
-export function totalsByCurrency(
-  entries: readonly TransactionEntry[],
-): Map<string, CurrencyTotals> {
-  const totals = new Map<string, CurrencyTotals>();
-  for (const entry of entries) {
-    const current = totals.get(entry.currency) ?? { income: 0, expense: 0 };
-    current[entry.kind] += entry.amountMinor;
-    totals.set(entry.currency, current);
-  }
-  return totals;
-}

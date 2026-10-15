@@ -12,7 +12,6 @@ export {
   useRecordTransaction,
   useRefreshLocalData,
   useSyncNow,
-  useRequestSync,
   useResolveConflict,
   useSyncStatus,
   useUpdateTransaction,
@@ -29,11 +28,5 @@ export {
   type TransactionInput,
   type Workspace,
 } from './model';
-export {
-  totalsByCurrency,
-  type EntrySync,
-  type Fx,
-  type TransactionEntry,
-  type TransactionFilter,
-} from './query';
+export { type EntrySync, type Fx, type TransactionEntry, type TransactionFilter } from './query';
 export type { TransactionDraft } from './writes';

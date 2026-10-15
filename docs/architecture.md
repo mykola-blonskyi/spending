@@ -136,7 +136,7 @@ stored lucide icon name to a curated icon set (`category-icons.ts`).
   so an offline start opens their local data; it is removed on sign-out and when the session
   ends. A page started offline fetches the CSRF token before its first write (`client.ts`).
 - **Device privacy.** Signing out with unsent mutations asks first and offers "Sync now"; signing
-  out deletes the user's database, per-user keys and the query cache (`clearLocalUserData`). A
+  out deletes the user's database and the query cache (`clearLocalUserData`). A
   `401` keeps the database, so the queue syncs when the same user signs in again. Only a `401`
   carrying the API's error envelope ends the session; a bare one (e.g. from a proxy) is retried
   like a network error. Before a user's
