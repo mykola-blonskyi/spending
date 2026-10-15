@@ -102,8 +102,12 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   unique. The generator creates every missed occurrence up to today in the rule's timezone. A
   monthly rule anchored on the 29th to 31st clamps to the last day of shorter months. Deleting a
   generated transaction leaves its tombstone in place, so that occurrence is not regenerated.
-- **BR-24.** Editing a rule affects only future occurrences. Deleting a rule keeps the
-  transactions it already generated.
+- **BR-24.** Editing a rule affects only future occurrences: occurrences already due are generated
+  with the old template first, then the next occurrence is recomputed from the later of today and
+  the current next one. Occurrences while a rule is paused are skipped, not caught up on resume.
+  Deleting a rule keeps the transactions it already generated. A rule's template follows the
+  transaction reference rules (BR-3, BR-4), with the rule's creator as the author, and generated
+  transactions are authored by the creator.
 
 ## Imports
 

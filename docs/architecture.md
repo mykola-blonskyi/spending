@@ -127,6 +127,16 @@ the limit of one expense category, and `DELETE /budgets/:id` removes it. The mon
 thresholds and progress fold are pure (`budgets/progress.ts`); one grouped query sums expenses
 per budget and currency.
 
+## Recurring rules
+
+`GET|POST /recurring-rules`, `PATCH|DELETE /recurring-rules/:id` (`paused` in the PATCH body
+pauses or resumes). The schedule (`recurring/schedule.ts`) is pure and works on calendar dates:
+monthly and yearly rules keep `startsOn`'s day, clamped to shorter months. `RecurringService.runDue`
+runs 10 s after startup and every 15 minutes (off when `NODE_ENV=test`). Each due rule commits in
+its own `ledgerTransaction`, re-reads its row `for update`, inserts every occurrence up to today in
+the rule's timezone with `ON CONFLICT (recurring_rule_id, recurring_occurrence) DO NOTHING`, and
+advances `nextOccurrence` (null after `endsOn`). Create and edit generate due occurrences at once.
+
 ## Security
 
 - Authentication runs only through the shared OIDC provider. The API is a confidential client
