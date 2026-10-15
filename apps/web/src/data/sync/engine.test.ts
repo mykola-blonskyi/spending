@@ -77,9 +77,11 @@ describe('SyncEngine', () => {
     const commit = local.commit.bind(local);
     let edit: Promise<void> | undefined;
     let intercepted = 0;
-    vi.spyOn(local, 'commit').mockImplementation((transition) => {
+    const spy = vi.spyOn(local, 'commit').mockImplementation((transition) => {
       intercepted += 1;
-      if (!edit && transition !== requeueInFlight) {
+      if (transition !== requeueInFlight) {
+        // The edit commits through local.commit too; restore first so it cannot re-enter here.
+        spy.mockRestore();
         edit = updateTransaction(local, id, { ...draft, description: 'W2' });
       }
       return commit(transition);
