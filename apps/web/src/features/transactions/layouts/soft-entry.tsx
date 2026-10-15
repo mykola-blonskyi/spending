@@ -19,6 +19,7 @@ import {
 import { type EntryForm, useEntryForm } from '../use-entry-form';
 
 const card = 'shadow-[0_1px_2px_color-mix(in_oklch,var(--foreground)_4%,transparent)]';
+const label = 'text-[13px] text-muted-foreground';
 const field =
   'h-14 rounded-2xl border-transparent bg-card pl-12 text-[15px] font-medium shadow-none md:text-[15px] dark:bg-card';
 
@@ -65,13 +66,13 @@ export function SoftEntryView({ form }: { form: EntryForm }) {
               form={form}
               labelClassName="sr-only"
               className="w-28"
-              controlClassName="h-8 justify-center gap-2 rounded-full border-transparent bg-muted text-[13px] shadow-none data-[size=default]:h-8 dark:bg-muted"
+              controlClassName="h-8 justify-center gap-2 rounded-full border-transparent bg-muted text-[13px] shadow-none dark:bg-muted"
             />
           </div>
 
           <CategoryPicker
             form={form}
-            labelClassName="text-[15px] font-semibold"
+            labelClassName={label}
             className="flex flex-wrap gap-2"
             itemClassName="h-12 w-auto flex-row gap-2 rounded-full border-transparent bg-card px-4 pl-3 text-[15px] font-medium hover:bg-card data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
             renderCategory={(category) => {
@@ -88,23 +89,25 @@ export function SoftEntryView({ form }: { form: EntryForm }) {
           <div className="grid gap-3 sm:grid-cols-2">
             <AccountSelect
               form={form}
-              labelClassName="text-[13px] text-muted-foreground"
+              labelClassName={label}
               controlClassName={field}
               icon={<Wallet aria-hidden className="size-[18px]" />}
             />
             <DateField
               form={form}
-              labelClassName="text-[13px] text-muted-foreground"
+              labelClassName={label}
               controlClassName={field}
               icon={<Calendar aria-hidden className="size-[18px]" />}
             />
           </div>
           <DescriptionField
             form={form}
+            labelClassName={label}
             controlClassName="h-14 rounded-2xl bg-card border-transparent shadow-none dark:bg-card"
           />
           <NoteField
             form={form}
+            labelClassName={label}
             controlClassName="rounded-2xl bg-card border-transparent shadow-none dark:bg-card"
           />
 

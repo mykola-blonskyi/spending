@@ -23,7 +23,7 @@ import type { History } from '../use-history';
 
 /** Radix Select cannot hold an empty value, so "any" stands in for the model's `''`. */
 const ANY = 'any';
-const control = 'h-11 w-full data-[size=default]:h-11';
+const control = 'h-11 w-full';
 
 function AnySelect({
   id,
