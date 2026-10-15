@@ -341,6 +341,10 @@ restored database has been in use for a while.
 - Health: `/api/health` (process up) and `/api/health/ready` (database reachable), also used by
   the container health checks and the Deploy workflow.
 - Backups: the `backup` container's health and log lines.
+- The web access log redacts invitation tokens, `returnTo` values and the OIDC callback query
+  (`code`, `state`). The nginx error log does not: when the API is unreachable it names the
+  request line, so a failed `/invite/<token>` or callback request shows its secrets there. Accepted
+  for debuggability; treat web container logs as sensitive.
 - No third-party telemetry or error reporting.
 
 ## Security headers
