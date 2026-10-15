@@ -1,11 +1,14 @@
 import { api } from '../client';
-import { ensureCsrfToken, present } from '../session';
+import { present } from '../session';
 import type { SyncTransport } from './engine';
 
 export const apiTransport: SyncTransport = {
-  async push(mutations) {
-    await ensureCsrfToken();
-    const { data } = await api.POST('/api/v1/sync/push', { body: { mutations } });
+  async push(mutations, onSent) {
+    const { data } = await api.POST('/api/v1/sync/push', {
+      body: { mutations },
+      // Runs after the client's own middleware, so only once nothing can stop the request.
+      middleware: [{ onRequest: () => void onSent() }],
+    });
     return present(data).results;
   },
   async pull(cursor) {

@@ -14,7 +14,7 @@ test('an expense recorded through the queue reaches the server, then edits and d
 
   let releasePush!: () => void;
   const pushHeld = new Promise<void>((resolve) => (releasePush = resolve));
-  await page.route('**/api/v1/sync/push', async (route) => {
+  await page.context().route('**/api/v1/sync/push', async (route) => {
     await pushHeld;
     await route.continue();
   });
@@ -35,7 +35,7 @@ test('an expense recorded through the queue reaches the server, then edits and d
   releasePush();
   await expect(row).not.toContainText('Waiting to sync');
   await expect(badge).toHaveText('Up to date');
-  await page.unroute('**/api/v1/sync/push');
+  await page.context().unroute('**/api/v1/sync/push');
   expect(await db.transactions(ann.email)).toMatchObject([
     { amount_minor: 1234, description: 'Coffee beans', version: 1, deleted: false },
   ]);

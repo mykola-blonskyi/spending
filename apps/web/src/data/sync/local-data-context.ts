@@ -102,27 +102,29 @@ export function useSyncStatus(): SyncStatus | null {
   return useSmoothed(state && engine ? deriveSyncStatus(engine, state, online) : null);
 }
 
-/** Holds statuses as JSON strings so a re-render with an equal status never restarts a timer. */
+const count = (status: SyncStatus | null) => (status && 'count' in status ? status.count : null);
+const sameStatus = (a: SyncStatus | null, b: SyncStatus | null) =>
+  a?.state === b?.state && count(a) === count(b);
+
 function useSmoothed(next: SyncStatus | null): SyncStatus | null {
-  const nextKey = next && JSON.stringify(next);
-  const [shown, setShown] = useState(nextKey);
+  // `target` keeps its identity while the status is equal, so a re-render never restarts a timer.
+  const [target, setTarget] = useState(next);
+  const [shown, setShown] = useState(next);
   const shownAt = useRef(0);
+  if (!sameStatus(next, target)) setTarget(next);
 
   useEffect(() => {
-    if (nextKey === shown) return;
-    const parse = (key: string) => JSON.parse(key) as SyncStatus;
+    if (sameStatus(target, shown)) return;
     const delay =
-      nextKey && shown
-        ? smoothingDelay(parse(nextKey), parse(shown), performance.now() - shownAt.current)
-        : 0;
+      target && shown ? smoothingDelay(target, shown, performance.now() - shownAt.current) : 0;
     const timer = setTimeout(() => {
       shownAt.current = performance.now();
-      setShown(nextKey);
+      setShown(target);
     }, delay);
     return () => clearTimeout(timer);
-  }, [nextKey, shown]);
+  }, [target, shown]);
 
-  return useMemo(() => (shown ? (JSON.parse(shown) as SyncStatus) : null), [shown]);
+  return shown;
 }
 
 /** The first sync on an empty device: active until a pull first reaches the end. */

@@ -40,10 +40,16 @@ describe('CSRF header', () => {
     expect(sentRequest(fetchMock).headers.has('X-CSRF-Token')).toBe(false);
   });
 
-  it('is not added when no token is set', async () => {
-    const { fetchMock, loose } = setup(() => json(200, {}));
+  it('is fetched before the first write when the page has none, as after starting offline', async () => {
+    const { fetchMock, loose, client } = setup(() => json(200, { csrfToken: 'fresh' }));
+    await client.GET('/api/health');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
     await loose.POST('/api/x');
-    expect(sentRequest(fetchMock).headers.has('X-CSRF-Token')).toBe(false);
+    const [, session, write] = fetchMock.mock.calls.map(([request]) => request);
+    expect(new URL(session!.url).pathname).toBe('/api/v1/auth/session');
+    expect(write!.headers.get('X-CSRF-Token')).toBe('fresh');
+    expect(getCsrfToken()).toBe('fresh');
   });
 });
 

@@ -131,12 +131,18 @@ export function setMutationState(
   return { ...state, mutations };
 }
 
-/** A push that never completed may or may not have reached the server; replaying it is safe (BR-18). */
-export function requeueInFlight(state: LocalState): LocalState {
+/**
+ * Settles mutations left `sending`. By default the push may have reached the server, so they are
+ * frozen for a replay (BR-18); `queued` is for a push known to have changed nothing.
+ */
+export function requeueInFlight(
+  state: LocalState,
+  status: 'queued' | 'retrying' = 'retrying',
+): LocalState {
   const sending = [...state.mutations.values()]
     .filter((mutation) => mutation.state.status === 'sending')
     .map((mutation) => mutation.mutationId);
-  return sending.length === 0 ? state : setMutationState(state, sending, { status: 'retrying' });
+  return sending.length === 0 ? state : setMutationState(state, sending, { status });
 }
 
 export function countMutations(state: LocalState): { pending: number; failed: number } {

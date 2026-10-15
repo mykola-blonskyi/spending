@@ -122,6 +122,14 @@ export function reducePush(
   results: readonly PushResult[],
   now: string,
 ): LocalState {
-  const next = results.reduce((current, result) => applyResult(current, result, now), state);
-  return requeueInFlight(next);
+  return requeueInFlight(applyPushResults(state, results, now));
+}
+
+/** Applies the results of a push cut short, leaving the rest `sending` for the flusher to settle. */
+export function applyPushResults(
+  state: LocalState,
+  results: readonly PushResult[],
+  now: string,
+): LocalState {
+  return results.reduce((current, result) => applyResult(current, result, now), state);
 }

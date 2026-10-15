@@ -3,7 +3,7 @@ import type { Middleware } from 'openapi-fetch';
 import type { paths } from './api.gen';
 import { ApiError, parseApiError } from './api-error';
 import { emitAuthLost } from './auth-events';
-import { clearCsrfToken, getCsrfToken } from './csrf';
+import { clearCsrfToken, getCsrfToken, setCsrfToken } from './csrf';
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -58,7 +58,18 @@ export function createApiClient(options: ApiClientOptions = {}) {
     credentials: 'same-origin',
     ...(options.fetch && { fetch: options.fetch }),
   });
-  client.use(apiMiddleware);
+  client.use(
+    {
+      // A page started offline has no token yet; it is fetched before the first write.
+      async onRequest({ request }) {
+        if (getCsrfToken() || !UNSAFE_METHODS.has(request.method)) return undefined;
+        const { data } = await client.GET('/api/v1/auth/session');
+        if (data) setCsrfToken(data.csrfToken);
+        return undefined;
+      },
+    },
+    apiMiddleware,
+  );
   return client;
 }
 

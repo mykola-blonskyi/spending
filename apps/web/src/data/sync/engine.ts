@@ -3,12 +3,13 @@ import { isSignedOutError } from '../session';
 import type { PullPage, PushResult, QueuedMutation, WireMutation } from './model';
 import { toWire } from './model';
 import { reducePull } from './pull';
-import { reducePush } from './push';
+import { applyPushResults, reducePush } from './push';
 import { requeueInFlight, selectBatch, setMutationState } from './queue';
 import { type LocalStore, StoreClosedError, syncChannelName } from './store';
 
 export type SyncTransport = {
-  push(mutations: WireMutation[]): Promise<PushResult[]>;
+  /** Calls `onSent` once the request leaves, so a failure before that is known to change nothing. */
+  push(mutations: WireMutation[], onSent: () => void): Promise<PushResult[]>;
   pull(cursor: number): Promise<PullPage>;
 };
 
@@ -56,6 +57,11 @@ function isTransient(error: ApiError): boolean {
   );
 }
 
+/** The server answered without applying anything: the push may be rebuilt and sent again. */
+function refused(error: unknown): boolean {
+  return error instanceof ApiError && error.status > 0 && error.status < 500;
+}
+
 /**
  * The flusher: pushes queued mutations in order, applies the results, then pulls until the
  * server has nothing more. Transport errors keep everything queued and retry with backoff. A lost
@@ -71,6 +77,8 @@ export class SyncEngine {
   #again = false;
   #attempt = 0;
   #timer: ReturnType<typeof setTimeout> | undefined;
+  /** The last push failed before the server could apply it, so its mutations stay editable. */
+  #unapplied = false;
 
   constructor(store: LocalStore, transport: SyncTransport, lock: FlushLock = (run) => run()) {
     this.#store = store;
@@ -133,8 +141,10 @@ export class SyncEngine {
   }
 
   async #run(): Promise<void> {
-    if (this.#halted()) return;
+    // Offline nothing can be sent; the `online` event flushes again.
+    if (this.#halted() || globalThis.navigator?.onLine === false) return;
     this.#setStatus({ phase: 'syncing' });
+    this.#unapplied = false;
     try {
       await this.#store.commit(requeueInFlight);
       await this.#pushAll();
@@ -144,11 +154,13 @@ export class SyncEngine {
     } catch (error) {
       if (error instanceof StoreClosedError || this.#store.closed) {
         this.stop();
-      } else if (isSignedOutError(error)) {
-        await this.#store.commit(requeueInFlight).catch(() => undefined);
-        this.#setStatus({ phase: 'authRequired' });
       } else {
-        await this.#store.commit(requeueInFlight).catch(() => undefined);
+        const status = this.#unapplied ? 'queued' : 'retrying';
+        await this.#store.commit((state) => requeueInFlight(state, status)).catch(() => undefined);
+        if (isSignedOutError(error)) {
+          this.#setStatus({ phase: 'authRequired' });
+          return;
+        }
         this.#attempt += 1;
         this.#setStatus({ phase: 'retrying' });
         this.#schedule(backoffDelay(this.#attempt));
@@ -199,10 +211,12 @@ export class SyncEngine {
   }
 
   async #push(batch: readonly QueuedMutation[]): Promise<PushResult[]> {
+    let sent = false;
     try {
-      return await this.#transport.push(batch.map(toWire));
+      return await this.#transport.push(batch.map(toWire), () => (sent = true));
     } catch (error) {
       if (!(error instanceof ApiError) || isTransient(error) || isSignedOutError(error)) {
+        this.#unapplied = !sent || refused(error);
         throw error;
       }
       if (batch.length > 1) {
@@ -210,10 +224,10 @@ export class SyncEngine {
         try {
           for (const mutation of batch) results.push(...(await this.#push([mutation])));
         } catch (failure) {
-          // Keep what the server already applied; reducePush requeues the rest.
+          // Keep what the server already applied; the flusher settles the rest.
           if (results.length > 0) {
             const now = new Date().toISOString();
-            await this.#store.commit((state) => reducePush(state, results, now));
+            await this.#store.commit((state) => applyPushResults(state, results, now));
           }
           throw failure;
         }

@@ -26,7 +26,8 @@ function fakeServer(
 ) {
   const pushes: WireMutation[][] = [];
   const transport: SyncTransport = {
-    async push(mutations) {
+    async push(mutations, onSent) {
+      onSent();
       pushes.push(mutations);
       await options.onPush?.(mutations);
       if (options.refuse?.(mutations)) throw invalid();
@@ -145,8 +146,8 @@ describe('SyncEngine', () => {
     expect(ids.map(shown)).toEqual(['a', 'b', undefined, undefined]);
     const left = queueOrder(store.state);
     expect(left.map((m) => [m.transactionId, m.state.status])).toEqual([
-      [ids[2], 'retrying'],
-      [ids[3], 'retrying'],
+      [ids[2], 'queued'],
+      [ids[3], 'queued'],
     ]);
 
     limited = false;
@@ -321,5 +322,72 @@ describe('backoffDelay', () => {
     [30, 1, 300_000],
   ])('attempt %i with random %d waits %i ms', (attempt, random, expected) => {
     expect(backoffDelay(attempt, () => random)).toBe(expected);
+  });
+});
+
+describe('a failed push', () => {
+  const offline = new ApiError({ status: 0, code: 'NETWORK', message: 'Failed to fetch' });
+
+  async function failOnce(failure: (onSent: () => void) => never) {
+    store = await LocalStore.open('ann');
+    const id = await recordTransaction(store, { ...draft, description: 'first' });
+    const engine = new SyncEngine(store, {
+      push: (_mutations, onSent) => Promise.resolve().then(() => failure(onSent)),
+      pull: () => Promise.resolve(page()),
+    });
+    await engine.flush();
+    engine.stop();
+    return { local: store, id, status: () => queueOrder(store!.state).map((m) => m.state.status) };
+  }
+
+  it('freezes mutations whose request left and never answered', async () => {
+    const { local, id, status } = await failOnce((onSent) => {
+      onSent();
+      throw offline;
+    });
+    expect(status()).toEqual(['retrying']);
+    await updateTransaction(local, id, { ...draft, description: 'second' });
+    expect(status()).toEqual(['retrying', 'queued']);
+  });
+
+  it.each<[string, (onSent: () => void) => never]>([
+    [
+      'the CSRF token could not be fetched before the request',
+      () => {
+        throw offline;
+      },
+    ],
+    [
+      'the server rate-limited it',
+      (onSent) => {
+        onSent();
+        throw new ApiError({ status: 429, code: 'RATE_LIMITED', message: 'slow down' });
+      },
+    ],
+  ])('keeps mutations editable when %s', async (_, failure) => {
+    const { local, id, status } = await failOnce(failure);
+    expect(status()).toEqual(['queued']);
+    await updateTransaction(local, id, { ...draft, description: 'second' });
+    expect(status()).toEqual(['queued']);
+    expect(queueOrder(local.state)[0]?.change).toMatchObject({
+      transaction: { description: 'second' },
+    });
+    await deleteTransaction(local, id);
+    expect(local.state.transactions.has(id)).toBe(false);
+    expect(local.state.mutations.size).toBe(0);
+  });
+
+  it('is not attempted while the browser is offline', async () => {
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    store = await LocalStore.open('ann');
+    await recordTransaction(store, draft);
+    const server = fakeServer();
+    const engine = new SyncEngine(store, server.transport);
+
+    await engine.flush();
+
+    expect(server.pushes).toEqual([]);
+    expect(queueOrder(store.state).map((m) => m.state.status)).toEqual(['queued']);
+    expect(engine.getStatus().phase).toBe('idle');
   });
 });

@@ -3,7 +3,7 @@ import type { components } from './api.gen';
 import { ApiError } from './api-error';
 import { AUTH_LOST_CODES, type AuthLostCode } from './auth-events';
 import { api } from './client';
-import { getCsrfToken, setCsrfToken } from './csrf';
+import { setCsrfToken } from './csrf';
 
 export type Profile = components['schemas']['ProfileDto_Output'];
 export type ProfilePatch = components['schemas']['UpdateProfileDto'];
@@ -67,7 +67,7 @@ function lastUser(): Session['user'] | null {
 /**
  * Resolves to null when there is no session, so "signed out" is data rather than an error.
  * Offline, the user who last signed in on this device keeps working from their local data; the
- * CSRF token is fetched again before the first write reaches the server.
+ * CSRF token is fetched before the first write (`client.ts`).
  */
 export const sessionQuery = queryOptions({
   queryKey: ['session'],
@@ -90,13 +90,6 @@ export const sessionQuery = queryOptions({
     }
   },
 });
-
-/** Fetches the CSRF token when this page has none yet, as after starting offline. */
-export async function ensureCsrfToken(): Promise<void> {
-  if (getCsrfToken()) return;
-  const { data } = await api.GET('/api/v1/auth/session');
-  setCsrfToken(present(data).csrfToken);
-}
 
 export const meQuery = queryOptions({
   queryKey: ['me'],

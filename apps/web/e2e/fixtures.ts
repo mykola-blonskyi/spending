@@ -5,7 +5,7 @@ import { APP_ORIGIN, E2E_USERS, type E2EUser } from './support/env';
 type Fixtures = { signInAs: (user: E2EUser) => Promise<void> };
 type WorkerFixtures = { db: E2EDatabase };
 
-async function signInAs(page: Page, user: E2EUser): Promise<void> {
+export async function signInAs(page: Page, user: E2EUser): Promise<void> {
   const { name } = E2E_USERS[user];
   if (new URL(page.url()).pathname !== '/signin') await page.goto('/signin');
   await page.locator('a[href^="/api/v1/auth/login"]').click();

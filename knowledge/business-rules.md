@@ -20,6 +20,8 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   archived category stays allowed only on a row that already uses it.
 - **BR-5.** A user with no session gets `401 AUTH_REQUIRED`. A session whose provider grant was
   revoked is destroyed, and the next request gets `401 SESSION_REVOKED`.
+- **BR-34.** Offline, the app opens on the local data of the user who last signed in on this
+  device, until that user signs out or a `401` is seen; an explicit sign-out removes that data.
 
 ## Family
 
