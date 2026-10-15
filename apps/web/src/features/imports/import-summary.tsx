@@ -70,17 +70,18 @@ function ImportedEntries({ ids }: { ids: readonly string[] }) {
   const uncategorized = entries.filter((e) => e.categoryId === null).length;
   const allShownSelected = shown.length > 0 && shown.every((e) => selected.has(e.id));
 
-  const setCategory = (entry: TransactionEntry, categoryId: string | null) => {
-    const {
-      id,
-      scope: _scope,
-      baseAmountMinor: _base,
-      sync: _sync,
-      createdAt: _at,
-      ...draft
-    } = entry;
-    return update(id, { ...draft, categoryId });
-  };
+  const setCategory = (entry: TransactionEntry, categoryId: string | null) =>
+    update(entry.id, {
+      workspaceId: entry.workspaceId,
+      kind: entry.kind,
+      amountMinor: entry.amountMinor,
+      currency: entry.currency,
+      occurredOn: entry.occurredOn,
+      accountId: entry.accountId,
+      categoryId,
+      description: entry.description,
+      note: entry.note,
+    });
   const applyBulk = async () => {
     const category = bulkCategory ? byId.get(bulkCategory) : undefined;
     for (const entry of shown) {
