@@ -556,7 +556,7 @@ export const uk = {
     },
     reasons: {
       INVALID_DATE: 'Не вдалося прочитати дату',
-      INVALID_AMOUNT: 'Не вдалося прочитати суму або вона нульова',
+      INVALID_AMOUNT: 'Не вдалося прочитати суму, вона нульова або завелика',
       INVALID_CURRENCY: 'Невідомий код валюти',
       DESCRIPTION_TOO_LONG: 'Опис довший за 200 символів',
       EXTERNAL_ID_TOO_LONG: 'Ідентифікатор операції довший за 100 символів',
