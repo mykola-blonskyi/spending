@@ -7,6 +7,8 @@ export const testProfile: Profile = {
   avatarUrl: null,
   locale: 'en',
   theme: 'system',
+  layout: 'calm',
+  palette: 'emerald',
   timezone: 'Europe/Madrid',
 };
 

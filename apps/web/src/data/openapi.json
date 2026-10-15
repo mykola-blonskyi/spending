@@ -974,6 +974,29 @@
                   "system"
                 ]
               },
+              "layout": {
+                "type": "string",
+                "enum": [
+                  "calm",
+                  "cards",
+                  "soft",
+                  "journal",
+                  "bento",
+                  "split",
+                  "playful",
+                  "hybrid"
+                ]
+              },
+              "palette": {
+                "type": "string",
+                "enum": [
+                  "emerald",
+                  "rose",
+                  "ocean",
+                  "sand",
+                  "graphite"
+                ]
+              },
               "timezone": {
                 "type": "string"
               }
@@ -985,6 +1008,8 @@
               "avatarUrl",
               "locale",
               "theme",
+              "layout",
+              "palette",
               "timezone"
             ],
             "additionalProperties": false
@@ -1051,6 +1076,29 @@
               "system"
             ]
           },
+          "layout": {
+            "type": "string",
+            "enum": [
+              "calm",
+              "cards",
+              "soft",
+              "journal",
+              "bento",
+              "split",
+              "playful",
+              "hybrid"
+            ]
+          },
+          "palette": {
+            "type": "string",
+            "enum": [
+              "emerald",
+              "rose",
+              "ocean",
+              "sand",
+              "graphite"
+            ]
+          },
           "timezone": {
             "type": "string"
           }
@@ -1062,6 +1110,8 @@
           "avatarUrl",
           "locale",
           "theme",
+          "layout",
+          "palette",
           "timezone"
         ],
         "additionalProperties": false
@@ -1089,6 +1139,29 @@
               "light",
               "dark",
               "system"
+            ]
+          },
+          "layout": {
+            "type": "string",
+            "enum": [
+              "calm",
+              "cards",
+              "soft",
+              "journal",
+              "bento",
+              "split",
+              "playful",
+              "hybrid"
+            ]
+          },
+          "palette": {
+            "type": "string",
+            "enum": [
+              "emerald",
+              "rose",
+              "ocean",
+              "sand",
+              "graphite"
             ]
           },
           "timezone": {

@@ -79,6 +79,8 @@ describe('authentication', () => {
           avatarUrl: ann.picture,
           locale: 'uk',
           theme: 'system',
+          layout: 'calm',
+          palette: 'rose',
           timezone: 'Europe/Madrid',
         },
         csrfToken: expect.stringMatching(/^[\w-]{43}$/),
@@ -97,7 +99,7 @@ describe('authentication', () => {
         method: 'PATCH',
         cookie: first.cookie,
         csrf: first.csrf,
-        body: { theme: 'dark', locale: 'es' },
+        body: { theme: 'dark', locale: 'es', layout: 'split' },
       });
       provider.setUser({ ...ann, name: 'Ann Renamed', email: 'ann@new.test', locale: 'en' });
       await login(t, ann.sub);
@@ -116,6 +118,8 @@ describe('authentication', () => {
         email: 'ann@new.test',
         locale: 'es',
         theme: 'dark',
+        layout: 'split',
+        palette: 'rose',
       });
     });
 
@@ -367,6 +371,7 @@ describe('authentication', () => {
       { displayName: 'x'.repeat(81) },
       { locale: 'de' },
       { theme: 'rose' },
+      { layout: 'grid' },
       { id: '00000000-0000-0000-0000-000000000000' },
     ])('rejects %j', async (body) => {
       const session = await signedIn();
