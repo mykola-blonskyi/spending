@@ -2,6 +2,7 @@ import { useId, useState } from 'react';
 import { useAccounts, useCategories } from '@data/sync';
 import { TimezoneSelect } from '@features/profile';
 import { useTranslations } from '@i18n/index';
+import { COMMON_CURRENCIES } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
@@ -12,7 +13,6 @@ import { type RuleFormErrors, type RuleFormValues, ruleFromValues } from './form
 import type { Rule, RuleInput } from './rules';
 
 const NONE = 'none';
-const COMMON_CURRENCIES = ['EUR', 'USD', 'GBP', 'UAH', 'PLN'];
 const KINDS = ['expense', 'income'] as const;
 const FREQUENCIES: readonly Rule['frequency'][] = ['daily', 'weekly', 'monthly', 'yearly'];
 

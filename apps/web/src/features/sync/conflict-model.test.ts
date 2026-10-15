@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Conflict } from '@data/sync';
-import { differingFields, mergeVersions, versionsOf } from './conflict-model';
+import { differingFields, mergeVersions, pickSide, versionsOf } from './conflict-model';
 
 const server = {
   id: 'tx-1',
@@ -79,6 +79,34 @@ describe('conflict review', () => {
       amountMinor: 2000,
       currency: 'USD',
       description: 'Lunch',
+    });
+  });
+
+  it('picks a category with its kind and workspace, and an account with its workspace', () => {
+    const moved = versionsOf(
+      conflict({
+        local: {
+          ...local,
+          kind: 'income',
+          workspaceId: 'ws-2',
+          categoryId: 'cat-2',
+          accountId: 'acc-2',
+        },
+      }),
+    );
+    const differing = differingFields(moved);
+    expect(pickSide({}, differing, 'kind', 'local')).toEqual({
+      kind: 'local',
+      categoryId: 'local',
+      workspaceId: 'local',
+      accountId: 'local',
+    });
+    const sameKind = differingFields(
+      versionsOf(conflict({ local: { ...local, categoryId: 'c' } })),
+    );
+    expect(pickSide({ amount: 'local' }, sameKind, 'categoryId', 'local')).toEqual({
+      amount: 'local',
+      categoryId: 'local',
     });
   });
 });

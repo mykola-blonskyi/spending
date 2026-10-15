@@ -51,6 +51,21 @@ describe('queryTransactions', () => {
       ['a', 5, 'pending'],
     ]);
   });
+
+  it('shows the server row of a rejected delete as failed, so it can be discarded', () => {
+    const deleted = applyLocalChange(history, { type: 'delete', id: 'b' }, sequentialIds());
+    const rejected = setMutationState(deleted, ['m-1'], {
+      status: 'failed',
+      code: 'FORBIDDEN',
+      message: '',
+    });
+    const entry = queryTransactions(rejected, {}).find((e) => e.id === 'b');
+    expect([entry?.description, entry?.version, entry?.sync]).toEqual([
+      'Coffee beans',
+      1,
+      { state: 'failed', code: 'FORBIDDEN' },
+    ]);
+  });
 });
 
 describe('localEntries conversion', () => {
@@ -72,7 +87,7 @@ describe('localEntries conversion', () => {
     expect(conversion(edited)).toEqual([[1000, fx]]);
   });
 
-  it('drops them while a pending edit changes the amount or currency', () => {
+  it('drops them while a pending edit changes the amount, currency or date', () => {
     const changed = (patch: Parameters<typeof localRow>[0]) =>
       conversion(
         applyLocalChange(
@@ -84,6 +99,9 @@ describe('localEntries conversion', () => {
     expect(changed({ currency: 'USD', amountMinor: 2000 })).toEqual([[null, null]]);
     expect(changed({ currency: 'GBP', amountMinor: 1085 })).toEqual([[null, null]]);
     expect(changed({ currency: 'EUR', amountMinor: 1085 })).toEqual([[1085, null]]);
+    expect(changed({ currency: 'USD', amountMinor: 1085, occurredOn: '2026-10-01' })).toEqual([
+      [null, null],
+    ]);
   });
 });
 

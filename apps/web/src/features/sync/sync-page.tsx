@@ -33,6 +33,7 @@ import {
   type ConflictField,
   differingFields,
   mergeVersions,
+  pickSide,
   type Side,
   type Versions,
   versionsOf,
@@ -255,7 +256,9 @@ function ConflictReview({
                     name={`${conflict.id}-${field}`}
                     value={side}
                     checked={picked === side}
-                    onChange={() => setPicks((current) => ({ ...current, [field]: side }))}
+                    onChange={() =>
+                      setPicks((current) => pickSide(current, differing, field, side))
+                    }
                     className="mt-0.5 size-4 shrink-0 accent-primary"
                   />
                   <span className="min-w-0 break-words">

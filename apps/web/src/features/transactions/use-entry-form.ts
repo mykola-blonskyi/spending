@@ -15,7 +15,7 @@ import type { Scope } from '@features/family';
 import { useCategoryViews } from '@features/ledger';
 import { useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
-import { currencyExponent, todayIn } from '@shared/format';
+import { COMMON_CURRENCIES, currencyExponent, todayIn } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import {
   decimalSeparator,
@@ -29,7 +29,6 @@ import {
 import { conversionOf } from './history-model';
 
 export const HISTORY_PATH = '/transactions';
-const COMMON_CURRENCIES = ['EUR', 'USD', 'GBP', 'UAH', 'PLN'];
 
 export type EntryStatus = 'loading' | 'unavailable' | 'notFound' | 'ready';
 
@@ -120,12 +119,17 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
   } | null>(null);
   const key = entryId ?? 'new';
   const ours = edited && edited.for === key ? edited : null;
+  // Editing began on a pending change: its base is the version that change becomes.
+  const settledVersion = stored.entry?.version ?? null;
+  if (ours && ours.version === null && settledVersion !== null) {
+    setEdited({ ...ours, version: settledVersion });
+  }
   const typed = ours ? ours.values : initial;
   const change = (patch: Partial<FormValues>) =>
     setEdited((current) =>
       current && current.for === key
         ? { ...current, values: { ...current.values, ...patch } }
-        : { for: key, values: { ...initial, ...patch }, version: stored.entry?.version ?? null },
+        : { for: key, values: { ...initial, ...patch }, version: settledVersion },
     );
 
   const categories = categoryViews.items.filter(
@@ -164,9 +168,12 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
   ].sort();
 
   const separator = decimalSeparator(locale);
-  // The stored conversion describes the stored amount; an edited amount has none until saved.
+  // The stored conversion describes the stored amount and date (BR-14); an edit has none until saved.
   const conversion =
-    stored.entry && values.amount === initial.amount && values.currency === initial.currency
+    stored.entry &&
+    values.amount === initial.amount &&
+    values.currency === initial.currency &&
+    values.occurredOn === initial.occurredOn
       ? conversionOf(stored.entry)
       : null;
 

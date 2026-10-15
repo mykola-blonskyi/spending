@@ -17,6 +17,7 @@ import {
   LoadingState,
   PageHeader,
 } from '@shared/components';
+import { COMMON_CURRENCIES } from '@shared/format';
 import { useOnlineStatus } from '@shared/lib/network';
 import { Button } from '@shared/ui/button';
 import {
@@ -41,12 +42,8 @@ const KIND_ICONS: Record<Kind, LucideIcon> = {
   savings: PiggyBank,
   other: Wallet,
 };
-const COMMON_CURRENCIES = [
-  'EUR',
-  'USD',
-  'GBP',
-  'UAH',
-  'PLN',
+const ACCOUNT_CURRENCIES = [
+  ...COMMON_CURRENCIES,
   'CHF',
   'CZK',
   'SEK',
@@ -258,7 +255,7 @@ export function AccountsPage() {
     [workspaces.items, t],
   );
   const currencies = useMemo(
-    () => [...new Set([...COMMON_CURRENCIES, ...accounts.items.map((a) => a.currency)])],
+    () => [...new Set([...ACCOUNT_CURRENCIES, ...accounts.items.map((a) => a.currency)])],
     [accounts.items],
   );
 

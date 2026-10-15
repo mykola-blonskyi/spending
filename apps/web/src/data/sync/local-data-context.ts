@@ -11,7 +11,15 @@ import {
 import type { SyncStatus } from '@shared/components';
 import { useOnlineStatus } from '@shared/lib/network';
 import type { EngineStatus, SyncEngine } from './engine';
-import type { Account, Category, Conflict, LocalState, Resolution, Workspace } from './model';
+import type {
+  Account,
+  Category,
+  Conflict,
+  LocalState,
+  Resolution,
+  SyncMeta,
+  Workspace,
+} from './model';
 import {
   localEntries,
   queryTransactions,
@@ -149,8 +157,8 @@ function useSmoothed(next: SyncStatus | null): SyncStatus | null {
 }
 
 /** When a pull last reached the end; undefined while there is no local store. */
-export function useLastSyncedAt(): string | null | undefined {
-  return useLocalState()?.meta.lastSyncedAt;
+export function useSyncMeta(): SyncMeta | undefined {
+  return useLocalState()?.meta;
 }
 
 /** The first sync on an empty device: active until a pull first reaches the end. */
@@ -163,21 +171,8 @@ export function useInitialSync(): { active: boolean; loaded: number } {
 }
 
 /**
- * Pushes queued changes and pulls what the server has, now. Accounts and categories are edited
- * through REST and reach the local store only through a pull, so their screens call this after
- * each write. Resolves once the store holds the server's rows.
- */
-export function useRefreshLocalData(): () => Promise<void> {
-  const ready = useReady();
-  return useCallback(async () => {
-    if (!ready) throw new Error('The local store is not open');
-    await ready.engine.flush();
-  }, [ready]);
-}
-
-/**
- * Pushes and pulls now, e.g. after joining or leaving a workspace or when the server generated
- * rows. A no-op without a store.
+ * Pushes and pulls now, e.g. after a REST write to accounts or categories, joining or leaving a
+ * workspace, or when the server generated rows. A no-op without a store.
  */
 export function useSyncNow(): () => Promise<void> {
   const engine = useReady()?.engine;

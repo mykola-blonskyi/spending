@@ -7,6 +7,7 @@ export {
   type DateInput,
 } from './date';
 export {
+  COMMON_CURRENCIES,
   currencyExponent,
   formatMoney,
   MAX_AMOUNT_MINOR,

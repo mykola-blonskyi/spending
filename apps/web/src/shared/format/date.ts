@@ -44,7 +44,12 @@ function dateFormat(locale: string, options: Intl.DateTimeFormatOptions) {
 export function formatDate(
   value: DateInput,
   locale: string,
-  options: { dateStyle?: 'short' | 'medium' | 'long' | 'full'; timeStyle?: 'short' } = {},
+  options: {
+    dateStyle?: 'short' | 'medium' | 'long' | 'full';
+    timeStyle?: 'short';
+    /** For instants only: a `YYYY-MM-DD` date is a calendar date and has no zone. */
+    timeZone?: string;
+  } = {},
 ): string {
   return dateFormat(locale, { dateStyle: options.dateStyle ?? 'medium', ...options }).format(
     toDate(value),

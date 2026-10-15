@@ -4,7 +4,7 @@
  * (BR-26), so every rejection is reported in one place with its line number.
  */
 import type { ImportRow } from '@data/imports';
-import { MAX_AMOUNT_MINOR } from '@shared/format';
+import { currencyExponent, MAX_AMOUNT_MINOR } from '@shared/format';
 
 export const DATE_FORMATS = ['dmy', 'ymd', 'mdy'] as const;
 export type DateFormat = (typeof DATE_FORMATS)[number];
@@ -204,6 +204,16 @@ function readAmount(cells: readonly string[], mapping: Mapping, exponent: number
   const debited = debit === '' ? 0 : parseAmountToMinor(debit, exponent, decimal);
   if (credited === null || debited === null) return null;
   return Math.abs(credited) - Math.abs(debited);
+}
+
+const KNOWN_CURRENCIES = new Set(Intl.supportedValuesOf('currency'));
+
+/** Digits of a currency cell ('' is the account's), or null for a code the server would refuse. */
+export function exponentFor(currency: string, fallback: number): number | null {
+  if (!currency) return fallback;
+  return /^[A-Z]{3}$/.test(currency) && KNOWN_CURRENCIES.has(currency)
+    ? currencyExponent(currency)
+    : null;
 }
 
 /**

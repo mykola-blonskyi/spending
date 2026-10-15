@@ -93,14 +93,14 @@ history for both `history` and `detail`, so selecting a row keeps the list mount
 holds the period math (calendar month, quarter, year or a custom range, and stepping) and pairs
 each category with its previous-period amount; `useDashboard` owns the period and scope and reads
 `/analytics/summary` and `/budgets` (budgets of the chosen month, otherwise this month), refetching
-both after every completed sync (`useRefreshOnSync`). `blocks/` are self-titled sections (totals, trend,
+both after the first completed sync and each one that moved the cursor (`useRefreshOnSync`). `blocks/` are self-titled sections (totals, trend,
 categories, budgets via `BudgetProgress`, unconverted amounts); `layouts/<layout>-dashboard.tsx`
 only arrange them, under the same ESLint rule, and hybrid uses the bento one. Charts are plain SVG
 in theme tokens; the trend has a table under "Show as a table" and category bars carry their
 figures as text.
 
 **Ledger feature** (`features/ledger`). Accounts and categories screens write through REST
-(`data/ledger.ts`) and then call `useRefreshLocalData()` (a push and pull), so the local store
+(`data/ledger.ts`) and then call `useSyncNow()` (a push and pull), so the local store
 stays the only inbound path and every picker updates from it. `categoryView` localizes a default
 category by `systemKey` while its stored name still equals the English default, and maps the
 stored lucide icon name to a curated icon set (`category-icons.ts`).
@@ -157,13 +157,15 @@ stored lucide icon name to a curated icon set (`category-icons.ts`).
   reached from the badge) lists open conflicts. Its review dialog shows both versions side by
   side, highlights the differing fields and names them in its description, so a screen reader
   announces them. A deletion on either side is shown as "Deleted" and offers only keep server or
-  keep mine; otherwise each differing field can be picked (amount and currency together).
+  keep mine; otherwise each differing field can be picked (amount and currency together; a
+  category with its kind and workspace, an account with its workspace, so a merge stays valid).
   Resolving needs the network: `POST /sync/conflicts/:id/resolve` runs at once, and its row
-  closes the conflict locally (`settleConflict`). Other devices drop it on their next pull,
+  closes the conflict locally (`settleConflict`); a change still queued for the
+  entry is rebased onto that row, so it does not conflict again. Other devices drop it on their next pull,
   which replaces the full conflict list.
 - **Rejected changes.** A `rejected` result keeps the overlay and marks the mutation `failed`
-  with its code; history shows "Not synced" with the reason from `errors.<code>`, and other
-  entries keep syncing. Editing the entry replaces the failed mutation with a fresh one, since the
+  with its code; history shows "Not synced" with the reason from `errors.<code>` (for a rejected
+  delete, on the server row), and other entries keep syncing. Editing the entry replaces the failed mutation with a fresh one, since the
   server stores the rejection under the old ID. Discard, on the entry screen or the detail pane,
   drops the failed mutation and the overlay (`discardFailed`): the entry returns to its last
   server row, or leaves the device if the server never had it.

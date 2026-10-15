@@ -20,6 +20,7 @@ import {
   type Columns,
   DATE_FORMATS,
   detectPreset,
+  exponentFor,
   isComplete,
   type Mapping,
   normalizeRow,
@@ -94,16 +95,6 @@ function ColumnSelect({
       </SelectContent>
     </Select>
   );
-}
-
-/** Null for a code the server would reject as INVALID_CURRENCY. */
-function exponentFor(currency: string, fallback: number): number | null {
-  if (!currency) return fallback;
-  try {
-    return currencyExponent(currency);
-  } catch {
-    return null;
-  }
 }
 
 function MappingStep({

@@ -2,8 +2,17 @@ import { act, waitFor } from '@testing-library/react';
 import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { testSession } from '@data/testing';
-import { page, PERSONAL, serverRow, syncedState } from '@data/sync/fixtures';
+import {
+  localRow,
+  page,
+  PERSONAL,
+  sequentialIds,
+  serverRow,
+  syncedState,
+} from '@data/sync/fixtures';
 import { reducePull } from '@data/sync/pull';
+import { reducePush } from '@data/sync/push';
+import { applyLocalChange } from '@data/sync/queue';
 import { emptyLocalState, type LocalState, queueOrder } from '@data/sync/model';
 import { account, category, fakeLocalData, renderTransactionHook } from './test-helpers';
 import { useEntryForm } from './use-entry-form';
@@ -111,6 +120,46 @@ describe('useEntryForm', () => {
     );
     await act(() => result.current.submit());
     expect(queueOrder(data.current())).toMatchObject([{ baseVersion: 3 }]);
+  });
+
+  it('bases a save started on a pending entry on the version that change became', async () => {
+    const pending = applyLocalChange(
+      ledger(syncedState(serverRow({ version: 3 }))),
+      { type: 'upsert', row: localRow({ note: 'mine' }) },
+      sequentialIds(),
+    );
+    const { result, data } = setup('/transactions/tx-1', pending);
+    act(() => result.current.set('amount', '20'));
+    await act(() =>
+      data.store.commit((state) =>
+        reducePush(
+          state,
+          [{ mutationId: 'm-1', status: 'applied', transaction: serverRow({ version: 4 }) }],
+          NOW,
+          ['m-1'],
+        ),
+      ),
+    );
+    await act(() =>
+      data.store.commit(
+        (state) =>
+          reducePull(state, page({ transactions: [serverRow({ version: 5, note: 'Bob' })] }), NOW)
+            .state,
+      ),
+    );
+    await act(() => result.current.submit());
+    expect(queueOrder(data.current())).toMatchObject([{ baseVersion: 4 }]);
+  });
+
+  it('shows the stored conversion only while amount, currency and date are unchanged', () => {
+    const fx = { rate: '1.0850', rateDate: '2026-10-14', source: 'ecb' };
+    const { result } = setup(
+      '/transactions/tx-1',
+      ledger(syncedState(serverRow({ currency: 'USD', baseAmountMinor: 1000, fx }))),
+    );
+    expect(result.current.conversion).not.toBeNull();
+    act(() => result.current.set('occurredOn', '2026-10-01'));
+    expect(result.current.conversion).toBeNull();
   });
 
   it('removes through the queue and toasts when the device cannot write', async () => {

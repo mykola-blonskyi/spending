@@ -361,6 +361,13 @@ describe('settleConflict', () => {
       server: { version: 3 },
       local: { amountMinor: 5 },
     });
-    expect(next.mutations.size).toBe(1);
+    expect(queueOrder(next)).toMatchObject([{ baseVersion: 3 }]);
+  });
+
+  it('leaves a change already sent on the base it was sent with', () => {
+    const state = editLocally(conflicted(), { amountMinor: 5 });
+    const sent = setMutationState(state, ['m-1'], { status: 'retrying' });
+    const next = settleConflict(sent, 'c-1', serverRow({ version: 3 }));
+    expect(queueOrder(next)).toMatchObject([{ baseVersion: 2 }]);
   });
 });

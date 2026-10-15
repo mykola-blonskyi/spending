@@ -64,11 +64,16 @@ export function localEntries(state: LocalState): TransactionEntry[] {
   const syncOf = syncLookup(state);
   const entries: TransactionEntry[] = [];
   for (const record of state.transactions.values()) {
-    if (isDeleted(record.local)) continue;
-    if (record.local) {
+    const sync = syncOf(record.id);
+    // A rejected delete shows the server row as failed, so the user can discard the delete.
+    if (isDeleted(record.local) && sync.state !== 'failed') continue;
+    if (record.local && !isDeleted(record.local)) {
       const row = record.local;
+      // The rate depends on the date (BR-14), so a changed date drops it like a changed amount.
       const server =
-        record.server?.amountMinor === row.amountMinor && record.server.currency === row.currency
+        record.server?.amountMinor === row.amountMinor &&
+        record.server.currency === row.currency &&
+        record.server.occurredOn === row.occurredOn
           ? record.server
           : null;
       entries.push({
@@ -79,7 +84,7 @@ export function localEntries(state: LocalState): TransactionEntry[] {
         baseAmountMinor:
           row.currency === BASE_CURRENCY ? row.amountMinor : (server?.baseAmountMinor ?? null),
         fx: row.currency === BASE_CURRENCY ? null : (server?.fx ?? null),
-        sync: syncOf(record.id),
+        sync,
       });
     } else if (record.server && record.server.reviewStatus === 'confirmed') {
       const row = record.server;
@@ -100,7 +105,7 @@ export function localEntries(state: LocalState): TransactionEntry[] {
         author: row.author,
         baseAmountMinor: row.baseAmountMinor,
         fx: row.fx,
-        sync: syncOf(record.id),
+        sync,
       });
     }
   }

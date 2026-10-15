@@ -56,6 +56,33 @@ export function differingFields({ server, local }: Versions): ConflictField[] {
   return CONFLICT_FIELDS.filter((field) => KEYS[field].some((key) => server[key] !== local[key]));
 }
 
+/** A category fits one kind and one workspace, an account one workspace (BR-3, BR-4). */
+const TIED: readonly (readonly ConflictField[])[] = [
+  ['kind', 'categoryId'],
+  ['workspaceId', 'categoryId', 'accountId'],
+];
+
+/** Picks a side for a field and for every differing field that must come from the same side. */
+export function pickSide(
+  picks: Partial<Record<ConflictField, Side>>,
+  differing: readonly ConflictField[],
+  field: ConflictField,
+  side: Side,
+): Partial<Record<ConflictField, Side>> {
+  const fields = new Set([field]);
+  for (let size = 0; size !== fields.size;) {
+    size = fields.size;
+    for (const group of TIED) {
+      if (differing.includes(group[0]!) && group.some((f) => fields.has(f))) {
+        for (const f of group) fields.add(f);
+      }
+    }
+  }
+  const next = { ...picks };
+  for (const f of fields) if (differing.includes(f)) next[f] = side;
+  return next;
+}
+
 /** The server version with each picked field taken from the chosen side. */
 export function mergeVersions(
   server: TransactionInput,

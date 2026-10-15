@@ -35,6 +35,9 @@ const MINOR_DIGITS: Readonly<Record<string, number>> = {
   TND: 3,
 };
 
+/** Offered in every currency picker, next to the currencies of the user's accounts. */
+export const COMMON_CURRENCIES: readonly string[] = ['EUR', 'USD', 'GBP', 'UAH', 'PLN'];
+
 /** The ISO 4217 minor-unit exponent (EUR 2, JPY 0, KWD 3). */
 export function currencyExponent(currency: string): number {
   return MINOR_DIGITS[currency] ?? 2;
