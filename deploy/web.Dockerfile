@@ -12,7 +12,7 @@ COPY apps/web apps/web
 RUN pnpm --filter @spending/web build \
  && find apps/web/dist -name '*.map' -delete
 
-FROM nginx:1.30.0-alpine
+FROM nginx:1.31.0-alpine
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY deploy/nginx.conf /etc/nginx/nginx.conf
 COPY deploy/security-headers.conf /etc/nginx/security-headers.conf
