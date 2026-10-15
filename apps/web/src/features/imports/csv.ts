@@ -47,12 +47,19 @@ export function detectDelimiter(text: string, sampleLines = 50): Delimiter {
   return best;
 }
 
-/** RFC 4180: quoted fields may hold the delimiter, doubled quotes and line breaks. */
-export function parseCsv(text: string, delimiter: Delimiter): string[][] {
-  const rows: string[][] = [];
+type Row = { line: number; cells: string[] };
+
+/**
+ * RFC 4180: quoted fields may hold the delimiter, doubled quotes and line breaks. Each record
+ * keeps the 1-based file line it starts on.
+ */
+export function parseCsv(text: string, delimiter: Delimiter): Row[] {
+  const rows: Row[] = [];
   let row: string[] = [];
   let cell = '';
   let quoted = false;
+  let line = 1;
+  let start = 1;
   for (let i = 0; i < text.length; i += 1) {
     const char = text[i]!;
     if (quoted) {
@@ -64,6 +71,7 @@ export function parseCsv(text: string, delimiter: Delimiter): string[][] {
           quoted = false;
         }
       } else {
+        if (char === '\n' || (char === '\r' && text[i + 1] !== '\n')) line += 1;
         cell += char;
       }
     } else if (char === '"' && cell === '') {
@@ -74,18 +82,20 @@ export function parseCsv(text: string, delimiter: Delimiter): string[][] {
     } else if (char === '\n' || char === '\r') {
       if (char === '\r' && text[i + 1] === '\n') i += 1;
       row.push(cell);
-      rows.push(row);
+      rows.push({ line: start, cells: row });
       row = [];
       cell = '';
+      line += 1;
+      start = line;
     } else {
       cell += char;
     }
   }
   if (cell !== '' || row.length > 0) {
     row.push(cell);
-    rows.push(row);
+    rows.push({ line: start, cells: row });
   }
-  return rows.map((cells) => cells.map((value) => value.trim()));
+  return rows.map((record) => ({ ...record, cells: record.cells.map((value) => value.trim()) }));
 }
 
 const NUMBER_LIKE = /^[+-]?[\d.,\s]+$/;
@@ -128,8 +138,8 @@ export type ParsedStatement = {
   encoding: Encoding;
   delimiter: Delimiter;
   headers: string[];
-  /** Data rows below the header, each with its 1-based row number in the file. */
-  rows: { line: number; cells: string[] }[];
+  /** Data rows below the header, each with the 1-based file line it starts on. */
+  rows: Row[];
 };
 
 export type StatementProblem = 'EMPTY' | 'TOO_MANY_ROWS';
@@ -141,13 +151,10 @@ export function parseStatement(
   const { text, encoding } = decodeStatement(bytes);
   const delimiter = detectDelimiter(text);
   const all = parseCsv(text, delimiter);
-  const headerIndex = findHeaderRow(all);
+  const headerIndex = findHeaderRow(all.map((row) => row.cells));
   if (headerIndex < 0) return { ok: false, problem: 'EMPTY' };
-  const headers = all[headerIndex]!;
-  const rows = all
-    .slice(headerIndex + 1)
-    .map((cells, offset) => ({ line: headerIndex + offset + 2, cells }))
-    .filter((row) => filled(row.cells) > 0);
+  const headers = all[headerIndex]!.cells;
+  const rows = all.slice(headerIndex + 1).filter((row) => filled(row.cells) > 0);
   if (rows.length === 0) return { ok: false, problem: 'EMPTY' };
   if (rows.length > ROWS_MAX) return { ok: false, problem: 'TOO_MANY_ROWS' };
   return { ok: true, statement: { encoding, delimiter, headers, rows } };
