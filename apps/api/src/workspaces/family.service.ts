@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { hashToken, randomToken } from '../auth/token-crypto';
 import { APP_CONFIG, type AppConfig } from '../common/config';
@@ -33,7 +33,7 @@ export class FamilyService {
   ) {}
 
   async workspaces(actorId: string): Promise<WorkspaceView[]> {
-    return this.views(this.db, await this.policy.memberships(actorId));
+    return workspaceViews(this.db, await this.policy.memberships(actorId));
   }
 
   async create(actorId: string, name: string): Promise<WorkspaceView> {
@@ -73,50 +73,37 @@ export class FamilyService {
     });
   }
 
-  /**
-   * BR-11. Transactions leave the family before the workspace is deleted, because deleting it
-   * cascades to everything it still holds: accounts, categories, budgets, rules, invitations.
-   */
+  /** BR-11. */
   async delete(actorId: string, confirmName: string): Promise<void> {
     await ledgerTransaction(this.db, async (tx) => {
       const family = await this.lockOwnedFamily(tx, actorId);
       if (confirmName !== family.name) throw new ApiError('CONFIRMATION_MISMATCH');
-      const familyId = family.workspaceId;
-      await tx.execute(sql`
-        delete from transactions where workspace_id = ${familyId} and created_by is null`);
-      await tx.execute(sql`
-        delete from sync_conflicts c using transactions t
-        where c.transaction_id = t.id and t.workspace_id = ${familyId}
-          and c.user_id <> t.created_by`);
-      await tx.execute(sql`
-        insert into categories (workspace_id, name, kind, color, icon, system_key)
-        select distinct on (p.workspace_id, c.kind, c.name)
-               p.workspace_id, c.name, c.kind, c.color, c.icon,
-               case when exists (
-                 select 1 from categories k
-                 where k.workspace_id = p.workspace_id and k.system_key = c.system_key)
-               then null else c.system_key end
-        from transactions t
-        join categories c on c.id = t.category_id
-        join memberships p on p.user_id = t.created_by and p.workspace_kind = 'personal'
-        where t.workspace_id = ${familyId} and t.deleted_at is null
-        on conflict (workspace_id, kind, name) do nothing`);
-      await tx.execute(sql`
-        update transactions t set
-          workspace_id = p.workspace_id,
-          category_id = (
-            select pc.id from categories fc
-            join categories pc
-              on pc.workspace_id = p.workspace_id and pc.kind = fc.kind and pc.name = fc.name
-            where fc.id = t.category_id),
-          account_id = case
-            when t.account_id in (select id from accounts where workspace_id = ${familyId})
-            then null else t.account_id end
-        from memberships p
-        where t.workspace_id = ${familyId}
-          and p.user_id = t.created_by and p.workspace_kind = 'personal'`);
-      await tx.delete(workspaces).where(eq(workspaces.id, familyId));
+      await this.purge(tx, family.workspaceId);
     });
+  }
+
+  /**
+   * BR-32. Takes the actor out of their family, if any, inside the user-deletion transaction,
+   * which must come from `ledgerTransaction`. A member leaves (BR-9); a sole owner's family is
+   * deleted as BR-11 describes; an owner with other members must transfer ownership first.
+   */
+  async releaseForUserDeletion(tx: Tx, actorId: string): Promise<void> {
+    const family = await this.lockFamilyIfAny(tx, actorId);
+    if (!family) return;
+    if (family.role === 'member') {
+      await this.dropMember(tx, family.workspaceId, actorId);
+      await this.record(tx, family.workspaceId, actorId, 'member_left', actorId);
+      return;
+    }
+    // `for no key update` lets an accept's `for key share` through; this blocks it until it commits.
+    await tx.execute(sql`select 1 from workspaces where id = ${family.workspaceId} for update`);
+    const others = await tx
+      .select({ userId: memberships.userId })
+      .from(memberships)
+      .where(and(eq(memberships.workspaceId, family.workspaceId), ne(memberships.userId, actorId)))
+      .limit(1);
+    if (others.length > 0) throw new ApiError('FAMILY_OWNER_MUST_TRANSFER');
+    await this.purge(tx, family.workspaceId);
   }
 
   async createInvitation(
@@ -351,13 +338,61 @@ export class FamilyService {
   }
 
   /**
+   * BR-11. Transactions leave the family before the workspace is deleted, because deleting it
+   * cascades to everything it still holds: accounts, categories, budgets, rules, invitations.
+   * The caller holds the ledger lock and the family row lock.
+   */
+  private async purge(tx: Tx, familyId: string): Promise<void> {
+    await tx.execute(sql`
+      delete from transactions where workspace_id = ${familyId} and created_by is null`);
+    await tx.execute(sql`
+      delete from sync_conflicts c using transactions t
+      where c.transaction_id = t.id and t.workspace_id = ${familyId}
+        and c.user_id <> t.created_by`);
+    await tx.execute(sql`
+      insert into categories (workspace_id, name, kind, color, icon, system_key)
+      select distinct on (p.workspace_id, c.kind, c.name)
+             p.workspace_id, c.name, c.kind, c.color, c.icon,
+             case when exists (
+               select 1 from categories k
+               where k.workspace_id = p.workspace_id and k.system_key = c.system_key)
+             then null else c.system_key end
+      from transactions t
+      join categories c on c.id = t.category_id
+      join memberships p on p.user_id = t.created_by and p.workspace_kind = 'personal'
+      where t.workspace_id = ${familyId} and t.deleted_at is null
+      on conflict (workspace_id, kind, name) do nothing`);
+    await tx.execute(sql`
+      update transactions t set
+        workspace_id = p.workspace_id,
+        category_id = (
+          select pc.id from categories fc
+          join categories pc
+            on pc.workspace_id = p.workspace_id and pc.kind = fc.kind and pc.name = fc.name
+          where fc.id = t.category_id),
+        account_id = case
+          when t.account_id in (select id from accounts where workspace_id = ${familyId})
+          then null else t.account_id end
+      from memberships p
+      where t.workspace_id = ${familyId}
+        and p.user_id = t.created_by and p.workspace_kind = 'personal'`);
+    await tx.delete(workspaces).where(eq(workspaces.id, familyId));
+  }
+
+  /**
    * Locks the actor's family row, serializing membership changes of one family. The membership
    * is read again under the lock because a concurrent change may have just committed. `no key
    * update` leaves foreign-key checks (ledger writers, joins) unblocked.
    */
   private async lockFamily(tx: Tx, actorId: string): Promise<Membership> {
+    const family = await this.lockFamilyIfAny(tx, actorId);
+    if (!family) throw new ApiError('NOT_FOUND');
+    return family;
+  }
+
+  private async lockFamilyIfAny(tx: Tx, actorId: string): Promise<Membership | null> {
     const before = await this.policy.familyMembership(actorId, tx);
-    if (!before) throw new ApiError('NOT_FOUND');
+    if (!before) return null;
     await tx.execute(
       sql`select 1 from workspaces where id = ${before.workspaceId} for no key update`,
     );
@@ -402,41 +437,45 @@ export class FamilyService {
   }
 
   private async view(tx: Tx, membership: Membership): Promise<WorkspaceView> {
-    const [view] = await this.views(tx, [membership]);
+    const [view] = await workspaceViews(tx, [membership]);
     return view!;
   }
+}
 
-  private async views(tx: Tx, list: readonly Membership[]): Promise<WorkspaceView[]> {
-    if (list.length === 0) return [];
-    const members = await tx
-      .select({
-        workspaceId: memberships.workspaceId,
-        userId: memberships.userId,
-        displayName: users.displayName,
-        avatarUrl: users.avatarUrl,
-        role: memberships.role,
-        joinedAt: memberships.joinedAt,
-      })
-      .from(memberships)
-      .innerJoin(users, eq(users.id, memberships.userId))
-      .where(
-        inArray(
-          memberships.workspaceId,
-          list.map((m) => m.workspaceId),
-        ),
-      )
-      .orderBy(memberships.joinedAt, memberships.userId);
-    return list.map((m) => ({
-      id: m.workspaceId,
-      kind: m.kind,
-      name: m.name,
-      role: m.role,
-      members: members
-        .filter((row) => row.workspaceId === m.workspaceId)
-        .map(({ workspaceId: _workspaceId, joinedAt, ...row }) => ({
-          ...row,
-          joinedAt: joinedAt.toISOString(),
-        })),
-    }));
-  }
+/** The workspaces of `list` with their members, as the API presents them. */
+export async function workspaceViews(
+  tx: Tx,
+  list: readonly Membership[],
+): Promise<WorkspaceView[]> {
+  if (list.length === 0) return [];
+  const members = await tx
+    .select({
+      workspaceId: memberships.workspaceId,
+      userId: memberships.userId,
+      displayName: users.displayName,
+      avatarUrl: users.avatarUrl,
+      role: memberships.role,
+      joinedAt: memberships.joinedAt,
+    })
+    .from(memberships)
+    .innerJoin(users, eq(users.id, memberships.userId))
+    .where(
+      inArray(
+        memberships.workspaceId,
+        list.map((m) => m.workspaceId),
+      ),
+    )
+    .orderBy(memberships.joinedAt, memberships.userId);
+  return list.map((m) => ({
+    id: m.workspaceId,
+    kind: m.kind,
+    name: m.name,
+    role: m.role,
+    members: members
+      .filter((row) => row.workspaceId === m.workspaceId)
+      .map(({ workspaceId: _workspaceId, joinedAt, ...row }) => ({
+        ...row,
+        joinedAt: joinedAt.toISOString(),
+      })),
+  }));
 }

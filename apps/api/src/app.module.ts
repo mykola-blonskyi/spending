@@ -9,6 +9,7 @@ import { CsrfGuard, SessionGuard } from './auth/guards';
 import { APP_CONFIG, type AppConfig } from './common/config';
 import { ErrorFilter } from './common/error.filter';
 import { rateLimitOptions } from './common/rate-limit';
+import { DataRightsModule } from './data-rights/data-rights.module';
 import { DatabaseModule } from './database/database.module';
 import { HealthController } from './health/health.controller';
 import { ImportsModule } from './imports/imports.module';
@@ -32,6 +33,7 @@ export class AppModule {
         WorkspacesModule,
         LedgerModule,
         SyncModule,
+        DataRightsModule,
         ImportsModule,
         BudgetsModule,
         RecurringModule,
