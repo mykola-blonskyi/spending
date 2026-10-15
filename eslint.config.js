@@ -100,6 +100,24 @@ export default tseslint.config(
     },
   },
   {
+    files: ['apps/web/src/**/*.tsx'],
+    ignores: ['**/*.test.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'JSXText[value=/\\p{L}{2}/u]',
+          message: 'Put user-visible text in the i18n catalogs.',
+        },
+        {
+          selector:
+            'JSXAttribute[name.name=/^(aria-label|aria-description|title|placeholder|alt)$/] :matches(JSXAttribute > Literal, JSXExpressionContainer > Literal)[value=/\\p{L}{2}/u]',
+          message: 'Put user-visible text in the i18n catalogs.',
+        },
+      ],
+    },
+  },
+  {
     // Playwright fixtures destructure their dependencies (even none) and receive a `use` callback.
     files: ['apps/web/e2e/**/*.ts'],
     rules: { 'no-empty-pattern': 'off', 'react-hooks/rules-of-hooks': 'off' },
