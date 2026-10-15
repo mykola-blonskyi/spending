@@ -79,10 +79,13 @@ test('two people share family entries but never personal ones', async ({
   await addEntry(page, 'Ann private', 'Personal');
   await addEntry(page, 'Family dinner', 'Family');
   await addEntry(bobPage, 'Bob private', 'Personal');
-  expect(await db.transactions(ann.email)).toMatchObject([
-    { description: 'Ann private', scope: 'personal' },
-    { description: 'Family dinner', scope: 'family' },
-  ]);
+  // The badge holds "Up to date" briefly after a write, so the push may still be on its way.
+  await expect
+    .poll(() => db.transactions(ann.email))
+    .toMatchObject([
+      { description: 'Ann private', scope: 'personal' },
+      { description: 'Family dinner', scope: 'family' },
+    ]);
 
   await bobPage.goto('/transactions');
   const dinner = bobPage.getByRole('link', { name: /Family dinner/ });
