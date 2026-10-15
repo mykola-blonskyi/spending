@@ -75,6 +75,7 @@ export class RecurringService {
    * occurrence is recomputed from max(today, the current next), so the edit reaches only the future.
    */
   async update(actorId: string, id: string, patch: UpdateRule): Promise<RuleView> {
+    await this.load(this.db, actorId, id);
     // A backlog longer than one call is committed call by call first, still with the old template.
     while ((await this.catchUp(id, new Date())).more);
     return ledgerTransaction(this.db, async (tx) => {
