@@ -25,7 +25,7 @@ const BACKFILL_BATCH = 500;
 const UPSERT_BATCH = 1000;
 /** Longer than a weekend plus a holiday, so normal ECB gaps never trigger a history fetch. */
 const HISTORY_GAP_DAYS = 4;
-/** The first day of the ECB series. Stored rates reaching it mean the full history is loaded. */
+/** The first day of the ECB series; older rows never get a rate. */
 const ECB_FIRST_DAY = '1999-01-04';
 /** The full history is about 30 MB, so even a failed attempt waits this long before the next. */
 const FULL_HISTORY_INTERVAL_MS = 24 * 60 * 60_000;
@@ -93,9 +93,10 @@ export class FxService {
 
   /**
    * Fetches the latest rates, plus the 90-day history when the stored rates are missing or stale
-   * (the API was down, or fetches failed), so missed days are recovered. When non-EUR rows predate
-   * every stored rate (an old statement import), it also loads the full history once. A failed
-   * feed is logged and skipped; rows are reconverted with whatever is stored.
+   * (the API was down, or fetches failed), so missed days are recovered. When an unconverted row
+   * falls where no rate is stored (an old statement import, or an outage longer than the history
+   * feed), it also loads the full history. A failed feed is logged and skipped; rows are
+   * reconverted with whatever is stored.
    */
   async refresh(): Promise<{ rates: number; filled: number }> {
     const [stored] = await this.db.select({ latest: max(fxRates.date) }).from(fxRates);
@@ -105,7 +106,7 @@ export class FxService {
     let rates = await this.store(await this.fetch(stale ? ['history', 'latest'] : ['latest']));
     if (
       Date.now() - this.lastFullHistoryAttempt >= FULL_HISTORY_INTERVAL_MS &&
-      (await this.predatesStoredRates())
+      (await this.rowsInRateGap())
     ) {
       this.lastFullHistoryAttempt = Date.now();
       rates += await this.store(await this.fetch(['full']), 'keep');
@@ -144,15 +145,23 @@ export class FxService {
     return rates.length;
   }
 
-  /** True while an unconverted non-EUR row is older than every stored rate and older days exist. */
-  private async predatesStoredRates(): Promise<boolean> {
+  /**
+   * True while an unconverted row has no stored rate of any currency in its BR-14 window, although
+   * its currency has a later one, so the ECB series has rates the store is missing.
+   */
+  private async rowsInRateGap(): Promise<boolean> {
     const { rows } = await this.db.execute<{ needed: boolean }>(sql`
-      with oldest as (select min(date) as date from fx_rates)
       select exists (
-        select 1 from transactions t, oldest
-        where oldest.date > ${ECB_FIRST_DAY}::date
-          and t.currency <> 'EUR' and t.deleted_at is null and t.base_amount_minor is null
-          and t.occurred_on < oldest.date
+        select 1 from transactions t
+        where t.currency <> 'EUR' and t.deleted_at is null and t.base_amount_minor is null
+          and t.occurred_on >= ${ECB_FIRST_DAY}::date
+          and exists (
+            select 1 from fx_rates r where r.currency = t.currency and r.date > t.occurred_on
+          )
+          and not exists (
+            select 1 from fx_rates r
+            where r.date between t.occurred_on - ${RATE_LOOKBACK_DAYS}::int and t.occurred_on
+          )
       ) as needed`);
     return rows[0]?.needed === true;
   }
