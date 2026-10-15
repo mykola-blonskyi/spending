@@ -43,7 +43,9 @@ export function applyLocalChange(
 
   if (change.type === 'delete') {
     if (!record || isDeleted(record.local)) return state;
-    const inFlight = pending.some((mutation) => mutation.state.status === 'sending');
+    const inFlight = pending.some(
+      (mutation) => mutation.state.status === 'sending' || mutation.state.status === 'retrying',
+    );
     if (record.server === null && !inFlight) {
       return {
         ...state,
@@ -109,7 +111,9 @@ export function selectBatch(state: LocalState, limit: number = PUSH_LIMIT): Queu
     if (batch.length === limit) break;
     if (seen.has(mutation.transactionId)) continue;
     seen.add(mutation.transactionId);
-    if (mutation.state.status === 'queued') batch.push(mutation);
+    if (mutation.state.status === 'queued' || mutation.state.status === 'retrying') {
+      batch.push(mutation);
+    }
   }
   return batch;
 }
@@ -128,15 +132,20 @@ export function setMutationState(
 }
 
 /**
- * A push that never completed may or may not have reached the server; replaying it is safe (BR-18).
- * `only` limits this to one flush's batch, so another tab's push in flight is left alone.
+ * Settles mutations left `sending`. By default the push may have reached the server, so they are
+ * frozen for a replay (BR-18); `queued` is for a push known to have changed nothing. `only` limits
+ * this to one flush's batch, so another tab's push in flight is left alone.
  */
-export function requeueInFlight(state: LocalState, only?: readonly string[]): LocalState {
+export function requeueInFlight(
+  state: LocalState,
+  status: 'queued' | 'retrying' = 'retrying',
+  only?: readonly string[],
+): LocalState {
   const sending = [...state.mutations.values()]
     .filter((mutation) => mutation.state.status === 'sending')
     .filter((mutation) => !only || only.includes(mutation.mutationId))
     .map((mutation) => mutation.mutationId);
-  return sending.length === 0 ? state : setMutationState(state, sending, { status: 'queued' });
+  return sending.length === 0 ? state : setMutationState(state, sending, { status });
 }
 
 export function countMutations(state: LocalState): { pending: number; failed: number } {

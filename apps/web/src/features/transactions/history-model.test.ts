@@ -135,6 +135,15 @@ describe('conversion', () => {
     });
     expect(row('c', '2026-10-14', chf).conversion).toEqual({ state: 'unavailable' });
   });
+
+  it('is pending, and counted apart from EUR, until the server converts an unsent entry', () => {
+    const unsent = row('d', '2026-10-14', { ...chf, sync: { state: 'pending' } });
+    expect(unsent.conversion).toEqual({ state: 'pending' });
+    expect(summarize([unsent])).toEqual({
+      base: { expense: 0, income: 0 },
+      unconverted: [{ currency: 'CHF', expense: 500, income: 0 }],
+    });
+  });
 });
 
 describe('summarize', () => {

@@ -123,6 +123,20 @@ stored lucide icon name to a curated icon set (`category-icons.ts`).
   `spending-sync:<userId>`, and other tabs re-read. Any tab may flush, but each flush holds the Web
   Lock of the same name, so flushes never overlap. Without Web Locks, flushes run uncoordinated;
   the server applies each mutation ID once, so an overlapping push is harmless.
+- **Flush triggers.** App start, the `online` event, becoming visible, 500 ms after a local
+  write, and a 60 s heartbeat while visible and online. Transport errors and 5xx retry with
+  backoff doubling from 1 s to 5 min, each wait drawn from its upper half. Offline, nothing is
+  pushed. A push that left but got no answer (network error, 5xx) leaves its mutations
+  `retrying`: the server may hold their results, so they are replayed unchanged and later edits
+  queue behind them. A push that changed nothing (failed before the request left, or a 4xx such as 429) leaves them `queued`, still open to coalescing. A mutation that cannot be serialized
+  fails on its own (`INTERNAL`) instead of stalling the queue.
+- **Offline start.** The service worker (`vite-plugin-pwa`, Workbox `generateSW`) precaches the
+  shell with an `index.html` navigation fallback; `/api/*` is on the navigation denylist and
+  has no runtime caching. The last signed-in user is kept in `localStorage['spending.lastUser']`
+  so an offline start opens their local data; it is removed on sign-out and when the session
+  ends. A page started offline fetches the CSRF token before its first write (`client.ts`).
+- **Status badge.** "Syncing" shows only after 300 ms and "synced" stays at least 600 ms, so a
+  quick sync never flickers. The badge is a polite live region.
 - **Conflicts.** The server keeps its row and records the client's version (BR-19). The client
   shows both and lets the user pick or merge.
 

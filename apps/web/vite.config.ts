@@ -1,13 +1,48 @@
 import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 import { defineConfig } from 'vitest/config';
 
 const fromSrc = (dir: string) => fileURLToPath(new URL(`./src/${dir}`, import.meta.url));
 const api = { target: process.env.API_ORIGIN ?? 'http://localhost:3000', changeOrigin: false };
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    VitePWA({
+      // A new version waits for every tab to close; #32 adds the reload prompt.
+      registerType: 'prompt',
+      injectRegister: 'script',
+      // Manifest icons and the manifest itself are precached by the plugin.
+      includeAssets: ['apple-touch-icon.png'],
+      manifest: {
+        name: 'Spending',
+        short_name: 'Spending',
+        description: 'Personal and family expenses, offline first.',
+        lang: 'en',
+        start_url: '/',
+        scope: '/',
+        display: 'standalone',
+        // --primary and --background from shared/styles.css, as hex for manifest support.
+        theme_color: '#006944',
+        background_color: '#fafaf9',
+        icons: [
+          { src: 'pwa-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'pwa-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'pwa-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,woff2}'],
+        navigateFallback: 'index.html',
+        // API and auth responses are private and live: never served from or stored in the cache.
+        navigateFallbackDenylist: [/^\/api\//],
+        runtimeCaching: [],
+      },
+    }),
+  ],
   resolve: {
     alias: {
       '@app': fromSrc('app'),

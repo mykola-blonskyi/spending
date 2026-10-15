@@ -2,7 +2,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../api-error';
 import { api, createApiClient } from '../client';
 import { setCsrfToken } from '../csrf';
-import { type FlushLock, SyncEngine, type SyncTransport, userFlushLock } from './engine';
+import {
+  backoffDelay,
+  type FlushLock,
+  SyncEngine,
+  type SyncTransport,
+  userFlushLock,
+} from './engine';
 import { localRow, page, sequentialIds, serverRow } from './fixtures';
 import {
   emptyLocalState,
@@ -30,7 +36,8 @@ function fakeServer(
 ) {
   const pushes: WireMutation[][] = [];
   const transport: SyncTransport = {
-    async push(mutations) {
+    async push(mutations, onSent) {
+      onSent();
       pushes.push(mutations);
       await options.onPush?.(mutations);
       if (options.refuse?.(mutations)) throw invalid();
@@ -209,6 +216,7 @@ describe('SyncEngine', () => {
 
   it('keeps waiting out the backoff when a local write arrives while retrying', async () => {
     vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(1);
     let state = applyLocalChange(
       emptyLocalState(),
       { type: 'upsert', row: localRow() },
@@ -285,6 +293,11 @@ describe('SyncEngine', () => {
     const server = fakeServer();
     const hung = new SyncEngine(local, apiTransport, lock);
     const otherTab = new SyncEngine(local, server.transport, lock);
+    let settled: string[] = [];
+    hung.subscribe(() => {
+      if (hung.getStatus().phase !== 'retrying') return;
+      settled = queueOrder(local.state).map((mutation) => mutation.state.status);
+    });
 
     const first = hung.flush();
     const second = otherTab.flush();
@@ -292,6 +305,8 @@ describe('SyncEngine', () => {
     timeouts[0]!.abort(new DOMException('timed out', 'TimeoutError'));
     await first;
     expect(hung.getStatus().phase).toBe('retrying');
+    // The request had left, so the server may have applied it: frozen for a replay.
+    expect(settled).toEqual(['retrying']);
     hung.stop();
     await second;
 
@@ -322,6 +337,41 @@ describe('SyncEngine', () => {
     expect(server.pushes).toHaveLength(1);
     expect(pull).not.toHaveBeenCalled();
   });
+
+  it('fails a mutation that cannot be sent and still sends the rest', async () => {
+    let state = applyLocalChange(
+      emptyLocalState(),
+      { type: 'upsert', row: localRow({ id: 'good' }) },
+      sequentialIds(),
+    );
+    state = {
+      ...state,
+      mutations: new Map(state.mutations).set('broken', {
+        mutationId: 'broken',
+        seq: 2,
+        transactionId: 'gone',
+        baseVersion: null,
+        change: { type: 'transaction.delete' },
+        state: { status: 'queued' },
+      }),
+    };
+    const memory = {
+      get state() {
+        return state;
+      },
+      closed: false,
+      commit: (transition: (current: LocalState) => LocalState) =>
+        Promise.resolve((state = transition(state))),
+    } as unknown as LocalStore;
+    const server = fakeServer();
+
+    await new SyncEngine(memory, server.transport).flush();
+
+    expect(server.pushes.flat().map((m) => m.mutationId)).toEqual(['m-1']);
+    expect(queueOrder(state).map((m) => [m.mutationId, m.state.status])).toEqual([
+      ['broken', 'failed'],
+    ]);
+  });
 });
 
 describe('userFlushLock', () => {
@@ -337,5 +387,85 @@ describe('userFlushLock', () => {
     const flushed = vi.fn(run);
     await userFlushLock('ann', undefined)(flushed);
     expect(flushed).toHaveBeenCalledOnce();
+  });
+});
+
+describe('backoffDelay', () => {
+  it.each([
+    [1, 0, 500],
+    [1, 1, 1000],
+    [4, 0, 4000],
+    [4, 1, 8000],
+    [10, 0.5, 225_000],
+    [30, 1, 300_000],
+  ])('attempt %i with random %d waits %i ms', (attempt, random, expected) => {
+    expect(backoffDelay(attempt, () => random)).toBe(expected);
+  });
+});
+
+describe('a failed push', () => {
+  const offline = new ApiError({ status: 0, code: 'NETWORK', message: 'Failed to fetch' });
+
+  async function failOnce(failure: (onSent: () => void) => never) {
+    store = await LocalStore.open('ann');
+    const id = await recordTransaction(store, { ...draft, description: 'first' });
+    const engine = new SyncEngine(store, {
+      push: (_mutations, onSent) => Promise.resolve().then(() => failure(onSent)),
+      pull: () => Promise.resolve(page()),
+    });
+    await engine.flush();
+    engine.stop();
+    return { local: store, id, status: () => queueOrder(store!.state).map((m) => m.state.status) };
+  }
+
+  it('freezes mutations whose request left and never answered', async () => {
+    const { local, id, status } = await failOnce((onSent) => {
+      onSent();
+      throw offline;
+    });
+    expect(status()).toEqual(['retrying']);
+    await updateTransaction(local, id, { ...draft, description: 'second' });
+    expect(status()).toEqual(['retrying', 'queued']);
+  });
+
+  it.each<[string, (onSent: () => void) => never]>([
+    [
+      'the CSRF token could not be fetched before the request',
+      () => {
+        throw offline;
+      },
+    ],
+    [
+      'the server rate-limited it',
+      (onSent) => {
+        onSent();
+        throw new ApiError({ status: 429, code: 'RATE_LIMITED', message: 'slow down' });
+      },
+    ],
+  ])('keeps mutations editable when %s', async (_, failure) => {
+    const { local, id, status } = await failOnce(failure);
+    expect(status()).toEqual(['queued']);
+    await updateTransaction(local, id, { ...draft, description: 'second' });
+    expect(status()).toEqual(['queued']);
+    expect(queueOrder(local.state)[0]?.change).toMatchObject({
+      transaction: { description: 'second' },
+    });
+    await deleteTransaction(local, id);
+    expect(local.state.transactions.has(id)).toBe(false);
+    expect(local.state.mutations.size).toBe(0);
+  });
+
+  it('is not attempted while the browser is offline', async () => {
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    store = await LocalStore.open('ann');
+    await recordTransaction(store, draft);
+    const server = fakeServer();
+    const engine = new SyncEngine(store, server.transport);
+
+    await engine.flush();
+
+    expect(server.pushes).toEqual([]);
+    expect(queueOrder(store.state).map((m) => m.state.status)).toEqual(['queued']);
+    expect(engine.getStatus().phase).toBe('idle');
   });
 });

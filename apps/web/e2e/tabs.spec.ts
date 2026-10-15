@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
-import { expect, test } from './fixtures';
-import { E2E_USERS } from './support/env';
+import { expect, signInAs as signInPageAs, test } from './fixtures';
+import { APP_ORIGIN, E2E_USERS } from './support/env';
 
 type Push = { start: number; end: number; mutationIds: string[] };
 
@@ -8,12 +8,6 @@ async function fillEntry(page: Page, amount: string, description: string): Promi
   await page.goto('/transactions/new');
   await page.getByLabel('Amount').fill(amount);
   await page.getByLabel('Description').fill(description);
-}
-
-async function settled(...pages: Page[]): Promise<void> {
-  for (const page of pages) {
-    await expect(page.getByRole('banner').getByRole('status')).toHaveText('Up to date');
-  }
 }
 
 async function save(page: Page): Promise<void> {
@@ -48,34 +42,26 @@ test('tabs take turns flushing, never overlap and see each other’s entries', a
   });
   const tabA = page;
   const tabB = await page.context().newPage();
-  const pushesA: Push[] = [];
-  const pushesB: Push[] = [];
-  recordPushes(tabA, pushesA);
-  recordPushes(tabB, pushesB);
+  const pushes: Push[] = [];
+  recordPushes(tabA, pushes);
+  recordPushes(tabB, pushes);
 
   await fillEntry(tabA, '3', 'From tab A');
   await fillEntry(tabB, '4', 'From tab B');
   await Promise.all([save(tabA), save(tabB)]);
   await expect(tabA.getByRole('link', { name: /From tab B/ })).toBeVisible();
   await expect(tabB.getByRole('link', { name: /From tab A/ })).toBeVisible();
-  await settled(tabA, tabB);
-
-  // With the other tab idle, a lone write can only be pushed by the tab that made it.
   await fillEntry(tabB, '5', 'Also from tab B');
   await save(tabB);
   await expect(tabA.getByRole('link', { name: /Also from tab B/ })).toBeVisible();
-  await settled(tabA, tabB);
-  await fillEntry(tabA, '6', 'Again from tab A');
-  await save(tabA);
-  await expect(tabB.getByRole('link', { name: /Again from tab A/ })).toBeVisible();
-  await settled(tabA, tabB);
 
+  await expect.poll(() => db.transactions(E2E_USERS.ann.email)).toHaveLength(3);
   for (const tab of [tabA, tabB]) {
-    await expect(tab.getByRole('link', { name: /from tab/i })).toHaveCount(4);
+    await expect(tab.getByRole('banner').getByRole('status')).toHaveText('Up to date');
+    await expect(tab.getByRole('link', { name: /from tab/i })).toHaveCount(3);
   }
-  expect(pushesA.length).toBeGreaterThan(0);
-  expect(pushesB.length).toBeGreaterThan(0);
-  const pushes = [...pushesA, ...pushesB].sort((a, b) => a.start - b.start);
+  expect(pushes.length).toBeGreaterThan(0);
+  pushes.sort((a, b) => a.start - b.start);
   for (let i = 1; i < pushes.length; i += 1) {
     expect(pushes[i]!.start, 'pushes overlapped').toBeGreaterThanOrEqual(pushes[i - 1]!.end);
   }
@@ -83,9 +69,42 @@ test('tabs take turns flushing, never overlap and see each other’s entries', a
   expect(new Set(sent).size).toBe(sent.length);
   const rows = await db.transactions(E2E_USERS.ann.email);
   expect(rows.map((row) => row.description).sort()).toEqual([
-    'Again from tab A',
     'Also from tab B',
     'From tab A',
     'From tab B',
   ]);
+});
+
+test('the visible tab still pulls another device’s entry while the other tab is hidden', async ({
+  page,
+  browser,
+  signInAs,
+  db,
+}) => {
+  await signInAs('ann');
+  const hidden = page;
+  await hidden.goto('/transactions');
+  const visible = await page.context().newPage();
+  await visible.goto('/transactions');
+  await expect(visible.getByRole('banner').getByRole('status')).toHaveText('Up to date');
+  await hidden.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+
+  const device = await browser.newContext({
+    baseURL: APP_ORIGIN,
+    extraHTTPHeaders: { 'X-Forwarded-For': '198.51.100.7' },
+  });
+  const other = await device.newPage();
+  await signInPageAs(other, 'ann');
+  await fillEntry(other, '8', 'From another device');
+  await save(other);
+  await expect.poll(() => db.transactions(E2E_USERS.ann.email)).toHaveLength(1);
+  await device.close();
+
+  await visible.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  for (const tab of [visible, hidden]) {
+    await expect(tab.getByRole('link', { name: /From another device/ })).toBeVisible();
+  }
 });

@@ -6,6 +6,15 @@ import { useSharedLocale } from '@shared/lib/locale-context';
 import { cn } from '@shared/lib/utils';
 import { type Conversion, type EntryRow, fxLabels } from '../history-model';
 
+function ConversionPending({ className }: { className?: string }) {
+  const t = useTranslations('history');
+  return (
+    <span className={cn('text-xs whitespace-nowrap text-muted-foreground', className)}>
+      {t('conversionPending')}
+    </span>
+  );
+}
+
 /** Says an entry has no EUR amount yet; the title explains why. */
 export function ConversionUnavailable({ className }: { className?: string }) {
   const t = useTranslations('history');
@@ -74,6 +83,7 @@ export function EntryAmount({
           </span>
         </span>
       )}
+      {conversion.state === 'pending' && <ConversionPending className={secondaryClassName} />}
       {conversion.state === 'unavailable' && (
         <ConversionUnavailable className={secondaryClassName} />
       )}
@@ -92,6 +102,7 @@ export function ConversionNote({
   const t = useTranslations('history');
   const { locale } = useSharedLocale();
   if (!conversion || conversion.state === 'same') return null;
+  if (conversion.state === 'pending') return <ConversionPending className={className} />;
   if (conversion.state === 'unavailable') {
     return (
       <p className={cn('flex flex-col gap-0.5 text-xs text-muted-foreground', className)}>

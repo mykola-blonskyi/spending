@@ -51,6 +51,24 @@ describe('applyLocalChange', () => {
     expect(state.transactions.get('tx-1')?.local).toEqual(DELETED);
   });
 
+  it('never rewrites or cancels a create whose push was cut off, since the server may hold it', () => {
+    const ids = sequentialIds();
+    let state = applyLocalChange(emptyLocalState(), { type: 'upsert', row: localRow() }, ids);
+    state = requeueInFlight(sendAll(state));
+    state = applyLocalChange(state, { type: 'upsert', row: localRow({ amountMinor: 9 }) }, ids);
+    expect(queueOrder(state).map((m) => [m.mutationId, m.state.status])).toEqual([
+      ['m-1', 'retrying'],
+      ['m-2', 'queued'],
+    ]);
+    expect(queueOrder(state)[0]?.change).toMatchObject({ transaction: { amountMinor: 1250 } });
+
+    state = applyLocalChange(state, { type: 'delete', id: 'tx-1' }, ids);
+    expect(queueOrder(state).map((m) => m.change.type)).toEqual([
+      'transaction.upsert',
+      'transaction.delete',
+    ]);
+  });
+
   it('cancels a queued create when the entry is deleted, so nothing is sent', () => {
     const ids = sequentialIds();
     let state = applyLocalChange(emptyLocalState(), { type: 'upsert', row: localRow() }, ids);

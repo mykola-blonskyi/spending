@@ -1,4 +1,13 @@
-import { createContext, use, useCallback, useMemo, useSyncExternalStore } from 'react';
+import {
+  createContext,
+  use,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import type { SyncStatus } from '@shared/components';
 import { useOnlineStatus } from '@shared/lib/network';
 import type { EngineStatus, SyncEngine } from './engine';
@@ -9,7 +18,7 @@ import {
   type TransactionEntry,
   type TransactionFilter,
 } from './query';
-import { deriveSyncStatus } from './status';
+import { deriveSyncStatus, smoothingDelay } from './status';
 import type { LocalStore } from './store';
 import {
   deleteTransaction,
@@ -95,7 +104,32 @@ export function useSyncStatus(): SyncStatus | null {
   const state = useLocalState();
   const engine = useEngineStatus();
   const online = useOnlineStatus();
-  return state && engine ? deriveSyncStatus(engine, state, online) : null;
+  return useSmoothed(state && engine ? deriveSyncStatus(engine, state, online) : null);
+}
+
+const count = (status: SyncStatus | null) => (status && 'count' in status ? status.count : null);
+const sameStatus = (a: SyncStatus | null, b: SyncStatus | null) =>
+  a?.state === b?.state && count(a) === count(b);
+
+function useSmoothed(next: SyncStatus | null): SyncStatus | null {
+  // `target` keeps its identity while the status is equal, so a re-render never restarts a timer.
+  const [target, setTarget] = useState(next);
+  const [shown, setShown] = useState(next);
+  const shownAt = useRef(0);
+  if (!sameStatus(next, target)) setTarget(next);
+
+  useEffect(() => {
+    if (sameStatus(target, shown)) return;
+    const delay =
+      target && shown ? smoothingDelay(target, shown, performance.now() - shownAt.current) : 0;
+    const timer = setTimeout(() => {
+      shownAt.current = performance.now();
+      setShown(target);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [target, shown]);
+
+  return shown;
 }
 
 /** The first sync on an empty device: active until a pull first reaches the end. */

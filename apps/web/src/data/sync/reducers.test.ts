@@ -228,11 +228,13 @@ describe('reducePush', () => {
     ]);
   });
 
-  it('returns what is left of its own batch to the queue, never another tab’s push', () => {
+  it('freezes what is left of its own batch for a replay, never another tab’s push', () => {
     const state = setMutationState(editLocally(syncedState(serverRow()), {}), ['m-1'], {
       status: 'sending',
     });
-    expect(queueOrder(reducePush(state, [], now, ['m-1']))[0]?.state).toEqual({ status: 'queued' });
+    expect(queueOrder(reducePush(state, [], now, ['m-1']))[0]?.state).toEqual({
+      status: 'retrying',
+    });
     expect(queueOrder(reducePush(state, [], now, []))[0]?.state).toEqual({ status: 'sending' });
   });
 });

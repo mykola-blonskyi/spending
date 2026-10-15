@@ -3,12 +3,13 @@ import { isSignedOutError } from '../session';
 import type { PullPage, PushResult, QueuedMutation, WireMutation } from './model';
 import { toWire } from './model';
 import { reducePull } from './pull';
-import { reducePush } from './push';
+import { applyPushResults, reducePush } from './push';
 import { requeueInFlight, selectBatch, setMutationState } from './queue';
 import { type LocalStore, StoreClosedError, syncChannelName } from './store';
 
 export type SyncTransport = {
-  push(mutations: WireMutation[]): Promise<PushResult[]>;
+  /** Calls `onSent` once the request leaves, so a failure before that is known to change nothing. */
+  push(mutations: WireMutation[], onSent: () => void): Promise<PushResult[]>;
   pull(cursor: number): Promise<PullPage>;
 };
 
@@ -35,9 +36,15 @@ export function userFlushLock(userId: string, locks: LockManager | undefined): F
 
 export const WRITE_DEBOUNCE_MS = 500;
 
-/** Doubling from 1 s up to 5 min. #26 adds jitter. */
-export function backoffDelay(attempt: number): number {
-  return Math.min(1000 * 2 ** Math.max(0, attempt - 1), 300_000);
+export const HEARTBEAT_MS = 60_000;
+
+/**
+ * Doubling from 1 s up to 5 min, each wait drawn from its upper half so that devices failing
+ * together do not retry together.
+ */
+export function backoffDelay(attempt: number, random: () => number = Math.random): number {
+  const ceiling = Math.min(1000 * 2 ** Math.max(0, attempt - 1), 300_000);
+  return Math.round(ceiling * (0.5 + random() / 2));
 }
 
 /** Errors that come from the connection or the server's health, not from what was sent. */
@@ -48,6 +55,11 @@ function isTransient(error: ApiError): boolean {
     error.status === 429 ||
     error.status >= 500
   );
+}
+
+/** The server answered without applying anything: the push may be rebuilt and sent again. */
+function refused(error: unknown): boolean {
+  return error instanceof ApiError && error.status > 0 && error.status < 500;
 }
 
 /**
@@ -67,6 +79,8 @@ export class SyncEngine {
   /** This flush's batch on its way, the only mutations it may settle. */
   #sent: readonly string[] = [];
   #timer: ReturnType<typeof setTimeout> | undefined;
+  /** The last push failed before the server could apply it, so its mutations stay editable. */
+  #unapplied = false;
 
   constructor(store: LocalStore, transport: SyncTransport, lock: FlushLock = (run) => run()) {
     this.#store = store;
@@ -129,8 +143,10 @@ export class SyncEngine {
   }
 
   async #run(): Promise<void> {
-    if (this.#halted()) return;
+    // Offline nothing can be sent; the `online` event flushes again.
+    if (this.#halted() || globalThis.navigator?.onLine === false) return;
     this.#setStatus({ phase: 'syncing' });
+    this.#unapplied = false;
     try {
       await this.#store.commit(requeueInFlight);
       await this.#pushAll();
@@ -142,7 +158,10 @@ export class SyncEngine {
         this.stop();
       } else {
         const sent = this.#sent;
-        await this.#store.commit((state) => requeueInFlight(state, sent)).catch(() => undefined);
+        const status = this.#unapplied ? 'queued' : 'retrying';
+        await this.#store
+          .commit((state) => requeueInFlight(state, status, sent))
+          .catch(() => undefined);
         if (isSignedOutError(error)) {
           this.#setStatus({ phase: 'authRequired' });
           return;
@@ -179,21 +198,45 @@ export class SyncEngine {
    * invalid one is rejected; a refused single mutation becomes a `rejected` result.
    */
   async #send(batch: readonly QueuedMutation[]): Promise<PushResult[]> {
+    // A mutation that cannot even be put on the wire is a bug in it, not a transport problem:
+    // it fails on its own instead of stalling the queue behind endless retries.
+    const unsendable: PushResult[] = [];
+    const sendable: QueuedMutation[] = [];
+    for (const mutation of batch) {
+      try {
+        toWire(mutation);
+        sendable.push(mutation);
+      } catch (error) {
+        unsendable.push({
+          mutationId: mutation.mutationId,
+          status: 'rejected',
+          code: 'INTERNAL',
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+    if (sendable.length === 0) return unsendable;
+    return [...unsendable, ...(await this.#push(sendable))];
+  }
+
+  async #push(batch: readonly QueuedMutation[]): Promise<PushResult[]> {
+    let sent = false;
     try {
-      return await this.#transport.push(batch.map(toWire));
+      return await this.#transport.push(batch.map(toWire), () => (sent = true));
     } catch (error) {
       if (!(error instanceof ApiError) || isTransient(error) || isSignedOutError(error)) {
+        this.#unapplied = !sent || refused(error);
         throw error;
       }
       if (batch.length > 1) {
         const results: PushResult[] = [];
         try {
-          for (const mutation of batch) results.push(...(await this.#send([mutation])));
+          for (const mutation of batch) results.push(...(await this.#push([mutation])));
         } catch (failure) {
-          // Keep what the server already applied; the flusher requeues the rest.
+          // Keep what the server already applied; the flusher settles the rest.
           if (results.length > 0) {
             const now = new Date().toISOString();
-            await this.#store.commit((state) => reducePush(state, results, now, []));
+            await this.#store.commit((state) => applyPushResults(state, results, now));
           }
           throw failure;
         }

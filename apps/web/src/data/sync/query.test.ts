@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import type { SyncStatus } from '@shared/components';
 import type { EngineStatus } from './engine';
 import { localRow, page, sequentialIds, serverRow, syncedState } from './fixtures';
 import { emptyLocalState, type LocalState } from './model';
 import { reducePull } from './pull';
 import { applyLocalChange, setMutationState } from './queue';
 import { queryTransactions, totalsByCurrency } from './query';
-import { deriveSyncStatus } from './status';
+import { deriveSyncStatus, smoothingDelay } from './status';
 
 const history = syncedState(
   serverRow({ id: 'a', occurredOn: '2026-10-01', description: 'Rent', amountMinor: 90000 }),
@@ -137,5 +138,23 @@ describe('deriveSyncStatus', () => {
     ['auth over all', { phase: 'authRequired' }, conflicted, true, { state: 'authRequired' }],
   ])('%s', (_, engine, state, online, expected) => {
     expect(deriveSyncStatus(engine, state, online)).toEqual(expected);
+  });
+});
+
+describe('smoothingDelay', () => {
+  const synced = { state: 'synced' } as const;
+  const syncing = { state: 'syncing' } as const;
+  const pending = { state: 'pending', count: 1 } as const;
+  const offline = { state: 'offline', count: 1 } as const;
+
+  it.each<[string, SyncStatus, SyncStatus, number, number]>([
+    ['syncing waits 300 ms', syncing, pending, 5000, 300],
+    ['a count change shows at once', { state: 'pending', count: 2 }, pending, 0, 0],
+    ['synced holds 600 ms', pending, synced, 100, 500],
+    ['synced holds against syncing too', syncing, synced, 0, 600],
+    ['after the hold, the next state shows at once', offline, synced, 700, 0],
+    ['leaving syncing is immediate', synced, syncing, 0, 0],
+  ])('%s', (_, next, shown, shownFor, expected) => {
+    expect(smoothingDelay(next, shown, shownFor)).toBe(expected);
   });
 });

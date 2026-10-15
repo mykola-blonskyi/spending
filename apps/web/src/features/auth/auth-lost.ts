@@ -1,6 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { onAuthLost } from '@data/auth-events';
-import { sessionQuery } from '@data/session';
+import { forgetLastUser, sessionQuery } from '@data/session';
 import { signInPath } from './return-to';
 
 /**
@@ -16,6 +16,7 @@ export function installAuthLostHandler(
   return onAuthLost((code) => {
     if (!queryClient.getQueryData(sessionQuery.queryKey)) return;
     queryClient.clear();
+    forgetLastUser();
     queryClient.setQueryData(sessionQuery.queryKey, null);
     const { pathname, search } = window.location;
     navigate(signInPath(pathname + search, code));

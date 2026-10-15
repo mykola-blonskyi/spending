@@ -56,12 +56,15 @@ export function clearFilter(filters: HistoryFilters, filter: ActiveFilter): Hist
 export type Conversion =
   | Readonly<{ state: 'same' }>
   | Readonly<{ state: 'converted'; baseAmountMinor: number; fx: Fx }>
+  | Readonly<{ state: 'pending' }>
   | Readonly<{ state: 'unavailable' }>;
 
 export function conversionOf(
-  entry: Pick<TransactionEntry, 'currency' | 'baseAmountMinor' | 'fx'>,
+  entry: Pick<TransactionEntry, 'currency' | 'baseAmountMinor' | 'fx' | 'sync'>,
 ): Conversion {
   if (entry.currency === 'EUR') return { state: 'same' };
+  // The server converts on push, so an unsent entry has no EUR amount yet.
+  if (entry.baseAmountMinor === null && entry.sync.state === 'pending') return { state: 'pending' };
   if (entry.baseAmountMinor === null || !entry.fx) return { state: 'unavailable' };
   return { state: 'converted', baseAmountMinor: entry.baseAmountMinor, fx: entry.fx };
 }
@@ -147,7 +150,7 @@ export function summarize(
   const unconverted = new Map<string, Sums & { currency: string }>();
   for (const entry of entries) {
     const { conversion } = entry;
-    if (conversion.state === 'unavailable') {
+    if (conversion.state === 'pending' || conversion.state === 'unavailable') {
       const sum = unconverted.get(entry.currency) ?? {
         currency: entry.currency,
         expense: 0,

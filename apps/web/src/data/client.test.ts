@@ -40,10 +40,35 @@ describe('CSRF header', () => {
     expect(sentRequest(fetchMock).headers.has('X-CSRF-Token')).toBe(false);
   });
 
-  it('is not added when no token is set', async () => {
-    const { fetchMock, loose } = setup(() => json(200, {}));
+  it('is fetched before the first write when the page has none, as after starting offline', async () => {
+    const { fetchMock, loose, client } = setup(() => json(200, { csrfToken: 'fresh' }));
+    await client.GET('/api/health');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
     await loose.POST('/api/x');
-    expect(sentRequest(fetchMock).headers.has('X-CSRF-Token')).toBe(false);
+    const [, session, write] = fetchMock.mock.calls.map(([request]) => request);
+    expect(new URL(session!.url).pathname).toBe('/api/v1/auth/session');
+    expect(write!.headers.get('X-CSRF-Token')).toBe('fresh');
+    expect(getCsrfToken()).toBe('fresh');
+  });
+
+  it('is fetched again after the server refuses a stale one', async () => {
+    setCsrfToken('stale');
+    const responses = [
+      json(403, { error: { code: 'CSRF_FAILED', message: 'bad token' } }),
+      json(200, { csrfToken: 'fresh' }),
+      json(200, {}),
+    ];
+    const { fetchMock, loose } = setup(() => responses.shift()!);
+
+    const error = (await loose.POST('/api/x').catch((e: unknown) => e)) as ApiError;
+    expect(error.code).toBe('CSRF_FAILED');
+    expect(getCsrfToken()).toBeUndefined();
+
+    await loose.POST('/api/x');
+    const [, session, retry] = fetchMock.mock.calls.map(([request]) => request);
+    expect(new URL(session!.url).pathname).toBe('/api/v1/auth/session');
+    expect(retry!.headers.get('X-CSRF-Token')).toBe('fresh');
   });
 });
 
