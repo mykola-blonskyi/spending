@@ -166,7 +166,7 @@ jobs:
             -f deploy/docker-compose.smoke.yml up -d --build --wait web
           docker compose --env-file deploy/smoke.env -f docker-compose.yml \
             -f deploy/docker-compose.smoke.yml up -d backup
-      - run: APP_URL=http://127.0.0.1:18080 sh scripts/check-deploy.sh
+      - run: APP_URL=http://127.0.0.1:18080 EXPECTED_VERSION=smoke-commit-1234 sh scripts/check-deploy.sh
       - name: Web logs hold no invitation token or callback code
         run: |
           compose="docker compose --env-file deploy/smoke.env -f docker-compose.yml -f deploy/docker-compose.smoke.yml"

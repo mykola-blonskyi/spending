@@ -25,6 +25,11 @@ services:
       postgres:
         condition: service_healthy
 
+  spending-api:
+    environment:
+      # Stands in for the SOURCE_COMMIT that Coolify's env_file provides in production.
+      SOURCE_COMMIT: smoke-commit-1234
+
   backup:
     depends_on:
       postgres:
