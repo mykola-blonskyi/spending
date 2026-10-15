@@ -1,4 +1,4 @@
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ClipboardCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import type { ImportResult } from '@data/imports';
@@ -15,10 +15,12 @@ import { formatDate } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import { cn } from '@shared/lib/utils';
 import { Button } from '@shared/ui/button';
+import { Card } from '@shared/ui/card';
 import { Checkbox } from '@shared/ui/checkbox';
 import { Label } from '@shared/ui/label';
 import { Switch } from '@shared/ui/switch';
 import { CategorySelect } from './category-select';
+import { REVIEW_PATH } from './imports-page';
 import { Table, Td, Th, Tr } from './table';
 
 /** Checkbox, description, amount; the category sits beside them on wide screens, under them on phones. */
@@ -196,10 +198,12 @@ function ImportedEntries({ ids }: { ids: readonly string[] }) {
 export function ImportSummary({
   result,
   accountName,
+  waitsForReview,
   onImportAnother,
 }: {
   result: ImportResult;
   accountName: string;
+  waitsForReview: boolean;
   onImportAnother: () => void;
 }) {
   const t = useTranslations('imports');
@@ -247,7 +251,20 @@ export function ImportSummary({
         </section>
       )}
 
-      {imported.count > 0 && <ImportedEntries ids={imported.transactionIds} />}
+      {imported.count > 0 &&
+        (waitsForReview ? (
+          <Card className="flex-row items-center gap-4 px-5 py-4">
+            <ClipboardCheck aria-hidden className="size-5 shrink-0 text-primary" />
+            <p className="flex-1 text-sm text-pretty">
+              {t('summary.pendingReview', { count: imported.count })}
+            </p>
+            <Button asChild size="sm">
+              <Link to={REVIEW_PATH}>{t('review.open')}</Link>
+            </Button>
+          </Card>
+        ) : (
+          <ImportedEntries ids={imported.transactionIds} />
+        ))}
 
       <div className="flex flex-wrap gap-3">
         <Button variant="outline" onClick={onImportAnother}>

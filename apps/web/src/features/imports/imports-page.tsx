@@ -1,4 +1,4 @@
-import { FileUp, Undo2 } from 'lucide-react';
+import { ClipboardCheck, FileUp, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
@@ -19,9 +19,23 @@ import { useOnlineStatus } from '@shared/lib/network';
 import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
 import { Card } from '@shared/ui/card';
-import { useImportBatches, useUndoImport } from './imports';
+import { useHasFamily, useImportBatches, useReviewQueue, useUndoImport } from './imports';
 
 export const NEW_IMPORT_PATH = '/imports/new';
+export const REVIEW_PATH = '/imports/review';
+
+function ReviewBanner({ count }: { count: number }) {
+  const t = useTranslations('imports.review');
+  return (
+    <Card className="flex-row items-center gap-4 px-5 py-4">
+      <ClipboardCheck aria-hidden className="size-5 shrink-0 text-primary" />
+      <p className="flex-1 text-sm text-pretty">{t('banner', { count })}</p>
+      <Button asChild variant="outline" size="sm">
+        <Link to={REVIEW_PATH}>{t('open')}</Link>
+      </Button>
+    </Card>
+  );
+}
 
 function BatchRow({
   batch,
@@ -69,11 +83,14 @@ export function ImportsPage() {
   const online = useOnlineStatus();
   const batches = useImportBatches();
   const accounts = useAccounts();
+  const hasFamily = useHasFamily();
+  const review = useReviewQueue();
   const undo = useUndoImport();
   const [undoing, setUndoing] = useState<ImportBatch | null>(null);
   const accountName = (id: string | null) =>
     accounts.items.find((account) => account.id === id)?.name ??
     t('imports.history.removedAccount');
+  const pendingReview = review.data?.length ?? 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -97,6 +114,7 @@ export function ImportsPage() {
         }
       />
       {!online && <p className="text-sm text-muted-foreground">{t('imports.offline')}</p>}
+      {hasFamily && pendingReview > 0 && <ReviewBanner count={pendingReview} />}
 
       {batches.isPending ? (
         <LoadingState rows={3} />

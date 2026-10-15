@@ -1,6 +1,6 @@
 import type { RouteObject } from 'react-router';
 import { RedirectIfSignedIn, RequireSession } from '@features/auth';
-import { ImportsPage, NewImportPage } from '@features/imports';
+import { ImportsPage, NewImportPage, ReviewPage } from '@features/imports';
 import { EditTransactionPage } from '@features/transactions';
 import { ADD_TRANSACTION_PATH, DESTINATIONS } from './destinations';
 import { LayoutScreen } from './layouts/layout-screen';
@@ -61,6 +61,7 @@ export const routes: RouteObject[] = [
               { path: '/transactions/:id', element: <EditTransactionPage /> },
               { path: '/imports', element: <ImportsPage /> },
               { path: '/imports/new', element: <NewImportPage /> },
+              { path: '/imports/review', element: <ReviewPage /> },
               { path: '/settings', element: <SettingsPage /> },
               { path: '*', element: <NotFoundPage /> },
             ],

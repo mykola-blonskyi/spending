@@ -14,6 +14,7 @@ export const E2E_DATABASE_URL =
 
 export const E2E_USERS = {
   ann: { sub: 'e2e-ann', email: 'ann@example.test', name: 'Ann Example' },
+  bob: { sub: 'e2e-bob', email: 'bob@example.test', name: 'Bob Example' },
 } as const;
 
 export type E2EUser = keyof typeof E2E_USERS;

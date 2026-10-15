@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ToggleGroup, ToggleGroupItem } from '@shared/ui/toggle-group';
 import { FILE_MAX_BYTES, type ParsedStatement, parseStatement, type StatementProblem } from './csv';
 import { ImportSummary } from './import-summary';
-import { useCreateImport } from './imports';
+import { useCreateImport, useHasFamily } from './imports';
 import {
   type Columns,
   DATE_FORMATS,
@@ -337,6 +337,7 @@ export function NewImportPage() {
   const t = useTranslations();
   const workspaces = useWorkspaces();
   const accounts = useAccounts();
+  const hasFamily = useHasFamily();
   const create = useCreateImport();
   const accountId = useId();
   const fileId = useId();
@@ -382,6 +383,7 @@ export function NewImportPage() {
         <ImportSummary
           result={result}
           accountName={account.name}
+          waitsForReview={hasFamily}
           onImportAnother={() => {
             setResult(null);
             setLoaded(null);
