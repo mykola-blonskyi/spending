@@ -17,8 +17,11 @@ export type SharedStrings = {
   offlineDescription: string;
   synced: string;
   syncing: string;
-  syncFailed: string;
+  syncRetrying: string;
+  syncAuthRequired: string;
+  syncFailed: (count: number) => string;
   syncPending: (count: number) => string;
+  syncOffline: (count: number) => string;
   syncConflict: (count: number) => string;
   negativeAmount: (amount: string) => string;
   typeToConfirm: (phrase: string) => string;
@@ -40,8 +43,11 @@ const englishStrings: SharedStrings = {
   offlineDescription: 'Changes are saved on this device and will sync when you reconnect.',
   synced: 'Up to date',
   syncing: 'Syncing…',
-  syncFailed: 'Sync failed',
+  syncRetrying: 'Retrying…',
+  syncAuthRequired: 'Sign in to sync',
+  syncFailed: (count) => `${count} failed`,
   syncPending: (count) => `${count} pending`,
+  syncOffline: (count) => (count > 0 ? `Offline, ${count} pending` : 'Offline'),
   syncConflict: (count) => `${count} conflicts`,
   negativeAmount: (amount) => `minus ${amount}`,
   typeToConfirm: (phrase) => `To confirm, type ${phrase} below.`,

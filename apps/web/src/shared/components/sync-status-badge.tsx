@@ -1,13 +1,24 @@
-import { AlertTriangle, CheckCircle2, CloudUpload, RefreshCw, type LucideIcon } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  CloudOff,
+  CloudUpload,
+  LogIn,
+  RefreshCw,
+  type LucideIcon,
+} from 'lucide-react';
 import { type SharedStrings, useSharedLocale } from '@shared/lib/locale-context';
 import { cn } from '@shared/lib/utils';
 
 export type SyncStatus =
   | { state: 'synced' }
   | { state: 'syncing' }
+  | { state: 'retrying' }
   | { state: 'pending'; count: number }
-  | { state: 'failed' }
-  | { state: 'conflict'; count: number };
+  | { state: 'offline'; count: number }
+  | { state: 'failed'; count: number }
+  | { state: 'conflict'; count: number }
+  | { state: 'authRequired' };
 
 type Appearance = {
   icon: LucideIcon;
@@ -30,20 +41,35 @@ const APPEARANCE: Record<SyncStatus['state'], Appearance> = {
     label: (_, strings) => strings.syncing,
     spin: true,
   },
+  retrying: {
+    icon: RefreshCw,
+    tone: 'bg-warning/15 text-warning-foreground',
+    label: (_, strings) => strings.syncRetrying,
+  },
   pending: {
     icon: CloudUpload,
     tone: 'bg-warning/15 text-warning-foreground',
     label: (status, strings) => strings.syncPending(count(status)),
   },
+  offline: {
+    icon: CloudOff,
+    tone: 'bg-muted text-muted-foreground',
+    label: (status, strings) => strings.syncOffline(count(status)),
+  },
   failed: {
     icon: AlertTriangle,
     tone: 'bg-destructive/10 text-destructive',
-    label: (_, strings) => strings.syncFailed,
+    label: (status, strings) => strings.syncFailed(count(status)),
   },
   conflict: {
     icon: AlertTriangle,
     tone: 'bg-destructive/10 text-destructive',
     label: (status, strings) => strings.syncConflict(count(status)),
+  },
+  authRequired: {
+    icon: LogIn,
+    tone: 'bg-destructive/10 text-destructive',
+    label: (_, strings) => strings.syncAuthRequired,
   },
 };
 

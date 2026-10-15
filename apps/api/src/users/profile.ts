@@ -36,6 +36,16 @@ export function canonicalTimezone(value: string): string | null {
   }
 }
 
+/** An IANA zone, stored in its canonical spelling. */
+export const timezoneSchema = z
+  .string()
+  .max(64)
+  .transform((value, ctx) => {
+    const zone = canonicalTimezone(value);
+    if (!zone) ctx.addIssue({ code: 'custom', message: 'unknown time zone' });
+    return zone ?? z.NEVER;
+  });
+
 export const profileSchema = z.object({
   id: z.uuid(),
   email: z.string(),
@@ -56,15 +66,7 @@ export const profilePatchSchema = z.strictObject({
   theme: z.enum(THEMES).optional(),
   layout: z.enum(LAYOUTS).optional(),
   palette: z.enum(PALETTES).optional(),
-  timezone: z
-    .string()
-    .max(64)
-    .transform((value, ctx) => {
-      const zone = canonicalTimezone(value);
-      if (!zone) ctx.addIssue({ code: 'custom', message: 'unknown time zone' });
-      return zone ?? z.NEVER;
-    })
-    .optional(),
+  timezone: timezoneSchema.optional(),
 });
 export type ProfilePatch = z.infer<typeof profilePatchSchema>;
 

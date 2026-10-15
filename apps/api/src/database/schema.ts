@@ -296,7 +296,7 @@ export const importBatches = pgTable('import_batches', {
   importedCount: integer('imported_count').notNull(),
   duplicateCount: integer('duplicate_count').notNull(),
   rejectedCount: integer('rejected_count').notNull(),
-  rejected: jsonb('rejected').$type<{ row: number; reason: string }[]>().notNull(),
+  rejected: jsonb('rejected').$type<{ line: number; reason: string }[]>().notNull(),
   createdAt: createdAt(),
   undoneAt: tstz('undone_at'),
 });

@@ -1,4 +1,4 @@
-import { ArrowLeftRight, LayoutDashboard, Plus } from 'lucide-react';
+import { LayoutDashboard } from 'lucide-react';
 import type { ComponentType } from 'react';
 import type { Profile } from '@data/session';
 import {
@@ -11,6 +11,7 @@ import {
   SoftShell,
   SplitShell,
 } from '@shared/shell';
+import { NewTransactionPage, TransactionsPage } from '@features/transactions';
 import { PlaceholderPage } from '../pages/placeholder-page';
 
 export type Layout = Profile['layout'];
@@ -24,8 +25,8 @@ type LayoutDefinition = {
 
 const calmScreens: Record<LayoutScreen, ComponentType> = {
   dashboard: () => <PlaceholderPage page="dashboard" icon={LayoutDashboard} />,
-  history: () => <PlaceholderPage page="transactions" icon={ArrowLeftRight} />,
-  entry: () => <PlaceholderPage page="addTransaction" icon={Plus} />,
+  history: TransactionsPage,
+  entry: NewTransactionPage,
 };
 
 /** Order is the order in the settings picker. */

@@ -51,7 +51,8 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
 
 ## Money and currency
 
-- **BR-13.** Amounts are positive integers of minor units. The sign comes from `kind`. The
+- **BR-13.** Amounts are positive integers of minor units, at most 10^12 (`400 VALIDATION_FAILED`
+  above it), so sums and conversions stay safe integers. The sign comes from `kind`. The
   minor-unit exponent comes from ISO 4217 (EUR 2, JPY 0, KWD 3).
 - **BR-14.** EUR is the base currency. A non-EUR transaction stores the ECB rate of its
   `occurredOn` date, or of the latest earlier published date within 7 days, together with the
@@ -60,6 +61,11 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   day's rate once it is published (a transaction entered before the ECB's afternoon release).
 - **BR-15.** Analytics sum `baseAmountMinor`. Transactions with no conversion are reported in a
   separate "not converted" list per currency, never silently dropped or counted at 1:1.
+  Analytics count only confirmed, non-deleted rows of the actor's workspaces in the chosen scope
+  (personal, family or both). The comparison period is the previous calendar month for exactly one
+  calendar month, the previous calendar year for exactly one calendar year, otherwise the
+  equal-length period right before. Categories are never merged across scopes: same-named personal
+  and family categories stay separate rows in "all".
 
 ## Ledger, history and sync
 
@@ -93,13 +99,29 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
 
 - **BR-22.** A budget is a monthly EUR limit on one expense category. Progress is the sum of
   confirmed expense `baseAmountMinor` in that category for the calendar month, in the user's
-  timezone.
+  timezone. `occurredOn` is a date, so the timezone only picks the current month. Unconverted
+  expenses are listed per currency beside the progress and never count (BR-15). The status is
+  `near` from 80% of the limit and `over` above it; spending exactly the limit is `near`. The
+  category must be an active expense category of the budget's workspace (`422 INVALID_CATEGORY`).
+  Any member of the workspace may set or delete its budgets.
 - **BR-23.** Recurring generation is idempotent: `(recurringRuleId, recurringOccurrence)` is
   unique. The generator creates every missed occurrence up to today in the rule's timezone. A
   monthly rule anchored on the 29th to 31st clamps to the last day of shorter months. Deleting a
   generated transaction leaves its tombstone in place, so that occurrence is not regenerated.
-- **BR-24.** Editing a rule affects only future occurrences. Deleting a rule keeps the
-  transactions it already generated.
+- **BR-24.** Editing a rule affects only future occurrences: occurrences already due are generated
+  with the old template first, then the next occurrence is recomputed from the later of today and
+  the current next one. Occurrences while a rule is paused are skipped, not caught up on resume.
+  Deleting a rule keeps the transactions it already generated. A rule's template follows the
+  transaction reference rules (BR-3, BR-4), with the rule's creator as the author, and generated
+  transactions are authored by the creator.
+- **BR-33.** A rule with a backdated `startsOn` generates every past occurrence from that date,
+  at most 1000 per generator run, so a long backlog completes over several runs; an edit first
+  generates the whole backlog with the old template (BR-24). A rule keeps generating into an
+  account or category it already references after that is archived; archiving only hides it from
+  lists and pickers. A family rule keeps generating after its creator leaves the family; the
+  creator stays the author.
+  Resuming a paused rule skips the occurrences missed meanwhile (BR-24); spending exactly at a
+  budget limit is `near`, not `over` (BR-22).
 
 ## Imports
 
@@ -111,17 +133,30 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
 - **BR-27.** The dedupe key is the provider transaction ID when mapped. Otherwise it is
   SHA-256 of account, date, amount, currency, normalized description, and the ordinal of that
   identical tuple within the file. Re-importing the same statement adds nothing. Two identical
-  purchases in one statement are both kept.
+  purchases in one statement are both kept. The amount in the tuple is signed (income and expense
+  differ); the description is NFKC-normalized, lowercased and whitespace-collapsed. A provider ID
+  repeated within one file rejects the later rows (`DUPLICATE_IN_FILE_EXTERNAL_ID`).
 - **BR-28.** For a user without a family, imported rows are confirmed immediately in the personal
   workspace and auto-categorized. For a user with a family, they are `pending_review` until the
-  user confirms category and scope for each row.
+  user confirms category and scope for each row. They wait in the importer's personal workspace
+  with the personal category suggestion. Confirming moves a family row to the family workspace
+  with its account kept (BR-3); the category must belong to the target workspace (BR-4). One
+  confirmation request is all or nothing.
 - **BR-29.** Auto-categorization first uses the user's learned CategoryRules (per merchant key),
   then built-in keyword rules for default categories, and otherwise leaves the category empty.
-  Confirming or changing the category of an imported row updates the learned rule.
+  Only categories of the row's kind qualify, and archived ones are skipped. Confirming or changing
+  the category of an imported row (sync push or review confirmation) updates the learned rule of
+  the row's workspace. The merchant key is the first three words of the stored description, folded
+  to lowercase without accents, with dates, card masks, numbers and bank boilerplate ("compra",
+  "tarjeta", "recibo") removed.
 - **BR-30.** Undoing an import batch deletes (tombstones) its transactions that were not edited
   after import and clears their dedupe keys, so the same statement can be imported again. Edited
   ones are kept and reported. Deleting a single imported transaction keeps its key, so a
-  re-import does not bring it back.
+  re-import does not bring it back, even after an undo. A row counts as edited when its `version`
+  is above 1 (any user-visible change, including review confirmation) or it left the personal
+  workspace. Only the importer can undo; repeating an undo changes nothing. Undo reports the deleted
+  and kept counts as they are when it runs, so a manual deletion made in between can change what
+  a repeat reports.
 
 ## Data rights
 

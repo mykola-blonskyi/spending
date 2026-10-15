@@ -213,6 +213,7 @@ export function SettingsPage() {
             {t('settings.signOutNote')}
           </p>
         </Card>
+        {signOut.dialog}
       </section>
     </div>
   );

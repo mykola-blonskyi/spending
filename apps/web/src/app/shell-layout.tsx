@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react';
 import { Link, Outlet } from 'react-router';
+import { useSyncStatus } from '@data/sync';
 import { useApplyProfilePreferences, useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
 import { OfflineBanner, SyncStatusBadge } from '@shared/components';
@@ -13,6 +14,7 @@ import { UserMenu } from './user-menu';
 export function ShellLayout() {
   const t = useTranslations();
   const online = useOnlineStatus();
+  const syncStatus = useSyncStatus();
   useApplyProfilePreferences();
   const { layout } = useProfile();
   const Shell = LAYOUTS[layout].shell;
@@ -44,7 +46,7 @@ export function ShellLayout() {
               to="/sync"
               className="rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60"
             >
-              <SyncStatusBadge status={{ state: 'synced' }} />
+              {syncStatus && <SyncStatusBadge status={syncStatus} />}
             </Link>
             <UserMenu />
           </div>

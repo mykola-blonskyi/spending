@@ -81,6 +81,13 @@ are `[data-palette]` token sets in `shared/styles.css` applied on `<html>` by `s
 - **Transaction writes.** They go to the local store and the mutation queue, then
   `POST /api/v1/sync/push` (ADR-006). Results update the local rows: applied, conflict or
   rejected.
+- **Local store** (`data/sync`). One IndexedDB database per user (`spending-<userId>`), listed in
+  the device registry `localStorage['spending.localDatabases']`. Each transaction record keeps the
+  last server row and, while a change is pending, the optimistic local row; readers count one of
+  them, never both. A local write updates the record and the mutation queue in one IndexedDB
+  transaction. Pull and push results are applied by pure reducers (`pull.ts`, `push.ts`), and
+  the flusher (`engine.ts`) pushes up to 200 queued mutations in order, then pulls until
+  `hasMore` is false.
 - **Conflicts.** The server keeps its row and records the client's version (BR-19). The client
   shows both and lets the user pick or merge.
 
@@ -124,6 +131,35 @@ edited through REST and arrive through pull like transactions.
 - **Account references (BR-3).** A viewer who cannot see a row's account receives
   `accountId: null`. Sending that null back in an upsert keeps the author's account. Only the
   author may choose an account from their own personal workspace.
+
+## Budgets
+
+`GET /budgets?workspaceId=&month=YYYY-MM` lists the budgets of every visible workspace (or one),
+with progress for that month or the current month in the actor's timezone. `PUT /budgets` upserts
+the limit of one expense category, and `DELETE /budgets/:id` removes it. The month range,
+thresholds and progress fold are pure (`budgets/progress.ts`); one grouped query sums expenses
+per budget and currency.
+
+## Recurring rules
+
+`GET|POST /recurring-rules`, `PATCH|DELETE /recurring-rules/:id` (`paused` in the PATCH body
+pauses or resumes). The schedule (`recurring/schedule.ts`) is pure and works on calendar dates:
+monthly and yearly rules keep `startsOn`'s day, clamped to shorter months. `RecurringService.runDue`
+runs 10 s after startup and every 15 minutes (off when `NODE_ENV=test`). Each due rule commits in
+its own `ledgerTransaction`, re-reads its row `for update`, inserts every occurrence up to today in
+the rule's timezone with `ON CONFLICT (recurring_rule_id, recurring_occurrence) DO NOTHING`, and
+advances `nextOccurrence` (null after `endsOn`). Create and edit generate due occurrences at once.
+
+## Analytics
+
+`GET /analytics/summary?from=&to=&scope=personal|family|all&compare=previous|none` (defaults
+`all` and `previous`, at most 3660 days). One grouped query per period sums confirmed, live rows
+of the scoped workspaces by day, kind, category and currency; pure folds (`analytics/summary.ts`)
+build the totals, the unconverted list, the category breakdown (shares per kind, four decimals,
+largest remainder so they sum to 1) and a zero-filled series by day (up to 31 days), ISO week (up
+to 92) or month. Buckets are named by their first day inside the period. `previous` covers the
+previous calendar month or year for a whole-month or whole-year period, else the equal-length
+period just before, with deltas (current minus previous). Budget progress comes from `/budgets`.
 
 ## Security
 

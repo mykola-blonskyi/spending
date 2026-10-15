@@ -129,7 +129,9 @@ workspace), `amountMinor` (EUR), unique per `(workspaceId, categoryId)`.
 
 - `id`, `workspaceId` (always the importer's personal workspace), `userId`, `accountId`
 - `fileName`, `mapping` (JSON), `rowCount`, `importedCount`, `duplicateCount`, `rejectedCount`
-- `rejected` (row numbers with reason codes), `createdAt`, `undoneAt`
+- `rejected` (`{ line, reason }` per rejected row: `INVALID_DATE`, `INVALID_AMOUNT`,
+  `INVALID_CURRENCY`, `DESCRIPTION_TOO_LONG`, `EXTERNAL_ID_TOO_LONG`,
+  `DUPLICATE_IN_FILE_EXTERNAL_ID`), `createdAt`, `undoneAt`
 
 ## CategoryRule
 
