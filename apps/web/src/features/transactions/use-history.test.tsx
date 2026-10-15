@@ -5,9 +5,10 @@ import { serverRow, syncedState } from '@data/sync/fixtures';
 import type { LocalData } from '@data/sync/local-data-context';
 import { emptyLocalState, type LocalState } from '@data/sync/model';
 import { account, category, fakeLocalData, renderTransactionHook } from './test-helpers';
-import { useHistory } from './use-history';
+import { useHistory, useRowContext } from './use-history';
 
-vi.mock('@features/auth', () => ({ useSession: () => testSession() }));
+const profile = vi.hoisted(() => ({ timezone: 'Europe/Madrid' }));
+vi.mock('@features/auth', () => ({ useSession: () => testSession(profile) }));
 
 const render = (data: LocalData, path = '/transactions') =>
   renderTransactionHook(useHistory, { data, path, route: '/transactions/:id?' });
@@ -20,7 +21,24 @@ function withLedger(state: LocalState): LocalState {
   };
 }
 
-beforeEach(() => vi.useRealTimers());
+beforeEach(() => {
+  vi.useRealTimers();
+  profile.timezone = 'Europe/Madrid';
+});
+
+describe('useRowContext', () => {
+  it("names days by the user's time zone, not the device's", () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-14T12:00:00Z'));
+    profile.timezone = 'Pacific/Kiritimati';
+    const { result } = renderTransactionHook(useRowContext, {
+      data: fakeLocalData(syncedState()).value,
+      path: '/transactions',
+      route: '/transactions',
+    });
+    expect(result.current.dayLabel('2026-10-15')).toBe('Today');
+  });
+});
 
 describe('useHistory', () => {
   it('tells loading, unavailable, first sync, empty and no matches apart', () => {

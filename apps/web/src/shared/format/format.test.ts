@@ -108,7 +108,7 @@ describe('dates', () => {
   });
 
   it('names nearby days and falls back to a date', () => {
-    const today = new Date(2026, 9, 14, 23, 30);
+    const today = '2026-10-14';
     expect(formatRelativeDay('2026-10-14', 'en', today)).toBe('Today');
     expect(formatRelativeDay('2026-10-13', 'ru', today)).toBe('Вчера');
     expect(formatRelativeDay('2026-10-15', 'es', today)).toBe('Mañana');

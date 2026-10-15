@@ -5,9 +5,10 @@ import { Link } from 'react-router';
 import { QueryUnavailable } from '@data/query-unavailable';
 import { useRefetchErrorToast } from '@data/refetch-error-toast';
 import { useCategories } from '@data/sync';
+import { useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
 import { ConfirmDialog, EmptyState, MoneyText, PageHeader } from '@shared/components';
-import { formatDate, formatRelativeDay } from '@shared/format';
+import { formatDate, formatRelativeDay, todayIn } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
@@ -102,6 +103,7 @@ function RuleRow({ rule, onDelete }: { rule: Rule; onDelete: () => void }) {
   const t = useTranslations();
   const tRecurring = useTranslations('recurring');
   const { locale } = useSharedLocale();
+  const today = todayIn(useProfile().timezone);
   const categories = useCategories().items;
   const update = useUpdateRule();
   const category = categories.find((c) => c.id === rule.categoryId);
@@ -139,7 +141,7 @@ function RuleRow({ rule, onDelete }: { rule: Rule; onDelete: () => void }) {
           <span className="text-muted-foreground">{t('recurring.ended')}</span>
         ) : (
           <span>
-            {t('recurring.next', { date: formatRelativeDay(rule.nextOccurrence, locale) })}
+            {t('recurring.next', { date: formatRelativeDay(rule.nextOccurrence, locale, today) })}
           </span>
         )}
         {rule.endsOn && rule.nextOccurrence !== null && (

@@ -63,10 +63,13 @@ function calendarDay(date: Date): number {
   return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / DAY_MS;
 }
 
-/** "Today", "Yesterday", "Tomorrow", otherwise a medium date. Capitalized for use as a label. */
-export function formatRelativeDay(value: DateInput, locale: string, today: Date = new Date()) {
+/**
+ * "Today", "Yesterday", "Tomorrow", otherwise a medium date. Capitalized for use as a label.
+ * `today` is a `YYYY-MM-DD` from `todayIn` with the user's time zone, not the device's.
+ */
+export function formatRelativeDay(value: DateInput, locale: string, today: string) {
   const date = toDate(value);
-  const offset = calendarDay(date) - calendarDay(today);
+  const offset = calendarDay(date) - calendarDay(parseDateOnly(today));
   if (Math.abs(offset) <= 1) {
     const relative = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
     return capitalize(relative.format(offset, 'day'), locale);

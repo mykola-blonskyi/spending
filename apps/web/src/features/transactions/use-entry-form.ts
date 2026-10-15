@@ -173,6 +173,7 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
   return {
     status,
     mode,
+    today,
     values,
     errors,
     set: <K extends keyof FormValues>(key: K, value: FormValues[K]) => change({ [key]: value }),

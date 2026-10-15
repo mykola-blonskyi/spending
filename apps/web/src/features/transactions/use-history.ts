@@ -2,8 +2,9 @@ import { useCallback, useDeferredValue, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { useAccounts, useInitialSync, useLocalDataStatus, useLocalTransactions } from '@data/sync';
 import { useCategoryViews } from '@features/ledger';
+import { useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
-import { formatDate, formatRelativeDay } from '@shared/format';
+import { formatDate, formatRelativeDay, todayIn } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import {
   type ActiveFilter,
@@ -28,14 +29,15 @@ export function useRowContext(): RowContext {
   const { locale } = useSharedLocale();
   const categories = useCategoryViews();
   const accounts = useAccounts();
+  const today = todayIn(useProfile().timezone);
   return useMemo(
     () => ({
       categories: categories.byId,
       accounts: new Map(accounts.items.map((account) => [account.id, account])),
-      dayLabel: (date: string) => formatRelativeDay(date, locale),
+      dayLabel: (date: string) => formatRelativeDay(date, locale, today),
       uncategorized: t('uncategorized'),
     }),
-    [categories.byId, accounts.items, locale, t],
+    [categories.byId, accounts.items, locale, today, t],
   );
 }
 
