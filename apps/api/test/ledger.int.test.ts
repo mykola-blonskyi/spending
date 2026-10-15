@@ -471,6 +471,28 @@ describe('ledger', () => {
       expect(stored).toMatchObject({ baseAmountMinor: 2000, fxRateDate: today });
     });
 
+    it('loads the full history for a row in a gap longer than the history feed', async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const gapDay = addDays(today, -120);
+      await t.db.insert(fxRates).values([
+        { date: addDays(today, -200), currency: 'USD', ratePerEur: '1.0', source: 'ecb' },
+        { date: today, currency: 'USD', ratePerEur: '1.25', source: 'ecb' },
+      ]);
+      const [row] = await push(ann, { currency: 'USD', amountMinor: 1100, occurredOn: gapDay });
+      const source = t.app.get<FxRateSource>(FX_RATE_SOURCE);
+      const fetch = vi
+        .spyOn(source, 'fetch')
+        .mockImplementation(async (feed) => [
+          feed === 'full'
+            ? { date: gapDay, currency: 'USD', ratePerEur: '1.1' }
+            : { date: today, currency: 'USD', ratePerEur: '1.25' },
+        ]);
+      await new FxService(t.db, source).refresh();
+      expect(fetch.mock.calls.map((call) => call[0])).toEqual(['latest', 'full']);
+      const [stored] = await t.db.select().from(transactions).where(eq(transactions.id, row!.id));
+      expect(stored).toMatchObject({ baseAmountMinor: 1000, fxRateDate: gapDay });
+    });
+
     it('loads the full history for rows older than every stored rate, once a day', async () => {
       const today = new Date().toISOString().slice(0, 10);
       await t.db

@@ -370,18 +370,14 @@ export const transactions = pgTable(
   ],
 );
 
-export const syncMutations = pgTable(
-  'sync_mutations',
-  {
-    id: uuid('id').primaryKey(),
-    userId: uuid('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    result: jsonb('result').notNull(),
-    createdAt: createdAt(),
-  },
-  (t) => [index('sync_mutations_created_idx').on(t.createdAt)],
-);
+export const syncMutations = pgTable('sync_mutations', {
+  id: uuid('id').primaryKey(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  result: jsonb('result').notNull(),
+  createdAt: createdAt(),
+});
 
 export const syncConflicts = pgTable(
   'sync_conflicts',
@@ -396,7 +392,8 @@ export const syncConflicts = pgTable(
     baseVersion: integer('base_version').notNull(),
     serverVersion: integer('server_version').notNull(),
     local: jsonb('local').notNull(),
-    server: jsonb('server').notNull(),
+    /** Unused (conflicts read the live row); drop once no rollback target writes it. */
+    server: jsonb('server'),
     status: conflictStatusEnum('status').notNull().default('open'),
     resolution: conflictResolutionEnum('resolution'),
     createdAt: createdAt(),

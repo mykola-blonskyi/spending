@@ -34,23 +34,27 @@ export async function loadCatalog(tx: Tx, workspaceId: string): Promise<Category
 
 /**
  * BR-29: a user chose `categoryId` for an imported row with this description. The caller has
- * already checked that the category belongs to `workspaceId`.
+ * already checked that each category belongs to its `workspaceId`. A later rule for the same
+ * merchant wins, as if the rules were learned one by one.
  */
-export async function learnCategoryRule(
+export async function learnCategoryRules(
   tx: Tx,
-  workspaceId: string,
-  description: string,
-  categoryId: string,
+  rules: readonly { workspaceId: string; description: string; categoryId: string }[],
 ): Promise<void> {
-  const key = merchantKey(description);
-  if (key === '') return;
+  const byKey = new Map<string, { workspaceId: string; merchantKey: string; categoryId: string }>();
+  for (const { workspaceId, description, categoryId } of rules) {
+    const key = merchantKey(description);
+    if (key !== '')
+      byKey.set(`${workspaceId}:${key}`, { workspaceId, merchantKey: key, categoryId });
+  }
+  if (byKey.size === 0) return;
   // shortcut: one learned rule per merchant regardless of kind, so a refund can replace the expense
   // rule; key by (merchant, kind) if that shows up in practice.
   await tx
     .insert(categoryRules)
-    .values({ workspaceId, merchantKey: key, categoryId })
+    .values([...byKey.values()])
     .onConflictDoUpdate({
       target: [categoryRules.workspaceId, categoryRules.merchantKey],
-      set: { categoryId, updatedAt: sql`now()` },
+      set: { categoryId: sql`excluded.category_id`, updatedAt: sql`now()` },
     });
 }

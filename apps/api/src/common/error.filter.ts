@@ -59,8 +59,9 @@ export class ErrorFilter implements ExceptionFilter {
         { error: { code: 'INTERNAL', message: 'Internal error' } },
       ];
     }
-    if (exception instanceof HttpException) {
-      const status = exception.getStatus();
+    const status =
+      exception instanceof HttpException ? exception.getStatus() : exposedStatus(exception);
+    if (status !== undefined) {
       const code = STATUS_CODES[status] ?? 'INTERNAL';
       return [status, { error: { code, message: code } }];
     }
@@ -70,6 +71,12 @@ export class ErrorFilter implements ExceptionFilter {
       { error: { code: 'INTERNAL', message: 'Internal error' } },
     ];
   }
+}
+
+/** body-parser throws http-errors (413 past the limit, 415 for an unknown encoding), not Nest's. */
+function exposedStatus(exception: unknown): number | undefined {
+  const { status, expose } = (exception ?? {}) as { status?: unknown; expose?: unknown };
+  return expose === true && typeof status === 'number' ? status : undefined;
 }
 
 /** Drizzle puts query parameters (tokens, amounts, notes) in its message; log only the cause. */

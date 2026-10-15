@@ -384,7 +384,6 @@ describe('data rights', () => {
         baseVersion: 1,
         serverVersion: 1,
         local: {},
-        server: {},
       });
       const secondBob = await loginAs(t, people[1].sub);
       const revocationsBefore = provider.revocations;
