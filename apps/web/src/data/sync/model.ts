@@ -13,6 +13,7 @@ export type Category = PullPage['categories'][number];
 export type Workspace = PullPage['workspaces'][number];
 export type Conflict = PullPage['conflicts'][number];
 export type TransactionInput = Extract<WireMutation, { type: 'transaction.upsert' }>['transaction'];
+export type Resolution = Schemas['ResolveDto'];
 export type { WireMutation };
 
 export const DELETED = { deleted: true } as const;

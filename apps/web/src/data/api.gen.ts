@@ -2249,7 +2249,9 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: unknown;
+            };
             cookie?: never;
         };
         requestBody: {

@@ -9,7 +9,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBody, ApiQuery } from '@nestjs/swagger';
+import { ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { createZodDto, ZodResponse } from 'nestjs-zod';
 import { type Actor, CurrentActor } from '../common/actor';
 import { RateLimit } from '../common/rate-limit';
@@ -61,6 +61,7 @@ export class SyncController {
 
   @Post('conflicts/:id/resolve')
   @HttpCode(200)
+  @ApiParam({ name: 'id', format: 'uuid' })
   @ApiBody({ type: ResolveDto })
   @ZodResponse({ status: 200, type: ResolveResponseDto })
   resolve(

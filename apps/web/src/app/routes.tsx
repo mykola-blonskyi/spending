@@ -5,6 +5,7 @@ import { AccountsPage, CategoriesPage } from '@features/ledger';
 import { BudgetsPage } from '@features/budgets';
 import { EditRulePage, NewRulePage, RecurringPage } from '@features/recurring';
 import { FamilyPage } from '@features/family';
+import { SyncPage } from '@features/sync';
 import { ADD_TRANSACTION_PATH, DESTINATIONS } from './destinations';
 import { LayoutScreen } from './layouts/layout-screen';
 import { PlaceholderPage } from './pages/placeholder-page';
@@ -27,7 +28,8 @@ const placeholderRoutes: RouteObject[] = DESTINATIONS.filter(
     destination.nav !== 'imports' &&
     destination.nav !== 'budgets' &&
     destination.nav !== 'recurring' &&
-    destination.nav !== 'family',
+    destination.nav !== 'family' &&
+    destination.nav !== 'sync',
 ).map(({ path, nav, icon }) => ({
   path,
   element: <PlaceholderPage page={nav} icon={icon} />,
@@ -77,6 +79,7 @@ export const routes: RouteObject[] = [
               { path: '/recurring/new', element: <NewRulePage /> },
               { path: '/recurring/:id', element: <EditRulePage /> },
               { path: '/family', element: <FamilyPage /> },
+              { path: '/sync', element: <SyncPage /> },
               { path: '/settings', element: <SettingsPage /> },
               { path: '*', element: <NotFoundPage /> },
             ],

@@ -10,7 +10,7 @@ import {
   tombstone,
 } from './fixtures';
 import { emptyLocalState, type LocalState, queueOrder } from './model';
-import { reducePull } from './pull';
+import { reducePull, settleConflict } from './pull';
 import { discardFailed, reducePush } from './push';
 import { applyLocalChange, setMutationState } from './queue';
 import { localEntries } from './query';
@@ -273,5 +273,54 @@ describe('discardFailed', () => {
       { categoryId: 'cat-1' },
     );
     expect(discardFailed(fixed, 'tx-1')).toBe(fixed);
+  });
+});
+
+describe('settleConflict', () => {
+  const conflicted = (server = serverRow({ version: 2, amountMinor: 2000 })) =>
+    reducePull(
+      syncedState(server),
+      page({
+        conflicts: [
+          {
+            id: 'c-1',
+            transactionId: 'tx-1',
+            baseVersion: 1,
+            serverVersion: 2,
+            local: localRow({ description: 'Mine' }),
+            server,
+            createdAt: now,
+          },
+        ],
+      }),
+      now,
+    ).state;
+
+  it('closes the conflict and takes the resolved row', () => {
+    const next = settleConflict(
+      conflicted(),
+      'c-1',
+      serverRow({ version: 3, amountMinor: 2000, description: 'Mine' }),
+    );
+    expect(next.conflicts.size).toBe(0);
+    expect(localEntries(next)).toMatchObject([
+      { amountMinor: 2000, description: 'Mine', sync: { state: 'synced' } },
+    ]);
+  });
+
+  it('removes an entry resolved as deleted', () => {
+    const next = settleConflict(conflicted(), 'c-1', tombstone('tx-1'));
+    expect(next.conflicts.size).toBe(0);
+    expect(next.transactions.size).toBe(0);
+  });
+
+  it('keeps a change made meanwhile on top of the resolved row', () => {
+    const state = editLocally(conflicted(), { amountMinor: 5 });
+    const next = settleConflict(state, 'c-1', serverRow({ version: 3 }));
+    expect(next.transactions.get('tx-1')).toMatchObject({
+      server: { version: 3 },
+      local: { amountMinor: 5 },
+    });
+    expect(next.mutations.size).toBe(1);
   });
 });

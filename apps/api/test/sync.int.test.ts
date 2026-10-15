@@ -242,6 +242,15 @@ describe('sync', () => {
       transactions: Row[];
     };
     expect(history.transactions.map((r) => r.amountMinor)).toEqual([6000]);
+    for (const member of [ann, bob]) {
+      const response = await as(
+        t,
+        member,
+        '/v1/analytics/summary?from=2026-10-01&to=2026-10-31&scope=family',
+      );
+      const { totals } = (await response.json()) as { totals: { expenseMinor: number } };
+      expect(totals.expenseMinor).toBe(6000);
+    }
   });
 
   it('resolves conflicts with the server, local or merged version', async () => {

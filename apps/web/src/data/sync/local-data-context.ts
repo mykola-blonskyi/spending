@@ -11,7 +11,7 @@ import {
 import type { SyncStatus } from '@shared/components';
 import { useOnlineStatus } from '@shared/lib/network';
 import type { EngineStatus, SyncEngine } from './engine';
-import type { Account, Category, LocalState, Workspace } from './model';
+import type { Account, Category, Conflict, LocalState, Resolution, Workspace } from './model';
 import {
   localEntries,
   queryTransactions,
@@ -24,6 +24,7 @@ import {
   deleteTransaction,
   discardChange,
   recordTransaction,
+  resolveConflict,
   type TransactionDraft,
   updateTransaction,
 } from './writes';
@@ -99,6 +100,20 @@ function useSorted<T extends { name: string }>(
 export const useAccounts = (): LocalList<Account> => useSorted((state) => state.accounts);
 export const useCategories = (): LocalList<Category> => useSorted((state) => state.categories);
 export const useWorkspaces = (): LocalList<Workspace> => useSorted((state) => state.workspaces);
+
+/** Open conflicts, newest first. */
+export function useConflicts(): LocalList<Conflict> {
+  const conflicts = useLocalState()?.conflicts ?? null;
+  return useMemo(
+    () => ({
+      ready: conflicts !== null,
+      items: conflicts
+        ? [...conflicts.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        : [],
+    }),
+    [conflicts],
+  );
+}
 
 /** Null while there is no local store to report on (opening, or IndexedDB unavailable). */
 export function useSyncStatus(): SyncStatus | null {
@@ -191,3 +206,7 @@ export const useUpdateTransaction = (): ((id: string, draft: TransactionDraft) =
 export const useDeleteTransaction = (): ((id: string) => Promise<void>) =>
   useWriter(deleteTransaction);
 export const useDiscardChange = (): ((id: string) => Promise<void>) => useWriter(discardChange);
+export const useResolveConflict = (): ((
+  conflictId: string,
+  resolution: Resolution,
+) => Promise<void>) => useWriter(resolveConflict);
