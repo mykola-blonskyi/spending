@@ -10,7 +10,7 @@ import { APP_CONFIG, type AppConfig } from '../../common/config';
 import { addDays } from '../../common/dates';
 import { BASE_CURRENCY, type CurrencyCode } from '../../common/money';
 import { DB, type Db, ledgerTransaction, type Tx } from '../../database/database.module';
-import { fxRates, transactions } from '../../database/schema';
+import { fxRates } from '../../database/schema';
 import {
   type Conversion,
   convert,
@@ -198,16 +198,26 @@ export class FxService {
           order by t.id
           limit ${BACKFILL_BATCH}
           for update of t`);
-        for (const row of rows) {
-          const conversion = convert(Number(row.amount_minor), row.currency as CurrencyCode, {
+        const converted = rows.flatMap((row) => {
+          const c = convert(Number(row.amount_minor), row.currency as CurrencyCode, {
             date: row.date,
             ratePerEur: row.rate_per_eur,
             source: row.source,
           });
-          if (conversion.baseAmountMinor === null) continue;
-          await tx.update(transactions).set(conversion).where(eq(transactions.id, row.id));
-          filled += 1;
+          return c.baseAmountMinor === null
+            ? []
+            : [
+                sql`(${row.id}::uuid, ${c.baseAmountMinor}::bigint, ${c.fxRate}::numeric, ${c.fxRateDate}::date, ${c.fxSource})`,
+              ];
+        });
+        if (converted.length > 0) {
+          await tx.execute(sql`
+            update transactions t
+            set base_amount_minor = v.base, fx_rate = v.rate, fx_rate_date = v.date, fx_source = v.source
+            from (values ${sql.join(converted, sql`, `)}) as v(id, base, rate, date, source)
+            where t.id = v.id`);
         }
+        filled += converted.length;
         return rows;
       });
       if (batch.length < BACKFILL_BATCH) return filled;
