@@ -7,8 +7,7 @@ import { UsersService } from '../users/users.service';
 import { OidcClient, type ProviderTokens } from './oidc.client';
 import { sanitizeReturnTo } from './return-to';
 import { type IssuedSession, SessionService } from './session.service';
-import { timingSafeEqual } from 'node:crypto';
-import { hashToken, randomToken } from './token-crypto';
+import { hashToken, randomToken, sameSecret } from './token-crypto';
 
 export const LOGIN_ATTEMPT_TTL_MS = 10 * 60_000;
 
@@ -65,7 +64,7 @@ export class AuthService {
       .where(eq(loginAttempts.state, state))
       .returning();
     if (!attempt) return this.fail('unknown_state');
-    if (!binding || !sameHash(hashToken(binding), attempt.bindingHash)) {
+    if (!binding || !sameSecret(hashToken(binding), attempt.bindingHash)) {
       return this.fail('browser_mismatch');
     }
     if (attempt.expiresAt.getTime() <= Date.now()) {
@@ -105,10 +104,4 @@ export class AuthService {
     this.logger.warn(`login_failed reason=${reason}`);
     return { ok: false, error: 'login_failed' };
   }
-}
-
-function sameHash(a: string, b: string): boolean {
-  const left = Buffer.from(a);
-  const right = Buffer.from(b);
-  return left.length === right.length && timingSafeEqual(left, right);
 }

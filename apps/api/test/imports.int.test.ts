@@ -536,6 +536,26 @@ describe('imports', () => {
       ).toBe(404);
     });
 
+    it('learns the last category chosen for a merchant confirmed twice at once', async () => {
+      const ids = await categoryIds(ann, annPersonal);
+      const { imported } = await importRows(ann, [
+        row(2, { description: 'MERCADONA' }),
+        row(3, { description: 'Mercadona' }),
+      ]);
+      const [first, second] = imported.transactionIds;
+      expect(
+        (
+          await confirm(ann, [
+            { transactionId: first, scope: 'personal', categoryId: ids.get('groceries') },
+            { transactionId: second, scope: 'personal', categoryId: ids.get('shopping') },
+          ])
+        ).status,
+      ).toBe(200);
+      expect(await t.db.select().from(categoryRules)).toEqual([
+        expect.objectContaining({ merchantKey: 'mercadona', categoryId: ids.get('shopping') }),
+      ]);
+    });
+
     it('rejects foreign rows, foreign or mismatched categories, all or nothing', async () => {
       const personalIds = await categoryIds(ann, annPersonal);
       const bobIds = await categoryIds(bob, await personal(bob));

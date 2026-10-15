@@ -11,7 +11,7 @@ import { LedgerService, selectViewRows } from '../ledger/ledger.service';
 import { toLedgerRow, type TransactionView } from '../ledger/views';
 import { AccessPolicy } from '../workspaces/access-policy';
 import { categorize } from './categorize';
-import { learnCategoryRule, loadCatalog } from './category-rules';
+import { learnCategoryRules, loadCatalog } from './category-rules';
 import { importHashes } from './dedupe';
 import { validateRows } from './rows';
 import {
@@ -247,7 +247,7 @@ export class ImportsService {
               .from(categories)
               .where(inArray(categories.id, categoryIds));
       const categoryById = new Map(found.map((c) => [c.id, c]));
-      for (const item of items) {
+      const confirmed = items.map((item) => {
         const row = rows.get(item.transactionId);
         const target = item.scope === 'family' ? familyId : personalId;
         if (!row || !target) throw new ApiError('NOT_FOUND');
@@ -262,18 +262,28 @@ export class ImportsService {
             throw new ApiError('INVALID_CATEGORY');
           }
         }
-        await tx
-          .update(transactions)
-          .set({
-            workspaceId: target,
-            categoryId: item.categoryId,
-            reviewStatus: 'confirmed',
-          })
-          .where(eq(transactions.id, row.id));
-        if (item.categoryId) {
-          await learnCategoryRule(tx, target, row.description, item.categoryId);
-        }
-      }
+        return {
+          id: row.id,
+          description: row.description,
+          workspaceId: target,
+          categoryId: item.categoryId,
+        };
+      });
+      const values = sql.join(
+        confirmed.map((c) => sql`(${c.id}::uuid, ${c.workspaceId}::uuid, ${c.categoryId}::uuid)`),
+        sql`, `,
+      );
+      await tx.execute(sql`
+        update transactions t
+        set workspace_id = v.workspace_id, category_id = v.category_id, review_status = 'confirmed'
+        from (values ${values}) as v(id, workspace_id, category_id)
+        where t.id = v.id`);
+      await learnCategoryRules(
+        tx,
+        confirmed.flatMap(({ workspaceId, description, categoryId }) =>
+          categoryId ? [{ workspaceId, description, categoryId }] : [],
+        ),
+      );
       const views = await this.ledger.ledgerRows(tx, actorId, ids);
       return ids.map((id) => views.get(id) as TransactionView);
     });

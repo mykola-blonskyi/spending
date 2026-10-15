@@ -43,6 +43,13 @@
       "when": 1792026616166,
       "tag": "0005_layout_palette",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792081933944,
+      "tag": "0006_sync_cleanup",
+      "breakpoints": true
     }
   ]
 }

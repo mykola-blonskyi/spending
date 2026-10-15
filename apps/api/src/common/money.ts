@@ -10,10 +10,40 @@ export function parseCurrency(code: string): CurrencyCode | null {
   return /^[A-Z]{3}$/.test(code) && knownCurrencies.has(code) ? (code as CurrencyCode) : null;
 }
 
+/**
+ * ISO 4217 minor-unit digits where they differ from 2. Intl's digits are not ISO's (HUF, IDR and
+ * COP format with 0), so they never decide the exponent. Keep in sync with
+ * apps/web/src/shared/format/money.ts.
+ */
+const MINOR_DIGITS: Readonly<Record<string, number>> = {
+  BIF: 0,
+  CLP: 0,
+  DJF: 0,
+  GNF: 0,
+  ISK: 0,
+  JPY: 0,
+  KMF: 0,
+  KRW: 0,
+  PYG: 0,
+  RWF: 0,
+  UGX: 0,
+  VND: 0,
+  VUV: 0,
+  XAF: 0,
+  XOF: 0,
+  XPF: 0,
+  BHD: 3,
+  IQD: 3,
+  JOD: 3,
+  KWD: 3,
+  LYD: 3,
+  OMR: 3,
+  TND: 3,
+};
+
 /** Number of minor-unit digits (EUR 2, JPY 0, KWD 3), per BR-13. */
 export function currencyExponent(code: CurrencyCode): number {
-  return new Intl.NumberFormat('en', { style: 'currency', currency: code }).resolvedOptions()
-    .maximumFractionDigits!;
+  return MINOR_DIGITS[code] ?? 2;
 }
 
 type Decimal = { digits: bigint; scale: number };
@@ -56,30 +86,6 @@ export function convertToEurMinor(
   if (converted > BigInt(Number.MAX_SAFE_INTEGER))
     throw new RangeError('Converted amount overflows');
   return Number(converted);
-}
-
-/**
- * Parses a human amount ("1.234,56", "-12.5", "1 234.5") into a signed minor-unit integer.
- * Grouping characters are accepted only between valid groups of three digits, so a wrong
- * separator choice fails loudly ("12,50" with "." as decimal separator) instead of scaling the
- * amount. Returns null for anything that is not a plain amount or has too many fraction digits.
- */
-export function parseAmountToMinor(
-  text: string,
-  exponent: number,
-  decimalSeparator: '.' | ',',
-): number | null {
-  const groupChars = decimalSeparator === ',' ? ". \\u00a0\\u202f'" : ", \\u00a0\\u202f'";
-  const match = new RegExp(
-    `^([+-]?)(\\d{1,3}(?:([${groupChars}])\\d{3}(?:\\3\\d{3})*)?|\\d+)(?:\\${decimalSeparator}(\\d+))?$`,
-  ).exec(text.trim());
-  if (!match) return null;
-  const integer = match[2]!.replace(/\D/g, '');
-  const fraction = match[4] ?? '';
-  if (fraction.length > exponent) return null;
-  const minor = BigInt(integer + fraction.padEnd(exponent, '0'));
-  if (minor > BigInt(Number.MAX_SAFE_INTEGER)) return null;
-  return Number(match[1] === '-' ? -minor : minor);
 }
 
 /**

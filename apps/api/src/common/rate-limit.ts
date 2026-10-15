@@ -30,6 +30,28 @@ export const rateLimitOptions: ThrottlerModuleOptions = {
     { name: 'sensitive', ttl: MINUTE, limit: 30, skipIf: notTagged('sensitive') },
     { name: 'sync', ttl: MINUTE, limit: 120, skipIf: notTagged('sync') },
   ],
-  getTracker: (req) => (req as ActorRequest).actor?.userId ?? (req as ActorRequest).ip ?? 'unknown',
+  getTracker: (req) => {
+    const { actor, ip } = req as ActorRequest;
+    return actor?.userId ?? (ip ? ipTracker(ip) : 'unknown');
+  },
   generateKey: (_context, tracker, name) => `${name}:${tracker}`,
 };
+
+/**
+ * An IPv6 client usually holds a whole /64, so it is one tracker; otherwise rotating addresses
+ * would reset every budget. An IPv4-mapped address counts as the IPv4 address.
+ */
+export function ipTracker(ip: string): string {
+  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(ip);
+  if (mapped) return mapped[1]!;
+  if (!ip.includes(':')) return ip;
+  const [head = '', tail] = ip.split('%')[0]!.split('::');
+  const left = head ? head.split(':') : [];
+  const right = tail ? tail.split(':') : [];
+  const width = (groups: string[]) => groups.reduce((n, g) => n + (g.includes('.') ? 2 : 1), 0);
+  const groups = [...left, ...Array<string>(8 - width(left) - width(right)).fill('0'), ...right];
+  return `${groups
+    .slice(0, 4)
+    .map((group) => parseInt(group, 16).toString(16))
+    .join(':')}::/64`;
+}

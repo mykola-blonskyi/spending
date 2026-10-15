@@ -4,10 +4,40 @@ export type MoneyFormatOptions = {
   signDisplay?: 'auto' | 'always' | 'exceptZero' | 'negative' | 'never';
 };
 
-/** The ISO 4217 minor-unit exponent (EUR 2, JPY 0, KWD 3), as Intl reports it. */
+/**
+ * ISO 4217 minor-unit digits where they differ from 2. Intl's digits are not ISO's (HUF, IDR and
+ * COP format with 0), so they never decide the exponent. Keep in sync with
+ * apps/api/src/common/money.ts.
+ */
+const MINOR_DIGITS: Readonly<Record<string, number>> = {
+  BIF: 0,
+  CLP: 0,
+  DJF: 0,
+  GNF: 0,
+  ISK: 0,
+  JPY: 0,
+  KMF: 0,
+  KRW: 0,
+  PYG: 0,
+  RWF: 0,
+  UGX: 0,
+  VND: 0,
+  VUV: 0,
+  XAF: 0,
+  XOF: 0,
+  XPF: 0,
+  BHD: 3,
+  IQD: 3,
+  JOD: 3,
+  KWD: 3,
+  LYD: 3,
+  OMR: 3,
+  TND: 3,
+};
+
+/** The ISO 4217 minor-unit exponent (EUR 2, JPY 0, KWD 3). */
 export function currencyExponent(currency: string): number {
-  return numberFormat('en', { style: 'currency', currency }).resolvedOptions()
-    .maximumFractionDigits as number;
+  return MINOR_DIGITS[currency] ?? 2;
 }
 
 /**

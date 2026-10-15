@@ -193,3 +193,4 @@ id_ed25519
 playwright-report/
 test-results/
 dev-dist/
+apps/web/shots/

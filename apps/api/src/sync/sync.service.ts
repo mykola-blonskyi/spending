@@ -21,7 +21,7 @@ import {
   toView,
   toLedgerRow,
 } from '../ledger/views';
-import { learnCategoryRule } from '../imports/category-rules';
+import { learnCategoryRules } from '../imports/category-rules';
 import { AccessPolicy } from '../workspaces/access-policy';
 import {
   type ConflictLocal,
@@ -376,12 +376,13 @@ export class SyncService {
             intended.categoryId !== null &&
             intended.categoryId !== existing!.categoryId
           ) {
-            await learnCategoryRule(
-              tx,
-              intended.workspaceId,
-              existing!.description,
-              intended.categoryId,
-            );
+            await learnCategoryRules(tx, [
+              {
+                workspaceId: intended.workspaceId,
+                description: existing!.description,
+                categoryId: intended.categoryId,
+              },
+            ]);
           }
         }
         return { status: 'applied', transactionId: input.id };
@@ -424,12 +425,10 @@ export class SyncService {
     existing: ExistingRow,
     local: ConflictLocal,
   ): Promise<Outcome> {
-    const server = (await this.ledger.ledgerRows(tx, actorId, [transactionId])).get(transactionId)!;
     const values = {
       baseVersion: typeof base === 'number' ? base : 0,
       serverVersion: existing.version,
       local,
-      server,
     };
     const [row] = await tx
       .insert(syncConflicts)

@@ -240,7 +240,8 @@ period just before, with deltas (current minus previous). Budget progress comes 
   workspace-scoped operation.
 - Sessions are opaque and stored as hashes. Cookies are `__Host-`, HttpOnly, Secure and
   SameSite=Lax. CSRF uses a synchronizer header plus an Origin check. CORS is off because the
-  app is same-origin. Rate limits apply to auth, invitations, imports and sync.
+  app is same-origin. Rate limits apply to auth, invitations, imports and sync, per user when
+  signed in, else per IPv4 address or IPv6 /64.
 - Secrets live only in Coolify's environment panel. Logs carry request ID, route, status and
   duration only. Never bodies, amounts, notes or tokens.
 - CSP and security headers are static in nginx (`deploy/security-headers.conf`): scripts are

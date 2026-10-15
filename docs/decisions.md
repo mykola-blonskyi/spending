@@ -162,11 +162,11 @@ Date: 2026-10-14
 feeds (free, no key), fetched daily by the API into `fx_rates`. Conversions are stored on the
 transaction with rate, rate date and source.
 
-When a non-EUR row is older than every stored rate (a CSV statement from before the 90-day
-window), the API loads the full ECB history (`eurofxref-hist.xml`, about 30 MB, since 1999) once,
-then backfills. It runs at most once per 24 hours per process, with a 60 s timeout and a 60 MB
-limit, keeps days already stored, and stops for good once stored rates reach the series' first
-day.
+When an unconverted non-EUR row falls where no rate of any currency is stored, while its currency
+has a later one (a CSV statement from before the 90-day window, or an outage longer than it), the
+API loads the full ECB history (`eurofxref-hist.xml`, about 30 MB, since 1999), then backfills. It
+runs at most once per 24 hours per process, with a 60 s timeout and a 60 MB limit, and keeps days
+already stored. Once those days are stored, the condition clears.
 
 **Consequences.** Analytics show unconverted amounts separately when no rate exists. The ECB
 publishes about 30 currencies, and others stay unconverted. A rate the ECB later revises for an
