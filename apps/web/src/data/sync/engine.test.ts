@@ -455,6 +455,21 @@ describe('a failed push', () => {
     expect(local.state.mutations.size).toBe(0);
   });
 
+  it('retries a bare 401 instead of stopping as signed out, since only the API envelope proves that', async () => {
+    store = await LocalStore.open('ann');
+    await recordTransaction(store, draft);
+    const engine = new SyncEngine(store, {
+      push: () => Promise.reject(new ApiError({ status: 401, code: 'AUTH_REQUIRED', message: '' })),
+      pull: () => Promise.resolve(page()),
+    });
+
+    await engine.flush();
+
+    expect(engine.getStatus().phase).toBe('retrying');
+    expect(queueOrder(store.state).map((m) => m.state.status)).toEqual(['queued']);
+    engine.stop();
+  });
+
   it('is not attempted while the browser is offline', async () => {
     vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
     store = await LocalStore.open('ann');

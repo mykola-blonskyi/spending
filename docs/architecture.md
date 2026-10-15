@@ -137,7 +137,9 @@ stored lucide icon name to a curated icon set (`category-icons.ts`).
   ends. A page started offline fetches the CSRF token before its first write (`client.ts`).
 - **Device privacy.** Signing out with unsent mutations asks first and offers "Sync now"; signing
   out deletes the user's database, per-user keys and the query cache (`clearLocalUserData`). A
-  `401` keeps the database, so the queue syncs when the same user signs in again. Before a user's
+  `401` keeps the database, so the queue syncs when the same user signs in again. Only a `401`
+  carrying the API's error envelope ends the session; a bare one (e.g. from a proxy) is retried
+  like a network error. Before a user's
   store opens, every other database in the registry is deleted, along with its unsent changes.
   Once the store is open the app calls `navigator.storage.persist()`. Without IndexedDB (private
   mode, quota) local-data screens explain that offline is unavailable; REST screens keep working.
