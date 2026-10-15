@@ -1,3 +1,4 @@
+import { gzipSync } from 'node:zlib';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startTestApp, type TestApp } from './harness';
 
@@ -27,5 +28,17 @@ describe('API process', () => {
     const response = await fetch(`${t.baseUrl}/api/nope`);
     expect(response.status).toBe(404);
     expect(await response.json()).toEqual({ error: { code: 'NOT_FOUND', message: 'NOT_FOUND' } });
+  });
+
+  it('rejects a body that inflates past the limit as too large', async () => {
+    const response = await fetch(`${t.baseUrl}/api/v1/sync/push`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'content-encoding': 'gzip' },
+      body: gzipSync(JSON.stringify({ pad: 'x'.repeat(4 * 1024 * 1024) })),
+    });
+    expect(response.status).toBe(413);
+    expect(await response.json()).toEqual({
+      error: { code: 'PAYLOAD_TOO_LARGE', message: 'PAYLOAD_TOO_LARGE' },
+    });
   });
 });
