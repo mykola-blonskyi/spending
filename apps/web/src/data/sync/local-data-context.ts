@@ -102,6 +102,14 @@ export function useInitialSync(): { active: boolean; loaded: number } {
   return { active, loaded: state?.transactions.size ?? 0 };
 }
 
+/** Pushes and pulls now, so rows the server just generated reach the device. */
+export function useSyncNow(): () => Promise<void> {
+  const engine = useReady()?.engine;
+  return useCallback(async () => {
+    await engine?.flush();
+  }, [engine]);
+}
+
 function useWriter<A extends unknown[], R>(
   write: (store: LocalStore, ...args: A) => Promise<R>,
 ): (...args: A) => Promise<R> {
@@ -117,10 +125,10 @@ function useWriter<A extends unknown[], R>(
   );
 }
 
-/** Pulls the server's latest rows now, for screens that just wrote through REST (imports). */
+/** Asks the engine to sync now, e.g. after joining or leaving a workspace. A no-op without a store. */
 export function useRequestSync(): () => Promise<void> {
-  const ready = useReady();
-  return useCallback(() => ready?.engine.flush() ?? Promise.resolve(), [ready]);
+  const engine = useReady()?.engine;
+  return useCallback(() => engine?.flush() ?? Promise.resolve(), [engine]);
 }
 
 export const useRecordTransaction = (): ((draft: TransactionDraft) => Promise<string>) =>

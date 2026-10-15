@@ -12,6 +12,7 @@ import {
 import { AccessPolicy } from '../src/workspaces/access-policy';
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
 import {
+  api,
   as,
   loginAs,
   resetData,
@@ -133,6 +134,12 @@ describe('family workspaces', () => {
     const lifetime = new Date(invitation.expiresAt).getTime() - Date.now();
     expect(Math.abs(lifetime - 7 * 86_400_000)).toBeLessThan(60_000);
 
+    const anonymous = await api(t, `/v1/invitations/${invitation.token}`);
+    expect(anonymous.status).toBe(200);
+    const anonymousAccept = await api(t, `/v1/invitations/${invitation.token}/accept`, {
+      method: 'POST',
+    });
+    expect(anonymousAccept.status).toBe(401);
     expect(await json(await as(t, bob, `/v1/invitations/${invitation.token}`), 200)).toEqual({
       familyName: 'Home',
       ownerName: 'Ann',

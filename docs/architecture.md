@@ -66,7 +66,8 @@ and Vite. ESLint (`eslint-plugin-boundaries`) enforces the table.
 `shared` cannot read the message catalogs, so its components take their words from
 `SharedLocaleProvider` (`@shared/lib/locale-context`). The app fills it from the active `use-intl`
 catalog, so shared components stay translated without importing `i18n`. API failures reach the UI
-as `ApiError` with a stable `code`, and screens show `errors.<code>` from the catalog.
+as `ApiError` with a stable `code`, and screens show `errors.<code>` from the catalog; `data`
+components (`QueryUnavailable`, `useRefetchErrorToast`) read it through `strings.apiError`.
 
 **Layouts and palettes.** The profile stores a `layout` and a `palette`. `app/layouts/registry`
 maps each layout to a shell from `shared/shell` (all take the same `ShellProps`) and to optional

@@ -9,7 +9,8 @@ function leaves(tree: Tree, prefix = ''): [string, string][] {
   );
 }
 
-const ICU_ARGUMENT = /\{(\w+)[,}]/g;
+// A plural branch such as `one {day}` is text, not an argument named `day`.
+const ICU_ARGUMENT = /(?<!(?:zero|one|two|few|many|other|=\d+)\s*)\{(\w+)[,}]/g;
 const argumentsOf = (message: string) =>
   [...new Set([...message.matchAll(ICU_ARGUMENT)].map((match) => match[1]))].sort();
 

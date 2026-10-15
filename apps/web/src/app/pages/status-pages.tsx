@@ -1,7 +1,7 @@
-import { Compass, MailOpen } from 'lucide-react';
+import { Compass } from 'lucide-react';
 import { isRouteErrorResponse, Link, useParams, useRouteError } from 'react-router';
 import { errorCode } from '@data/api-error';
-import { loginHref } from '@features/auth';
+import { InviteFlow } from '@features/family';
 import { useTranslations } from '@i18n/index';
 import { EmptyState, ErrorState } from '@shared/components';
 import { Button } from '@shared/ui/button';
@@ -40,22 +40,11 @@ export function RouteErrorPage() {
 }
 
 export function InvitePage() {
-  const t = useTranslations();
   const { token = '' } = useParams();
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col items-center justify-center gap-8 px-4 text-center">
       <BrandMark className="size-12" />
-      <EmptyState
-        className="w-full border-solid bg-card"
-        icon={MailOpen}
-        title={t('invite.title')}
-        description={t('invite.description')}
-        action={
-          <Button asChild size="lg">
-            <a href={loginHref(`/invite/${encodeURIComponent(token)}`)}>{t('invite.accept')}</a>
-          </Button>
-        }
-      />
+      <InviteFlow token={token} />
     </main>
   );
 }
