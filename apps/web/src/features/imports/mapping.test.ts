@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   detectPreset,
+  exponentFor,
   isComplete,
   type Mapping,
   normalizeRow,
@@ -164,6 +165,17 @@ describe('normalizeRow', () => {
         exponentOf,
       ),
     ).toMatchObject({ currency: 'XXX', amountMinor: -100, problems: ['currency'] });
+  });
+
+  it('knows the digits of an ISO currency and refuses anything else', () => {
+    expect(['', 'JPY', 'USD', '€', 'EURO', 'ZZZ'].map((code) => exponentFor(code, 3))).toEqual([
+      3,
+      0,
+      2,
+      null,
+      null,
+      null,
+    ]);
   });
 
   it('keeps unreadable cells in a form the server rejects, and names the problem', () => {
