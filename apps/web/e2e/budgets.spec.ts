@@ -4,8 +4,10 @@ import { expect, test } from './fixtures';
 async function recordGroceries(page: Page, amount: string) {
   await page.goto('/transactions/new');
   await page.getByLabel('Amount').fill(amount);
-  await page.getByRole('combobox', { name: 'Category' }).click();
-  await page.getByRole('option', { name: 'Groceries' }).click();
+  await page
+    .getByRole('radiogroup', { name: 'Category' })
+    .getByRole('radio', { name: 'Groceries' })
+    .click();
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page).toHaveURL('/transactions');
   await expect(page.getByRole('banner').getByRole('status')).toHaveText('Up to date');

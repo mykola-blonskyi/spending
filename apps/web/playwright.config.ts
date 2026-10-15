@@ -57,7 +57,8 @@ export default defineConfig({
     },
     {
       name: 'web',
-      command: `node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port ${WEB_PORT} --strictPort`,
+      // E2E_WEB_DIST lets side-by-side runs preview their own build instead of sharing dist/.
+      command: `node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port ${WEB_PORT} --strictPort${process.env.E2E_WEB_DIST ? ` --outDir ${process.env.E2E_WEB_DIST}` : ''}`,
       url: APP_ORIGIN,
       env: { API_ORIGIN },
     },

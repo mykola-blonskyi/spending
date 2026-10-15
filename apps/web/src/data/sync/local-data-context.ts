@@ -33,6 +33,11 @@ function useReady() {
   return data.status === 'ready' ? data : null;
 }
 
+/** Whether this device has a local store yet, so screens can tell "opening" from "unavailable". */
+export function useLocalDataStatus(): LocalData['status'] {
+  return use(LocalDataContext).status;
+}
+
 function useLocalState(): LocalState | null {
   const store = useReady()?.store;
   return useSyncExternalStore(store?.subscribe ?? subscribeNothing, store?.getState ?? nothing);
@@ -100,6 +105,19 @@ export function useInitialSync(): { active: boolean; loaded: number } {
   const active =
     state !== null && state.meta.lastSyncedAt === null && engine?.phase !== 'authRequired';
   return { active, loaded: state?.transactions.size ?? 0 };
+}
+
+/**
+ * Pushes queued changes and pulls what the server has, now. Accounts and categories are edited
+ * through REST and reach the local store only through a pull, so their screens call this after
+ * each write. Resolves once the store holds the server's rows.
+ */
+export function useRefreshLocalData(): () => Promise<void> {
+  const ready = useReady();
+  return useCallback(async () => {
+    if (!ready) throw new Error('The local store is not open');
+    await ready.engine.flush();
+  }, [ready]);
 }
 
 /** Pushes and pulls now, so rows the server just generated reach the device. */
