@@ -207,6 +207,7 @@ export const accounts = pgTable(
   },
   (t) => [
     index('accounts_workspace_idx').on(t.workspaceId),
+    uniqueIndex('accounts_name_uq').on(t.workspaceId, t.kind, t.name),
     index('accounts_revision_idx').on(t.revision),
     check('accounts_currency_ck', currencyCheck('currency')),
   ],
@@ -393,6 +394,29 @@ export const syncConflicts = pgTable(
       .on(t.transactionId, t.userId)
       .where(sql`${t.status} = 'open'`),
     index('sync_conflicts_user_idx').on(t.userId, t.status),
+  ],
+);
+
+/**
+ * A transaction that left a workspace (BR-18a). Members of that workspace pull it as a tombstone
+ * once, at the move's revision; later edits of the row elsewhere never touch it (BR-2). The row
+ * lives on in another workspace, so `transaction_id` has no foreign key. `revision` comes from
+ * the `sync_tombstone_stamp` trigger (migration 0005), under the ledger lock like every
+ * synced table.
+ */
+export const syncTombstones = pgTable(
+  'sync_tombstones',
+  {
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    transactionId: uuid('transaction_id').notNull(),
+    revision: revision(),
+    deletedAt: tstz('deleted_at').notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.workspaceId, t.transactionId] }),
+    index('sync_tombstones_revision_idx').on(t.workspaceId, t.revision),
   ],
 );
 

@@ -146,10 +146,12 @@ behave identically.
 
 Revisions come from one sequence, assigned by the `ledger_stamp` trigger under a
 transaction-scoped advisory lock. Revision order therefore equals commit order, and a pull cursor
-cannot skip a write that commits late. The cost is that ledger writes are serialized, which is
-negligible at household scale. Service code writes the ledger only through
-`ledgerTransaction`, which takes the lock before any row lock, so writers cannot deadlock. Sign-in
-runs under it too, because a first login seeds the personal workspace's default categories. `transactions.version` increments only on user-visible changes,
+cannot skip a write that commits late. The cost is that ledger writes are serialized, one writer
+at a time for the whole database. We accept that throughput limit at household scale, where a
+push carries at most 200 mutations and is limited to 120 per minute per user. Service code
+writes the ledger only through `ledgerTransaction`, which takes the lock before any row lock, so
+writers cannot deadlock. Sign-in runs under it too, because a first login seeds the personal
+workspace's default categories. `transactions.version` increments only on user-visible changes,
 so background FX fills never cause conflicts.
 
 ## ADR-007: EUR base currency, ECB reference rates
@@ -160,8 +162,15 @@ Date: 2026-10-14
 feeds (free, no key), fetched daily by the API into `fx_rates`. Conversions are stored on the
 transaction with rate, rate date and source.
 
+When a non-EUR row is older than every stored rate (a CSV statement from before the 90-day
+window), the API loads the full ECB history (`eurofxref-hist.xml`, about 30 MB, since 1999) once,
+then backfills. It runs at most once per 24 hours per process, with a 60 s timeout and a 60 MB
+limit, keeps days already stored, and stops for good once stored rates reach the series' first
+day.
+
 **Consequences.** Analytics show unconverted amounts separately when no rate exists. The ECB
-publishes about 30 currencies, and others stay unconverted.
+publishes about 30 currencies, and others stay unconverted. A rate the ECB later revises for an
+already stored day updates `fx_rates` but is not re-applied to rows already converted with it.
 
 ## ADR-008: At most one family per user; scope is the workspace
 

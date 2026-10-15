@@ -12,9 +12,12 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   every path: list, search, analytics, export and sync.
 - **BR-3.** A family transaction may reference an account in the family workspace or an account in
   its author's personal workspace. Viewers who cannot access that account see `account: null`
-  and the author's display name instead.
+  and the author's display name instead. When such a viewer edits the row and sends the null back,
+  the author's account is kept. An archived account stays allowed only on a row that already
+  references it.
 - **BR-4.** A transaction's category must belong to the transaction's workspace and match its kind.
-  The service layer enforces it, because family deletion (BR-11) moves rows between workspaces.
+  The service layer enforces it, because family deletion (BR-11) moves rows between workspaces. An
+  archived category stays allowed only on a row that already uses it.
 - **BR-5.** A user with no session gets `401 AUTH_REQUIRED`. A session whose provider grant was
   revoked is destroyed, and the next request gets `401 SESSION_REVOKED`.
 
@@ -53,7 +56,8 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
 - **BR-14.** EUR is the base currency. A non-EUR transaction stores the ECB rate of its
   `occurredOn` date, or of the latest earlier published date within 7 days, together with the
   rate date and source. Without a rate, `baseAmountMinor` stays null. A background job fills it
-  when the rate arrives.
+  when the rate arrives. The same job moves a row converted with an earlier day's rate onto a closer
+  day's rate once it is published (a transaction entered before the ECB's afternoon release).
 - **BR-15.** Analytics sum `baseAmountMinor`. Transactions with no conversion are reported in a
   separate "not converted" list per currency, never silently dropped or counted at 1:1.
 
@@ -64,10 +68,20 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
 - **BR-17.** Every write increments `version` and takes a new global `revision`. Sync pull returns
   rows with `revision > cursor` that the actor may see, plus the actor's current workspace list.
   The client drops local rows of workspaces it no longer belongs to.
-- **BR-18.** A sync mutation is applied at most once, keyed by its client mutation ID. A create
-  with an existing transaction ID made by the same actor is treated as an update.
+- **BR-18.** A sync mutation is applied at most once, keyed by its client mutation ID. A replay
+  returns the stored outcome with the row's current view. A mutation ID already used by another
+  user is rejected (`MUTATION_ID_REUSED`). A create (`baseVersion: null`) whose transaction ID
+  already exists is treated as an update with an unknown base: applied when nothing would change,
+  otherwise a conflict (BR-19).
+- **BR-18a.** Personal rows are writable only by their workspace's owner; family rows by any
+  member. Only the author moves a row between their personal workspace and the family; the other
+  members then receive a tombstone for it. A row the
+  actor cannot see is `NOT_FOUND`, never `FORBIDDEN`. Pending-review rows cannot be edited or
+  deleted through sync (`REVIEW_REQUIRED`).
 - **BR-19.** An update or delete whose `baseVersion` differs from the server's `version` creates
-  a SyncConflict, unless the intended result equals the current server state. The server row is
+  a SyncConflict, unless the intended result equals the current server state. Deleting a row that
+  is already deleted succeeds. A user has at most one open conflict per transaction; a newer stale
+  edit replaces its local side. The server row is
   left unchanged. Totals count only the server row while the conflict is open. The conflict is
   shown to the user who made the edit.
 - **BR-20.** Resolving a conflict applies the chosen version (server, local or a merge of fields)

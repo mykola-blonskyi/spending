@@ -276,6 +276,150 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LedgerController_accounts"];
+        put?: never;
+        post: operations["LedgerController_createAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["LedgerController_updateAccount"];
+        trace?: never;
+    };
+    "/api/v1/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LedgerController_categories"];
+        put?: never;
+        post: operations["LedgerController_createCategory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["LedgerController_updateCategory"];
+        trace?: never;
+    };
+    "/api/v1/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LedgerController_transactions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sync/push": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SyncController_push"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sync/pull": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SyncController_pull"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sync/conflicts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SyncController_conflicts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sync/conflicts/{id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SyncController_resolve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -432,6 +576,355 @@ export interface components {
             expiresAt: string;
             /** @enum {string} */
             state: "pending" | "accepted" | "revoked" | "expired";
+        };
+        ArchivedAt_Output: string | null;
+        AccountListDto_Output: {
+            accounts: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                name: string;
+                /** @enum {string} */
+                kind: "cash" | "bank" | "card" | "savings" | "other";
+                currency: string;
+                archivedAt: components["schemas"]["ArchivedAt_Output"];
+                revision: number;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+        };
+        CreateAccountDto: {
+            /** Format: uuid */
+            workspaceId: string;
+            name: string;
+            /** @enum {string} */
+            kind: "cash" | "bank" | "card" | "savings" | "other";
+            currency: string;
+        };
+        AccountDto_Output: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            name: string;
+            /** @enum {string} */
+            kind: "cash" | "bank" | "card" | "savings" | "other";
+            currency: string;
+            archivedAt: components["schemas"]["ArchivedAt_Output"];
+            revision: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UpdateAccountDto: {
+            name?: string;
+            /** @enum {string} */
+            kind?: "cash" | "bank" | "card" | "savings" | "other";
+            archived?: boolean;
+        };
+        SystemKey_Output: string | null;
+        CategoryListDto_Output: {
+            categories: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                name: string;
+                /** @enum {string} */
+                kind: "income" | "expense";
+                color: string;
+                icon: string;
+                systemKey: components["schemas"]["SystemKey_Output"];
+                archivedAt: components["schemas"]["ArchivedAt_Output"];
+                revision: number;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+        };
+        CreateCategoryDto: {
+            /** Format: uuid */
+            workspaceId: string;
+            name: string;
+            /** @enum {string} */
+            kind: "income" | "expense";
+            color: string;
+            icon: string;
+        };
+        CategoryDto_Output: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            name: string;
+            /** @enum {string} */
+            kind: "income" | "expense";
+            color: string;
+            icon: string;
+            systemKey: components["schemas"]["SystemKey_Output"];
+            archivedAt: components["schemas"]["ArchivedAt_Output"];
+            revision: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UpdateCategoryDto: {
+            name?: string;
+            color?: string;
+            icon?: string;
+            archived?: boolean;
+        };
+        TransactionView_Output: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** @enum {string} */
+            scope: "personal" | "family";
+            /** @enum {string} */
+            kind: "income" | "expense";
+            amountMinor: number;
+            currency: string;
+            baseAmountMinor: number | null;
+            fx: {
+                rate: string;
+                rateDate: string;
+                source: string;
+            } | null;
+            occurredOn: string;
+            accountId: string | null;
+            categoryId: string | null;
+            description: string;
+            note: string;
+            /** @enum {string} */
+            source: "manual" | "import" | "recurring";
+            /** @enum {string} */
+            reviewStatus: "confirmed" | "pending_review";
+            importBatchId: string | null;
+            author: {
+                userId: string | null;
+                displayName: string | null;
+            };
+            version: number;
+            revision: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        NextCursor_Output: string | null;
+        TransactionPageDto_Output: {
+            transactions: components["schemas"]["TransactionView_Output"][];
+            nextCursor: components["schemas"]["NextCursor_Output"];
+        };
+        PushDto: {
+            mutations: ({
+                /** Format: uuid */
+                mutationId: string;
+                /** @constant */
+                type: "transaction.upsert";
+                baseVersion: number | null;
+                transaction: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    workspaceId: string;
+                    /** @enum {string} */
+                    kind: "income" | "expense";
+                    amountMinor: number;
+                    currency: string;
+                    occurredOn: string;
+                    accountId: string | null;
+                    categoryId: string | null;
+                    description: string;
+                    note: string;
+                };
+            } | {
+                /** Format: uuid */
+                mutationId: string;
+                /** @constant */
+                type: "transaction.delete";
+                /** Format: uuid */
+                transactionId: string;
+                baseVersion: number;
+            })[];
+        };
+        Tombstone_Output: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** Format: date-time */
+            deletedAt: string;
+            revision: number;
+        };
+        PushResponseDto_Output: {
+            results: ({
+                /** Format: uuid */
+                mutationId: string;
+                /** @constant */
+                status: "applied";
+                transaction: components["schemas"]["TransactionView_Output"] | components["schemas"]["Tombstone_Output"];
+            } | {
+                /** Format: uuid */
+                mutationId: string;
+                /** @constant */
+                status: "conflict";
+                /** Format: uuid */
+                conflictId: string;
+                transaction: components["schemas"]["TransactionView_Output"] | components["schemas"]["Tombstone_Output"];
+            } | {
+                /** Format: uuid */
+                mutationId: string;
+                /** @constant */
+                status: "rejected";
+                code: string;
+                message: string;
+            })[];
+        };
+        PullResponseDto_Output: {
+            workspaces: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                kind: "personal" | "family";
+                name: string;
+                /** @enum {string} */
+                role: "owner" | "member";
+            }[];
+            accounts: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                name: string;
+                /** @enum {string} */
+                kind: "cash" | "bank" | "card" | "savings" | "other";
+                currency: string;
+                archivedAt: components["schemas"]["ArchivedAt_Output"];
+                revision: number;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+            categories: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                name: string;
+                /** @enum {string} */
+                kind: "income" | "expense";
+                color: string;
+                icon: string;
+                systemKey: components["schemas"]["SystemKey_Output"];
+                archivedAt: components["schemas"]["ArchivedAt_Output"];
+                revision: number;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+            transactions: (components["schemas"]["TransactionView_Output"] | components["schemas"]["Tombstone_Output"])[];
+            conflicts: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                transactionId: string;
+                baseVersion: number;
+                serverVersion: number;
+                local: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    workspaceId: string;
+                    /** @enum {string} */
+                    kind: "income" | "expense";
+                    amountMinor: number;
+                    currency: string;
+                    occurredOn: string;
+                    accountId: string | null;
+                    categoryId: string | null;
+                    description: string;
+                    note: string;
+                } | {
+                    /** @constant */
+                    deleted: true;
+                };
+                server: components["schemas"]["TransactionView_Output"] | components["schemas"]["Tombstone_Output"];
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+            cursor: number;
+            hasMore: boolean;
+        };
+        ConflictListDto_Output: {
+            conflicts: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                transactionId: string;
+                baseVersion: number;
+                serverVersion: number;
+                local: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    workspaceId: string;
+                    /** @enum {string} */
+                    kind: "income" | "expense";
+                    amountMinor: number;
+                    currency: string;
+                    occurredOn: string;
+                    accountId: string | null;
+                    categoryId: string | null;
+                    description: string;
+                    note: string;
+                } | {
+                    /** @constant */
+                    deleted: true;
+                };
+                server: components["schemas"]["TransactionView_Output"] | components["schemas"]["Tombstone_Output"];
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+        };
+        ResolveDto: {
+            /** @enum {string} */
+            resolution: "server" | "local" | "merged";
+            transaction?: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                /** @enum {string} */
+                kind: "income" | "expense";
+                amountMinor: number;
+                currency: string;
+                occurredOn: string;
+                accountId: string | null;
+                categoryId: string | null;
+                description: string;
+                note: string;
+            };
+        };
+        ResolveResponseDto_Output: {
+            /** Format: uuid */
+            id: string;
+            /** @constant */
+            status: "resolved";
+            /** @enum {string} */
+            resolution: "server" | "local" | "merged";
+            /** Format: date-time */
+            resolvedAt: string;
+            transaction: components["schemas"]["TransactionView_Output"] | components["schemas"]["Tombstone_Output"];
         };
     };
     responses: never;
@@ -853,6 +1346,259 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkspaceDto_Output"];
+                };
+            };
+        };
+    };
+    LedgerController_accounts: {
+        parameters: {
+            query?: {
+                workspaceId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountListDto_Output"];
+                };
+            };
+        };
+    };
+    LedgerController_createAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAccountDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountDto_Output"];
+                };
+            };
+        };
+    };
+    LedgerController_updateAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAccountDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountDto_Output"];
+                };
+            };
+        };
+    };
+    LedgerController_categories: {
+        parameters: {
+            query?: {
+                workspaceId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryListDto_Output"];
+                };
+            };
+        };
+    };
+    LedgerController_createCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCategoryDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryDto_Output"];
+                };
+            };
+        };
+    };
+    LedgerController_updateCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCategoryDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryDto_Output"];
+                };
+            };
+        };
+    };
+    LedgerController_transactions: {
+        parameters: {
+            query?: {
+                q?: string;
+                from?: string;
+                to?: string;
+                kind?: string;
+                currency?: string;
+                accountId?: string;
+                categoryId?: string;
+                scope?: string;
+                workspaceId?: string;
+                reviewStatus?: string;
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionPageDto_Output"];
+                };
+            };
+        };
+    };
+    SyncController_push: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushResponseDto_Output"];
+                };
+            };
+        };
+    };
+    SyncController_pull: {
+        parameters: {
+            query?: {
+                cursor?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PullResponseDto_Output"];
+                };
+            };
+        };
+    };
+    SyncController_conflicts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConflictListDto_Output"];
+                };
+            };
+        };
+    };
+    SyncController_resolve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResolveResponseDto_Output"];
                 };
             };
         };

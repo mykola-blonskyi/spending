@@ -7,7 +7,7 @@ const MINUTE = 60_000;
 const RATE_LIMIT_TAG = Symbol('RATE_LIMIT_TAG');
 
 /** Named budgets a route opts into on top of the global default. */
-export type RateLimitName = 'auth' | 'sensitive';
+export type RateLimitName = 'auth' | 'sensitive' | 'sync';
 
 export const RateLimit = (name: RateLimitName) => SetMetadata(RATE_LIMIT_TAG, name);
 
@@ -28,6 +28,7 @@ export const rateLimitOptions: ThrottlerModuleOptions = {
     { name: 'default', ttl: MINUTE, limit: 600 },
     { name: 'auth', ttl: MINUTE, limit: 20, skipIf: notTagged('auth') },
     { name: 'sensitive', ttl: MINUTE, limit: 30, skipIf: notTagged('sensitive') },
+    { name: 'sync', ttl: MINUTE, limit: 120, skipIf: notTagged('sync') },
   ],
   getTracker: (req) => (req as ActorRequest).actor?.userId ?? (req as ActorRequest).ip ?? 'unknown',
   generateKey: (_context, tracker, name) => `${name}:${tracker}`,
