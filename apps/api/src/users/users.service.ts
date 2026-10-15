@@ -11,7 +11,7 @@ export type Provisioned = Readonly<{
   personalWorkspaceId: string;
 }>;
 
-const profileColumns = {
+export const profileColumns = {
   id: users.id,
   email: users.email,
   displayName: users.displayName,

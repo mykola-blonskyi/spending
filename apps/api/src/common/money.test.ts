@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   convertToEurMinor,
   currencyExponent,
+  formatMinor,
   parseAmountToMinor,
   parseCurrency,
   type CurrencyCode,
@@ -85,5 +86,24 @@ describe('parseAmountToMinor', () => {
     ['5.', '.'],
   ] as const)('rejects %s with %s as decimal separator', (text, sep) => {
     expect(parseAmountToMinor(text, 2, sep)).toBeNull();
+  });
+});
+
+describe('formatMinor', () => {
+  it.each([
+    [1234, 0, '1234'],
+    [150, 2, '1.50'],
+    [5, 2, '0.05'],
+    [0, 2, '0.00'],
+    [5, 3, '0.005'],
+    [1234567, 3, '1234.567'],
+    [-150, 2, '-1.50'],
+    [Number.MAX_SAFE_INTEGER, 2, '90071992547409.91'],
+  ])('formats %d with exponent %d as %s', (minor, exponent, expected) => {
+    expect(formatMinor(minor, exponent)).toBe(expected);
+  });
+
+  it('rejects amounts that are not safe integers', () => {
+    expect(() => formatMinor(1.5, 2)).toThrow(RangeError);
   });
 });

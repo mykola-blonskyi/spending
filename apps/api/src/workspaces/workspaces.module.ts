@@ -6,6 +6,6 @@ import { WorkspacesController } from './workspaces.controller';
 @Module({
   controllers: [WorkspacesController],
   providers: [AccessPolicy, FamilyService],
-  exports: [AccessPolicy],
+  exports: [AccessPolicy, FamilyService],
 })
 export class WorkspacesModule {}
