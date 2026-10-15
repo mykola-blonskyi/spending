@@ -9,6 +9,7 @@ import {
   formatRelativeDay,
   minorToDecimalString,
   parseDateOnly,
+  todayIn,
 } from './index';
 
 const plain = (text: string) => text.replace(/[\u00a0\u202f]/g, ' ').replace(/\u2212/g, '-');
@@ -111,5 +112,11 @@ describe('dates', () => {
     expect(formatRelativeDay('2026-10-13', 'ru', today)).toBe('Вчера');
     expect(formatRelativeDay('2026-10-15', 'es', today)).toBe('Mañana');
     expect(formatRelativeDay('2026-10-01', 'en', today)).toBe('Oct 1, 2026');
+  });
+
+  it("gives today's date in the user's time zone, not the device's", () => {
+    const instant = new Date('2026-10-14T23:30:00Z');
+    expect(todayIn('Europe/Kyiv', instant)).toBe('2026-10-15');
+    expect(todayIn('America/New_York', instant)).toBe('2026-10-14');
   });
 });

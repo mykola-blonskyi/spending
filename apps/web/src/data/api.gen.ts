@@ -420,31 +420,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/imports": {
+    "/api/v1/budgets": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["ImportsController_list"];
-        put?: never;
-        post: operations["ImportsController_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/imports/review": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ImportsController_review"];
-        put?: never;
+        get: operations["BudgetsController_list"];
+        put: operations["BudgetsController_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -452,7 +436,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/imports/review/confirm": {
+    "/api/v1/budgets/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -461,14 +445,30 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["ImportsController_confirm"];
+        post?: never;
+        delete: operations["BudgetsController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recurring-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RecurringController_list"];
+        put?: never;
+        post: operations["RecurringController_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/imports/{id}/undo": {
+    "/api/v1/recurring-rules/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -477,7 +477,23 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["ImportsController_undo"];
+        post?: never;
+        delete: operations["RecurringController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["RecurringController_update"];
+        trace?: never;
+    };
+    "/api/v1/analytics/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AnalyticsController_summary"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -990,73 +1006,211 @@ export interface components {
             resolvedAt: string;
             transaction: components["schemas"]["TransactionView_Output"] | components["schemas"]["Tombstone_Output"];
         };
-        ImportDto: {
-            /** Format: uuid */
-            accountId: string;
-            fileName: string;
-            mapping: {
-                [key: string]: unknown;
-            };
-            rows: {
-                line: number;
-                occurredOn: string;
-                amountMinor: number;
-                currency?: string;
-                description: string;
-                externalId?: string;
-            }[];
-        };
-        ImportBatchView_Output: {
-            /** Format: uuid */
-            id: string;
-            accountId: string | null;
-            fileName: string;
-            rowCount: number;
-            importedCount: number;
-            duplicateCount: number;
-            rejectedCount: number;
-            /** Format: date-time */
-            createdAt: string;
-            undoneAt: string | null;
-        };
-        ImportResultDto_Output: {
-            batch: components["schemas"]["ImportBatchView_Output"];
-            imported: {
-                count: number;
-                transactionIds: string[];
-            };
-            duplicates: number;
-            rejected: {
-                line: number;
-                /** @enum {string} */
-                reason: "INVALID_DATE" | "INVALID_AMOUNT" | "INVALID_CURRENCY" | "DESCRIPTION_TOO_LONG" | "EXTERNAL_ID_TOO_LONG" | "DUPLICATE_IN_FILE_EXTERNAL_ID";
-            }[];
-        };
-        BatchListDto_Output: {
-            batches: components["schemas"]["ImportBatchView_Output"][];
-        };
-        ReviewListDto_Output: {
-            items: {
-                transaction: components["schemas"]["TransactionView_Output"];
-                familyCategoryId: string | null;
-            }[];
-        };
-        ConfirmDto: {
-            items: {
+        BudgetListDto_Output: {
+            budgets: {
                 /** Format: uuid */
-                transactionId: string;
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
                 /** @enum {string} */
                 scope: "personal" | "family";
-                categoryId: string | null;
+                /** Format: uuid */
+                categoryId: string;
+                amountMinor: number;
+                month: string;
+                spentMinor: number;
+                unconverted: {
+                    currency: string;
+                    amountMinor: number;
+                }[];
+                /** @enum {string} */
+                status: "ok" | "near" | "over";
             }[];
         };
-        ConfirmResultDto_Output: {
-            transactions: components["schemas"]["TransactionView_Output"][];
+        PutBudgetDto: {
+            /** Format: uuid */
+            workspaceId: string;
+            /** Format: uuid */
+            categoryId: string;
+            amountMinor: number;
         };
-        UndoResultDto_Output: {
-            batch: components["schemas"]["ImportBatchView_Output"];
-            deleted: number;
-            kept: number;
+        BudgetDto_Output: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** @enum {string} */
+            scope: "personal" | "family";
+            /** Format: uuid */
+            categoryId: string;
+            amountMinor: number;
+            month: string;
+            spentMinor: number;
+            unconverted: {
+                currency: string;
+                amountMinor: number;
+            }[];
+            /** @enum {string} */
+            status: "ok" | "near" | "over";
+        };
+        NullableId_Output: string | null;
+        NullableDate_Output: string | null;
+        NullableTimestamp_Output: string | null;
+        RuleListDto_Output: {
+            rules: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                /** @enum {string} */
+                scope: "personal" | "family";
+                createdBy: components["schemas"]["NullableId_Output"];
+                /** @enum {string} */
+                kind: "income" | "expense";
+                amountMinor: number;
+                currency: string;
+                accountId: components["schemas"]["NullableId_Output"];
+                categoryId: components["schemas"]["NullableId_Output"];
+                description: string;
+                /** @enum {string} */
+                frequency: "daily" | "weekly" | "monthly" | "yearly";
+                interval: number;
+                startsOn: string;
+                endsOn: components["schemas"]["NullableDate_Output"];
+                timezone: string;
+                nextOccurrence: components["schemas"]["NullableDate_Output"];
+                pausedAt: components["schemas"]["NullableTimestamp_Output"];
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+        };
+        EndsOn: string | null;
+        CreateRuleDto: {
+            /** Format: uuid */
+            workspaceId: string;
+            /** @enum {string} */
+            kind: "income" | "expense";
+            amountMinor: number;
+            currency: string;
+            /** @default null */
+            accountId: string | null;
+            /** @default null */
+            categoryId: string | null;
+            /** @default  */
+            description: string;
+            /** @enum {string} */
+            frequency: "daily" | "weekly" | "monthly" | "yearly";
+            /** @default 1 */
+            interval: number;
+            startsOn: string;
+            /** @default null */
+            endsOn: components["schemas"]["EndsOn"];
+            timezone?: string;
+        };
+        RuleDto_Output: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** @enum {string} */
+            scope: "personal" | "family";
+            createdBy: components["schemas"]["NullableId_Output"];
+            /** @enum {string} */
+            kind: "income" | "expense";
+            amountMinor: number;
+            currency: string;
+            accountId: components["schemas"]["NullableId_Output"];
+            categoryId: components["schemas"]["NullableId_Output"];
+            description: string;
+            /** @enum {string} */
+            frequency: "daily" | "weekly" | "monthly" | "yearly";
+            interval: number;
+            startsOn: string;
+            endsOn: components["schemas"]["NullableDate_Output"];
+            timezone: string;
+            nextOccurrence: components["schemas"]["NullableDate_Output"];
+            pausedAt: components["schemas"]["NullableTimestamp_Output"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UpdateRuleDto: {
+            /** @enum {string} */
+            kind?: "income" | "expense";
+            amountMinor?: number;
+            currency?: string;
+            accountId?: string | null;
+            categoryId?: string | null;
+            description?: string;
+            /** @enum {string} */
+            frequency?: "daily" | "weekly" | "monthly" | "yearly";
+            interval?: number;
+            startsOn?: string;
+            endsOn?: components["schemas"]["EndsOn"];
+            timezone?: string;
+            paused?: boolean;
+        };
+        SummaryDto_Output: {
+            period: {
+                from: string;
+                to: string;
+            };
+            /** @enum {string} */
+            granularity: "day" | "week" | "month";
+            totals: {
+                incomeMinor: number;
+                expenseMinor: number;
+                balanceMinor: number;
+            };
+            unconverted: {
+                currency: string;
+                incomeMinor: number;
+                expenseMinor: number;
+            }[];
+            byCategory: {
+                categoryId: string | null;
+                name: string | null;
+                systemKey: string | null;
+                /** @enum {string} */
+                kind: "income" | "expense";
+                color: string | null;
+                amountMinor: number;
+                share: number;
+            }[];
+            series: {
+                bucket: string;
+                incomeMinor: number;
+                expenseMinor: number;
+            }[];
+            previous?: {
+                period: {
+                    from: string;
+                    to: string;
+                };
+                totals: {
+                    incomeMinor: number;
+                    expenseMinor: number;
+                    balanceMinor: number;
+                };
+                byCategory: {
+                    categoryId: string | null;
+                    name: string | null;
+                    systemKey: string | null;
+                    /** @enum {string} */
+                    kind: "income" | "expense";
+                    color: string | null;
+                    amountMinor: number;
+                    share: number;
+                }[];
+                deltas: {
+                    incomeMinor: number;
+                    expenseMinor: number;
+                    balanceMinor: number;
+                };
+            };
         };
     };
     responses: never;
@@ -1735,9 +1889,12 @@ export interface operations {
             };
         };
     };
-    ImportsController_list: {
+    BudgetsController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                workspaceId?: string;
+                month?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1749,12 +1906,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BatchListDto_Output"];
+                    "application/json": components["schemas"]["BudgetListDto_Output"];
                 };
             };
         };
     };
-    ImportsController_create: {
+    BudgetsController_put: {
         parameters: {
             query?: never;
             header?: never;
@@ -1763,7 +1920,68 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportDto"];
+                "application/json": components["schemas"]["PutBudgetDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetDto_Output"];
+                };
+            };
+        };
+    };
+    BudgetsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RecurringController_list: {
+        parameters: {
+            query?: {
+                workspaceId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleListDto_Output"];
+                };
+            };
+        };
+    };
+    RecurringController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRuleDto"];
             };
         };
         responses: {
@@ -1772,12 +1990,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportResultDto_Output"];
+                    "application/json": components["schemas"]["RuleDto_Output"];
                 };
             };
         };
     };
-    ImportsController_review: {
+    RecurringController_remove: {
         parameters: {
             query?: never;
             header?: never;
@@ -1786,17 +2004,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            200: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["ReviewListDto_Output"];
-                };
+                content?: never;
             };
         };
     };
-    ImportsController_confirm: {
+    RecurringController_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -1805,7 +2021,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ConfirmDto"];
+                "application/json": components["schemas"]["UpdateRuleDto"];
             };
         };
         responses: {
@@ -1814,14 +2030,19 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ConfirmResultDto_Output"];
+                    "application/json": components["schemas"]["RuleDto_Output"];
                 };
             };
         };
     };
-    ImportsController_undo: {
+    AnalyticsController_summary: {
         parameters: {
-            query?: never;
+            query: {
+                from: string;
+                to: string;
+                scope?: string;
+                compare?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1833,7 +2054,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UndoResultDto_Output"];
+                    "application/json": components["schemas"]["SummaryDto_Output"];
                 };
             };
         };

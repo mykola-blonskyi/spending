@@ -71,3 +71,13 @@ export function formatRelativeDay(value: DateInput, locale: string, today: Date 
   }
   return formatDate(date, locale);
 }
+
+/** Today's calendar date (`YYYY-MM-DD`) in the given IANA time zone. */
+export function todayIn(timeZone: string, now: Date = new Date()): string {
+  return dateFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now);
+}

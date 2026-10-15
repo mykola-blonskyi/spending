@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { z } from 'zod';
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { ApiError } from '../common/errors';
-import { BASE_CURRENCY, type CurrencyCode } from '../common/money';
+import { type CurrencyCode } from '../common/money';
 import { DB, type Db, ledgerTransaction, type Tx } from '../database/database.module';
 import { accounts, categories, importBatches, transactions } from '../database/schema';
 import { convert, type RateQuote } from '../ledger/fx/conversion';
@@ -13,7 +13,7 @@ import { AccessPolicy } from '../workspaces/access-policy';
 import { categorize } from './categorize';
 import { learnCategoryRule, loadCatalog } from './category-rules';
 import { importHashes } from './dedupe';
-import { type NormalizedRow, validateRows } from './rows';
+import { validateRows } from './rows';
 import {
   batchColumns,
   type ConfirmItem,
@@ -64,8 +64,12 @@ export class ImportsService {
       const reviewStatus = (await this.policy.familyMembership(actorId, tx))
         ? ('pending_review' as const)
         : ('confirmed' as const);
-      // One rate lookup per distinct (currency, day), not per row: the ledger lock is held.
-      const quotes = new Map<string, RateQuote | null>();
+      // One rate query per currency, not per row: the ledger lock is held.
+      const quotes = new Map<CurrencyCode, Map<string, RateQuote | null>>();
+      for (const currency of new Set(valid.map((row) => row.currency))) {
+        const dates = valid.filter((row) => row.currency === currency).map((row) => row.occurredOn);
+        quotes.set(currency, await this.fx.quotes(tx, currency, dates));
+      }
       const values = [];
       for (const [index, row] of valid.entries()) {
         values.push({
@@ -84,7 +88,11 @@ export class ImportsService {
           source: 'import' as const,
           reviewStatus,
           importBatchId: batch!.id,
-          ...(await this.conversion(tx, quotes, row)),
+          ...convert(
+            row.amountMinor,
+            row.currency,
+            quotes.get(row.currency)?.get(row.occurredOn) ?? null,
+          ),
         });
       }
       const transactionIds: string[] = [];
@@ -288,13 +296,5 @@ export class ImportsService {
       throw new ApiError('INVALID_ACCOUNT');
     }
     return { id: account.id, currency: account.currency as CurrencyCode };
-  }
-
-  /** BR-14. EUR needs no rate; other currencies read the rate inside this transaction. */
-  private async conversion(tx: Tx, quotes: Map<string, RateQuote | null>, row: NormalizedRow) {
-    if (row.currency === BASE_CURRENCY) return convert(row.amountMinor, row.currency, null);
-    const key = `${row.currency}|${row.occurredOn}`;
-    if (!quotes.has(key)) quotes.set(key, await this.fx.quote(tx, row.currency, row.occurredOn));
-    return convert(row.amountMinor, row.currency, quotes.get(key)!);
   }
 }

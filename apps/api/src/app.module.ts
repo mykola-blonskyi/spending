@@ -2,7 +2,9 @@ import { type DynamicModule, Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { AuthModule } from './auth/auth.module';
+import { BudgetsModule } from './budgets/budgets.module';
 import { CsrfGuard, SessionGuard } from './auth/guards';
 import { APP_CONFIG, type AppConfig } from './common/config';
 import { ErrorFilter } from './common/error.filter';
@@ -11,6 +13,7 @@ import { DatabaseModule } from './database/database.module';
 import { HealthController } from './health/health.controller';
 import { ImportsModule } from './imports/imports.module';
 import { LedgerModule } from './ledger/ledger.module';
+import { RecurringModule } from './recurring/recurring.module';
 import { SyncModule } from './sync/sync.module';
 import { UsersModule } from './users/users.module';
 import { WorkspacesModule } from './workspaces/workspaces.module';
@@ -30,6 +33,9 @@ export class AppModule {
         LedgerModule,
         SyncModule,
         ImportsModule,
+        BudgetsModule,
+        RecurringModule,
+        AnalyticsModule,
       ],
       controllers: [HealthController],
       providers: [
