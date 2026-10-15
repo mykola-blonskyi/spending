@@ -16,10 +16,10 @@
     "db:check": "tsx scripts/check-migrations.ts && drizzle-kit check"
   },
   "dependencies": {
-    "@nestjs/common": "^11.2.7",
-    "@nestjs/core": "^11.2.7",
-    "@nestjs/platform-express": "^11.2.7",
-    "@nestjs/swagger": "^11.4.7",
+    "@nestjs/common": "^12.1.3",
+    "@nestjs/core": "^12.1.3",
+    "@nestjs/platform-express": "^12.1.3",
+    "@nestjs/swagger": "^12.0.2",
     "@nestjs/throttler": "^6.7.1",
     "drizzle-orm": "^0.45.4",
     "nestjs-zod": "^5.5.0",
@@ -30,18 +30,18 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@nestjs/cli": "^11.0.24",
-    "@nestjs/testing": "^11.2.7",
+    "@nestjs/cli": "^12.0.8",
+    "@nestjs/testing": "^12.1.3",
     "@swc/core": "^1.16.18",
     "@types/express": "^5.0.6",
-    "@types/node": "^24.19.2",
+    "@types/node": "^26.6.5",
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",
     "drizzle-kit": "^0.31.11",
     "jose": "^6.2.12",
     "supertest": "^7.3.1",
     "tsx": "^4.23.15",
-    "typescript": "~6.0.3",
+    "typescript": "~7.0.2",
     "unplugin-swc": "^2.0.0",
     "vitest": "^5.0.4"
   }
