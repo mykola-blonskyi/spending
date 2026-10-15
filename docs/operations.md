@@ -68,7 +68,7 @@ missing or invalid. `apps/api/.env.example` documents every variable with local 
 | `OIDC_CLIENT_SECRET`     | Its secret (`client_secret_basic`)                                             |
 | `SESSION_ENCRYPTION_KEY` | Base64 of 32 random bytes. Rotating it signs everyone out at the next re-check |
 | `COOKIE_SECURE`          | Default `true`; must be `true` in production                                   |
-| `APP_VERSION`            | Optional build commit shown by `/api/health` (default `unknown`)               |
+| `SOURCE_COMMIT`          | Build commit shown by `/api/health` (default `unknown`); Coolify sets it       |
 
 Register these URIs with the provider: redirect `${APP_ORIGIN}/api/v1/auth/callback` and
 post-logout `${APP_ORIGIN}/signin`.
@@ -134,9 +134,14 @@ migration fails, the deploy fails and the whole site stays down until a later de
 That is deliberate (fail-closed): new code never runs against an old schema, and nothing runs
 without a fresh dump. Fix forward or revert and redeploy (see Rollback).
 
-`SOURCE_COMMIT` is provided by Coolify (the commit it built). Compose passes it to the API as
-`APP_VERSION`, and `/api/health` reports it as `version`, so the Deploy workflow can confirm the
+`SOURCE_COMMIT` is provided by Coolify (the commit it built) through the `.env` it attaches to
+every service, and `/api/health` reports it as `version`, so the Deploy workflow can confirm the
 running build is the commit it verified. Outside Coolify it is `unknown`.
+
+Never reference `${SOURCE_COMMIT}` in `docker-compose.yml`. Coolify turns every variable the file
+mentions into a stored user variable (with the `:-` default as its value), and a stored
+`SOURCE_COMMIT` replaces the real commit on every deploy. If one appears under Environment
+Variables, delete it.
 
 ### Real client IP
 

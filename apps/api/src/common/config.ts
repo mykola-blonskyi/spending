@@ -21,8 +21,8 @@ const configSchema = z
     OIDC_CLIENT_SECRET: z.string().min(1),
     SESSION_ENCRYPTION_KEY: encryptionKey,
     COOKIE_SECURE: booleanFlag.default(true),
-    // Commit of the running build; the deploy check compares it with the dispatched SHA.
-    APP_VERSION: z.string().min(1).default('unknown'),
+    // Commit of the running build, set by Coolify; the deploy check compares it with the SHA.
+    SOURCE_COMMIT: z.string().min(1).default('unknown'),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV !== 'production') return;
@@ -74,7 +74,7 @@ export function parseConfig(env: Record<string, string | undefined>): AppConfig 
     },
     sessionEncryptionKey: data.SESSION_ENCRYPTION_KEY,
     cookieSecure: data.COOKIE_SECURE,
-    version: data.APP_VERSION,
+    version: data.SOURCE_COMMIT,
   };
 }
 

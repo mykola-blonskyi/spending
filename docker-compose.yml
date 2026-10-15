@@ -52,9 +52,9 @@ services:
       OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:?}
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:?}
       SESSION_ENCRYPTION_KEY: ${SESSION_ENCRYPTION_KEY:?}
-      # Coolify sets SOURCE_COMMIT to the commit it built; /api/health reports it so the deploy
-      # workflow can confirm the running build is the one it verified.
-      APP_VERSION: ${SOURCE_COMMIT:-unknown}
+      # No SOURCE_COMMIT here: any ${SOURCE_COMMIT} reference makes Coolify store it as a user
+      # variable, which then replaces the real commit. Coolify's env_file already gives the
+      # container SOURCE_COMMIT, and /api/health reports it for the deploy check.
       NODE_ENV: production
     depends_on:
       migrate:
