@@ -13,7 +13,7 @@ const importBatchExportSchema = z.object({
   importedCount: z.int(),
   duplicateCount: z.int(),
   rejectedCount: z.int(),
-  rejected: z.array(z.object({ row: z.int(), reason: z.string() })),
+  rejected: z.array(z.object({ line: z.int(), reason: z.string() })),
   createdAt: z.iso.datetime(),
   undoneAt: z.iso.datetime().nullable(),
 });

@@ -1248,7 +1248,7 @@ export interface components {
                 duplicateCount: number;
                 rejectedCount: number;
                 rejected: {
-                    row: number;
+                    line: number;
                     reason: string;
                 }[];
                 /** Format: date-time */
