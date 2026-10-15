@@ -23,6 +23,13 @@ async function createAccount(page: Page, name: string) {
   await page.reload();
 }
 
+async function importFile(page: Page, name: string, rows: number) {
+  await page.goto('/imports/new');
+  await page.getByLabel('Statement file').setInputFiles(fixture(name));
+  await page.getByRole('button', { name: new RegExp(`^Import ${rows} rows?$`) }).click();
+  await expect(page.getByRole('heading', { name: 'Import finished' })).toBeVisible();
+}
+
 const stat = (page: Page, label: string) =>
   page
     .locator('dl > div')
@@ -104,7 +111,10 @@ test('a BBVA statement is read as the bank exports it', async ({ page, signInAs 
   await expect(page.getByRole('link', { name: /CAFÉ PEPE/ })).toHaveCount(2);
 });
 
-test('a Santander statement is read with its preset', async ({ page, signInAs }) => {
+test('a Santander statement is read with its preset, and its reference is the dedupe key', async ({
+  page,
+  signInAs,
+}) => {
   await signInAs('ann');
   await createAccount(page, 'Santander');
   await page.goto('/imports/new');
@@ -117,6 +127,10 @@ test('a Santander statement is read with its preset', async ({ page, signInAs })
   await expect(page.getByLabel('Transaction ID')).toHaveText(/Referencia/);
   await page.getByRole('button', { name: 'Import 3 rows' }).click();
   await expect(stat(page, 'Imported')).toHaveText('3');
+
+  await importFile(page, 'santander.csv', 3);
+  await expect(stat(page, 'Imported')).toHaveText('0');
+  await expect(stat(page, 'Already imported')).toHaveText('3');
 });
 
 test('files over the limits are refused before anything is uploaded', async ({
@@ -144,4 +158,21 @@ test('files over the limits are refused before anything is uploaded', async ({
     'This file has more than 5,000 rows. Export a shorter period and try again.',
   );
   await expect(page.getByRole('button', { name: /^Import/ })).toHaveCount(0);
+});
+
+test('importing the same statement again adds nothing', async ({ page, signInAs, db }) => {
+  await signInAs('ann');
+  await createAccount(page, 'BBVA');
+  await importFile(page, 'bbva.csv', 6);
+  await expect(stat(page, 'Imported')).toHaveText('5');
+  await expect(stat(page, 'Already imported')).toHaveText('0');
+
+  await importFile(page, 'bbva.csv', 6);
+  await expect(stat(page, 'Imported')).toHaveText('0');
+  await expect(stat(page, 'Already imported')).toHaveText('5');
+  await expect(stat(page, 'Rejected')).toHaveText('1');
+  await expect(
+    page.getByText('Rows that were imported before, or deleted since, are skipped.'),
+  ).toBeVisible();
+  expect(await db.history(ann.email)).toHaveLength(5);
 });

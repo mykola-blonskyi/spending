@@ -37,7 +37,11 @@ export function ImportSummary({
       </div>
       <dl className="grid grid-cols-3 gap-3">
         <Stat label={t('summary.imported')} value={imported.count} />
-        <Stat label={t('summary.duplicates')} value={duplicates} />
+        <Stat
+          label={t('summary.duplicates')}
+          value={duplicates}
+          hint={duplicates > 0 ? t('summary.duplicatesHint') : undefined}
+        />
         <Stat label={t('summary.rejected')} value={rejected.length} />
       </dl>
 
