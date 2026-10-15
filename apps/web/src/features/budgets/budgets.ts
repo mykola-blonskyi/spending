@@ -1,18 +1,17 @@
 import { keepPreviousData, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import type { components } from '@data/api.gen';
 import { errorCode } from '@data/api-error';
 import { api } from '@data/client';
 import { isSignedOutError, present } from '@data/session';
-import { type Category, useSyncStatus } from '@data/sync';
+import type { Category } from '@data/sync';
 import { useTranslations } from '@i18n/index';
 import type { Month } from './month';
 
 export type Budget = components['schemas']['BudgetDto_Output'];
 export type BudgetInput = components['schemas']['PutBudgetDto'];
 
-const BUDGETS_KEY = ['budgets'];
+export const BUDGETS_KEY = ['budgets'];
 
 export const budgetsQuery = (month: Month) =>
   queryOptions({
@@ -46,19 +45,6 @@ export const useDeleteBudget = () =>
   useBudgetMutation(async (id: string): Promise<void> => {
     await api.DELETE('/api/v1/budgets/{id}', { params: { path: { id } } });
   });
-
-/** Spending reaches the server through sync, so a finished sync may have moved progress. */
-export function useRefreshBudgetsOnSync(): void {
-  const state = useSyncStatus()?.state;
-  const queryClient = useQueryClient();
-  const previous = useRef(state);
-  useEffect(() => {
-    if (state === 'synced' && previous.current !== undefined && previous.current !== 'synced') {
-      void queryClient.invalidateQueries({ queryKey: BUDGETS_KEY });
-    }
-    previous.current = state;
-  }, [state, queryClient]);
-}
 
 /** Expense categories of the workspace that can still get a budget (PUT upserts per category). */
 export function budgetableCategories(
