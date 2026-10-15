@@ -30,7 +30,8 @@ function saveFile(blob: Blob, fileName: string) {
   link.href = url;
   link.download = fileName;
   link.click();
-  URL.revokeObjectURL(url);
+  // Safari cancels the download when the URL is revoked in the same task as the click.
+  setTimeout(() => URL.revokeObjectURL(url));
 }
 
 export function DataRightsSection() {
