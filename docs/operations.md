@@ -272,7 +272,18 @@ action Skip (all remaining custom rules, and Bot Fight Mode / Super Bot Fight Mo
 - Dumps are `pg_dump --format=custom` (gzip-compressed), mode 600, in the `spending-backups`
   volume. The script logs only file names and sizes. The container turns unhealthy when no daily
   dump is younger than 26 hours.
-- The volume is on the VPS disk only. Copy dumps off the host for disaster recovery.
+- Each dump is checked with `pg_restore --list` before it is kept. A corrupt or empty dump is
+  discarded and the run fails: `predeploy-backup` stops the deploy, and for the daily dump the
+  container turns unhealthy once the last good one is older than 26 hours.
+- The volume is on the VPS disk only unless the optional off-host copy is configured. When
+  `BACKUP_OFFSITE_REMOTE` is set on the Coolify resource, the `backup` container also copies each
+  daily dump there with rclone, and a failed copy fails the run (logged, retried next day). Owner
+  steps: create a private S3-compatible bucket (Backblaze B2, Cloudflare R2, ...) with a
+  lifecycle rule that expires objects after about 30 days, create a key restricted to that
+  bucket, then set `BACKUP_OFFSITE_REMOTE=:s3:<bucket>/spending`, `RCLONE_S3_PROVIDER`,
+  `RCLONE_S3_ENDPOINT`, `RCLONE_S3_REGION` (if the provider needs it), `RCLONE_S3_ACCESS_KEY_ID`
+  and `RCLONE_S3_SECRET_ACCESS_KEY`. Nothing is printed except file names. Off-host dumps are
+  restored by downloading the file and following the restore steps below.
 
 Restore into a scratch database first, verify, then swap. On the VPS (`ssh blonskyi`); the
 backup container name comes from `docker ps --format '{{.Names}}' | grep '^backup-'`:
