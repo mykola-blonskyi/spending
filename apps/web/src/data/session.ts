@@ -9,7 +9,7 @@ export type Profile = components['schemas']['ProfileDto_Output'];
 export type ProfilePatch = components['schemas']['UpdateProfileDto'];
 export type Session = components['schemas']['SessionDto_Output'];
 
-function present<T>(data: T | undefined): T {
+export function present<T>(data: T | undefined): T {
   if (data === undefined) {
     throw new ApiError({ status: 0, code: 'INTERNAL', message: 'Empty response' });
   }

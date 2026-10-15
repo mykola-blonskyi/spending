@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@data/api-error';
 import { createQueryClient } from '@data/query-client';
 import { logout } from '@data/session';
+import { countUnsentMutations } from '@data/sync';
 import { testSession } from '@data/testing';
 import { I18nProvider } from '@i18n/index';
 import { loadPage } from '@shared/lib/navigation';
@@ -18,6 +19,10 @@ vi.mock(import('@data/session'), async (importOriginal) => ({
   ...(await importOriginal()),
   logout: vi.fn(),
 }));
+vi.mock(import('@data/sync'), async (importOriginal) => ({
+  ...(await importOriginal()),
+  countUnsentMutations: vi.fn(),
+}));
 
 function SignOutButton() {
   const signOut = useSignOut();
@@ -26,6 +31,7 @@ function SignOutButton() {
       <button disabled={signOut.busy} onClick={signOut.request}>
         Sign out
       </button>
+      {signOut.dialog}
     </>
   );
 }
@@ -49,6 +55,7 @@ function renderButton() {
 beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
+  vi.mocked(countUnsentMutations).mockReturnValue(0);
 });
 
 describe('useSignOut', () => {
@@ -91,5 +98,41 @@ describe('useSignOut', () => {
     );
     expect(loadPage).not.toHaveBeenCalled();
     expect(localStorage.length).toBe(1);
+  });
+
+  it('asks first when changes on this device have not reached the server', async () => {
+    vi.mocked(countUnsentMutations).mockReturnValue(2);
+    vi.mocked(logout).mockResolvedValue({ endSessionUrl: null });
+    renderButton();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    expect(await screen.findByRole('alertdialog')).toHaveTextContent(
+      'Sign out with unsynced changes?',
+    );
+    expect(countUnsentMutations).toHaveBeenCalledWith(testSession().user.id);
+    expect(logout).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Sign out anyway' }));
+    await waitFor(() => expect(loadPage).toHaveBeenCalledWith('/signin'));
+  });
+
+  it('asks first when the local store is not open to count unsent changes', async () => {
+    vi.mocked(countUnsentMutations).mockReturnValue(null);
+    renderButton();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    expect(await screen.findByRole('alertdialog')).toBeInTheDocument();
+    expect(logout).not.toHaveBeenCalled();
+  });
+
+  it('asks first when the local store cannot tell whether changes are unsent', async () => {
+    vi.mocked(countUnsentMutations).mockImplementation(() => {
+      throw new Error('IndexedDB unavailable');
+    });
+    renderButton();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    expect(await screen.findByRole('alertdialog')).toBeInTheDocument();
+    expect(logout).not.toHaveBeenCalled();
   });
 });
