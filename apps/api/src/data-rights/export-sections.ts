@@ -5,6 +5,7 @@ import type { ExportScope } from './export-section';
 import { importBatchesExport, categoryRulesExport } from '../imports/export-section';
 import { accountsExport, categoriesExport, transactionsExport } from '../ledger/export-section';
 import { recurringRulesExport } from '../recurring/export-section';
+import { conflictsExport } from '../sync/export-section';
 import { profileExport } from '../users/export-section';
 import { workspacesExport } from '../workspaces/export-section';
 
@@ -22,6 +23,7 @@ export const EXPORT_SECTIONS = {
   recurringRules: recurringRulesExport,
   importBatches: importBatchesExport,
   categoryRules: categoryRulesExport,
+  conflicts: conflictsExport,
 };
 
 type Sections = typeof EXPORT_SECTIONS;

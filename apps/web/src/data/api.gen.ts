@@ -4,2610 +4,2600 @@
  */
 
 export interface paths {
-  '/api/health': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["HealthController_live"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['HealthController_live'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/health/ready': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/health/ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["HealthController_ready"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['HealthController_ready'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/login': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AuthController_login"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['AuthController_login'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/callback': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/auth/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AuthController_callback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['AuthController_callback'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/session': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/auth/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AuthController_session"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['AuthController_session'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/logout': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post: operations['AuthController_logout'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/me': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MeController_get"];
+        put?: never;
+        post?: never;
+        delete: operations["DataRightsController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["MeController_update"];
+        trace?: never;
     };
-    get: operations['MeController_get'];
-    put?: never;
-    post?: never;
-    delete: operations['DataRightsController_remove'];
-    options?: never;
-    head?: never;
-    patch: operations['MeController_update'];
-    trace?: never;
-  };
-  '/api/v1/workspaces': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/workspaces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WorkspacesController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['WorkspacesController_list'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/family': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/family": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["WorkspacesController_create"];
+        delete: operations["WorkspacesController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["WorkspacesController_rename"];
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post: operations['WorkspacesController_create'];
-    delete: operations['WorkspacesController_remove'];
-    options?: never;
-    head?: never;
-    patch: operations['WorkspacesController_rename'];
-    trace?: never;
-  };
-  '/api/v1/family/invitations': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/family/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WorkspacesController_invitations"];
+        put?: never;
+        post: operations["WorkspacesController_invite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['WorkspacesController_invitations'];
-    put?: never;
-    post: operations['WorkspacesController_invite'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/family/invitations/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/family/invitations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["WorkspacesController_revoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post?: never;
-    delete: operations['WorkspacesController_revoke'];
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/family/leave': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/family/leave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["WorkspacesController_leave"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post: operations['WorkspacesController_leave'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/family/members/{userId}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/family/members/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["WorkspacesController_removeMember"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post?: never;
-    delete: operations['WorkspacesController_removeMember'];
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/family/transfer': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/family/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["WorkspacesController_transfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post: operations['WorkspacesController_transfer'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/family/events': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/family/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WorkspacesController_events"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['WorkspacesController_events'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/invitations/{token}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/invitations/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WorkspacesController_preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['WorkspacesController_preview'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/invitations/{token}/accept': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/invitations/{token}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["WorkspacesController_accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post: operations['WorkspacesController_accept'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/accounts': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LedgerController_accounts"];
+        put?: never;
+        post: operations["LedgerController_createAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['LedgerController_accounts'];
-    put?: never;
-    post: operations['LedgerController_createAccount'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/accounts/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/accounts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["LedgerController_updateAccount"];
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch: operations['LedgerController_updateAccount'];
-    trace?: never;
-  };
-  '/api/v1/categories': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LedgerController_categories"];
+        put?: never;
+        post: operations["LedgerController_createCategory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['LedgerController_categories'];
-    put?: never;
-    post: operations['LedgerController_createCategory'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/categories/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["LedgerController_updateCategory"];
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch: operations['LedgerController_updateCategory'];
-    trace?: never;
-  };
-  '/api/v1/transactions': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LedgerController_transactions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['LedgerController_transactions'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/sync/push': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/sync/push": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SyncController_push"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post: operations['SyncController_push'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/sync/pull': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/sync/pull": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SyncController_pull"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['SyncController_pull'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/sync/conflicts': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/sync/conflicts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SyncController_conflicts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['SyncController_conflicts'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/sync/conflicts/{id}/resolve': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/sync/conflicts/{id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SyncController_resolve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post: operations['SyncController_resolve'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/me/export': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/me/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DataRightsController_export"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['DataRightsController_export'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/imports': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ImportsController_list"];
+        put?: never;
+        post: operations["ImportsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['ImportsController_list'];
-    put?: never;
-    post: operations['ImportsController_create'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/imports/review': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/imports/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ImportsController_review"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['ImportsController_review'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/imports/review/confirm': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/imports/review/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ImportsController_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post: operations['ImportsController_confirm'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/imports/{id}/undo': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/imports/{id}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ImportsController_undo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post: operations['ImportsController_undo'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/budgets': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/budgets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["BudgetsController_list"];
+        put: operations["BudgetsController_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['BudgetsController_list'];
-    put: operations['BudgetsController_put'];
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/budgets/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/budgets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["BudgetsController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post?: never;
-    delete: operations['BudgetsController_remove'];
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/recurring-rules': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/recurring-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RecurringController_list"];
+        put?: never;
+        post: operations["RecurringController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['RecurringController_list'];
-    put?: never;
-    post: operations['RecurringController_create'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/recurring-rules/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/recurring-rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["RecurringController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["RecurringController_update"];
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post?: never;
-    delete: operations['RecurringController_remove'];
-    options?: never;
-    head?: never;
-    patch: operations['RecurringController_update'];
-    trace?: never;
-  };
-  '/api/v1/analytics/summary': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/analytics/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AnalyticsController_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations['AnalyticsController_summary'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    HealthDto_Output: {
-      /** @constant */
-      status: 'ok';
-      version: string;
-    };
-    AvatarUrl_Output: string | null;
-    SessionDto_Output: {
-      user: {
-        /** Format: uuid */
-        id: string;
-        email: string;
-        displayName: string;
-        avatarUrl: components['schemas']['AvatarUrl_Output'];
-        /** @enum {string} */
-        locale: 'en' | 'uk' | 'ru' | 'es';
-        /** @enum {string} */
-        theme: 'light' | 'dark' | 'system';
-        /** @enum {string} */
-        layout: 'calm' | 'cards' | 'soft' | 'journal' | 'bento' | 'split' | 'playful' | 'hybrid';
-        /** @enum {string} */
-        palette: 'emerald' | 'rose' | 'ocean' | 'sand' | 'graphite';
-        timezone: string;
-      };
-      csrfToken: string;
-    };
-    EndSessionUrl_Output: string | null;
-    LogoutDto_Output: {
-      endSessionUrl: components['schemas']['EndSessionUrl_Output'];
-    };
-    ProfileDto_Output: {
-      /** Format: uuid */
-      id: string;
-      email: string;
-      displayName: string;
-      avatarUrl: components['schemas']['AvatarUrl_Output'];
-      /** @enum {string} */
-      locale: 'en' | 'uk' | 'ru' | 'es';
-      /** @enum {string} */
-      theme: 'light' | 'dark' | 'system';
-      /** @enum {string} */
-      layout: 'calm' | 'cards' | 'soft' | 'journal' | 'bento' | 'split' | 'playful' | 'hybrid';
-      /** @enum {string} */
-      palette: 'emerald' | 'rose' | 'ocean' | 'sand' | 'graphite';
-      timezone: string;
-    };
-    UpdateProfileDto: {
-      displayName?: string;
-      /** @enum {string} */
-      locale?: 'en' | 'uk' | 'ru' | 'es';
-      /** @enum {string} */
-      theme?: 'light' | 'dark' | 'system';
-      /** @enum {string} */
-      layout?: 'calm' | 'cards' | 'soft' | 'journal' | 'bento' | 'split' | 'playful' | 'hybrid';
-      /** @enum {string} */
-      palette?: 'emerald' | 'rose' | 'ocean' | 'sand' | 'graphite';
-      timezone?: string;
-    };
-    WorkspaceListDto_Output: {
-      workspaces: {
-        /** Format: uuid */
-        id: string;
-        /** @enum {string} */
-        kind: 'personal' | 'family';
-        name: string;
-        /** @enum {string} */
-        role: 'owner' | 'member';
-        members: {
-          /** Format: uuid */
-          userId: string;
-          displayName: string;
-          avatarUrl: string | null;
-          /** @enum {string} */
-          role: 'owner' | 'member';
-          /** Format: date-time */
-          joinedAt: string;
-        }[];
-      }[];
-    };
-    FamilyNameDto: {
-      name: string;
-    };
-    WorkspaceDto_Output: {
-      /** Format: uuid */
-      id: string;
-      /** @enum {string} */
-      kind: 'personal' | 'family';
-      name: string;
-      /** @enum {string} */
-      role: 'owner' | 'member';
-      members: {
-        /** Format: uuid */
-        userId: string;
-        displayName: string;
-        avatarUrl: string | null;
-        /** @enum {string} */
-        role: 'owner' | 'member';
-        /** Format: date-time */
-        joinedAt: string;
-      }[];
-    };
-    DeleteFamilyDto: {
-      confirmName: string;
-    };
-    CreateInvitationDto: {
-      /** @default 7 */
-      expiresInDays: number;
-    };
-    CreatedInvitationDto_Output: {
-      /** Format: uuid */
-      id: string;
-      url: string;
-      /** Format: date-time */
-      expiresAt: string;
-    };
-    InvitationListDto_Output: {
-      invitations: {
-        /** Format: uuid */
-        id: string;
-        /** @enum {string} */
-        state: 'pending' | 'accepted' | 'revoked' | 'expired';
-        /** Format: date-time */
-        createdAt: string;
-        /** Format: date-time */
-        expiresAt: string;
-        acceptedAt: string | null;
-        revokedAt: string | null;
-        acceptedBy: {
-          /** Format: uuid */
-          userId: string;
-          displayName: string;
-        } | null;
-      }[];
-    };
-    TransferDto: {
-      /** Format: uuid */
-      userId: string;
-    };
-    EventListDto_Output: {
-      events: {
-        /** Format: uuid */
-        id: string;
-        /** @enum {string} */
-        type:
-          | 'family_created'
-          | 'renamed'
-          | 'invitation_created'
-          | 'invitation_revoked'
-          | 'member_joined'
-          | 'member_left'
-          | 'member_removed'
-          | 'ownership_transferred';
-        actor: {
-          /** Format: uuid */
-          userId: string;
-          displayName: string;
-        } | null;
-        subject: {
-          /** Format: uuid */
-          userId: string;
-          displayName: string;
-        } | null;
-        /** Format: date-time */
-        createdAt: string;
-      }[];
-    };
-    InvitationPreviewDto_Output: {
-      familyName: string;
-      ownerName: string;
-      /** Format: date-time */
-      expiresAt: string;
-      /** @enum {string} */
-      state: 'pending' | 'accepted' | 'revoked' | 'expired';
-    };
-    ArchivedAt_Output: string | null;
-    AccountListDto_Output: {
-      accounts: {
-        /** Format: uuid */
-        id: string;
-        /** Format: uuid */
-        workspaceId: string;
-        name: string;
-        /** @enum {string} */
-        kind: 'cash' | 'bank' | 'card' | 'savings' | 'other';
-        currency: string;
-        archivedAt: components['schemas']['ArchivedAt_Output'];
-        revision: number;
-        /** Format: date-time */
-        createdAt: string;
-        /** Format: date-time */
-        updatedAt: string;
-      }[];
-    };
-    CreateAccountDto: {
-      /** Format: uuid */
-      workspaceId: string;
-      name: string;
-      /** @enum {string} */
-      kind: 'cash' | 'bank' | 'card' | 'savings' | 'other';
-      currency: string;
-    };
-    AccountDto_Output: {
-      /** Format: uuid */
-      id: string;
-      /** Format: uuid */
-      workspaceId: string;
-      name: string;
-      /** @enum {string} */
-      kind: 'cash' | 'bank' | 'card' | 'savings' | 'other';
-      currency: string;
-      archivedAt: components['schemas']['ArchivedAt_Output'];
-      revision: number;
-      /** Format: date-time */
-      createdAt: string;
-      /** Format: date-time */
-      updatedAt: string;
-    };
-    UpdateAccountDto: {
-      name?: string;
-      /** @enum {string} */
-      kind?: 'cash' | 'bank' | 'card' | 'savings' | 'other';
-      archived?: boolean;
-    };
-    SystemKey_Output: string | null;
-    CategoryListDto_Output: {
-      categories: {
-        /** Format: uuid */
-        id: string;
-        /** Format: uuid */
-        workspaceId: string;
-        name: string;
-        /** @enum {string} */
-        kind: 'income' | 'expense';
-        color: string;
-        icon: string;
-        systemKey: components['schemas']['SystemKey_Output'];
-        archivedAt: components['schemas']['ArchivedAt_Output'];
-        revision: number;
-        /** Format: date-time */
-        createdAt: string;
-        /** Format: date-time */
-        updatedAt: string;
-      }[];
-    };
-    CreateCategoryDto: {
-      /** Format: uuid */
-      workspaceId: string;
-      name: string;
-      /** @enum {string} */
-      kind: 'income' | 'expense';
-      color: string;
-      icon: string;
-    };
-    CategoryDto_Output: {
-      /** Format: uuid */
-      id: string;
-      /** Format: uuid */
-      workspaceId: string;
-      name: string;
-      /** @enum {string} */
-      kind: 'income' | 'expense';
-      color: string;
-      icon: string;
-      systemKey: components['schemas']['SystemKey_Output'];
-      archivedAt: components['schemas']['ArchivedAt_Output'];
-      revision: number;
-      /** Format: date-time */
-      createdAt: string;
-      /** Format: date-time */
-      updatedAt: string;
-    };
-    UpdateCategoryDto: {
-      name?: string;
-      color?: string;
-      icon?: string;
-      archived?: boolean;
-    };
-    TransactionView_Output: {
-      /** Format: uuid */
-      id: string;
-      /** Format: uuid */
-      workspaceId: string;
-      /** @enum {string} */
-      scope: 'personal' | 'family';
-      /** @enum {string} */
-      kind: 'income' | 'expense';
-      amountMinor: number;
-      currency: string;
-      baseAmountMinor: number | null;
-      fx: {
-        rate: string;
-        rateDate: string;
-        source: string;
-      } | null;
-      occurredOn: string;
-      accountId: string | null;
-      categoryId: string | null;
-      description: string;
-      note: string;
-      /** @enum {string} */
-      source: 'manual' | 'import' | 'recurring';
-      /** @enum {string} */
-      reviewStatus: 'confirmed' | 'pending_review';
-      importBatchId: string | null;
-      author: {
-        userId: string | null;
-        displayName: string | null;
-      };
-      version: number;
-      revision: number;
-      /** Format: date-time */
-      createdAt: string;
-      /** Format: date-time */
-      updatedAt: string;
-    };
-    NextCursor_Output: string | null;
-    TransactionPageDto_Output: {
-      transactions: components['schemas']['TransactionView_Output'][];
-      nextCursor: components['schemas']['NextCursor_Output'];
-    };
-    PushDto: {
-      mutations: (
-        | {
-            /** Format: uuid */
-            mutationId: string;
+    schemas: {
+        HealthDto_Output: {
             /** @constant */
-            type: 'transaction.upsert';
-            baseVersion: number | null;
-            transaction: {
-              /** Format: uuid */
-              id: string;
-              /** Format: uuid */
-              workspaceId: string;
-              /** @enum {string} */
-              kind: 'income' | 'expense';
-              amountMinor: number;
-              currency: string;
-              occurredOn: string;
-              accountId: string | null;
-              categoryId: string | null;
-              description: string;
-              note: string;
-            };
-          }
-        | {
-            /** Format: uuid */
-            mutationId: string;
-            /** @constant */
-            type: 'transaction.delete';
-            /** Format: uuid */
-            transactionId: string;
-            baseVersion: number;
-          }
-      )[];
-    };
-    Tombstone_Output: {
-      /** Format: uuid */
-      id: string;
-      /** Format: uuid */
-      workspaceId: string;
-      /** Format: date-time */
-      deletedAt: string;
-      revision: number;
-    };
-    PushResponseDto_Output: {
-      results: (
-        | {
-            /** Format: uuid */
-            mutationId: string;
-            /** @constant */
-            status: 'applied';
-            transaction:
-              | components['schemas']['TransactionView_Output']
-              | components['schemas']['Tombstone_Output'];
-          }
-        | {
-            /** Format: uuid */
-            mutationId: string;
-            /** @constant */
-            status: 'conflict';
-            /** Format: uuid */
-            conflictId: string;
-            transaction:
-              | components['schemas']['TransactionView_Output']
-              | components['schemas']['Tombstone_Output'];
-          }
-        | {
-            /** Format: uuid */
-            mutationId: string;
-            /** @constant */
-            status: 'rejected';
-            code: string;
-            message: string;
-          }
-      )[];
-    };
-    PullResponseDto_Output: {
-      workspaces: {
-        /** Format: uuid */
-        id: string;
-        /** @enum {string} */
-        kind: 'personal' | 'family';
-        name: string;
-        /** @enum {string} */
-        role: 'owner' | 'member';
-      }[];
-      accounts: {
-        /** Format: uuid */
-        id: string;
-        /** Format: uuid */
-        workspaceId: string;
-        name: string;
-        /** @enum {string} */
-        kind: 'cash' | 'bank' | 'card' | 'savings' | 'other';
-        currency: string;
-        archivedAt: components['schemas']['ArchivedAt_Output'];
-        revision: number;
-        /** Format: date-time */
-        createdAt: string;
-        /** Format: date-time */
-        updatedAt: string;
-      }[];
-      categories: {
-        /** Format: uuid */
-        id: string;
-        /** Format: uuid */
-        workspaceId: string;
-        name: string;
-        /** @enum {string} */
-        kind: 'income' | 'expense';
-        color: string;
-        icon: string;
-        systemKey: components['schemas']['SystemKey_Output'];
-        archivedAt: components['schemas']['ArchivedAt_Output'];
-        revision: number;
-        /** Format: date-time */
-        createdAt: string;
-        /** Format: date-time */
-        updatedAt: string;
-      }[];
-      transactions: (
-        components['schemas']['TransactionView_Output'] | components['schemas']['Tombstone_Output']
-      )[];
-      conflicts: {
-        /** Format: uuid */
-        id: string;
-        /** Format: uuid */
-        transactionId: string;
-        baseVersion: number;
-        serverVersion: number;
-        local:
-          | {
-              /** Format: uuid */
-              id: string;
-              /** Format: uuid */
-              workspaceId: string;
-              /** @enum {string} */
-              kind: 'income' | 'expense';
-              amountMinor: number;
-              currency: string;
-              occurredOn: string;
-              accountId: string | null;
-              categoryId: string | null;
-              description: string;
-              note: string;
-            }
-          | {
-              /** @constant */
-              deleted: true;
-            };
-        server:
-          | components['schemas']['TransactionView_Output']
-          | components['schemas']['Tombstone_Output'];
-        /** Format: date-time */
-        createdAt: string;
-      }[];
-      cursor: number;
-      hasMore: boolean;
-    };
-    ConflictListDto_Output: {
-      conflicts: {
-        /** Format: uuid */
-        id: string;
-        /** Format: uuid */
-        transactionId: string;
-        baseVersion: number;
-        serverVersion: number;
-        local:
-          | {
-              /** Format: uuid */
-              id: string;
-              /** Format: uuid */
-              workspaceId: string;
-              /** @enum {string} */
-              kind: 'income' | 'expense';
-              amountMinor: number;
-              currency: string;
-              occurredOn: string;
-              accountId: string | null;
-              categoryId: string | null;
-              description: string;
-              note: string;
-            }
-          | {
-              /** @constant */
-              deleted: true;
-            };
-        server:
-          | components['schemas']['TransactionView_Output']
-          | components['schemas']['Tombstone_Output'];
-        /** Format: date-time */
-        createdAt: string;
-      }[];
-    };
-    ResolveDto: {
-      /** @enum {string} */
-      resolution: 'server' | 'local' | 'merged';
-      transaction?: {
-        /** Format: uuid */
-        id: string;
-        /** Format: uuid */
-        workspaceId: string;
-        /** @enum {string} */
-        kind: 'income' | 'expense';
-        amountMinor: number;
-        currency: string;
-        occurredOn: string;
-        accountId: string | null;
-        categoryId: string | null;
-        description: string;
-        note: string;
-      };
-    };
-    ResolveResponseDto_Output: {
-      /** Format: uuid */
-      id: string;
-      /** @constant */
-      status: 'resolved';
-      /** @enum {string} */
-      resolution: 'server' | 'local' | 'merged';
-      /** Format: date-time */
-      resolvedAt: string;
-      transaction:
-        components['schemas']['TransactionView_Output'] | components['schemas']['Tombstone_Output'];
-    };
-    AvatarUrl: string | null;
-    ArchivedAt: string | null;
-    SystemKey: string | null;
-    TransactionView: {
-      /** Format: uuid */
-      id: string;
-      /** Format: uuid */
-      workspaceId: string;
-      /** @enum {string} */
-      scope: 'personal' | 'family';
-      /** @enum {string} */
-      kind: 'income' | 'expense';
-      amountMinor: number;
-      currency: string;
-      baseAmountMinor: number | null;
-      fx: {
-        rate: string;
-        rateDate: string;
-        source: string;
-      } | null;
-      occurredOn: string;
-      accountId: string | null;
-      categoryId: string | null;
-      description: string;
-      note: string;
-      /** @enum {string} */
-      source: 'manual' | 'import' | 'recurring';
-      /** @enum {string} */
-      reviewStatus: 'confirmed' | 'pending_review';
-      importBatchId: string | null;
-      author: {
-        userId: string | null;
-        displayName: string | null;
-      };
-      version: number;
-      revision: number;
-      /** Format: date-time */
-      createdAt: string;
-      /** Format: date-time */
-      updatedAt: string;
-    };
-    DataExportDto: {
-      /** Format: date-time */
-      exportedAt: string;
-      user: {
-        /** Format: uuid */
-        id: string;
-        email: string;
-        displayName: string;
-        avatarUrl: components['schemas']['AvatarUrl'];
-        /** @enum {string} */
-        locale: 'en' | 'uk' | 'ru' | 'es';
-        /** @enum {string} */
-        theme: 'light' | 'dark' | 'system';
-        /** @enum {string} */
-        layout: 'calm' | 'cards' | 'soft' | 'journal' | 'bento' | 'split' | 'playful' | 'hybrid';
-        /** @enum {string} */
-        palette: 'emerald' | 'rose' | 'ocean' | 'sand' | 'graphite';
-        timezone: string;
-      };
-      workspaces: {
-        /** Format: uuid */
-        id: string;
-        /** @enum {string} */
-        kind: 'personal' | 'family';
-        name: string;
-        /** @enum {string} */
-        role: 'owner' | 'member';
-        members: {
-          /** Format: uuid */
-          userId: string;
-          displayName: string;
-          avatarUrl: string | null;
-          /** @enum {string} */
-          role: 'owner' | 'member';
-          /** Format: date-time */
-          joinedAt: string;
-        }[];
-      }[];
-      accounts: {
-        /** Format: uuid */
-        id: string;
-        /** Format: uuid */
-        workspaceId: string;
-        name: string;
-        /** @enum {string} */
-        kind: 'cash' | 'bank' | 'card' | 'savings' | 'other';
-        currency: string;
-        archivedAt: components['schemas']['ArchivedAt'];
-        revision: number;
-        /** Format: date-time */
-        createdAt: string;
-        /** Format: date-time */
-        updatedAt: string;
-      }[];
-      categories: {
-        /** Format: uuid */
-        id: string;
-        /** Format: uuid */
-        workspaceId: string;
-        name: string;
-        /** @enum {string} */
-        kind: 'income' | 'expense';
-        color: string;
-        icon: string;
-        systemKey: components['schemas']['SystemKey'];
-        archivedAt: components['schemas']['ArchivedAt'];
-        revision: number;
-        /** Format: date-time */
-        createdAt: string;
-        /** Format: date-time */
-        updatedAt: string;
-      }[];
-      transactions: components['schemas']['TransactionView'][];
-      budgets: {
-        /** Format: uuid */
-        id: string;
-        /** Format: uuid */
-        workspaceId: string;
-        /** Format: uuid */
-        categoryId: string;
-        amountMinor: number;
-        /** Format: date-time */
-        createdAt: string;
-        /** Format: date-time */
-        updatedAt: string;
-      }[];
-      recurringRules: {
-        /** Format: uuid */
-        id: string;
-        /** Format: uuid */
-        workspaceId: string;
-        createdBy: string | null;
-        /** @enum {string} */
-        kind: 'income' | 'expense';
-        amountMinor: number;
-        currency: string;
-        accountId: string | null;
-        categoryId: string | null;
-        description: string;
-        /** @enum {string} */
-        frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
-        interval: number;
-        startsOn: string;
-        endsOn: string | null;
-        timezone: string;
-        nextOccurrence: string | null;
-        pausedAt: string | null;
-        /** Format: date-time */
-        createdAt: string;
-        /** Format: date-time */
-        updatedAt: string;
-      }[];
-      importBatches: {
-        /** Format: uuid */
-        id: string;
-        /** Format: uuid */
-        workspaceId: string;
-        accountId: string | null;
-        fileName: string;
-        mapping: unknown;
-        rowCount: number;
-        importedCount: number;
-        duplicateCount: number;
-        rejectedCount: number;
-        rejected: {
-          line: number;
-          reason: string;
-        }[];
-        /** Format: date-time */
-        createdAt: string;
-        undoneAt: string | null;
-      }[];
-      categoryRules: {
-        /** Format: uuid */
-        workspaceId: string;
-        merchantKey: string;
-        /** Format: uuid */
-        categoryId: string;
-        /** Format: date-time */
-        updatedAt: string;
-      }[];
-    };
-    DeleteUserDto: {
-      confirmation: string;
-    };
-    ImportDto: {
-      /** Format: uuid */
-      accountId: string;
-      fileName: string;
-      mapping: {
-        [key: string]: unknown;
-      };
-      rows: {
-        line: number;
-        occurredOn: string;
-        amountMinor: number;
-        currency?: string;
-        description: string;
-        externalId?: string;
-      }[];
-    };
-    ImportBatchView_Output: {
-      /** Format: uuid */
-      id: string;
-      accountId: string | null;
-      fileName: string;
-      rowCount: number;
-      importedCount: number;
-      duplicateCount: number;
-      rejectedCount: number;
-      /** Format: date-time */
-      createdAt: string;
-      undoneAt: string | null;
-    };
-    ImportResultDto_Output: {
-      batch: components['schemas']['ImportBatchView_Output'];
-      imported: {
-        count: number;
-        transactionIds: string[];
-      };
-      duplicates: number;
-      rejected: {
-        line: number;
-        /** @enum {string} */
-        reason:
-          | 'INVALID_DATE'
-          | 'INVALID_AMOUNT'
-          | 'INVALID_CURRENCY'
-          | 'DESCRIPTION_TOO_LONG'
-          | 'EXTERNAL_ID_TOO_LONG'
-          | 'DUPLICATE_IN_FILE_EXTERNAL_ID';
-      }[];
-    };
-    BatchListDto_Output: {
-      batches: components['schemas']['ImportBatchView_Output'][];
-    };
-    ReviewListDto_Output: {
-      items: {
-        transaction: components['schemas']['TransactionView_Output'];
-        familyCategoryId: string | null;
-      }[];
-    };
-    ConfirmDto: {
-      items: {
-        /** Format: uuid */
-        transactionId: string;
-        /** @enum {string} */
-        scope: 'personal' | 'family';
-        categoryId: string | null;
-      }[];
-    };
-    ConfirmResultDto_Output: {
-      transactions: components['schemas']['TransactionView_Output'][];
-    };
-    UndoResultDto_Output: {
-      batch: components['schemas']['ImportBatchView_Output'];
-      deleted: number;
-      kept: number;
-    };
-    BudgetListDto_Output: {
-      budgets: {
-        /** Format: uuid */
-        id: string;
-        /** Format: uuid */
-        workspaceId: string;
-        /** @enum {string} */
-        scope: 'personal' | 'family';
-        /** Format: uuid */
-        categoryId: string;
-        amountMinor: number;
-        month: string;
-        spentMinor: number;
-        unconverted: {
-          currency: string;
-          amountMinor: number;
-        }[];
-        /** @enum {string} */
-        status: 'ok' | 'near' | 'over';
-      }[];
-    };
-    PutBudgetDto: {
-      /** Format: uuid */
-      workspaceId: string;
-      /** Format: uuid */
-      categoryId: string;
-      amountMinor: number;
-    };
-    BudgetDto_Output: {
-      /** Format: uuid */
-      id: string;
-      /** Format: uuid */
-      workspaceId: string;
-      /** @enum {string} */
-      scope: 'personal' | 'family';
-      /** Format: uuid */
-      categoryId: string;
-      amountMinor: number;
-      month: string;
-      spentMinor: number;
-      unconverted: {
-        currency: string;
-        amountMinor: number;
-      }[];
-      /** @enum {string} */
-      status: 'ok' | 'near' | 'over';
-    };
-    NullableId_Output: string | null;
-    NullableDate_Output: string | null;
-    NullableTimestamp_Output: string | null;
-    RuleListDto_Output: {
-      rules: {
-        /** Format: uuid */
-        id: string;
-        /** Format: uuid */
-        workspaceId: string;
-        /** @enum {string} */
-        scope: 'personal' | 'family';
-        createdBy: components['schemas']['NullableId_Output'];
-        /** @enum {string} */
-        kind: 'income' | 'expense';
-        amountMinor: number;
-        currency: string;
-        accountId: components['schemas']['NullableId_Output'];
-        categoryId: components['schemas']['NullableId_Output'];
-        description: string;
-        /** @enum {string} */
-        frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
-        interval: number;
-        startsOn: string;
-        endsOn: components['schemas']['NullableDate_Output'];
-        timezone: string;
-        nextOccurrence: components['schemas']['NullableDate_Output'];
-        pausedAt: components['schemas']['NullableTimestamp_Output'];
-        /** Format: date-time */
-        createdAt: string;
-        /** Format: date-time */
-        updatedAt: string;
-      }[];
-    };
-    EndsOn: string | null;
-    CreateRuleDto: {
-      /** Format: uuid */
-      workspaceId: string;
-      /** @enum {string} */
-      kind: 'income' | 'expense';
-      amountMinor: number;
-      currency: string;
-      /** @default null */
-      accountId: string | null;
-      /** @default null */
-      categoryId: string | null;
-      /** @default  */
-      description: string;
-      /** @enum {string} */
-      frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
-      /** @default 1 */
-      interval: number;
-      startsOn: string;
-      /** @default null */
-      endsOn: components['schemas']['EndsOn'];
-      timezone?: string;
-    };
-    RuleDto_Output: {
-      /** Format: uuid */
-      id: string;
-      /** Format: uuid */
-      workspaceId: string;
-      /** @enum {string} */
-      scope: 'personal' | 'family';
-      createdBy: components['schemas']['NullableId_Output'];
-      /** @enum {string} */
-      kind: 'income' | 'expense';
-      amountMinor: number;
-      currency: string;
-      accountId: components['schemas']['NullableId_Output'];
-      categoryId: components['schemas']['NullableId_Output'];
-      description: string;
-      /** @enum {string} */
-      frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
-      interval: number;
-      startsOn: string;
-      endsOn: components['schemas']['NullableDate_Output'];
-      timezone: string;
-      nextOccurrence: components['schemas']['NullableDate_Output'];
-      pausedAt: components['schemas']['NullableTimestamp_Output'];
-      /** Format: date-time */
-      createdAt: string;
-      /** Format: date-time */
-      updatedAt: string;
-    };
-    UpdateRuleDto: {
-      /** @enum {string} */
-      kind?: 'income' | 'expense';
-      amountMinor?: number;
-      currency?: string;
-      accountId?: string | null;
-      categoryId?: string | null;
-      description?: string;
-      /** @enum {string} */
-      frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
-      interval?: number;
-      startsOn?: string;
-      endsOn?: components['schemas']['EndsOn'];
-      timezone?: string;
-      paused?: boolean;
-    };
-    SummaryDto_Output: {
-      period: {
-        from: string;
-        to: string;
-      };
-      /** @enum {string} */
-      granularity: 'day' | 'week' | 'month';
-      totals: {
-        incomeMinor: number;
-        expenseMinor: number;
-        balanceMinor: number;
-      };
-      unconverted: {
-        currency: string;
-        incomeMinor: number;
-        expenseMinor: number;
-      }[];
-      byCategory: {
-        categoryId: string | null;
-        name: string | null;
-        systemKey: string | null;
-        /** @enum {string} */
-        kind: 'income' | 'expense';
-        color: string | null;
-        amountMinor: number;
-        share: number;
-      }[];
-      series: {
-        bucket: string;
-        incomeMinor: number;
-        expenseMinor: number;
-      }[];
-      previous?: {
-        period: {
-          from: string;
-          to: string;
+            status: "ok";
+            version: string;
         };
-        totals: {
-          incomeMinor: number;
-          expenseMinor: number;
-          balanceMinor: number;
+        AvatarUrl_Output: string | null;
+        SessionDto_Output: {
+            user: {
+                /** Format: uuid */
+                id: string;
+                email: string;
+                displayName: string;
+                avatarUrl: components["schemas"]["AvatarUrl_Output"];
+                /** @enum {string} */
+                locale: "en" | "uk" | "ru" | "es";
+                /** @enum {string} */
+                theme: "light" | "dark" | "system";
+                /** @enum {string} */
+                layout: "calm" | "cards" | "soft" | "journal" | "bento" | "split" | "playful" | "hybrid";
+                /** @enum {string} */
+                palette: "emerald" | "rose" | "ocean" | "sand" | "graphite";
+                timezone: string;
+            };
+            csrfToken: string;
         };
-        byCategory: {
-          categoryId: string | null;
-          name: string | null;
-          systemKey: string | null;
-          /** @enum {string} */
-          kind: 'income' | 'expense';
-          color: string | null;
-          amountMinor: number;
-          share: number;
-        }[];
-        deltas: {
-          incomeMinor: number;
-          expenseMinor: number;
-          balanceMinor: number;
+        EndSessionUrl_Output: string | null;
+        LogoutDto_Output: {
+            endSessionUrl: components["schemas"]["EndSessionUrl_Output"];
         };
-      };
+        ProfileDto_Output: {
+            /** Format: uuid */
+            id: string;
+            email: string;
+            displayName: string;
+            avatarUrl: components["schemas"]["AvatarUrl_Output"];
+            /** @enum {string} */
+            locale: "en" | "uk" | "ru" | "es";
+            /** @enum {string} */
+            theme: "light" | "dark" | "system";
+            /** @enum {string} */
+            layout: "calm" | "cards" | "soft" | "journal" | "bento" | "split" | "playful" | "hybrid";
+            /** @enum {string} */
+            palette: "emerald" | "rose" | "ocean" | "sand" | "graphite";
+            timezone: string;
+        };
+        UpdateProfileDto: {
+            displayName?: string;
+            /** @enum {string} */
+            locale?: "en" | "uk" | "ru" | "es";
+            /** @enum {string} */
+            theme?: "light" | "dark" | "system";
+            /** @enum {string} */
+            layout?: "calm" | "cards" | "soft" | "journal" | "bento" | "split" | "playful" | "hybrid";
+            /** @enum {string} */
+            palette?: "emerald" | "rose" | "ocean" | "sand" | "graphite";
+            timezone?: string;
+        };
+        WorkspaceListDto_Output: {
+            workspaces: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                kind: "personal" | "family";
+                name: string;
+                /** @enum {string} */
+                role: "owner" | "member";
+                members: {
+                    /** Format: uuid */
+                    userId: string;
+                    displayName: string;
+                    avatarUrl: string | null;
+                    /** @enum {string} */
+                    role: "owner" | "member";
+                    /** Format: date-time */
+                    joinedAt: string;
+                }[];
+            }[];
+        };
+        FamilyNameDto: {
+            name: string;
+        };
+        WorkspaceDto_Output: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "personal" | "family";
+            name: string;
+            /** @enum {string} */
+            role: "owner" | "member";
+            members: {
+                /** Format: uuid */
+                userId: string;
+                displayName: string;
+                avatarUrl: string | null;
+                /** @enum {string} */
+                role: "owner" | "member";
+                /** Format: date-time */
+                joinedAt: string;
+            }[];
+        };
+        DeleteFamilyDto: {
+            confirmName: string;
+        };
+        CreateInvitationDto: {
+            /** @default 7 */
+            expiresInDays: number;
+        };
+        CreatedInvitationDto_Output: {
+            /** Format: uuid */
+            id: string;
+            url: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        InvitationListDto_Output: {
+            invitations: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                state: "pending" | "accepted" | "revoked" | "expired";
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                expiresAt: string;
+                acceptedAt: string | null;
+                revokedAt: string | null;
+                acceptedBy: {
+                    /** Format: uuid */
+                    userId: string;
+                    displayName: string;
+                } | null;
+            }[];
+        };
+        TransferDto: {
+            /** Format: uuid */
+            userId: string;
+        };
+        EventListDto_Output: {
+            events: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                type: "family_created" | "renamed" | "invitation_created" | "invitation_revoked" | "member_joined" | "member_left" | "member_removed" | "ownership_transferred";
+                actor: {
+                    /** Format: uuid */
+                    userId: string;
+                    displayName: string;
+                } | null;
+                subject: {
+                    /** Format: uuid */
+                    userId: string;
+                    displayName: string;
+                } | null;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+        };
+        InvitationPreviewDto_Output: {
+            familyName: string;
+            ownerName: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** @enum {string} */
+            state: "pending" | "accepted" | "revoked" | "expired";
+        };
+        ArchivedAt_Output: string | null;
+        AccountListDto_Output: {
+            accounts: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                name: string;
+                /** @enum {string} */
+                kind: "cash" | "bank" | "card" | "savings" | "other";
+                currency: string;
+                archivedAt: components["schemas"]["ArchivedAt_Output"];
+                revision: number;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+        };
+        CreateAccountDto: {
+            /** Format: uuid */
+            workspaceId: string;
+            name: string;
+            /** @enum {string} */
+            kind: "cash" | "bank" | "card" | "savings" | "other";
+            currency: string;
+        };
+        AccountDto_Output: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            name: string;
+            /** @enum {string} */
+            kind: "cash" | "bank" | "card" | "savings" | "other";
+            currency: string;
+            archivedAt: components["schemas"]["ArchivedAt_Output"];
+            revision: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UpdateAccountDto: {
+            name?: string;
+            /** @enum {string} */
+            kind?: "cash" | "bank" | "card" | "savings" | "other";
+            archived?: boolean;
+        };
+        SystemKey_Output: string | null;
+        CategoryListDto_Output: {
+            categories: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                name: string;
+                /** @enum {string} */
+                kind: "income" | "expense";
+                color: string;
+                icon: string;
+                systemKey: components["schemas"]["SystemKey_Output"];
+                archivedAt: components["schemas"]["ArchivedAt_Output"];
+                revision: number;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+        };
+        CreateCategoryDto: {
+            /** Format: uuid */
+            workspaceId: string;
+            name: string;
+            /** @enum {string} */
+            kind: "income" | "expense";
+            color: string;
+            icon: string;
+        };
+        CategoryDto_Output: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            name: string;
+            /** @enum {string} */
+            kind: "income" | "expense";
+            color: string;
+            icon: string;
+            systemKey: components["schemas"]["SystemKey_Output"];
+            archivedAt: components["schemas"]["ArchivedAt_Output"];
+            revision: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UpdateCategoryDto: {
+            name?: string;
+            color?: string;
+            icon?: string;
+            archived?: boolean;
+        };
+        TransactionView_Output: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** @enum {string} */
+            scope: "personal" | "family";
+            /** @enum {string} */
+            kind: "income" | "expense";
+            amountMinor: number;
+            currency: string;
+            baseAmountMinor: number | null;
+            fx: {
+                rate: string;
+                rateDate: string;
+                source: string;
+            } | null;
+            occurredOn: string;
+            accountId: string | null;
+            categoryId: string | null;
+            description: string;
+            note: string;
+            /** @enum {string} */
+            source: "manual" | "import" | "recurring";
+            /** @enum {string} */
+            reviewStatus: "confirmed" | "pending_review";
+            importBatchId: string | null;
+            author: {
+                userId: string | null;
+                displayName: string | null;
+            };
+            version: number;
+            revision: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        NextCursor_Output: string | null;
+        TransactionPageDto_Output: {
+            transactions: components["schemas"]["TransactionView_Output"][];
+            nextCursor: components["schemas"]["NextCursor_Output"];
+        };
+        PushDto: {
+            mutations: ({
+                /** Format: uuid */
+                mutationId: string;
+                /** @constant */
+                type: "transaction.upsert";
+                baseVersion: number | null;
+                transaction: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    workspaceId: string;
+                    /** @enum {string} */
+                    kind: "income" | "expense";
+                    amountMinor: number;
+                    currency: string;
+                    occurredOn: string;
+                    accountId: string | null;
+                    categoryId: string | null;
+                    description: string;
+                    note: string;
+                };
+            } | {
+                /** Format: uuid */
+                mutationId: string;
+                /** @constant */
+                type: "transaction.delete";
+                /** Format: uuid */
+                transactionId: string;
+                baseVersion: number;
+            })[];
+        };
+        Tombstone_Output: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** Format: date-time */
+            deletedAt: string;
+            revision: number;
+        };
+        PushResponseDto_Output: {
+            results: ({
+                /** Format: uuid */
+                mutationId: string;
+                /** @constant */
+                status: "applied";
+                transaction: components["schemas"]["TransactionView_Output"] | components["schemas"]["Tombstone_Output"];
+            } | {
+                /** Format: uuid */
+                mutationId: string;
+                /** @constant */
+                status: "conflict";
+                /** Format: uuid */
+                conflictId: string;
+                transaction: components["schemas"]["TransactionView_Output"] | components["schemas"]["Tombstone_Output"];
+            } | {
+                /** Format: uuid */
+                mutationId: string;
+                /** @constant */
+                status: "rejected";
+                code: string;
+                message: string;
+            })[];
+        };
+        PullResponseDto_Output: {
+            workspaces: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                kind: "personal" | "family";
+                name: string;
+                /** @enum {string} */
+                role: "owner" | "member";
+            }[];
+            accounts: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                name: string;
+                /** @enum {string} */
+                kind: "cash" | "bank" | "card" | "savings" | "other";
+                currency: string;
+                archivedAt: components["schemas"]["ArchivedAt_Output"];
+                revision: number;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+            categories: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                name: string;
+                /** @enum {string} */
+                kind: "income" | "expense";
+                color: string;
+                icon: string;
+                systemKey: components["schemas"]["SystemKey_Output"];
+                archivedAt: components["schemas"]["ArchivedAt_Output"];
+                revision: number;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+            transactions: (components["schemas"]["TransactionView_Output"] | components["schemas"]["Tombstone_Output"])[];
+            conflicts: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                transactionId: string;
+                baseVersion: number;
+                serverVersion: number;
+                local: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    workspaceId: string;
+                    /** @enum {string} */
+                    kind: "income" | "expense";
+                    amountMinor: number;
+                    currency: string;
+                    occurredOn: string;
+                    accountId: string | null;
+                    categoryId: string | null;
+                    description: string;
+                    note: string;
+                } | {
+                    /** @constant */
+                    deleted: true;
+                };
+                server: components["schemas"]["TransactionView_Output"] | components["schemas"]["Tombstone_Output"];
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+            cursor: number;
+            hasMore: boolean;
+        };
+        ConflictListDto_Output: {
+            conflicts: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                transactionId: string;
+                baseVersion: number;
+                serverVersion: number;
+                local: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    workspaceId: string;
+                    /** @enum {string} */
+                    kind: "income" | "expense";
+                    amountMinor: number;
+                    currency: string;
+                    occurredOn: string;
+                    accountId: string | null;
+                    categoryId: string | null;
+                    description: string;
+                    note: string;
+                } | {
+                    /** @constant */
+                    deleted: true;
+                };
+                server: components["schemas"]["TransactionView_Output"] | components["schemas"]["Tombstone_Output"];
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+        };
+        ResolveDto: {
+            /** @enum {string} */
+            resolution: "server" | "local" | "merged";
+            transaction?: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                /** @enum {string} */
+                kind: "income" | "expense";
+                amountMinor: number;
+                currency: string;
+                occurredOn: string;
+                accountId: string | null;
+                categoryId: string | null;
+                description: string;
+                note: string;
+            };
+        };
+        ResolveResponseDto_Output: {
+            /** Format: uuid */
+            id: string;
+            /** @constant */
+            status: "resolved";
+            /** @enum {string} */
+            resolution: "server" | "local" | "merged";
+            /** Format: date-time */
+            resolvedAt: string;
+            transaction: components["schemas"]["TransactionView_Output"] | components["schemas"]["Tombstone_Output"];
+        };
+        AvatarUrl: string | null;
+        ArchivedAt: string | null;
+        SystemKey: string | null;
+        TransactionView: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** @enum {string} */
+            scope: "personal" | "family";
+            /** @enum {string} */
+            kind: "income" | "expense";
+            amountMinor: number;
+            currency: string;
+            baseAmountMinor: number | null;
+            fx: {
+                rate: string;
+                rateDate: string;
+                source: string;
+            } | null;
+            occurredOn: string;
+            accountId: string | null;
+            categoryId: string | null;
+            description: string;
+            note: string;
+            /** @enum {string} */
+            source: "manual" | "import" | "recurring";
+            /** @enum {string} */
+            reviewStatus: "confirmed" | "pending_review";
+            importBatchId: string | null;
+            author: {
+                userId: string | null;
+                displayName: string | null;
+            };
+            version: number;
+            revision: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        DataExportDto: {
+            /** Format: date-time */
+            exportedAt: string;
+            user: {
+                /** Format: uuid */
+                id: string;
+                email: string;
+                displayName: string;
+                avatarUrl: components["schemas"]["AvatarUrl"];
+                /** @enum {string} */
+                locale: "en" | "uk" | "ru" | "es";
+                /** @enum {string} */
+                theme: "light" | "dark" | "system";
+                /** @enum {string} */
+                layout: "calm" | "cards" | "soft" | "journal" | "bento" | "split" | "playful" | "hybrid";
+                /** @enum {string} */
+                palette: "emerald" | "rose" | "ocean" | "sand" | "graphite";
+                timezone: string;
+            };
+            workspaces: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                kind: "personal" | "family";
+                name: string;
+                /** @enum {string} */
+                role: "owner" | "member";
+                members: {
+                    /** Format: uuid */
+                    userId: string;
+                    displayName: string;
+                    avatarUrl: string | null;
+                    /** @enum {string} */
+                    role: "owner" | "member";
+                    /** Format: date-time */
+                    joinedAt: string;
+                }[];
+            }[];
+            accounts: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                name: string;
+                /** @enum {string} */
+                kind: "cash" | "bank" | "card" | "savings" | "other";
+                currency: string;
+                archivedAt: components["schemas"]["ArchivedAt"];
+                revision: number;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+            categories: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                name: string;
+                /** @enum {string} */
+                kind: "income" | "expense";
+                color: string;
+                icon: string;
+                systemKey: components["schemas"]["SystemKey"];
+                archivedAt: components["schemas"]["ArchivedAt"];
+                revision: number;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+            transactions: components["schemas"]["TransactionView"][];
+            budgets: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                /** Format: uuid */
+                categoryId: string;
+                amountMinor: number;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+            recurringRules: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                createdBy: string | null;
+                /** @enum {string} */
+                kind: "income" | "expense";
+                amountMinor: number;
+                currency: string;
+                accountId: string | null;
+                categoryId: string | null;
+                description: string;
+                /** @enum {string} */
+                frequency: "daily" | "weekly" | "monthly" | "yearly";
+                interval: number;
+                startsOn: string;
+                endsOn: string | null;
+                timezone: string;
+                nextOccurrence: string | null;
+                pausedAt: string | null;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+            importBatches: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                accountId: string | null;
+                fileName: string;
+                mapping: unknown;
+                rowCount: number;
+                importedCount: number;
+                duplicateCount: number;
+                rejectedCount: number;
+                rejected: {
+                    line: number;
+                    reason: string;
+                }[];
+                /** Format: date-time */
+                createdAt: string;
+                undoneAt: string | null;
+            }[];
+            categoryRules: {
+                /** Format: uuid */
+                workspaceId: string;
+                merchantKey: string;
+                /** Format: uuid */
+                categoryId: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+            conflicts: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                transactionId: string;
+                local: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    workspaceId: string;
+                    /** @enum {string} */
+                    kind: "income" | "expense";
+                    amountMinor: number;
+                    currency: string;
+                    occurredOn: string;
+                    accountId: string | null;
+                    categoryId: string | null;
+                    description: string;
+                    note: string;
+                } | {
+                    /** @constant */
+                    deleted: true;
+                };
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+        };
+        DeleteUserDto: {
+            confirmation: string;
+        };
+        ImportDto: {
+            /** Format: uuid */
+            accountId: string;
+            fileName: string;
+            mapping: {
+                [key: string]: unknown;
+            };
+            rows: {
+                line: number;
+                occurredOn: string;
+                amountMinor: number;
+                currency?: string;
+                description: string;
+                externalId?: string;
+            }[];
+        };
+        ImportBatchView_Output: {
+            /** Format: uuid */
+            id: string;
+            accountId: string | null;
+            fileName: string;
+            rowCount: number;
+            importedCount: number;
+            duplicateCount: number;
+            rejectedCount: number;
+            /** Format: date-time */
+            createdAt: string;
+            undoneAt: string | null;
+        };
+        ImportResultDto_Output: {
+            batch: components["schemas"]["ImportBatchView_Output"];
+            imported: {
+                count: number;
+                transactionIds: string[];
+            };
+            duplicates: number;
+            rejected: {
+                line: number;
+                /** @enum {string} */
+                reason: "INVALID_DATE" | "INVALID_AMOUNT" | "INVALID_CURRENCY" | "DESCRIPTION_TOO_LONG" | "EXTERNAL_ID_TOO_LONG" | "DUPLICATE_IN_FILE_EXTERNAL_ID";
+            }[];
+        };
+        BatchListDto_Output: {
+            batches: components["schemas"]["ImportBatchView_Output"][];
+        };
+        ReviewListDto_Output: {
+            items: {
+                transaction: components["schemas"]["TransactionView_Output"];
+                familyCategoryId: string | null;
+            }[];
+        };
+        ConfirmDto: {
+            items: {
+                /** Format: uuid */
+                transactionId: string;
+                /** @enum {string} */
+                scope: "personal" | "family";
+                categoryId: string | null;
+            }[];
+        };
+        ConfirmResultDto_Output: {
+            transactions: components["schemas"]["TransactionView_Output"][];
+        };
+        UndoResultDto_Output: {
+            batch: components["schemas"]["ImportBatchView_Output"];
+            deleted: number;
+            kept: number;
+        };
+        BudgetListDto_Output: {
+            budgets: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                /** @enum {string} */
+                scope: "personal" | "family";
+                /** Format: uuid */
+                categoryId: string;
+                amountMinor: number;
+                month: string;
+                spentMinor: number;
+                unconverted: {
+                    currency: string;
+                    amountMinor: number;
+                }[];
+                /** @enum {string} */
+                status: "ok" | "near" | "over";
+            }[];
+        };
+        PutBudgetDto: {
+            /** Format: uuid */
+            workspaceId: string;
+            /** Format: uuid */
+            categoryId: string;
+            amountMinor: number;
+        };
+        BudgetDto_Output: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** @enum {string} */
+            scope: "personal" | "family";
+            /** Format: uuid */
+            categoryId: string;
+            amountMinor: number;
+            month: string;
+            spentMinor: number;
+            unconverted: {
+                currency: string;
+                amountMinor: number;
+            }[];
+            /** @enum {string} */
+            status: "ok" | "near" | "over";
+        };
+        NullableId_Output: string | null;
+        NullableDate_Output: string | null;
+        NullableTimestamp_Output: string | null;
+        RuleListDto_Output: {
+            rules: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                /** @enum {string} */
+                scope: "personal" | "family";
+                createdBy: components["schemas"]["NullableId_Output"];
+                /** @enum {string} */
+                kind: "income" | "expense";
+                amountMinor: number;
+                currency: string;
+                accountId: components["schemas"]["NullableId_Output"];
+                categoryId: components["schemas"]["NullableId_Output"];
+                description: string;
+                /** @enum {string} */
+                frequency: "daily" | "weekly" | "monthly" | "yearly";
+                interval: number;
+                startsOn: string;
+                endsOn: components["schemas"]["NullableDate_Output"];
+                timezone: string;
+                nextOccurrence: components["schemas"]["NullableDate_Output"];
+                pausedAt: components["schemas"]["NullableTimestamp_Output"];
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+        };
+        EndsOn: string | null;
+        CreateRuleDto: {
+            /** Format: uuid */
+            workspaceId: string;
+            /** @enum {string} */
+            kind: "income" | "expense";
+            amountMinor: number;
+            currency: string;
+            /** @default null */
+            accountId: string | null;
+            /** @default null */
+            categoryId: string | null;
+            /** @default  */
+            description: string;
+            /** @enum {string} */
+            frequency: "daily" | "weekly" | "monthly" | "yearly";
+            /** @default 1 */
+            interval: number;
+            startsOn: string;
+            /** @default null */
+            endsOn: components["schemas"]["EndsOn"];
+            timezone?: string;
+        };
+        RuleDto_Output: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** @enum {string} */
+            scope: "personal" | "family";
+            createdBy: components["schemas"]["NullableId_Output"];
+            /** @enum {string} */
+            kind: "income" | "expense";
+            amountMinor: number;
+            currency: string;
+            accountId: components["schemas"]["NullableId_Output"];
+            categoryId: components["schemas"]["NullableId_Output"];
+            description: string;
+            /** @enum {string} */
+            frequency: "daily" | "weekly" | "monthly" | "yearly";
+            interval: number;
+            startsOn: string;
+            endsOn: components["schemas"]["NullableDate_Output"];
+            timezone: string;
+            nextOccurrence: components["schemas"]["NullableDate_Output"];
+            pausedAt: components["schemas"]["NullableTimestamp_Output"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UpdateRuleDto: {
+            /** @enum {string} */
+            kind?: "income" | "expense";
+            amountMinor?: number;
+            currency?: string;
+            accountId?: string | null;
+            categoryId?: string | null;
+            description?: string;
+            /** @enum {string} */
+            frequency?: "daily" | "weekly" | "monthly" | "yearly";
+            interval?: number;
+            startsOn?: string;
+            endsOn?: components["schemas"]["EndsOn"];
+            timezone?: string;
+            paused?: boolean;
+        };
+        SummaryDto_Output: {
+            period: {
+                from: string;
+                to: string;
+            };
+            /** @enum {string} */
+            granularity: "day" | "week" | "month";
+            totals: {
+                incomeMinor: number;
+                expenseMinor: number;
+                balanceMinor: number;
+            };
+            unconverted: {
+                currency: string;
+                incomeMinor: number;
+                expenseMinor: number;
+            }[];
+            byCategory: {
+                categoryId: string | null;
+                name: string | null;
+                systemKey: string | null;
+                /** @enum {string} */
+                kind: "income" | "expense";
+                color: string | null;
+                amountMinor: number;
+                share: number;
+            }[];
+            series: {
+                bucket: string;
+                incomeMinor: number;
+                expenseMinor: number;
+            }[];
+            previous?: {
+                period: {
+                    from: string;
+                    to: string;
+                };
+                totals: {
+                    incomeMinor: number;
+                    expenseMinor: number;
+                    balanceMinor: number;
+                };
+                byCategory: {
+                    categoryId: string | null;
+                    name: string | null;
+                    systemKey: string | null;
+                    /** @enum {string} */
+                    kind: "income" | "expense";
+                    color: string | null;
+                    amountMinor: number;
+                    share: number;
+                }[];
+                deltas: {
+                    incomeMinor: number;
+                    expenseMinor: number;
+                    balanceMinor: number;
+                };
+            };
+        };
     };
-  };
-  responses: never;
-  parameters: never;
-  requestBodies: never;
-  headers: never;
-  pathItems: never;
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  HealthController_live: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HealthDto_Output'];
-        };
-      };
-    };
-  };
-  HealthController_ready: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HealthDto_Output'];
-        };
-      };
-    };
-  };
-  AuthController_login: {
-    parameters: {
-      query?: {
-        returnTo?: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Redirect to the identity provider */
-      302: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  AuthController_callback: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Redirect into the app or back to sign-in */
-      302: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  AuthController_session: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['SessionDto_Output'];
-        };
-      };
-    };
-  };
-  AuthController_logout: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['LogoutDto_Output'];
-        };
-      };
-    };
-  };
-  MeController_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ProfileDto_Output'];
-        };
-      };
-    };
-  };
-  DataRightsController_remove: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['DeleteUserDto'];
-      };
-    };
-    responses: {
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  MeController_update: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['UpdateProfileDto'];
-      };
-    };
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ProfileDto_Output'];
-        };
-      };
-    };
-  };
-  WorkspacesController_list: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['WorkspaceListDto_Output'];
-        };
-      };
-    };
-  };
-  WorkspacesController_create: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['FamilyNameDto'];
-      };
-    };
-    responses: {
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['WorkspaceDto_Output'];
-        };
-      };
-    };
-  };
-  WorkspacesController_remove: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['DeleteFamilyDto'];
-      };
-    };
-    responses: {
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  WorkspacesController_rename: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['FamilyNameDto'];
-      };
-    };
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['WorkspaceDto_Output'];
-        };
-      };
-    };
-  };
-  WorkspacesController_invitations: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['InvitationListDto_Output'];
-        };
-      };
-    };
-  };
-  WorkspacesController_invite: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['CreateInvitationDto'];
-      };
-    };
-    responses: {
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['CreatedInvitationDto_Output'];
-        };
-      };
-    };
-  };
-  WorkspacesController_revoke: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: unknown;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  WorkspacesController_leave: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  WorkspacesController_removeMember: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        userId: unknown;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  WorkspacesController_transfer: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TransferDto'];
-      };
-    };
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['WorkspaceDto_Output'];
-        };
-      };
-    };
-  };
-  WorkspacesController_events: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['EventListDto_Output'];
-        };
-      };
-    };
-  };
-  WorkspacesController_preview: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        token: unknown;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['InvitationPreviewDto_Output'];
-        };
-      };
-    };
-  };
-  WorkspacesController_accept: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        token: unknown;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['WorkspaceDto_Output'];
-        };
-      };
-    };
-  };
-  LedgerController_accounts: {
-    parameters: {
-      query?: {
-        workspaceId?: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['AccountListDto_Output'];
-        };
-      };
-    };
-  };
-  LedgerController_createAccount: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['CreateAccountDto'];
-      };
-    };
-    responses: {
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['AccountDto_Output'];
-        };
-      };
-    };
-  };
-  LedgerController_updateAccount: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['UpdateAccountDto'];
-      };
-    };
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['AccountDto_Output'];
-        };
-      };
-    };
-  };
-  LedgerController_categories: {
-    parameters: {
-      query?: {
-        workspaceId?: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['CategoryListDto_Output'];
-        };
-      };
-    };
-  };
-  LedgerController_createCategory: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['CreateCategoryDto'];
-      };
-    };
-    responses: {
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['CategoryDto_Output'];
-        };
-      };
-    };
-  };
-  LedgerController_updateCategory: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['UpdateCategoryDto'];
-      };
-    };
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['CategoryDto_Output'];
-        };
-      };
-    };
-  };
-  LedgerController_transactions: {
-    parameters: {
-      query?: {
-        q?: string;
-        from?: string;
-        to?: string;
-        kind?: string;
-        currency?: string;
-        accountId?: string;
-        categoryId?: string;
-        scope?: string;
-        workspaceId?: string;
-        reviewStatus?: string;
-        cursor?: string;
-        limit?: number;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TransactionPageDto_Output'];
-        };
-      };
-    };
-  };
-  SyncController_push: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['PushDto'];
-      };
-    };
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['PushResponseDto_Output'];
-        };
-      };
-    };
-  };
-  SyncController_pull: {
-    parameters: {
-      query?: {
-        cursor?: number;
-        limit?: number;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['PullResponseDto_Output'];
-        };
-      };
-    };
-  };
-  SyncController_conflicts: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ConflictListDto_Output'];
-        };
-      };
-    };
-  };
-  SyncController_resolve: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: unknown;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ResolveDto'];
-      };
-    };
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ResolveResponseDto_Output'];
-        };
-      };
-    };
-  };
-  DataRightsController_export: {
-    parameters: {
-      query?: {
-        format?: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Everything the caller can see (JSON) or their confirmed transactions (CSV) */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['DataExportDto'];
-          'text/csv': string;
-        };
-      };
-    };
-  };
-  ImportsController_list: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['BatchListDto_Output'];
-        };
-      };
-    };
-  };
-  ImportsController_create: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ImportDto'];
-      };
-    };
-    responses: {
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ImportResultDto_Output'];
-        };
-      };
-    };
-  };
-  ImportsController_review: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ReviewListDto_Output'];
-        };
-      };
-    };
-  };
-  ImportsController_confirm: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ConfirmDto'];
-      };
-    };
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ConfirmResultDto_Output'];
-        };
-      };
-    };
-  };
-  ImportsController_undo: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['UndoResultDto_Output'];
-        };
-      };
-    };
-  };
-  BudgetsController_list: {
-    parameters: {
-      query?: {
-        workspaceId?: string;
-        month?: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['BudgetListDto_Output'];
-        };
-      };
-    };
-  };
-  BudgetsController_put: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['PutBudgetDto'];
-      };
-    };
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['BudgetDto_Output'];
-        };
-      };
-    };
-  };
-  BudgetsController_remove: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  RecurringController_list: {
-    parameters: {
-      query?: {
-        workspaceId?: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['RuleListDto_Output'];
-        };
-      };
-    };
-  };
-  RecurringController_create: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['CreateRuleDto'];
-      };
-    };
-    responses: {
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['RuleDto_Output'];
-        };
-      };
-    };
-  };
-  RecurringController_remove: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  RecurringController_update: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['UpdateRuleDto'];
-      };
-    };
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['RuleDto_Output'];
-        };
-      };
-    };
-  };
-  AnalyticsController_summary: {
-    parameters: {
-      query: {
-        from: string;
-        to: string;
-        scope?: string;
-        compare?: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['SummaryDto_Output'];
-        };
-      };
-    };
-  };
+    HealthController_live: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthDto_Output"];
+                };
+            };
+        };
+    };
+    HealthController_ready: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthDto_Output"];
+                };
+            };
+        };
+    };
+    AuthController_login: {
+        parameters: {
+            query?: {
+                returnTo?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect to the identity provider */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_callback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect into the app or back to sign-in */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionDto_Output"];
+                };
+            };
+        };
+    };
+    AuthController_logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogoutDto_Output"];
+                };
+            };
+        };
+    };
+    MeController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileDto_Output"];
+                };
+            };
+        };
+    };
+    DataRightsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteUserDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MeController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfileDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileDto_Output"];
+                };
+            };
+        };
+    };
+    WorkspacesController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceListDto_Output"];
+                };
+            };
+        };
+    };
+    WorkspacesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FamilyNameDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceDto_Output"];
+                };
+            };
+        };
+    };
+    WorkspacesController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteFamilyDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WorkspacesController_rename: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FamilyNameDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceDto_Output"];
+                };
+            };
+        };
+    };
+    WorkspacesController_invitations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationListDto_Output"];
+                };
+            };
+        };
+    };
+    WorkspacesController_invite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateInvitationDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedInvitationDto_Output"];
+                };
+            };
+        };
+    };
+    WorkspacesController_revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WorkspacesController_leave: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WorkspacesController_removeMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WorkspacesController_transfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceDto_Output"];
+                };
+            };
+        };
+    };
+    WorkspacesController_events: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventListDto_Output"];
+                };
+            };
+        };
+    };
+    WorkspacesController_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationPreviewDto_Output"];
+                };
+            };
+        };
+    };
+    WorkspacesController_accept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceDto_Output"];
+                };
+            };
+        };
+    };
+    LedgerController_accounts: {
+        parameters: {
+            query?: {
+                workspaceId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountListDto_Output"];
+                };
+            };
+        };
+    };
+    LedgerController_createAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAccountDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountDto_Output"];
+                };
+            };
+        };
+    };
+    LedgerController_updateAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAccountDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountDto_Output"];
+                };
+            };
+        };
+    };
+    LedgerController_categories: {
+        parameters: {
+            query?: {
+                workspaceId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryListDto_Output"];
+                };
+            };
+        };
+    };
+    LedgerController_createCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCategoryDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryDto_Output"];
+                };
+            };
+        };
+    };
+    LedgerController_updateCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCategoryDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryDto_Output"];
+                };
+            };
+        };
+    };
+    LedgerController_transactions: {
+        parameters: {
+            query?: {
+                q?: string;
+                from?: string;
+                to?: string;
+                kind?: string;
+                currency?: string;
+                accountId?: string;
+                categoryId?: string;
+                scope?: string;
+                workspaceId?: string;
+                reviewStatus?: string;
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionPageDto_Output"];
+                };
+            };
+        };
+    };
+    SyncController_push: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushResponseDto_Output"];
+                };
+            };
+        };
+    };
+    SyncController_pull: {
+        parameters: {
+            query?: {
+                cursor?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PullResponseDto_Output"];
+                };
+            };
+        };
+    };
+    SyncController_conflicts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConflictListDto_Output"];
+                };
+            };
+        };
+    };
+    SyncController_resolve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResolveResponseDto_Output"];
+                };
+            };
+        };
+    };
+    DataRightsController_export: {
+        parameters: {
+            query?: {
+                format?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Everything the caller can see (JSON) or their confirmed transactions (CSV) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataExportDto"];
+                    "text/csv": string;
+                };
+            };
+        };
+    };
+    ImportsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchListDto_Output"];
+                };
+            };
+        };
+    };
+    ImportsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResultDto_Output"];
+                };
+            };
+        };
+    };
+    ImportsController_review: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewListDto_Output"];
+                };
+            };
+        };
+    };
+    ImportsController_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmResultDto_Output"];
+                };
+            };
+        };
+    };
+    ImportsController_undo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UndoResultDto_Output"];
+                };
+            };
+        };
+    };
+    BudgetsController_list: {
+        parameters: {
+            query?: {
+                workspaceId?: string;
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetListDto_Output"];
+                };
+            };
+        };
+    };
+    BudgetsController_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutBudgetDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetDto_Output"];
+                };
+            };
+        };
+    };
+    BudgetsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RecurringController_list: {
+        parameters: {
+            query?: {
+                workspaceId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleListDto_Output"];
+                };
+            };
+        };
+    };
+    RecurringController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRuleDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleDto_Output"];
+                };
+            };
+        };
+    };
+    RecurringController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RecurringController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRuleDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleDto_Output"];
+                };
+            };
+        };
+    };
+    AnalyticsController_summary: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                scope?: string;
+                compare?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummaryDto_Output"];
+                };
+            };
+        };
+    };
 }

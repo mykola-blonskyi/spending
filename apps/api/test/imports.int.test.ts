@@ -587,6 +587,31 @@ describe('imports', () => {
       expect(await history(ann, '?reviewStatus=pending_review')).toHaveLength(2);
     });
 
+    it('keeps a suggested category archived since, but refuses picking an archived one (BR-4)', async () => {
+      const ids = await categoryIds(ann, annPersonal);
+      const { imported } = await importRows(ann, [
+        row(2, { description: 'MERCADONA' }),
+        row(3, { description: 'Bar Pepe' }),
+      ]);
+      const [suggested, other] = imported.transactionIds;
+      await as(t, ann, `/v1/categories/${ids.get('groceries')}`, {
+        method: 'PATCH',
+        body: { archived: true },
+      });
+      const picked = await confirm(ann, [
+        { transactionId: other, scope: 'personal', categoryId: ids.get('groceries') },
+      ]);
+      expect(picked.status).toBe(422);
+      expect(await errorCode(picked)).toBe('INVALID_CATEGORY');
+      expect(
+        (
+          await confirm(ann, [
+            { transactionId: suggested, scope: 'personal', categoryId: ids.get('groceries') },
+          ])
+        ).status,
+      ).toBe(200);
+    });
+
     it('lets a pending row of a former member be confirmed as personal only', async () => {
       const { imported } = await importRows(
         bob,

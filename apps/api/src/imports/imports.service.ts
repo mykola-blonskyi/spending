@@ -221,6 +221,7 @@ export class ImportsService {
           id: transactions.id,
           kind: transactions.kind,
           description: transactions.description,
+          categoryId: transactions.categoryId,
         })
         .from(transactions)
         .where(
@@ -257,7 +258,7 @@ export class ImportsService {
             !category ||
             category.workspaceId !== target ||
             category.kind !== row.kind ||
-            category.archivedAt
+            (category.archivedAt && category.id !== row.categoryId)
           ) {
             throw new ApiError('INVALID_CATEGORY');
           }

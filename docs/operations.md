@@ -277,12 +277,16 @@ action Skip (all remaining custom rules, and Bot Fight Mode / Super Bot Fight Mo
 - Dumps are `pg_dump --format=custom` (gzip-compressed), mode 600, in the `spending-backups`
   volume. The script logs only file names and sizes. The container turns unhealthy when no daily
   dump is younger than 26 hours.
-- Each dump is checked with `pg_restore --list` before it is kept. A corrupt or empty dump is
+- Each dump is checked with `pg_restore --list` before it is kept; a daily dump must also list
+  the `transactions` table data. A corrupt, empty or wrong-database dump is
   discarded and the run fails: `predeploy-backup` stops the deploy, and for the daily dump the
-  container turns unhealthy once the last good one is older than 26 hours.
+  container turns unhealthy once the last good one is older than 26 hours. `DATABASE_URL` may
+  carry `?sslmode=...` (passed as `PGSSLMODE`); any other query parameter is refused.
 - The volume is on the VPS disk only unless the optional off-host copy is configured. When
   `BACKUP_OFFSITE_REMOTE` is set on the Coolify resource, the `backup` container also copies each
-  daily dump there with rclone, and a failed copy fails the run (logged, retried next day). Owner
+  daily dump there with rclone and touches `offsite.ok` in the volume. A failed copy fails the run
+  after local pruning (logged, retried next day), and the container turns unhealthy when
+  `offsite.ok` is older than 26 hours. Owner
   steps: create a private S3-compatible bucket (Backblaze B2, Cloudflare R2, ...) with a
   lifecycle rule that expires objects after about 30 days, create a key restricted to that
   bucket, then set `BACKUP_OFFSITE_REMOTE=:s3:<bucket>/spending`, `RCLONE_S3_PROVIDER`,
@@ -341,6 +345,10 @@ restored database has been in use for a while.
 - Health: `/api/health` (process up) and `/api/health/ready` (database reachable), also used by
   the container health checks and the Deploy workflow.
 - Backups: the `backup` container's health and log lines.
+- The web access log redacts invitation tokens, `returnTo` values and the OIDC callback query
+  (`code`, `state`). The nginx error log does not: when the API is unreachable it names the
+  request line, so a failed `/invite/<token>` or callback request shows its secrets there. Accepted
+  for debuggability; treat web container logs as sensitive.
 - No third-party telemetry or error reporting.
 
 ## Security headers
@@ -350,5 +358,5 @@ and in every location that sets its own `Cache-Control` (nginx drops inherited `
 directives otherwise). The CSP allows no inline scripts; `style-src` includes `'unsafe-inline'` because sonner and
 Radix inject styles (ADR-011). Caching:
 `/assets/*` is immutable for a year, `/api/` is `no-store`, everything else (including
-`index.html`, `sw.js`, `registerSW.js`, `manifest.webmanifest`) is `no-cache`. Source maps are
+`index.html`, `sw.js`, `manifest.webmanifest`) is `no-cache`. Source maps are
 not shipped and `*.map` returns 404.

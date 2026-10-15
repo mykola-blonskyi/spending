@@ -1,14 +1,15 @@
-import { Controller, Get, HttpCode, Inject, Post, Query, Req, Res } from '@nestjs/common';
+import { Controller, Get, HttpCode, Inject, Logger, Post, Query, Req, Res } from '@nestjs/common';
 import { ApiQuery, ApiResponse } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { createZodDto, ZodResponse } from 'nestjs-zod';
 import { z } from 'zod';
 import { type Actor, CurrentActor, Public } from '../common/actor';
 import { APP_CONFIG, type AppConfig } from '../common/config';
+import { describeUnexpected } from '../common/error.filter';
 import { RateLimit } from '../common/rate-limit';
 import { profileSchema } from '../users/profile';
 import { UsersService } from '../users/users.service';
-import { AuthService, LOGIN_ATTEMPT_TTL_MS } from './auth.service';
+import { AuthService, LOGIN_ATTEMPT_TTL_MS, type LoginResult } from './auth.service';
 import {
   clearLoginCookie,
   clearSessionCookie,
@@ -27,6 +28,8 @@ class LogoutDto extends createZodDto(
 
 @Controller('v1/auth')
 export class AuthController {
+  private readonly logger = new Logger('Auth');
+
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(AuthService) private readonly auth: AuthService,
@@ -54,7 +57,12 @@ export class AuthController {
     const previous = readCookie(req, sessionCookieName(this.config.cookieSecure));
     const binding = readCookie(req, loginCookieName(this.config.cookieSecure));
     clearLoginCookie(res, this.config.cookieSecure);
-    const result = await this.auth.completeLogin(callbackUrl, binding, previous);
+    const result = await this.auth
+      .completeLogin(callbackUrl, binding, previous)
+      .catch((error: unknown): LoginResult => {
+        this.logger.error(`login_failed ${describeUnexpected(error)}`);
+        return { ok: false, error: 'login_failed' };
+      });
     if (!result.ok) {
       res.redirect(302, `/signin?error=${result.error}`);
       return;

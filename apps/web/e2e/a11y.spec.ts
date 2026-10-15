@@ -69,12 +69,13 @@ test('an entry is recorded and deleted with the keyboard alone', async ({ page, 
 
   await tabTo(page, page.getByLabel('Amount'));
   await page.keyboard.type('12.34');
-  await tabTo(page, page.getByRole('radiogroup', { name: 'Category' }).getByRole('radio').first());
+  const categories = page.getByRole('radiogroup', { name: 'Category' }).getByRole('radio');
+  await tabTo(page, categories.first());
   await page.keyboard.press('ArrowRight');
+  await expect(categories.nth(1)).toBeFocused();
   await page.keyboard.press('Space');
-  await expect(
-    page.getByRole('radiogroup', { name: 'Category' }).getByRole('radio', { checked: true }),
-  ).toBeFocused();
+  await expect(categories.nth(1)).toBeChecked();
+  await expect(categories.nth(1), 'focus stays on the chosen category').toBeFocused();
   await tabTo(page, page.getByLabel('Description'));
   await page.keyboard.type('Keyboard lunch');
   await page.keyboard.press('Enter');

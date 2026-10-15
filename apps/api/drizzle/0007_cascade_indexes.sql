@@ -1,0 +1,2 @@
+CREATE INDEX "sync_conflicts_transaction_idx" ON "sync_conflicts" USING btree ("transaction_id");--> statement-breakpoint
+CREATE INDEX "sync_mutations_user_idx" ON "sync_mutations" USING btree ("user_id");

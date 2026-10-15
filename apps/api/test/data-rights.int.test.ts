@@ -50,6 +50,7 @@ type Export = {
   recurringRules: { workspaceId: string; accountId: string | null }[];
   importBatches: { workspaceId: string }[];
   categoryRules: { workspaceId: string }[];
+  conflicts: { id: string; transactionId: string; local: unknown; createdAt: string }[];
 };
 
 describe('data rights', () => {
@@ -294,6 +295,34 @@ describe('data rights', () => {
       ]);
       expect(bobExport.importBatches).toEqual([]);
       expect(bobExport.categoryRules).toEqual([]);
+    });
+
+    it("includes the actor's own open conflict versions, and nobody else's", async () => {
+      const [row] = await push(ann, { description: 'shared', workspaceId: family });
+      const conflict = { transactionId: row!.id, baseVersion: 1, serverVersion: 1 };
+      const [open] = await t.db
+        .insert(syncConflicts)
+        .values([
+          { ...conflict, userId: ann.userId, local: { deleted: true } },
+          { ...conflict, userId: bob.userId, local: { deleted: true } },
+          {
+            ...conflict,
+            userId: ann.userId,
+            local: { deleted: true },
+            status: 'resolved',
+            resolution: 'server',
+          },
+        ])
+        .returning();
+      expect((await exportJson(ann)).conflicts).toEqual([
+        {
+          id: open!.id,
+          transactionId: row!.id,
+          local: { deleted: true },
+          createdAt: open!.createdAt.toISOString(),
+        },
+      ]);
+      expect((await exportJson(bob)).conflicts.map((c) => c.id)).not.toContain(open!.id);
     });
 
     it('writes confirmed transactions as RFC 4180 CSV with exact amounts, safe from formulas', async () => {

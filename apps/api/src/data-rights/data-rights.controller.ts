@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  Header,
   HttpCode,
   Inject,
   Query,
@@ -45,7 +44,6 @@ export class DataRightsController {
   /** A file download, so the body bypasses the zod serializer; its JSON shape is DataExportDto. */
   @Get('export')
   @RateLimit('sensitive')
-  @Header('Cache-Control', 'no-store')
   @ApiQuery({ type: ExportQueryDto })
   @ApiOkResponse({
     description: 'Everything the caller can see (JSON) or their confirmed transactions (CSV)',

@@ -47,6 +47,13 @@ export class AccessPolicy {
     return row;
   }
 
+  /** The one named workspace (NOT_FOUND unless a member), or every workspace of the actor. */
+  async scope(actorId: string, workspaceId: string | undefined): Promise<Membership[]> {
+    return workspaceId
+      ? [await this.requireMember(actorId, workspaceId)]
+      : await this.memberships(actorId);
+  }
+
   async personalWorkspaceId(actorId: string, tx: Tx = this.db): Promise<string> {
     const [row] = await tx
       .select({ workspaceId: memberships.workspaceId })

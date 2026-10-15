@@ -211,6 +211,10 @@ edited through REST and arrive through pull like transactions.
 - **Account references (BR-3).** A viewer who cannot see a row's account receives
   `accountId: null`. Sending that null back in an upsert keeps the author's account. Only the
   author may choose an account from their own personal workspace.
+- **Author names.** A row carries its author's display name as read at pull time. Sign-in
+  refreshes the name from the provider without bumping any revision, so rows a device already
+  holds keep the old name until each changes or the cursor resets. Accepted: the name is a label,
+  and stamping every authored row on a rename would rewrite the ledger for cosmetics.
 
 ## Budgets
 
