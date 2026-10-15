@@ -277,9 +277,11 @@ action Skip (all remaining custom rules, and Bot Fight Mode / Super Bot Fight Mo
 - Dumps are `pg_dump --format=custom` (gzip-compressed), mode 600, in the `spending-backups`
   volume. The script logs only file names and sizes. The container turns unhealthy when no daily
   dump is younger than 26 hours.
-- Each dump is checked with `pg_restore --list` before it is kept. A corrupt or empty dump is
+- Each dump is checked with `pg_restore --list` before it is kept; a daily dump must also list
+  the `transactions` table data. A corrupt, empty or wrong-database dump is
   discarded and the run fails: `predeploy-backup` stops the deploy, and for the daily dump the
-  container turns unhealthy once the last good one is older than 26 hours.
+  container turns unhealthy once the last good one is older than 26 hours. `DATABASE_URL` may
+  carry `?sslmode=...` (passed as `PGSSLMODE`); any other query parameter is refused.
 - The volume is on the VPS disk only unless the optional off-host copy is configured. When
   `BACKUP_OFFSITE_REMOTE` is set on the Coolify resource, the `backup` container also copies each
   daily dump there with rclone, and a failed copy fails the run (logged, retried next day). Owner

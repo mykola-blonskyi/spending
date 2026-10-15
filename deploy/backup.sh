@@ -7,11 +7,12 @@
 #   backup.sh schedule     daily at 03:00 UTC, forever
 #
 # Dumps use pg_dump's custom format, which is gzip-compressed and is what pg_restore reads.
-# Every dump is checked with pg_restore --list before it is kept, so a corrupt or empty dump
-# fails the run instead of replacing a good backup. When BACKUP_OFFSITE_REMOTE is set (an rclone
-# destination such as :s3:bucket/spending, credentials in RCLONE_* variables), each daily dump is
-# also copied there; retention off-host is the bucket's lifecycle rule.
-# DATABASE_URL is split into the PG* environment variables, so the password is never in a
+# Every dump is checked with pg_restore --list before it is kept (a daily dump must list the
+# transactions table data), so a corrupt, empty or wrong-database dump fails the run instead of
+# replacing a good backup. When BACKUP_OFFSITE_REMOTE is set (an rclone destination such as
+# :s3:bucket/spending, credentials in RCLONE_* variables), each daily dump is also copied there;
+# retention off-host is the bucket's lifecycle rule.
+# DATABASE_URL (optionally ?sslmode=...) is split into the PG* environment variables, so the password is never in a
 # process argument list, and is never printed.
 set -eu
 
@@ -34,7 +35,23 @@ PGUSER=${userinfo%%:*}
 PGPASSWORD=${userinfo#*:}
 PGHOST=${hostpart%%/*}
 PGDATABASE=${hostpart#*/}
-PGDATABASE=${PGDATABASE%%\?*}
+query=''
+case "$PGDATABASE" in
+  *\?*)
+    query=${PGDATABASE#*\?}
+    PGDATABASE=${PGDATABASE%%\?*}
+    ;;
+esac
+# Only sslmode is understood; any other parameter is refused instead of silently dropped.
+oldifs=$IFS
+IFS='&'
+for param in $query; do
+  case "$param" in
+    sslmode=?*) PGSSLMODE=${param#sslmode=}; export PGSSLMODE ;;
+    *) echo "DATABASE_URL query parameters other than sslmode are not supported." >&2; exit 1 ;;
+  esac
+done
+IFS=$oldifs
 PGPORT=5432
 case "$PGHOST" in
   *:*)
@@ -52,7 +69,12 @@ dump_to() {
   partial="$1.partial"
   trap 'rm -f "$partial"' EXIT
   pg_dump --format=custom --compress=gzip:6 --file="$partial"
-  pg_restore --list "$partial" >/dev/null || { log "$(basename "$1") failed verification"; return 1; }
+  # A daily dump must list the transactions table data, so a dump of an empty or wrong database
+  # fails. pre-migrate runs before the first migration, when that table does not exist yet.
+  if ! pg_restore --list "$partial" | grep -q "${2:-.}"; then
+    log "$(basename "$1") failed verification"
+    return 1
+  fi
   chmod 600 "$partial"
   mv "$partial" "$1"
   trap - EXIT
@@ -78,7 +100,7 @@ pre_migrate() {
 daily() {
   mkdir -p "$dir/daily" "$dir/weekly"
   today="$dir/daily/daily-$(date -u +%Y-%m-%d).dump"
-  dump_to "$today"
+  dump_to "$today" 'TABLE DATA public transactions '
   week="$dir/weekly/weekly-$(date -u +%G-W%V).dump"
   if [ ! -e "$week" ]; then
     cp "$today" "$week.partial"
