@@ -47,6 +47,7 @@ describe('validateRows', () => {
     ['a zero amount', { amountMinor: 0 }, 'INVALID_AMOUNT'],
     ['a fractional amount', { amountMinor: 12.5 }, 'INVALID_AMOUNT'],
     ['an unsafe amount', { amountMinor: 2 ** 53 }, 'INVALID_AMOUNT'],
+    ['an amount above the BR-13 cap', { amountMinor: -(10 ** 12 + 1) }, 'INVALID_AMOUNT'],
     ['an unknown currency', { currency: 'ZZZ' }, 'INVALID_CURRENCY'],
     ['a lowercase currency', { currency: 'eur' }, 'INVALID_CURRENCY'],
     ['a long description', { description: 'x'.repeat(201) }, 'DESCRIPTION_TOO_LONG'],

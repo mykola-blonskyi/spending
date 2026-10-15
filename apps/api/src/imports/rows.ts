@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { type CurrencyCode, parseCurrency } from '../common/money';
-import { calendarDateSchema, type EntryKind } from '../ledger/views';
+import { amountMinorSchema, calendarDateSchema, type EntryKind } from '../ledger/views';
 
 export const IMPORT_ROWS_MAX = 5000;
 const DESCRIPTION_MAX = 200;
@@ -48,7 +48,7 @@ type Checked = { row: NormalizedRow } | { reason: RejectReason };
 function checkRow(input: ImportRowInput, accountCurrency: CurrencyCode): Checked {
   if (!calendarDateSchema.safeParse(input.occurredOn).success) return { reason: 'INVALID_DATE' };
   const amount = input.amountMinor;
-  if (!Number.isSafeInteger(amount) || amount === 0) return { reason: 'INVALID_AMOUNT' };
+  if (!amountMinorSchema.safeParse(Math.abs(amount)).success) return { reason: 'INVALID_AMOUNT' };
   const currency = input.currency === undefined ? accountCurrency : parseCurrency(input.currency);
   if (!currency) return { reason: 'INVALID_CURRENCY' };
   const description = input.description.trim();
