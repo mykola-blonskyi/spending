@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import type { Profile } from '@data/session';
 import { cn } from '@shared/lib/utils';
+
+export type AvatarUser = { displayName: string; avatarUrl: string | null };
 
 function initials(name: string): string {
   const letters = name
@@ -11,9 +12,10 @@ function initials(name: string): string {
   return letters.join('') || '?';
 }
 
-export function UserAvatar({ profile, className }: { profile: Profile; className?: string }) {
+/** A picture when there is one, else initials. Decorative: name the person in text next to it. */
+export function UserAvatar({ user, className }: { user: AvatarUser; className?: string }) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const url = profile.avatarUrl !== failedUrl ? profile.avatarUrl : null;
+  const url = user.avatarUrl !== failedUrl ? user.avatarUrl : null;
 
   return (
     <span
@@ -32,7 +34,7 @@ export function UserAvatar({ profile, className }: { profile: Profile; className
           onError={() => setFailedUrl(url)}
         />
       ) : (
-        initials(profile.displayName)
+        initials(user.displayName)
       )}
     </span>
   );

@@ -31,13 +31,21 @@ export class E2EDatabase {
       description: string;
       version: number;
       deleted: boolean;
+      scope: 'personal' | 'family';
     }>(
-      `select t.id, t.amount_minor, t.description, t.version, t.deleted_at is not null as deleted
+      `select t.id, t.amount_minor, t.description, t.version, t.deleted_at is not null as deleted,
+              w.kind as scope
          from transactions t join users u on u.id = t.created_by
+         join workspaces w on w.id = t.workspace_id
         where u.email = $1 order by t.created_at`,
       [email],
     );
     return rows.map((row) => ({ ...row, amount_minor: Number(row.amount_minor) }));
+  }
+
+  /** Every invitation link is past its expiry from now on. */
+  async expireInvitations(): Promise<void> {
+    await this.pool.query("update invitations set expires_at = now() - interval '1 minute'");
   }
 
   close(): Promise<void> {

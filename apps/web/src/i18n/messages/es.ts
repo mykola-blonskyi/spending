@@ -124,9 +124,20 @@ export const es = {
     label: 'Cuenta: {name}',
   },
   invite: {
-    title: 'Te han invitado',
-    description: 'Inicia sesión para unirte a este espacio familiar y compartir los gastos juntos.',
-    accept: 'Iniciar sesión y aceptar',
+    title: '¿Unirte a {family}?',
+    description:
+      '{owner} te invita a compartir los gastos familiares. Las entradas personales siguen siendo privadas.',
+    validUntil: 'Este enlace funciona hasta el {date}.',
+    accept: 'Unirme a {family}',
+    notNow: 'Ahora no',
+    joined: 'Bienvenido a {family}',
+    invalidTitle: 'Esta invitación ya no es válida',
+    invalidDescription:
+      'El enlace puede haber caducado, haberse usado ya o haberse revocado. Pide al propietario de la familia uno nuevo.',
+    alreadyTitle: 'Ya formas parte de una familia',
+    alreadyDescription:
+      'Solo se puede pertenecer a una familia a la vez. Sal de {family} antes de unirte a otra.',
+    openFamily: 'Abrir mi familia',
   },
   pages: {
     dashboard: {
@@ -202,8 +213,6 @@ export const es = {
     family: {
       title: 'Familia',
       description: 'Comparte un espacio con las personas con las que vives.',
-      emptyTitle: 'De momento, solo tú',
-      emptyDescription: 'Invita a tu familia para llevar juntos los gastos compartidos.',
     },
     settings: {
       title: 'Ajustes',
@@ -282,6 +291,107 @@ export const es = {
     signOutNote:
       'Al cerrar sesión, tus datos se borran de este dispositivo. En el servidor todo sigue a salvo.',
   },
+  family: {
+    create: {
+      title: 'Crear un espacio familiar',
+      description:
+        'Los gastos compartidos viven en la familia. Tus entradas personales siguen siendo tuyas, y cada entrada nueva pregunta a cuál pertenece.',
+      nameLabel: 'Nombre de la familia',
+      namePlaceholder: 'Los García',
+      submit: 'Crear familia',
+      created: 'Familia creada',
+    },
+    roles: {
+      owner: 'Propietario',
+      member: 'Miembro',
+    },
+    you: 'tú',
+    members: {
+      title: 'Miembros',
+      count: '{count, plural, one {# miembro} other {# miembros}}',
+      joined: 'Se unió el {date}',
+      remove: 'Quitar',
+      removeTitle: '¿Quitar a {name} de la familia?',
+      removeDescription:
+        'Las entradas familiares que registró {name} se quedan en la familia. Sus datos personales nunca se compartieron.',
+      removed: 'Se quitó a {name}',
+      makeOwner: 'Hacer propietario',
+      transferTitle: '¿Hacer propietario a {name}?',
+      transferDescription:
+        'Pasarás a ser un miembro normal. Solo {name} podrá invitar, quitar miembros y eliminar la familia.',
+      transferConfirm: 'Transferir la propiedad',
+      transferred: '{name} ahora es el propietario',
+      actionsFor: 'Acciones para {name}',
+    },
+    invitations: {
+      title: 'Invitaciones',
+      description:
+        'Cada enlace funciona una sola vez y se muestra una sola vez. Compártelo como prefieras.',
+      expiry: 'Enlace válido durante',
+      days: '{count, plural, one {# día} other {# días}}',
+      create: 'Crear enlace de invitación',
+      linkLabel: 'Enlace de invitación',
+      copy: 'Copiar enlace',
+      copied: 'Enlace copiado',
+      copyFailed: 'Aquí no se puede copiar automáticamente. Selecciona el enlace y cópialo tú.',
+      empty: 'Todavía no hay enlaces de invitación.',
+      revoke: 'Revocar',
+      revoked: 'Invitación revocada',
+      state: {
+        pending: 'Pendiente',
+        accepted: 'Aceptada',
+        revoked: 'Revocada',
+        expired: 'Caducada',
+      },
+      expires: 'Caduca el {date}',
+      acceptedBy: 'Aceptada por {name}',
+      createdOn: 'Creada el {date}',
+    },
+    leave: {
+      title: 'Salir de la familia',
+      description:
+        'Tus entradas personales se quedan contigo. Las entradas familiares que registraste se quedan en la familia.',
+      ownerNote:
+        'Como propietario no puedes salir. Haz propietario a otro miembro primero, o elimina la familia.',
+      action: 'Salir de la familia',
+      confirmTitle: '¿Salir de {family}?',
+      confirmDescription:
+        'Pierdes el acceso a las entradas familiares de inmediato. Puedes volver a unirte con una invitación nueva.',
+      left: 'Has salido de la familia',
+    },
+    delete: {
+      title: 'Eliminar la familia',
+      description:
+        'Cada entrada familiar vuelve al espacio personal del miembro que la registró, con su categoría recreada allí. Las cuentas, categorías, presupuestos y pagos recurrentes de la familia se eliminan.',
+      action: 'Eliminar familia',
+      confirmTitle: '¿Eliminar {family}?',
+      confirmDescription: 'Las entradas vuelven a sus autores. Esto no se puede deshacer.',
+      deleted: 'Familia eliminada',
+    },
+    dangerZone: 'Salir o eliminar',
+    events: {
+      title: 'Actividad',
+      empty: 'Todavía no ha pasado nada.',
+      formerMember: 'Un antiguo miembro',
+      family_created: '{actor} creó la familia',
+      renamed: '{actor} cambió el nombre de la familia',
+      invitation_created: '{actor} creó un enlace de invitación',
+      invitation_revoked: '{actor} revocó un enlace de invitación',
+      member_joined: '{subject} se unió',
+      member_left: '{subject} salió',
+      member_removed: '{actor} quitó a {subject}',
+      ownership_transferred: '{actor} hizo propietario a {subject}',
+    },
+    scope: {
+      label: 'Para quién es',
+      personal: 'Personal',
+      family: 'Familia',
+    },
+    author: {
+      paidBy: 'Pagado por {name}',
+      formerMember: 'Antiguo miembro',
+    },
+  },
   errors: {
     AUTH_REQUIRED: 'Inicia sesión para continuar.',
     SESSION_REVOKED: 'Se ha cerrado tu sesión. Vuelve a iniciar sesión.',
@@ -293,6 +403,12 @@ export const es = {
     RATE_LIMITED: 'Demasiados intentos. Espera un momento y vuelve a intentarlo.',
     PAYLOAD_TOO_LARGE: 'El archivo es demasiado grande para subirlo.',
     UNAVAILABLE: 'El servicio no está disponible temporalmente. Inténtalo de nuevo en breve.',
+    CONFIRMATION_MISMATCH: 'El nombre que escribiste no coincide.',
+    FAMILY_EXISTS: 'Ya formas parte de una familia.',
+    OWNER_CANNOT_LEAVE:
+      'El propietario no puede salir. Transfiere la propiedad o elimina la familia.',
+    FAMILY_OWNER_MUST_TRANSFER: 'Primero transfiere la propiedad o elimina la familia.',
+    INVITATION_INVALID: 'Esta invitación ya no es válida.',
     INTERNAL: 'Algo ha fallado por nuestra parte. Inténtalo de nuevo en un momento.',
     NETWORK:
       'Sin conexión con el servidor. Comprueba tu conexión a internet y vuelve a intentarlo.',

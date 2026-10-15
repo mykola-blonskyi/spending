@@ -1876,7 +1876,9 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: unknown;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -1910,7 +1912,9 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                userId: unknown;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -1969,7 +1973,9 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                token: unknown;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -1988,7 +1994,9 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                token: unknown;
+            };
             cookie?: never;
         };
         requestBody?: never;
