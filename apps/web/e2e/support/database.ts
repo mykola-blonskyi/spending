@@ -40,6 +40,43 @@ export class E2EDatabase {
     return rows.map((row) => ({ ...row, amount_minor: Number(row.amount_minor) }));
   }
 
+  /** The user's accounts as the server holds them, archived ones included. */
+  async accounts(email: string) {
+    const { rows } = await this.pool.query<{
+      name: string;
+      kind: string;
+      currency: string;
+      archived: boolean;
+    }>(
+      `select a.name, a.kind, a.currency, a.archived_at is not null as archived
+         from accounts a
+         join memberships m on m.workspace_id = a.workspace_id
+         join users u on u.id = m.user_id
+        where u.email = $1 order by a.created_at, a.name`,
+      [email],
+    );
+    return rows;
+  }
+
+  /** The user's categories as the server holds them, archived ones included. */
+  async categories(email: string) {
+    const { rows } = await this.pool.query<{
+      name: string;
+      kind: string;
+      color: string;
+      icon: string;
+      archived: boolean;
+    }>(
+      `select c.name, c.kind, c.color, c.icon, c.archived_at is not null as archived
+         from categories c
+         join memberships m on m.workspace_id = c.workspace_id
+         join users u on u.id = m.user_id
+        where u.email = $1 order by c.created_at, c.name`,
+      [email],
+    );
+    return rows;
+  }
+
   close(): Promise<void> {
     return this.pool.end();
   }

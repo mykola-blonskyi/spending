@@ -9,7 +9,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBody, ApiQuery } from '@nestjs/swagger';
+import { ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { createZodDto, ZodResponse } from 'nestjs-zod';
 import { z } from 'zod';
 import { type Actor, CurrentActor } from '../common/actor';
@@ -43,7 +43,7 @@ class TransactionPageDto extends createZodDto(
   }),
 ) {}
 
-// @ApiBody and @ApiQuery are explicit because tsx, which writes the OpenAPI file, emits no
+// @ApiBody, @ApiQuery and @ApiParam are explicit because tsx, which writes the OpenAPI file, emits no
 // parameter metadata.
 @Controller('v1')
 export class LedgerController {
@@ -64,6 +64,7 @@ export class LedgerController {
   }
 
   @Patch('accounts/:id')
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
   @ApiBody({ type: UpdateAccountDto })
   @ZodResponse({ status: 200, type: AccountDto })
   updateAccount(
@@ -89,6 +90,7 @@ export class LedgerController {
   }
 
   @Patch('categories/:id')
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
   @ApiBody({ type: UpdateCategoryDto })
   @ZodResponse({ status: 200, type: CategoryDto })
   updateCategory(

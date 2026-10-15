@@ -1,7 +1,11 @@
-/** Fixed ports keep the three E2E servers away from `pnpm dev` (3000, 4400, 5173). */
-export const WEB_PORT = 4173;
-export const API_PORT = 3410;
-export const OIDC_PORT = 4410;
+/**
+ * Fixed ports keep the three E2E servers away from `pnpm dev` (3000, 4400, 5173). Worktrees that
+ * run E2E side by side shift all three with E2E_PORT_OFFSET.
+ */
+const OFFSET = Number(process.env.E2E_PORT_OFFSET ?? 0);
+export const WEB_PORT = 4173 + OFFSET;
+export const API_PORT = 3410 + OFFSET;
+export const OIDC_PORT = 4410 + OFFSET;
 
 export const APP_ORIGIN = `http://127.0.0.1:${WEB_PORT}`;
 export const API_ORIGIN = `http://127.0.0.1:${API_PORT}`;

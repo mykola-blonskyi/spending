@@ -1,0 +1,75 @@
+import type { Page } from '@playwright/test';
+import { APP_ORIGIN } from './env';
+
+const CATEGORY_NAMES = ['Groceries', 'Dining', 'Transport', 'Housing', 'Health', 'Salary'];
+
+/**
+ * Seeds `count` entries for the signed-in user through the sync push API, as another device
+ * would, spread over two accounts it creates when the user has none ("Wallet" and "Daily card").
+ * Descriptions are "Seed <n> <word>", dates walk back one day per 5 entries, currencies
+ * cycle EUR/EUR/EUR/USD/GBP, every 7th entry is income.
+ */
+export async function seedEntries(page: Page, count: number): Promise<void> {
+  const session = await (await page.request.get('/api/v1/auth/session')).json();
+  const pull = await (await page.request.get('/api/v1/sync/pull?cursor=0&limit=1000')).json();
+  const personal = pull.workspaces.find((w: { kind: string }) => w.kind === 'personal');
+  const categories = pull.categories.filter(
+    (c: { workspaceId: string }) => c.workspaceId === personal.id,
+  );
+  const headers = { 'X-CSRF-Token': session.csrfToken, Origin: APP_ORIGIN };
+  let accounts = pull.accounts.filter(
+    (a: { workspaceId: string }) => a.workspaceId === personal.id,
+  );
+  if (accounts.length === 0) {
+    for (const [name, kind] of [
+      ['Wallet', 'cash'],
+      ['Daily card', 'card'],
+    ] as const) {
+      const created = await page.request.post('/api/v1/accounts', {
+        headers,
+        data: { workspaceId: personal.id, name, kind, currency: 'EUR' },
+      });
+      if (!created.ok())
+        throw new Error(`account failed: ${created.status()} ${await created.text()}`);
+      accounts = [...accounts, await created.json()];
+    }
+  }
+  const byName = (name: string, kind: string) =>
+    categories.find((c: { name: string; kind: string }) => c.name === name && c.kind === kind);
+  const start = new Date();
+  const mutations = [];
+  for (let n = 1; n <= count; n += 1) {
+    const income = n % 7 === 0;
+    const date = new Date(start);
+    date.setDate(start.getDate() - Math.floor((n - 1) / 5));
+    const currency = ['EUR', 'EUR', 'EUR', 'USD', 'GBP'][n % 5]!;
+    const category = income
+      ? byName('Salary', 'income')
+      : byName(CATEGORY_NAMES[n % 5]!, 'expense');
+    mutations.push({
+      mutationId: crypto.randomUUID(),
+      type: 'transaction.upsert',
+      baseVersion: null,
+      transaction: {
+        id: crypto.randomUUID(),
+        workspaceId: personal.id,
+        kind: income ? 'income' : 'expense',
+        amountMinor: 100 + ((n * 37) % 20000),
+        currency,
+        occurredOn: date.toISOString().slice(0, 10),
+        accountId: accounts[n % (accounts.length || 1)]?.id ?? null,
+        categoryId: category?.id ?? null,
+        description: `Seed ${n} ${CATEGORY_NAMES[n % CATEGORY_NAMES.length]}`,
+        note: n % 3 === 0 ? `note ${n}` : '',
+      },
+    });
+  }
+  for (let i = 0; i < mutations.length; i += 200) {
+    const response = await page.request.post('/api/v1/sync/push', {
+      headers,
+      data: { mutations: mutations.slice(i, i + 200) },
+    });
+    if (!response.ok())
+      throw new Error(`push failed: ${response.status()} ${await response.text()}`);
+  }
+}

@@ -69,10 +69,29 @@ catalog, so shared components stay translated without importing `i18n`. API fail
 as `ApiError` with a stable `code`, and screens show `errors.<code>` from the catalog.
 
 **Layouts and palettes.** The profile stores a `layout` and a `palette`. `app/layouts/registry`
-maps each layout to a shell from `shared/shell` (all take the same `ShellProps`) and to optional
-dashboard, history and entry screens; a missing screen falls back to the calm version. Palettes
-are `[data-palette]` token sets in `shared/styles.css` applied on `<html>` by `shared/theme`
-(and by `public/theme-init.js` before first paint); a unit test checks their contrast.
+maps each layout to a shell from `shared/shell` (all take the same `ShellProps`) and to its
+dashboard, history, entry and detail screens; a missing screen falls back to the calm version,
+and a missing `detail` (`/transactions/:id`) falls back to the layout's entry screen, which
+edits by `:id`. Palettes are `[data-palette]` token sets in `shared/styles.css` applied on
+`<html>` by `shared/theme` (and by `public/theme-init.js` before first paint); a unit test
+checks their contrast.
+
+**Transactions feature** (`features/transactions`). Logic lives once, in pure models
+(`history-model.ts`: filters to query, rows, day grouping with row positions, per-currency
+totals; `form-model.ts`: validation, the keypad reducer) and hooks (`useHistory`,
+`useEntryForm`, `useTransactionDetail`). `blocks/` holds the building blocks every layout
+composes (`HistoryList` is the only user of TanStack Virtual and virtualizes a flat list of day
+headers and rows, scrolling the window or its own pane; `FilterSheet`, `HistoryStatus`, the
+entry fields, `MasterDetail`, `EntryDetail`). `layouts/<layout>-{history,entry}.tsx` are
+presentation only: an ESLint rule bans `@data/*` and `@tanstack/*` there. `layouts/screens.ts`
+is the per-layout table the registry reads. Split and hybrid register their master-detail
+history for both `history` and `detail`, so selecting a row keeps the list mounted.
+
+**Ledger feature** (`features/ledger`). Accounts and categories screens write through REST
+(`data/ledger.ts`) and then call `useRefreshLocalData()` (a push and pull), so the local store
+stays the only inbound path and every picker updates from it. `categoryView` localizes a default
+category by `systemKey` while its stored name still equals the English default, and maps the
+stored lucide icon name to a curated icon set (`category-icons.ts`).
 
 ## Data flow
 

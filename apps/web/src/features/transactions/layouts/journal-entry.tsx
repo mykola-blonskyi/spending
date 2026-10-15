@@ -1,0 +1,328 @@
+import { ChevronDown } from 'lucide-react';
+import { Fragment, type ReactNode, useId, useState } from 'react';
+import { useTranslations } from '@i18n/index';
+import { PageHeader } from '@shared/components';
+import { formatRelativeDay } from '@shared/format';
+import { useSharedLocale } from '@shared/lib/locale-context';
+import { cn } from '@shared/lib/utils';
+import { Button } from '@shared/ui/button';
+import { DateField, DeleteButton, DescriptionField, EntryStatus, NoteField } from '../blocks';
+import type { EntryKind } from '../form-model';
+import { type EntryForm, useEntryForm } from '../use-entry-form';
+
+type Panel = 'date' | 'category' | 'where' | 'account' | 'note';
+
+const ring =
+  'outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+
+function Chip({
+  open,
+  panelId,
+  onClick,
+  muted,
+  children,
+}: {
+  open: boolean;
+  panelId: string;
+  onClick: () => void;
+  muted?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={open}
+      aria-controls={panelId}
+      className={cn(
+        'inline-flex min-h-11 max-w-full items-center gap-1 rounded-xl px-2.5 align-baseline font-sans text-[0.8em] font-medium tracking-tight transition-[background-color,transform] duration-150 ease-out active:scale-[0.97]',
+        open ? 'bg-accent text-accent-foreground' : 'bg-muted text-foreground',
+        muted && !open && 'text-muted-foreground',
+        ring,
+      )}
+    >
+      <span className="truncate">{children}</span>
+      <ChevronDown
+        aria-hidden
+        className={cn(
+          'size-4 shrink-0 opacity-60 transition-transform duration-150',
+          open && 'rotate-180',
+        )}
+        strokeWidth={2}
+      />
+    </button>
+  );
+}
+
+function Pills<T extends string>({
+  label,
+  value,
+  items,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  items: readonly { value: T; label: string }[];
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div role="radiogroup" aria-label={label} className="flex flex-wrap rounded-3xl border p-0.5">
+      {items.map((item) => (
+        <button
+          key={item.value}
+          type="button"
+          role="radio"
+          aria-checked={item.value === value}
+          onClick={() => onChange(item.value)}
+          className={cn(
+            'flex h-10 min-w-11 items-center justify-center rounded-full px-4 text-[13px] transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.97]',
+            item.value === value
+              ? 'bg-accent font-medium text-accent-foreground'
+              : 'text-muted-foreground hover:text-foreground',
+            ring,
+          )}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Options({
+  label,
+  value,
+  items,
+  onPick,
+}: {
+  label: string;
+  value: string | null;
+  items: readonly { value: string; label: string; icon?: ReactNode }[];
+  onPick: (value: string) => void;
+}) {
+  return (
+    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-2">
+      {items.map((item) => {
+        const on = item.value === value;
+        return (
+          <button
+            key={item.value}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            onClick={() => onPick(item.value)}
+            className={cn(
+              'flex h-11 items-center gap-2 rounded-full border px-4 text-sm transition-[background-color,transform] duration-150 ease-out active:scale-[0.97]',
+              on
+                ? 'border-primary bg-accent font-medium text-accent-foreground'
+                : 'bg-card hover:bg-muted',
+              ring,
+            )}
+          >
+            {item.icon}
+            {item.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Fills the catalog sentence's `{name}` blanks, so each language orders them its own way. */
+function fill(template: string, blanks: Record<string, ReactNode>): ReactNode[] {
+  return template
+    .split(/\{(\w+)\}/)
+    .map((part, index) =>
+      index % 2 === 0 ? part : <Fragment key={part}>{blanks[part]}</Fragment>,
+    );
+}
+
+function Sentence({
+  form,
+  open,
+  toggle,
+}: {
+  form: EntryForm;
+  open: Panel | null;
+  toggle: (panel: Panel) => void;
+}) {
+  const t = useTranslations();
+  const { locale } = useSharedLocale();
+  const amountId = useId();
+  const base = useId();
+  const { values } = form;
+  const invalid = form.errors.amount === 'invalid';
+  const category = form.categories.find((item) => item.id === values.categoryId);
+  const account = form.accounts.find((item) => item.id === values.accountId);
+  const chip = (panel: Panel, label: string | undefined, fallback: string) => (
+    <Chip
+      open={open === panel}
+      panelId={`${base}-${panel}`}
+      onClick={() => toggle(panel)}
+      muted={!label}
+    >
+      {label || fallback}
+    </Chip>
+  );
+
+  return (
+    <div>
+      <p className="font-serif text-[24px] leading-[1.9] text-foreground/90 lg:text-[28px]">
+        {fill(t.raw(`entry.journal.${values.kind}`), {
+          date: chip('date', formatRelativeDay(values.occurredOn, locale), ''),
+          amount: (
+            <label
+              htmlFor={amountId}
+              className="tabular inline-flex items-baseline gap-1 rounded-xl bg-muted px-3 py-0.5 align-baseline font-sans text-5xl font-semibold tracking-tight text-foreground focus-within:outline-2 focus-within:outline-ring"
+            >
+              <input
+                id={amountId}
+                aria-label={t('transactionForm.amount')}
+                inputMode="decimal"
+                autoComplete="off"
+                placeholder="0"
+                value={values.amount}
+                aria-invalid={invalid || undefined}
+                aria-describedby={invalid ? `${amountId}-error` : undefined}
+                onChange={(event) => form.set('amount', event.target.value)}
+                className={cn(
+                  'min-w-[2ch] bg-transparent [field-sizing:content] outline-none placeholder:text-muted-foreground/60',
+                  values.kind === 'income' && 'text-income',
+                )}
+              />
+              <span aria-hidden className="text-3xl text-muted-foreground">
+                {values.currency}
+              </span>
+            </label>
+          ),
+          category: chip('category', category?.name, t('transactionForm.category')),
+          where: chip('where', values.description, t('transactionForm.description')),
+          account: chip('account', account?.name, t('transactionForm.noAccount')),
+        })}
+      </p>
+      {invalid && (
+        <p id={`${amountId}-error`} className="mt-2 text-sm text-destructive">
+          {t('transactionForm.amountInvalid')}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Journal entry: the form told as one sentence, each blank a chip that opens its options below. */
+export function JournalEntryView({ form }: { form: EntryForm }) {
+  const t = useTranslations();
+  const base = useId();
+  const [open, setOpen] = useState<Panel | null>('category');
+  const toggle = (panel: Panel) => setOpen((current) => (current === panel ? null : panel));
+  const page = form.mode === 'edit' ? 'editTransaction' : 'addTransaction';
+  const kinds: readonly { value: EntryKind; label: string }[] = [
+    { value: 'expense', label: t('transactionForm.expense') },
+    { value: 'income', label: t('transactionForm.income') },
+  ];
+
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader title={t(`pages.${page}.title`)} />
+      {form.status === 'ready' ? (
+        <form onSubmit={(event) => void form.submit(event)} noValidate className="flex flex-col">
+          <div className="flex flex-wrap gap-2">
+            <Pills
+              label={t('transactionForm.kind')}
+              value={form.values.kind}
+              items={kinds}
+              onChange={form.setKind}
+            />
+            <Pills
+              label={t('transactionForm.currency')}
+              value={form.values.currency}
+              items={form.currencies.map((currency) => ({ value: currency, label: currency }))}
+              onChange={(currency) => form.set('currency', currency)}
+            />
+          </div>
+
+          <div className="mt-8">
+            <Sentence form={form} open={open} toggle={toggle} />
+          </div>
+
+          <div className="mt-2 flex">
+            <button
+              type="button"
+              aria-expanded={open === 'note'}
+              aria-controls={`${base}-note`}
+              onClick={() => toggle('note')}
+              className={cn(
+                'flex h-11 items-center gap-1 rounded-full text-[13px] text-muted-foreground transition-colors duration-150 hover:text-foreground',
+                ring,
+              )}
+            >
+              <span className="underline decoration-border underline-offset-4">
+                {t('transactionForm.note')}
+              </span>
+              <ChevronDown
+                aria-hidden
+                className={cn(
+                  'size-4 transition-transform duration-150',
+                  open === 'note' && 'rotate-180',
+                )}
+              />
+            </button>
+          </div>
+
+          {open && (
+            <div id={`${base}-${open}`} className="mt-4 border-t pt-4">
+              {open === 'category' && (
+                <Options
+                  label={t('transactionForm.category')}
+                  value={form.values.categoryId}
+                  items={form.categories.map((category) => ({
+                    value: category.id,
+                    label: category.name,
+                    icon: <category.Icon aria-hidden className="size-4" strokeWidth={1.8} />,
+                  }))}
+                  onPick={(id) => form.set('categoryId', id === form.values.categoryId ? null : id)}
+                />
+              )}
+              {open === 'account' && (
+                <Options
+                  label={t('transactionForm.account')}
+                  value={form.values.accountId}
+                  items={form.accounts.map((account) => ({
+                    value: account.id,
+                    label: `${account.name} · ${account.currency}`,
+                  }))}
+                  onPick={form.setAccount}
+                />
+              )}
+              {open === 'date' && <DateField form={form} />}
+              {open === 'where' && <DescriptionField form={form} />}
+              {open === 'note' && <NoteField form={form} />}
+            </div>
+          )}
+
+          <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Button
+              type="submit"
+              disabled={form.submitting}
+              className="h-12 rounded-full px-8 text-[15px] transition-transform duration-150 ease-out active:scale-[0.97]"
+            >
+              {t('transactionForm.save')}
+            </Button>
+            {form.canDelete && (
+              <DeleteButton onConfirm={() => void form.remove()} className="rounded-full" />
+            )}
+            <p className="text-center text-xs text-muted-foreground sm:text-left">
+              {t('transactionForm.saveHint')}
+            </p>
+          </div>
+        </form>
+      ) : (
+        <EntryStatus status={form.status} />
+      )}
+    </div>
+  );
+}
+
+export function JournalEntry() {
+  return <JournalEntryView form={useEntryForm()} />;
+}

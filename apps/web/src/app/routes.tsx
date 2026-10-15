@@ -1,6 +1,6 @@
 import type { RouteObject } from 'react-router';
 import { RedirectIfSignedIn, RequireSession } from '@features/auth';
-import { EditTransactionPage } from '@features/transactions';
+import { AccountsPage, CategoriesPage } from '@features/ledger';
 import { ADD_TRANSACTION_PATH, DESTINATIONS } from './destinations';
 import { LayoutScreen } from './layouts/layout-screen';
 import { PlaceholderPage } from './pages/placeholder-page';
@@ -17,7 +17,9 @@ const placeholderRoutes: RouteObject[] = DESTINATIONS.filter(
   (destination) =>
     destination.nav !== 'settings' &&
     destination.nav !== 'dashboard' &&
-    destination.nav !== 'transactions',
+    destination.nav !== 'transactions' &&
+    destination.nav !== 'accounts' &&
+    destination.nav !== 'categories',
 ).map(({ path, nav, icon }) => ({
   path,
   element: <PlaceholderPage page={nav} icon={icon} />,
@@ -56,7 +58,9 @@ export const routes: RouteObject[] = [
                 element: <LayoutScreen screen={screen} />,
               })),
               { path: ADD_TRANSACTION_PATH, element: <LayoutScreen screen="entry" /> },
-              { path: '/transactions/:id', element: <EditTransactionPage /> },
+              { path: '/transactions/:id', element: <LayoutScreen screen="detail" /> },
+              { path: '/accounts', element: <AccountsPage /> },
+              { path: '/categories', element: <CategoriesPage /> },
               { path: '/settings', element: <SettingsPage /> },
               { path: '*', element: <NotFoundPage /> },
             ],
