@@ -56,7 +56,7 @@ export function CategoryGlyph({
 }
 
 const label = 'text-[13px] font-medium text-muted-foreground';
-const select = 'lg:data-[size=default]:h-9';
+const select = 'lg:h-9';
 
 /** Every entry field at desktop-form density; shared by the split entry and the detail pane. */
 export function CompactEntryForm({ form, footer }: { form: EntryForm; footer?: ReactNode }) {

@@ -77,7 +77,7 @@ export function PlayfulEntryView({ form }: { form: EntryForm }) {
               form={form}
               labelClassName="sr-only"
               className="w-28"
-              controlClassName="h-9 justify-center gap-2 rounded-full border-input/50 bg-card font-semibold shadow-none data-[size=default]:h-9 dark:bg-card"
+              controlClassName="h-9 justify-center gap-2 rounded-full border-input/50 bg-card font-semibold shadow-none dark:bg-card"
             />
           </div>
 

@@ -17,7 +17,7 @@ import { ConversionNote } from './entry-amount';
 
 const KINDS: readonly EntryKind[] = ['expense', 'income'];
 const NONE = 'none';
-const selectTrigger = 'h-11 w-full data-[size=default]:h-11';
+const selectTrigger = 'h-11 w-full';
 
 /** Seams a layout restyles a field through: the wrapper, the label and the control itself. */
 type FieldStyle = {
@@ -286,7 +286,14 @@ export function DateField({
         id={id}
         type="date"
         required
-        className={cn('h-11', controlClassName)}
+        className={cn(
+          'h-11',
+          // With our own icon, the browser's calendar button is hidden but still covers the
+          // field, so a click anywhere opens the picker.
+          icon &&
+            'relative [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:size-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0',
+          controlClassName,
+        )}
         value={form.values.occurredOn}
         onChange={(event) => event.target.value && form.set('occurredOn', event.target.value)}
       />
