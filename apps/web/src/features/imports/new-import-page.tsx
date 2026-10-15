@@ -1,5 +1,6 @@
 import { Wallet } from 'lucide-react';
 import { useId, useMemo, useState } from 'react';
+import { Link } from 'react-router';
 import type { ImportResult } from '@data/imports';
 import { type Account, useAccounts, useWorkspaces } from '@data/sync';
 import { useTranslations } from '@i18n/index';
@@ -372,6 +373,11 @@ export function NewImportPage() {
           icon={Wallet}
           title={t('imports.noAccountsTitle')}
           description={t('imports.noAccountsDescription')}
+          action={
+            <Button asChild variant="outline">
+              <Link to="/accounts">{t('imports.noAccountsAction')}</Link>
+            </Button>
+          }
         />
       </div>
     );

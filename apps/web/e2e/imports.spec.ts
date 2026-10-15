@@ -261,3 +261,16 @@ test('undoing an import keeps the edited entry and lets the statement in again',
   await expect(stat(page, 'Imported')).toHaveText('4');
   await expect(stat(page, 'Already imported')).toHaveText('1');
 });
+
+test('without a personal account, the import page points to accounts', async ({
+  page,
+  signInAs,
+}) => {
+  await signInAs('ann');
+  await page.goto('/imports/new');
+  await expect(page.getByRole('heading', { name: 'Create an account first' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Open accounts' })).toHaveAttribute(
+    'href',
+    '/accounts',
+  );
+});

@@ -290,7 +290,8 @@ export const es = {
     account: 'Cuenta',
     accountHint:
       'Los movimientos van a esta cuenta y usan su moneda salvo que el archivo indique otra.',
-    noAccountsTitle: 'Añade una cuenta primero',
+    noAccountsTitle: 'Crea una cuenta primero',
+    noAccountsAction: 'Abrir cuentas',
     noAccountsDescription: 'Un extracto se importa en una de tus cuentas personales.',
     file: 'Archivo del extracto',
     fileHint: 'Una exportación CSV de hasta 2 MiB y 5.000 filas.',

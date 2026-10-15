@@ -48,7 +48,7 @@ function ScopeToggle({
   onChange,
   label,
 }: {
-  value: Scope | undefined;
+  value: Scope;
   onChange: (scope: Scope) => void;
   label: string;
 }) {
@@ -59,7 +59,7 @@ function ScopeToggle({
       variant="outline"
       size="sm"
       aria-label={label}
-      value={value ?? ''}
+      value={value}
       onValueChange={(next) => SCOPES.includes(next as Scope) && onChange(next as Scope)}
     >
       {SCOPES.map((scope) => (
@@ -81,6 +81,7 @@ export function ReviewPage() {
   const confirm = useConfirmReview();
   const [choices, setChoices] = useState<ReadonlyMap<string, Choice>>(new Map());
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [bulkScope, setBulkScope] = useState<Scope>('personal');
 
   const workspaceOf = useMemo(() => {
     const personal = workspaces.items.find((w) => w.kind === 'personal')?.id;
@@ -100,20 +101,20 @@ export function ReviewPage() {
   const chosen = items.filter((i) => selected.has(i.transaction.id));
 
   const applyScope = (scope: Scope) => {
+    setBulkScope(scope);
     setChoices((prev) => {
       const next = new Map(prev);
       for (const item of chosen) next.set(item.transaction.id, defaultChoice(item, scope));
       return next;
     });
   };
-  /** A category implies its workspace, so picking a family one moves the row to the family. */
+  /** The bulk scope is chosen first; the category comes from that workspace, per row kind. */
   const applyCategory = (category: Category) => {
-    const scope: Scope = category.workspaceId === workspaceOf('family') ? 'family' : 'personal';
     setChoices((prev) => {
       const next = new Map(prev);
       for (const item of chosen) {
         if (item.transaction.kind === category.kind) {
-          next.set(item.transaction.id, { scope, categoryId: category.id });
+          next.set(item.transaction.id, { scope: bulkScope, categoryId: category.id });
         }
       }
       return next;
@@ -152,7 +153,7 @@ export function ReviewPage() {
               {t('imports.review.selected', { count: selected.size })}
             </span>
             <ScopeToggle
-              value={undefined}
+              value={bulkScope}
               onChange={applyScope}
               label={t('imports.review.bulkScope')}
             />
@@ -170,20 +171,14 @@ export function ReviewPage() {
                 <SelectItem value={NONE} className="hidden">
                   {t('imports.review.bulkCategory')}
                 </SelectItem>
-                {SCOPES.filter((scope) => workspaceOf(scope)).map((scope) => (
-                  <SelectGroup key={scope}>
-                    <SelectLabel>{t(`imports.review.${scope}`)}</SelectLabel>
-                    {live
-                      .filter((c) => c.workspaceId === workspaceOf(scope))
-                      .map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                          <span className="text-muted-foreground">
-                            {' '}
-                            · {t(`transactionForm.${category.kind}`)}
-                          </span>
-                        </SelectItem>
-                      ))}
+                {(['expense', 'income'] as const).map((kind) => (
+                  <SelectGroup key={kind}>
+                    <SelectLabel>{t(`transactionForm.${kind}`)}</SelectLabel>
+                    {optionsFor(bulkScope, kind).map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
                   </SelectGroup>
                 ))}
               </SelectContent>

@@ -58,6 +58,9 @@ test('a family member reviews imported rows and publishes some to the family', a
     .getByRole('radio', { name: 'Family' })
     .click();
   await expect(rows.and(page.locator('[data-scope="family"]'))).toHaveCount(5);
+  // The bulk category list follows the chosen scope and applies per row kind.
+  await page.getByRole('combobox', { name: 'Category for selected' }).click();
+  await page.getByRole('option', { name: 'Groceries' }).click();
   const mercadona = 'COMPRA TARJ. 5489XXXX1234 MERCADONA S.A.';
   await page
     .getByRole('radiogroup', { name: `Scope: ${mercadona}` })
@@ -70,6 +73,9 @@ test('a family member reviews imported rows and publishes some to the family', a
   await expect(page.getByRole('combobox', { name: 'Category: NÓMINA ACME SL' })).toHaveText(
     'Salary',
   );
+  await expect(page.getByRole('combobox', { name: 'Category: RECIBO ENDESA ENERGÍA' })).toHaveText(
+    'Groceries',
+  );
 
   await page.getByRole('button', { name: 'Publish 5 rows' }).click();
   await expect(page.getByText('5 rows published.')).toBeVisible();
@@ -81,7 +87,7 @@ test('a family member reviews imported rows and publishes some to the family', a
       .filter((r) => r.scope === 'family')
       .map((r) => r.category)
       .sort(),
-  ).toEqual(['Dining', 'Dining', 'Salary', 'Utilities']);
+  ).toEqual(['Groceries', 'Groceries', 'Groceries', 'Salary']);
   expect(history.find((r) => r.description === mercadona)).toMatchObject({
     scope: 'personal',
     category: 'Groceries',
