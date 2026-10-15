@@ -80,7 +80,7 @@ function exposedStatus(exception: unknown): number | undefined {
 }
 
 /** Drizzle puts query parameters (tokens, amounts, notes) in its message; log only the cause. */
-function describeUnexpected(exception: unknown): string {
+export function describeUnexpected(exception: unknown): string {
   if (exception instanceof DrizzleQueryError) {
     const cause = exception.cause as { code?: string; message?: string } | undefined;
     return `Query failed: ${cause?.code ?? 'unknown'} ${cause?.message ?? ''}`.trim();

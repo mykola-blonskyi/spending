@@ -173,6 +173,21 @@ describe('authentication', () => {
       },
     );
 
+    it('sends a login that fails after the exchange back to sign-in', async () => {
+      await t.db.execute(sql`
+        create function refuse_session() returns trigger language plpgsql
+          as $$ begin raise exception 'refused'; end $$;
+        create trigger refuse_session before insert on sessions
+          for each row execute function refuse_session();`);
+      try {
+        const outcome = await login(t, ann.sub);
+        expect(outcome.location).toBe('/signin?error=login_failed');
+        expect(outcome.cookie).toBeUndefined();
+      } finally {
+        await t.db.execute(sql`drop function refuse_session() cascade`);
+      }
+    });
+
     it('rejects a callback with an unknown state or a provider error', async () => {
       const unknown = await callback(`${t.baseUrl}/api/v1/auth/callback?code=x&state=nope`);
       expect(unknown.location).toBe('/signin?error=login_failed');
