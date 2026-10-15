@@ -1,7 +1,9 @@
-import { isDeleted, type TransactionInput } from './model';
+import { isDeleted, type Resolution, type TransactionInput } from './model';
+import { settleConflict } from './pull';
 import { discardFailed } from './push';
 import { applyLocalChange, type LocalChange } from './queue';
 import type { LocalStore } from './store';
+import { postResolution } from './transport';
 
 export type TransactionDraft = Omit<TransactionInput, 'id'>;
 
@@ -41,4 +43,14 @@ export async function deleteTransaction(store: LocalStore, id: string): Promise<
 /** Drops an entry's rejected change, back to its last server row or gone if it never synced. */
 export async function discardChange(store: LocalStore, id: string): Promise<void> {
   await store.commit((state) => discardFailed(state, id));
+}
+
+/** Resolves a conflict on the server (online only), then closes it on this device. */
+export async function resolveConflict(
+  store: LocalStore,
+  conflictId: string,
+  resolution: Resolution,
+): Promise<void> {
+  const row = await postResolution(conflictId, resolution);
+  await store.commit((state) => settleConflict(state, conflictId, row));
 }

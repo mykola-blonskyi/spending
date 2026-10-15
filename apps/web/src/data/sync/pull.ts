@@ -1,4 +1,11 @@
-import { isTombstone, type LocalState, type PullPage, type TransactionRecord } from './model';
+import {
+  isTombstone,
+  type LocalState,
+  type PullPage,
+  type ServerRow,
+  type TransactionRecord,
+  withoutEntries,
+} from './model';
 
 export type PullOutcome = Readonly<{ state: LocalState; hasMore: boolean }>;
 
@@ -11,6 +18,27 @@ function upsertAll<V extends { id: string; workspaceId: string }>(
   for (const row of rows) next.set(row.id, row);
   for (const [id, row] of next) if (removedWorkspaces.has(row.workspaceId)) next.delete(id);
   return next;
+}
+
+/** A row with a pending change keeps its overlay and only refreshes the stored server row. */
+function applyServerRow(
+  transactions: Map<string, TransactionRecord>,
+  row: ServerRow,
+  pending: boolean,
+): void {
+  const current = transactions.get(row.id);
+  if (pending && current) {
+    if (!isTombstone(row)) transactions.set(row.id, { ...current, server: row });
+  } else if (isTombstone(row)) {
+    transactions.delete(row.id);
+  } else {
+    transactions.set(row.id, {
+      id: row.id,
+      workspaceId: row.workspaceId,
+      server: row,
+      local: null,
+    });
+  }
 }
 
 /**
@@ -30,22 +58,7 @@ export function reducePull(state: LocalState, page: PullPage, now: string): Pull
   const pending = new Set([...state.mutations.values()].map((m) => m.transactionId));
 
   const transactions = new Map(state.transactions);
-  for (const row of page.transactions) {
-    const current = transactions.get(row.id);
-    if (pending.has(row.id) && current) {
-      if (!isTombstone(row)) transactions.set(row.id, { ...current, server: row });
-    } else if (isTombstone(row)) {
-      transactions.delete(row.id);
-    } else {
-      const record: TransactionRecord = {
-        id: row.id,
-        workspaceId: row.workspaceId,
-        server: row,
-        local: null,
-      };
-      transactions.set(row.id, record);
-    }
-  }
+  for (const row of page.transactions) applyServerRow(transactions, row, pending.has(row.id));
   for (const [id, record] of transactions) {
     if (removed.has(record.workspaceId) && !pending.has(id)) transactions.delete(id);
   }
@@ -67,4 +80,15 @@ export function reducePull(state: LocalState, page: PullPage, now: string): Pull
     },
     hasMore,
   };
+}
+
+/**
+ * A conflict the server just resolved: it closes here at once and the entry takes the row the
+ * server answered with, so this device does not wait for the next pull.
+ */
+export function settleConflict(state: LocalState, conflictId: string, row: ServerRow): LocalState {
+  const transactions = new Map(state.transactions);
+  const pending = [...state.mutations.values()].some((m) => m.transactionId === row.id);
+  applyServerRow(transactions, row, pending);
+  return { ...state, transactions, conflicts: withoutEntries(state.conflicts, [conflictId]) };
 }

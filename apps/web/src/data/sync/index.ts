@@ -1,6 +1,7 @@
 export {
   useAccounts,
   useCategories,
+  useConflicts,
   useDeleteTransaction,
   useDiscardChange,
   useInitialSync,
@@ -11,13 +12,22 @@ export {
   useRefreshLocalData,
   useSyncNow,
   useRequestSync,
+  useResolveConflict,
   useSyncStatus,
   useUpdateTransaction,
   useWorkspaces,
 } from './local-data-context';
 export { LocalDataProvider } from './local-data-provider';
 export { countUnsentMutations } from './store';
-export type { Account, Category, Workspace } from './model';
+export {
+  isTombstone,
+  type Account,
+  type Category,
+  type Conflict,
+  type Resolution,
+  type TransactionInput,
+  type Workspace,
+} from './model';
 export {
   totalsByCurrency,
   type EntrySync,

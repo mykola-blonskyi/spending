@@ -137,8 +137,15 @@ stored lucide icon name to a curated icon set (`category-icons.ts`).
   ends. A page started offline fetches the CSRF token before its first write (`client.ts`).
 - **Status badge.** "Syncing" shows only after 300 ms and "synced" stays at least 600 ms, so a
   quick sync never flickers. The badge is a polite live region.
-- **Conflicts.** The server keeps its row and records the client's version (BR-19). The client
-  shows both and lets the user pick or merge.
+- **Conflicts.** The server keeps its row and records the client's version (BR-19); history
+  shows the server row marked "Needs review", so totals count it once. The sync center (`/sync`,
+  reached from the badge) lists open conflicts. Its review dialog shows both versions side by
+  side, highlights the differing fields and names them in its description, so a screen reader
+  announces them. A deletion on either side is shown as "Deleted" and offers only keep server or
+  keep mine; otherwise each differing field can be picked (amount and currency together).
+  Resolving needs the network: `POST /sync/conflicts/:id/resolve` runs at once, and its row
+  closes the conflict locally (`settleConflict`). Other devices drop it on their next pull,
+  which replaces the full conflict list.
 - **Rejected changes.** A `rejected` result keeps the overlay and marks the mutation `failed`
   with its code; history shows "Not synced" with the reason from `errors.<code>`, and other
   entries keep syncing. Editing the entry replaces the failed mutation with a fresh one, since the
