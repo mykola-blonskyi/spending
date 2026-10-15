@@ -151,6 +151,17 @@ describe('useEntryForm', () => {
     expect(queueOrder(data.current())).toMatchObject([{ baseVersion: 4 }]);
   });
 
+  it('shows the stored conversion only while amount, currency and date are unchanged', () => {
+    const fx = { rate: '1.0850', rateDate: '2026-10-14', source: 'ecb' };
+    const { result } = setup(
+      '/transactions/tx-1',
+      ledger(syncedState(serverRow({ currency: 'USD', baseAmountMinor: 1000, fx }))),
+    );
+    expect(result.current.conversion).not.toBeNull();
+    act(() => result.current.set('occurredOn', '2026-10-01'));
+    expect(result.current.conversion).toBeNull();
+  });
+
   it('removes through the queue and toasts when the device cannot write', async () => {
     const { result, data, location } = setup(
       '/transactions/tx-1',

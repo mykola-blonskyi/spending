@@ -69,8 +69,11 @@ export function localEntries(state: LocalState): TransactionEntry[] {
     if (isDeleted(record.local) && sync.state !== 'failed') continue;
     if (record.local && !isDeleted(record.local)) {
       const row = record.local;
+      // The rate depends on the date (BR-14), so a changed date drops it like a changed amount.
       const server =
-        record.server?.amountMinor === row.amountMinor && record.server.currency === row.currency
+        record.server?.amountMinor === row.amountMinor &&
+        record.server.currency === row.currency &&
+        record.server.occurredOn === row.occurredOn
           ? record.server
           : null;
       entries.push({

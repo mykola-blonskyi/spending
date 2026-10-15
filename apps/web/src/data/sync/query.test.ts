@@ -87,7 +87,7 @@ describe('localEntries conversion', () => {
     expect(conversion(edited)).toEqual([[1000, fx]]);
   });
 
-  it('drops them while a pending edit changes the amount or currency', () => {
+  it('drops them while a pending edit changes the amount, currency or date', () => {
     const changed = (patch: Parameters<typeof localRow>[0]) =>
       conversion(
         applyLocalChange(
@@ -99,6 +99,9 @@ describe('localEntries conversion', () => {
     expect(changed({ currency: 'USD', amountMinor: 2000 })).toEqual([[null, null]]);
     expect(changed({ currency: 'GBP', amountMinor: 1085 })).toEqual([[null, null]]);
     expect(changed({ currency: 'EUR', amountMinor: 1085 })).toEqual([[1085, null]]);
+    expect(changed({ currency: 'USD', amountMinor: 1085, occurredOn: '2026-10-01' })).toEqual([
+      [null, null],
+    ]);
   });
 });
 

@@ -168,9 +168,12 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
   ].sort();
 
   const separator = decimalSeparator(locale);
-  // The stored conversion describes the stored amount; an edited amount has none until saved.
+  // The stored conversion describes the stored amount and date (BR-14); an edit has none until saved.
   const conversion =
-    stored.entry && values.amount === initial.amount && values.currency === initial.currency
+    stored.entry &&
+    values.amount === initial.amount &&
+    values.currency === initial.currency &&
+    values.occurredOn === initial.occurredOn
       ? conversionOf(stored.entry)
       : null;
 
