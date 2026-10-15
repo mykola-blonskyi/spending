@@ -84,8 +84,8 @@ Where money sits: a card, a bank account, cash.
 - `source` (`manual|import|recurring`), `importBatchId`, `importHash`, `externalId`
 - `recurringRuleId` and `recurringOccurrence` (a date), unique together
 - `reviewStatus` (`confirmed|pending_review`)
-- `version` (incremented on every write), `revision` (global change sequence used as the sync
-  cursor), `deletedAt` (a tombstone, so sync can propagate deletes), `createdAt`, `updatedAt`
+- `version` (incremented on user-visible changes only, so a background FX fill never causes a
+  conflict), `revision` (global change sequence used as the sync cursor), `deletedAt` (a tombstone, so sync can propagate deletes), `createdAt`, `updatedAt`
 
 ## SyncMutation
 
