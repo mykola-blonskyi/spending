@@ -1,13 +1,13 @@
 import { useId, useMemo, useState } from 'react';
 import type { Account, Category } from '@data/sync';
 import { useTranslations } from '@i18n/index';
-import { currencyExponent } from '@shared/format';
+import { currencyExponent, parseAmount } from '@shared/format';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
 import { Label } from '@shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@shared/ui/toggle-group';
-import { type FormValues, parseAmount } from './form-values';
+import type { FormValues } from './form-values';
 
 const NONE = 'none';
 const COMMON_CURRENCIES = ['EUR', 'USD', 'GBP', 'UAH', 'PLN'];

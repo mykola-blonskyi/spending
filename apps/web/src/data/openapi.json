@@ -1157,7 +1157,17 @@
     "/api/v1/budgets/{id}": {
       "delete": {
         "operationId": "BudgetsController_remove",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "204": {
             "description": ""
