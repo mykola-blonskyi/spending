@@ -95,6 +95,8 @@ export class FamilyService {
       await this.record(tx, family.workspaceId, actorId, 'member_left', actorId);
       return;
     }
+    // `for no key update` lets an accept's `for key share` through; this blocks it until it commits.
+    await tx.execute(sql`select 1 from workspaces where id = ${family.workspaceId} for update`);
     const others = await tx
       .select({ userId: memberships.userId })
       .from(memberships)

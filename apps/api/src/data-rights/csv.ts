@@ -34,6 +34,13 @@ const HEADER = [
   'author',
 ] as const;
 
+const FORMER_MEMBER = {
+  en: 'former member',
+  uk: 'колишній учасник',
+  ru: 'бывший участник',
+  es: 'antiguo miembro',
+} as const;
+
 function exponentOf(currency: string): number {
   const code = parseCurrency(currency);
   if (!code) throw new Error(`Stored currency ${currency} is not a known ISO 4217 code`);
@@ -43,8 +50,8 @@ function exponentOf(currency: string): number {
 /**
  * The confirmed transactions of an export as CSV (BR-31), one row each, oldest first. Amounts are
  * unsigned major units ("kind" carries the sign, BR-13). Names resolve through the export's own
- * sections, so an account the actor cannot see stays empty (BR-3). A former member's rows have
- * an empty author.
+ * sections, so an account the actor cannot see stays empty (BR-3). A former member's rows read
+ * "former member" in the actor's locale.
  */
 export function transactionsCsv(document: DataExport): string {
   const names = (rows: readonly { id: string; name: string }[]) =>
@@ -52,6 +59,7 @@ export function transactionsCsv(document: DataExport): string {
   const workspaces = names(document.workspaces);
   const accounts = names(document.accounts);
   const categories = names(document.categories);
+  const formerMember = FORMER_MEMBER[document.user.locale];
   const eurExponent = currencyExponent(BASE_CURRENCY);
   const lines = [csvRow(HEADER)];
   for (const t of document.transactions) {
@@ -72,7 +80,7 @@ export function transactionsCsv(document: DataExport): string {
         t.description,
         t.note,
         t.source,
-        t.author.displayName ?? '',
+        t.author.userId === null ? formerMember : (t.author.displayName ?? ''),
       ]),
     );
   }

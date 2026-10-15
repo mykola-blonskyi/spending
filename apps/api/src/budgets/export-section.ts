@@ -1,6 +1,6 @@
 import { inArray } from 'drizzle-orm';
 import { z } from 'zod';
-import { exportSection } from '../data-rights/export-section';
+import type { ExportSection } from '../data-rights/export-section';
 import { budgets } from '../database/schema';
 
 const budgetExportSchema = z.object({
@@ -12,7 +12,7 @@ const budgetExportSchema = z.object({
   updatedAt: z.iso.datetime(),
 });
 
-export const budgetsExport = exportSection({
+export const budgetsExport = {
   schema: z.array(budgetExportSchema),
   async read(tx, scope) {
     const rows = await tx
@@ -26,4 +26,4 @@ export const budgetsExport = exportSection({
       updatedAt: row.updatedAt.toISOString(),
     }));
   },
-});
+} satisfies ExportSection<z.ZodType>;

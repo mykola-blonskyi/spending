@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { SessionService } from '../auth/session.service';
 import { ApiError } from '../common/errors';
 import { DB, type Db, ledgerTransaction } from '../database/database.module';
-import { transactions, users, workspaces } from '../database/schema';
+import { users, workspaces } from '../database/schema';
 import { AccessPolicy } from '../workspaces/access-policy';
 import { FamilyService } from '../workspaces/family.service';
 import { transactionsCsv } from './csv';
@@ -62,8 +62,9 @@ export class DataRightsService {
    * BR-32. One ledger transaction leaves or deletes the family, keeps the family transactions the
    * user authored as a former member's, and deletes the personal workspace and the user. The
    * schema's cascades remove what hangs off them: accounts, categories, transactions, budgets,
-   * rules, imports, memberships, sync mutations, conflicts and tombstones. Family rows stay visible, so they need no tombstone. Provider refresh tokens are
-   * revoked only after commit, and their failure never undoes the deletion.
+   * rules, imports, memberships, sync mutations, conflicts and tombstones. Family rows stay
+   * visible, so they need no tombstone. Provider refresh tokens are revoked only after commit, and
+   * their failure never undoes the deletion.
    */
   async deleteUser(actorId: string, confirmation: string): Promise<void> {
     if (confirmation !== DELETE_CONFIRMATION) throw new ApiError('CONFIRMATION_MISMATCH');
@@ -72,10 +73,6 @@ export class DataRightsService {
       const personalWorkspaceId = await this.policy.personalWorkspaceId(actorId, tx);
       const tokens = await this.sessions.deleteAllOf(tx, actorId);
       await tx.delete(workspaces).where(eq(workspaces.id, personalWorkspaceId));
-      await tx
-        .update(transactions)
-        .set({ createdBy: null })
-        .where(eq(transactions.createdBy, actorId));
       await tx.delete(users).where(eq(users.id, actorId));
       return tokens;
     });

@@ -1,6 +1,6 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
-import { exportSection } from '../data-rights/export-section';
+import type { ExportSection } from '../data-rights/export-section';
 import { categoryRules, importBatches } from '../database/schema';
 
 const importBatchExportSchema = z.object({
@@ -26,18 +26,13 @@ const categoryRuleExportSchema = z.object({
 });
 
 /** Batches live in their importer's personal workspace; only the actor's own are exported. */
-export const importBatchesExport = exportSection({
+export const importBatchesExport = {
   schema: z.array(importBatchExportSchema),
   async read(tx, scope) {
     const rows = await tx
       .select()
       .from(importBatches)
-      .where(
-        and(
-          eq(importBatches.userId, scope.actorId),
-          inArray(importBatches.workspaceId, [...scope.visible]),
-        ),
-      )
+      .where(eq(importBatches.userId, scope.actorId))
       .orderBy(importBatches.createdAt, importBatches.id);
     return rows.map(({ userId: _userId, ...row }) => ({
       ...row,
@@ -45,9 +40,9 @@ export const importBatchesExport = exportSection({
       undoneAt: row.undoneAt?.toISOString() ?? null,
     }));
   },
-});
+} satisfies ExportSection<z.ZodType>;
 
-export const categoryRulesExport = exportSection({
+export const categoryRulesExport = {
   schema: z.array(categoryRuleExportSchema),
   async read(tx, scope) {
     const rows = await tx
@@ -57,4 +52,4 @@ export const categoryRulesExport = exportSection({
       .orderBy(categoryRules.workspaceId, categoryRules.merchantKey);
     return rows.map((row) => ({ ...row, updatedAt: row.updatedAt.toISOString() }));
   },
-});
+} satisfies ExportSection<z.ZodType>;

@@ -19,5 +19,3 @@ export type ExportSection<S extends z.ZodType> = Readonly<{
   schema: S;
   read: (tx: Tx, scope: ExportScope) => Promise<z.infer<S>>;
 }>;
-
-export const exportSection = <S extends z.ZodType>(section: ExportSection<S>) => section;

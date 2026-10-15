@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
   accounts,
@@ -215,6 +215,32 @@ describe('family workspaces', () => {
     expect([200, 410]).toContain(accepted.status);
     expect(deleted.status).toBe(204);
     expect((await workspacesOf(bob)).map((w) => w.kind)).toEqual(['personal']);
+  });
+
+  it('keeps a member whose accept commits while the sole owner deletes the account', async () => {
+    const family = await familyWith(ann);
+    // An accept in flight: it holds the family row `for key share` and has inserted its member.
+    const accepting = t.db.transaction(async (tx) => {
+      await tx.execute(sql`select 1 from workspaces where id = ${family.id} for key share`);
+      await tx.insert(memberships).values({
+        workspaceId: family.id,
+        workspaceKind: 'family',
+        userId: bob.userId,
+        role: 'member',
+      });
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    });
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    const deleted = await as(t, ann, '/v1/me', {
+      method: 'DELETE',
+      body: { confirmation: 'DELETE MY DATA' },
+    });
+    await accepting;
+    expect(deleted.status).toBe(409);
+    expect(await errorCode(deleted)).toBe('FAMILY_OWNER_MUST_TRANSFER');
+    expect(
+      await t.db.select().from(memberships).where(eq(memberships.userId, bob.userId)),
+    ).toHaveLength(2);
   });
 
   it('lets two concurrent accepts of one invitation succeed only once', async () => {

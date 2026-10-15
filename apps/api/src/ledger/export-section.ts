@@ -1,6 +1,6 @@
 import { and, asc, eq, inArray, isNull, or } from 'drizzle-orm';
 import { z } from 'zod';
-import { exportSection } from '../data-rights/export-section';
+import type { ExportSection } from '../data-rights/export-section';
 import { accounts, categories, transactions } from '../database/schema';
 import { accountColumns, categoryColumns, selectViewRows } from './ledger.service';
 import {
@@ -12,7 +12,7 @@ import {
   transactionViewSchema,
 } from './views';
 
-export const accountsExport = exportSection({
+export const accountsExport = {
   schema: z.array(accountViewSchema),
   async read(tx, scope) {
     const rows = await tx
@@ -22,9 +22,9 @@ export const accountsExport = exportSection({
       .orderBy(accounts.createdAt, accounts.id);
     return rows.map(toView);
   },
-});
+} satisfies ExportSection<z.ZodType>;
 
-export const categoriesExport = exportSection({
+export const categoriesExport = {
   schema: z.array(categoryViewSchema),
   async read(tx, scope) {
     const rows = await tx
@@ -34,14 +34,14 @@ export const categoriesExport = exportSection({
       .orderBy(categories.workspaceId, categories.kind, categories.name, categories.id);
     return rows.map(toView);
   },
-});
+} satisfies ExportSection<z.ZodType>;
 
 /**
  * Every live transaction the actor sees, oldest first: confirmed rows of their workspaces plus
  * pending-review rows of their personal workspace (BR-21). No tombstones (BR-16). An account
  * outside the actor's workspaces reads as null (BR-3).
  */
-export const transactionsExport = exportSection({
+export const transactionsExport = {
   schema: z.array(transactionViewSchema),
   async read(tx, scope) {
     const rows = await selectViewRows(tx)
@@ -58,4 +58,4 @@ export const transactionsExport = exportSection({
       .orderBy(asc(transactions.occurredOn), asc(transactions.createdAt), asc(transactions.id));
     return rows.map((row) => toLedgerRow(row, scope.visible) as TransactionView);
   },
-});
+} satisfies ExportSection<z.ZodType>;

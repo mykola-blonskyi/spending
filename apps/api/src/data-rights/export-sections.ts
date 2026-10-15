@@ -43,6 +43,9 @@ export async function readExport(
   exportedAt: Date,
 ): Promise<DataExport> {
   const document: Record<string, unknown> = { exportedAt: exportedAt.toISOString() };
-  for (const key of sectionKeys) document[key] = await EXPORT_SECTIONS[key].read(tx, scope);
+  for (const key of sectionKeys) {
+    const section = EXPORT_SECTIONS[key];
+    document[key] = section.schema.parse(await section.read(tx, scope));
+  }
   return document as DataExport;
 }
