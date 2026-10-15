@@ -163,8 +163,23 @@ jobs:
       - name: Build and start the production stack
         run: |
           docker compose --env-file deploy/smoke.env -f docker-compose.yml \
-            -f deploy/docker-compose.smoke.yml up -d --build --wait
+            -f deploy/docker-compose.smoke.yml up -d --build --wait web
+          docker compose --env-file deploy/smoke.env -f docker-compose.yml \
+            -f deploy/docker-compose.smoke.yml up -d backup
       - run: APP_URL=http://127.0.0.1:18080 sh scripts/check-deploy.sh
+      - name: Web logs hold no invitation token or callback code
+        run: |
+          compose="docker compose --env-file deploy/smoke.env -f docker-compose.yml -f deploy/docker-compose.smoke.yml"
+          curl -s -o /dev/null 'http://127.0.0.1:18080/invite/SECRETTOKEN?returnTo=%2Finvite%2FSECRETTOKEN'
+          curl -s -o /dev/null -X POST 'http://127.0.0.1:18080/api/v1/invitations/SECRETTOKEN/accept'
+          curl -s -o /dev/null 'http://127.0.0.1:18080/api/v1/auth/callback?code=SECRETTOKEN&state=SECRETTOKEN'
+          $compose logs --no-color web | grep -c 'GET /invite/\[redacted\]'
+          test "$($compose logs --no-color web | grep -c SECRETTOKEN)" = 0
+      - name: Backup container dumps and has rclone
+        run: |
+          compose="docker compose --env-file deploy/smoke.env -f docker-compose.yml -f deploy/docker-compose.smoke.yml"
+          $compose exec -T backup /usr/local/bin/backup.sh daily
+          $compose exec -T backup rclone version
       - if: failure()
         run: |
           docker compose --env-file deploy/smoke.env -f docker-compose.yml \
