@@ -420,6 +420,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ImportsController_list"];
+        put?: never;
+        post: operations["ImportsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ImportsController_review"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/review/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ImportsController_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{id}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ImportsController_undo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/budgets": {
         parameters: {
             query?: never;
@@ -1005,6 +1069,74 @@ export interface components {
             /** Format: date-time */
             resolvedAt: string;
             transaction: components["schemas"]["TransactionView_Output"] | components["schemas"]["Tombstone_Output"];
+        };
+        ImportDto: {
+            /** Format: uuid */
+            accountId: string;
+            fileName: string;
+            mapping: {
+                [key: string]: unknown;
+            };
+            rows: {
+                line: number;
+                occurredOn: string;
+                amountMinor: number;
+                currency?: string;
+                description: string;
+                externalId?: string;
+            }[];
+        };
+        ImportBatchView_Output: {
+            /** Format: uuid */
+            id: string;
+            accountId: string | null;
+            fileName: string;
+            rowCount: number;
+            importedCount: number;
+            duplicateCount: number;
+            rejectedCount: number;
+            /** Format: date-time */
+            createdAt: string;
+            undoneAt: string | null;
+        };
+        ImportResultDto_Output: {
+            batch: components["schemas"]["ImportBatchView_Output"];
+            imported: {
+                count: number;
+                transactionIds: string[];
+            };
+            duplicates: number;
+            rejected: {
+                line: number;
+                /** @enum {string} */
+                reason: "INVALID_DATE" | "INVALID_AMOUNT" | "INVALID_CURRENCY" | "DESCRIPTION_TOO_LONG" | "EXTERNAL_ID_TOO_LONG" | "DUPLICATE_IN_FILE_EXTERNAL_ID";
+            }[];
+        };
+        BatchListDto_Output: {
+            batches: components["schemas"]["ImportBatchView_Output"][];
+        };
+        ReviewListDto_Output: {
+            items: {
+                transaction: components["schemas"]["TransactionView_Output"];
+                familyCategoryId: string | null;
+            }[];
+        };
+        ConfirmDto: {
+            items: {
+                /** Format: uuid */
+                transactionId: string;
+                /** @enum {string} */
+                scope: "personal" | "family";
+                categoryId: string | null;
+            }[];
+        };
+        ConfirmResultDto_Output: {
+            transactions: components["schemas"]["TransactionView_Output"][];
+        };
+        UndoResultDto_Output: {
+            batch: components["schemas"]["ImportBatchView_Output"];
+            deleted: number;
+            kept: number;
         };
         BudgetListDto_Output: {
             budgets: {
@@ -1885,6 +2017,109 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ResolveResponseDto_Output"];
+                };
+            };
+        };
+    };
+    ImportsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchListDto_Output"];
+                };
+            };
+        };
+    };
+    ImportsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResultDto_Output"];
+                };
+            };
+        };
+    };
+    ImportsController_review: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewListDto_Output"];
+                };
+            };
+        };
+    };
+    ImportsController_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmResultDto_Output"];
+                };
+            };
+        };
+    };
+    ImportsController_undo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UndoResultDto_Output"];
                 };
             };
         };
