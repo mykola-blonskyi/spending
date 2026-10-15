@@ -31,6 +31,7 @@ required status checks:
 - `API integration tests`
 - `Playwright E2E`
 - `Production build`
+- `Docker stack smoke test`
 
 ### Branch protection (owner action)
 
@@ -38,7 +39,7 @@ The repository settings were not changed by this work. To require the checks:
 
 1. Settings → Rules → Rulesets → New branch ruleset, target `main`.
 2. Enable "Restrict deletions", "Block force pushes", "Require a pull request before merging".
-3. Enable "Require status checks to pass", add the five job names above, and enable "Require
+3. Enable "Require status checks to pass", add the six job names above, and enable "Require
    branches to be up to date before merging".
 
 ### Actions spending (owner action)
@@ -93,7 +94,7 @@ three servers itself and stops them afterwards:
 
 | Server       | Port | Started as                                                                              |
 | ------------ | ---- | --------------------------------------------------------------------------------------- |
-| fake OIDC    | 4410 | `node --import tsx test/fake-oidc/main.ts` with user ann                                |
+| fake OIDC    | 4410 | `node --import tsx test/fake-oidc/main.ts` with users ann and bob                       |
 | API          | 3410 | `node e2e/support/start-api.ts`: rebuilds `E2E_DATABASE_URL`, then runs `apps/api/dist` |
 | vite preview | 4173 | proxies `/api` to the API                                                               |
 

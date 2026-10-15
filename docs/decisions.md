@@ -10,8 +10,8 @@ Date: 2026-10-14
 Vite) in one repository, with no microservices.
 
 **Decision.** Use a pnpm workspace with two apps. The API is one deployable NestJS process with
-modules `auth`, `users`, `workspaces`, `ledger`, `budgets`, `recurring`, `sync`, `imports`,
-`analytics`, `database` and a small `common`. Modules call each other only through exported
+modules `auth`, `users`, `workspaces`, `ledger`, `budgets`, `recurring`, `sync`, `data-rights`,
+`imports`, `analytics`, `database` and a small `common`. Modules call each other only through exported
 services. The web app gets API types generated from the API's OpenAPI document, so no shared
 contracts package is needed.
 
@@ -190,11 +190,10 @@ Date: 2026-10-14
 **Decision.**
 
 - React 19 with Vite 8 and react-router 8.
-- Tailwind CSS 4, shadcn/ui under `@shared/ui`, and `lucide-animated` icons only where motion
-  carries meaning (sync, success).
+- Tailwind CSS 4, shadcn/ui under `@shared/ui`, and `lucide-react` icons.
 - TanStack Query for server state, Zustand for UI state, TanStack Virtual for history.
-- `use-intl` for i18n, `idb` for IndexedDB, Recharts (via shadcn charts), `vite-plugin-pwa` with
-  Workbox `generateSW`.
+- `use-intl` for i18n, `idb` for IndexedDB, plain SVG charts, `vite-plugin-pwa` with Workbox
+  `generateSW`.
 - Layer boundaries are enforced by `eslint-plugin-boundaries`.
 
 **Consequences.** The service worker precaches the shell only. `/api/*` is network-only and is
