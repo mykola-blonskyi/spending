@@ -150,3 +150,26 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+
+  stack:
+    name: Docker stack smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.CHECKOUT_REF }}
+          persist-credentials: false
+      - name: Build and start the production stack
+        run: |
+          docker compose --env-file deploy/smoke.env -f docker-compose.yml \
+            -f deploy/docker-compose.smoke.yml up -d --build --wait
+      - run: APP_URL=http://127.0.0.1:18080 sh scripts/check-deploy.sh
+      - if: failure()
+        run: |
+          docker compose --env-file deploy/smoke.env -f docker-compose.yml \
+            -f deploy/docker-compose.smoke.yml logs --no-color --tail=100
+      - if: always()
+        run: |
+          docker compose --env-file deploy/smoke.env -f docker-compose.yml \
+            -f deploy/docker-compose.smoke.yml down -v

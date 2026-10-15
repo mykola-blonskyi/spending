@@ -7,6 +7,10 @@
 #   backup.sh schedule     daily at 03:00 UTC, forever
 #
 # Dumps use pg_dump's custom format, which is gzip-compressed and is what pg_restore reads.
+# Every dump is checked with pg_restore --list before it is kept, so a corrupt or empty dump
+# fails the run instead of replacing a good backup. When BACKUP_OFFSITE_REMOTE is set (an rclone
+# destination such as :s3:bucket/spending, credentials in RCLONE_* variables), each daily dump is
+# also copied there; retention off-host is the bucket's lifecycle rule.
 # DATABASE_URL is split into the PG* environment variables, so the password is never in a
 # process argument list, and is never printed.
 set -eu
@@ -48,6 +52,7 @@ dump_to() {
   partial="$1.partial"
   trap 'rm -f "$partial"' EXIT
   pg_dump --format=custom --compress=gzip:6 --file="$partial"
+  pg_restore --list "$partial" >/dev/null || { log "$(basename "$1") failed verification"; return 1; }
   chmod 600 "$partial"
   mv "$partial" "$1"
   trap - EXIT
@@ -79,6 +84,11 @@ daily() {
     cp "$today" "$week.partial"
     mv "$week.partial" "$week"
     log "wrote $(basename "$week")"
+  fi
+  if [ -n "${BACKUP_OFFSITE_REMOTE:-}" ]; then
+    rclone copyto --quiet "$today" "${BACKUP_OFFSITE_REMOTE%/}/daily/$(basename "$today")" ||
+      { log "off-host copy failed"; return 1; }
+    log "copied $(basename "$today") off-host"
   fi
   prune "$dir/daily" daily 14
   prune "$dir/weekly" weekly 8
