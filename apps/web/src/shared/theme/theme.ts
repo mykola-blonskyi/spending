@@ -1,3 +1,5 @@
+import { applyPalette, readPalettePreference } from './palette';
+
 export const THEME_PREFERENCES = ['light', 'dark', 'system'] as const;
 export type ThemePreference = (typeof THEME_PREFERENCES)[number];
 export type ResolvedTheme = 'light' | 'dark';
@@ -50,7 +52,8 @@ export function applyTheme(theme: ResolvedTheme, root: HTMLElement = document.do
   meta.content = THEME_COLOR[theme];
 }
 
-/** Runs before the first render so the page never flashes the wrong theme. */
+/** Runs before the first render so the page never flashes the wrong theme or palette. */
 export function applyStoredTheme(): void {
   applyTheme(resolveTheme(readThemePreference(), systemDarkQuery()?.matches ?? false));
+  applyPalette(readPalettePreference());
 }

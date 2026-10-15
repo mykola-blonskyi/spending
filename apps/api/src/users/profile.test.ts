@@ -19,6 +19,7 @@ describe('identityFromClaims', () => {
       avatarUrl: 'https://cdn.example/a.png',
       locale: 'uk',
       theme: 'dark',
+      palette: 'emerald',
     });
   });
 
@@ -36,6 +37,7 @@ describe('identityFromClaims', () => {
       avatarUrl: null,
       locale: 'en',
       theme: 'system',
+      palette: 'rose',
     });
   });
 
@@ -54,6 +56,13 @@ describe('profilePatchSchema', () => {
     expect(profilePatchSchema.parse({ timezone: 'UTC' })).toEqual({ timezone: 'UTC' });
   });
 
+  it('accepts layout and palette', () => {
+    expect(profilePatchSchema.parse({ layout: 'bento', palette: 'ocean' })).toEqual({
+      layout: 'bento',
+      palette: 'ocean',
+    });
+  });
+
   it('accepts zone aliases the runtime knows under another canonical name', () => {
     expect(['Europe/Kyiv', 'Europe/Kiev']).toContain(canonicalTimezone('Europe/Kyiv'));
   });
@@ -63,6 +72,8 @@ describe('profilePatchSchema', () => {
     { displayName: 'a'.repeat(81) },
     { locale: 'de' },
     { theme: 'rose' },
+    { layout: 'grid' },
+    { palette: 'teal' },
     { timezone: 'Mars/Olympus' },
     { timezone: '+01:00' },
     { userId: 'x' },

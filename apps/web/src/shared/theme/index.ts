@@ -1,3 +1,4 @@
+export { isPalette, PALETTE_STORAGE_KEY, PALETTES, type Palette } from './palette';
 export {
   applyStoredTheme,
   THEME_PREFERENCES,

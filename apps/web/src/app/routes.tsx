@@ -1,7 +1,8 @@
 import type { RouteObject } from 'react-router';
 import { RedirectIfSignedIn, RequireSession } from '@features/auth';
-import { EditTransactionPage, NewTransactionPage, TransactionsPage } from '@features/transactions';
+import { EditTransactionPage } from '@features/transactions';
 import { ADD_TRANSACTION_PATH, DESTINATIONS } from './destinations';
+import { LayoutScreen } from './layouts/layout-screen';
 import { PlaceholderPage } from './pages/placeholder-page';
 import { SettingsPage } from './pages/settings-page';
 import { SignInPage } from './pages/signin-page';
@@ -10,8 +11,13 @@ import { DocumentLayout } from './document-layout';
 import { ShellLayout } from './shell-layout';
 import { UserLocalData } from './user-local-data';
 
+const layoutScreens = { '/': 'dashboard', '/transactions': 'history' } as const;
+
 const placeholderRoutes: RouteObject[] = DESTINATIONS.filter(
-  (destination) => destination.nav !== 'settings' && destination.nav !== 'transactions',
+  (destination) =>
+    destination.nav !== 'settings' &&
+    destination.nav !== 'dashboard' &&
+    destination.nav !== 'transactions',
 ).map(({ path, nav, icon }) => ({
   path,
   element: <PlaceholderPage page={nav} icon={icon} />,
@@ -45,8 +51,11 @@ export const routes: RouteObject[] = [
             errorElement: <RouteErrorPage />,
             children: [
               ...placeholderRoutes,
-              { path: '/transactions', element: <TransactionsPage /> },
-              { path: ADD_TRANSACTION_PATH, element: <NewTransactionPage /> },
+              ...Object.entries(layoutScreens).map(([path, screen]) => ({
+                path,
+                element: <LayoutScreen screen={screen} />,
+              })),
+              { path: ADD_TRANSACTION_PATH, element: <LayoutScreen screen="entry" /> },
               { path: '/transactions/:id', element: <EditTransactionPage /> },
               { path: '/settings', element: <SettingsPage /> },
               { path: '*', element: <NotFoundPage /> },

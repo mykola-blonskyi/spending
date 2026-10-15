@@ -68,6 +68,12 @@ and Vite. ESLint (`eslint-plugin-boundaries`) enforces the table.
 catalog, so shared components stay translated without importing `i18n`. API failures reach the UI
 as `ApiError` with a stable `code`, and screens show `errors.<code>` from the catalog.
 
+**Layouts and palettes.** The profile stores a `layout` and a `palette`. `app/layouts/registry`
+maps each layout to a shell from `shared/shell` (all take the same `ShellProps`) and to optional
+dashboard, history and entry screens; a missing screen falls back to the calm version. Palettes
+are `[data-palette]` token sets in `shared/styles.css` applied on `<html>` by `shared/theme`
+(and by `public/theme-init.js` before first paint); a unit test checks their contrast.
+
 ## Data flow
 
 - **Reads.** Accounts, categories and transactions are pulled into IndexedDB (partitioned per

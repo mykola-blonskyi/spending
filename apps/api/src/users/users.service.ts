@@ -18,6 +18,8 @@ export const profileColumns = {
   avatarUrl: users.avatarUrl,
   locale: users.locale,
   theme: users.theme,
+  layout: users.layout,
+  palette: users.palette,
   timezone: users.timezone,
 };
 
@@ -41,6 +43,7 @@ export class UsersService {
         avatarUrl: identity.avatarUrl,
         locale: identity.locale,
         theme: identity.theme,
+        palette: identity.palette,
       })
       .onConflictDoUpdate({
         target: users.oidcSub,

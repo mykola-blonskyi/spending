@@ -1,13 +1,14 @@
 import { Plus } from 'lucide-react';
 import { Link, Outlet } from 'react-router';
 import { useSyncStatus } from '@data/sync';
-import { useApplyProfilePreferences } from '@features/profile';
+import { useApplyProfilePreferences, useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
 import { OfflineBanner, SyncStatusBadge } from '@shared/components';
 import { useOnlineStatus } from '@shared/lib/network';
-import { AppShell, type NavItem } from '@shared/shell';
-import { Brand } from './brand';
+import { type NavItem } from '@shared/shell';
+import { Brand, BrandMark } from './brand';
 import { ADD_TRANSACTION_PATH, DESTINATIONS } from './destinations';
+import { LAYOUTS } from './layouts/registry';
 import { UserMenu } from './user-menu';
 
 export function ShellLayout() {
@@ -15,6 +16,8 @@ export function ShellLayout() {
   const online = useOnlineStatus();
   const syncStatus = useSyncStatus();
   useApplyProfilePreferences();
+  const { layout } = useProfile();
+  const Shell = LAYOUTS[layout].shell;
   const navItems: NavItem[] = DESTINATIONS.map((destination) => ({
     to: destination.path,
     label: t(`nav.${destination.nav}`),
@@ -23,24 +26,35 @@ export function ShellLayout() {
   }));
 
   return (
-    <AppShell
-      brand={<Brand name={t('app.name')} />}
-      navItems={navItems}
-      primaryAction={{ to: ADD_TRANSACTION_PATH, label: t('nav.addTransaction'), icon: Plus }}
-      status={
-        <div className="flex items-center gap-2">
+    <div data-layout={layout} className="contents">
+      <Shell
+        brand={<Brand name={t('app.name')} />}
+        brandMark={
           <Link
-            to="/sync"
-            className="rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60"
+            to="/"
+            aria-label={t('app.name')}
+            className="rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60"
           >
-            {syncStatus && <SyncStatusBadge status={syncStatus} />}
+            <BrandMark className="size-9" />
           </Link>
-          <UserMenu />
-        </div>
-      }
-      banner={online ? undefined : <OfflineBanner />}
-    >
-      <Outlet />
-    </AppShell>
+        }
+        navItems={navItems}
+        primaryAction={{ to: ADD_TRANSACTION_PATH, label: t('nav.addTransaction'), icon: Plus }}
+        status={
+          <div className="flex items-center gap-2">
+            <Link
+              to="/sync"
+              className="rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60"
+            >
+              {syncStatus && <SyncStatusBadge status={syncStatus} />}
+            </Link>
+            <UserMenu />
+          </div>
+        }
+        banner={online ? undefined : <OfflineBanner />}
+      >
+        <Outlet />
+      </Shell>
+    </div>
   );
 }

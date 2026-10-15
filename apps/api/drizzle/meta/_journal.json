@@ -36,6 +36,13 @@
       "when": 1792021352003,
       "tag": "0004_ledger_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792026616166,
+      "tag": "0005_layout_palette",
+      "breakpoints": true
     }
   ]
 }

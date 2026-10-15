@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { applyPalette, readPalettePreference, writePalettePreference } from './palette';
 import {
   applyTheme,
   readThemePreference,
@@ -20,19 +21,26 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [preference, setPreferenceState] = useState(readThemePreference);
   const systemDark = useSyncExternalStore(subscribeSystemDark, getSystemDark, () => false);
   const resolved = resolveTheme(preference, systemDark);
+  const [palette, setPaletteState] = useState(readPalettePreference);
 
   useEffect(() => applyTheme(resolved), [resolved]);
+  useEffect(() => applyPalette(palette), [palette]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({
       preference,
       resolved,
+      palette,
       setPreference: (next) => {
         writeThemePreference(next);
         setPreferenceState(next);
       },
+      setPalette: (next) => {
+        writePalettePreference(next);
+        setPaletteState(next);
+      },
     }),
-    [preference, resolved],
+    [preference, resolved, palette],
   );
 
   return <ThemeContext value={value}>{children}</ThemeContext>;

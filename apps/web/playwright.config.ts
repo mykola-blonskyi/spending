@@ -21,7 +21,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
-  use: { baseURL: APP_ORIGIN, trace: 'retain-on-failure' },
+  // The app's reduced-motion rule makes sheet and menu transitions near-instant, so a test never
+  // clicks through a closing overlay.
+  use: { baseURL: APP_ORIGIN, trace: 'retain-on-failure', reducedMotion: 'reduce' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {

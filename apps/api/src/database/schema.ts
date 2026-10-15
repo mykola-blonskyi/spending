@@ -28,6 +28,17 @@ export const ledgerRevision = pgSequence('ledger_revision');
 
 export const localeEnum = pgEnum('locale', ['en', 'uk', 'ru', 'es']);
 export const themeEnum = pgEnum('theme', ['light', 'dark', 'system']);
+export const layoutEnum = pgEnum('layout', [
+  'calm',
+  'cards',
+  'soft',
+  'journal',
+  'bento',
+  'split',
+  'playful',
+  'hybrid',
+]);
+export const paletteEnum = pgEnum('palette', ['emerald', 'rose', 'ocean', 'sand', 'graphite']);
 export const workspaceKindEnum = pgEnum('workspace_kind', ['personal', 'family']);
 export const memberRoleEnum = pgEnum('member_role', ['owner', 'member']);
 export const accountKindEnum = pgEnum('account_kind', ['cash', 'bank', 'card', 'savings', 'other']);
@@ -71,6 +82,8 @@ export const users = pgTable('users', {
   avatarUrl: text('avatar_url'),
   locale: localeEnum('locale').notNull().default('en'),
   theme: themeEnum('theme').notNull().default('system'),
+  layout: layoutEnum('layout').notNull().default('calm'),
+  palette: paletteEnum('palette').notNull().default('emerald'),
   timezone: text('timezone').notNull().default('Europe/Madrid'),
   createdAt: createdAt(),
   updatedAt: updatedAt(),

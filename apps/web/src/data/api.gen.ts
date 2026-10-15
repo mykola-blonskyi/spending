@@ -601,6 +601,10 @@ export interface components {
                 locale: "en" | "uk" | "ru" | "es";
                 /** @enum {string} */
                 theme: "light" | "dark" | "system";
+                /** @enum {string} */
+                layout: "calm" | "cards" | "soft" | "journal" | "bento" | "split" | "playful" | "hybrid";
+                /** @enum {string} */
+                palette: "emerald" | "rose" | "ocean" | "sand" | "graphite";
                 timezone: string;
             };
             csrfToken: string;
@@ -619,6 +623,10 @@ export interface components {
             locale: "en" | "uk" | "ru" | "es";
             /** @enum {string} */
             theme: "light" | "dark" | "system";
+            /** @enum {string} */
+            layout: "calm" | "cards" | "soft" | "journal" | "bento" | "split" | "playful" | "hybrid";
+            /** @enum {string} */
+            palette: "emerald" | "rose" | "ocean" | "sand" | "graphite";
             timezone: string;
         };
         UpdateProfileDto: {
@@ -627,6 +635,10 @@ export interface components {
             locale?: "en" | "uk" | "ru" | "es";
             /** @enum {string} */
             theme?: "light" | "dark" | "system";
+            /** @enum {string} */
+            layout?: "calm" | "cards" | "soft" | "journal" | "bento" | "split" | "playful" | "hybrid";
+            /** @enum {string} */
+            palette?: "emerald" | "rose" | "ocean" | "sand" | "graphite";
             timezone?: string;
         };
         WorkspaceListDto_Output: {
@@ -1140,6 +1152,10 @@ export interface components {
                 locale: "en" | "uk" | "ru" | "es";
                 /** @enum {string} */
                 theme: "light" | "dark" | "system";
+                /** @enum {string} */
+                layout: "calm" | "cards" | "soft" | "journal" | "bento" | "split" | "playful" | "hybrid";
+                /** @enum {string} */
+                palette: "emerald" | "rose" | "ocean" | "sand" | "graphite";
                 timezone: string;
             };
             workspaces: {
