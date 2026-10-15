@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 # pg_dump client matching the shared Postgres 18 server.
 FROM postgres:18.6-alpine
-RUN install -d -o postgres -g postgres -m 700 /backups
+RUN apk add --no-cache rclone \
+ && install -d -o postgres -g postgres -m 700 /backups
 COPY --chmod=755 deploy/backup.sh /usr/local/bin/backup.sh
 USER postgres
 ENV BACKUP_DIR=/backups
