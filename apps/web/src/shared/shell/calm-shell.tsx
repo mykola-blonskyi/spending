@@ -1,61 +1,34 @@
-import { Ellipsis, type LucideIcon } from 'lucide-react';
-import { useState } from 'react';
-import { NavLink, useLocation, matchPath } from 'react-router';
+import { Ellipsis } from 'lucide-react';
+import { NavLink } from 'react-router';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import { cn } from '@shared/lib/utils';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui/sheet';
+import {
+  focusRing,
+  isEnd,
+  MAIN_ID,
+  type NavItem,
+  type PrimaryAction,
+  type ShellProps,
+  splitNav,
+  useMore,
+} from './nav';
+import { MoreSheet, SkipLink } from './shell-primitives';
 
-export type NavItem = {
-  to: string;
-  label: string;
-  icon: LucideIcon;
-  /** Primary items sit in the mobile tab bar; secondary ones live behind "More". */
-  placement: 'primary' | 'secondary';
-};
-
-export type PrimaryAction = { to: string; label: string; icon: LucideIcon };
-
-type AppShellProps = {
-  brand: React.ReactNode;
-  navItems: readonly NavItem[];
-  primaryAction: PrimaryAction;
-  status?: React.ReactNode;
-  banner?: React.ReactNode;
-  children: React.ReactNode;
-};
-
-const MAIN_ID = 'main';
-
-const focusRing =
-  'outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background';
-
-function isEnd(to: string) {
-  return to === '/';
-}
-
-export function AppShell({
+/** Calm minimal: sidebar on desktop, bottom tabs with a round add button on mobile. */
+export function CalmShell({
   brand,
   navItems,
   primaryAction,
   status,
   banner,
   children,
-}: AppShellProps) {
+}: ShellProps) {
   const { strings } = useSharedLocale();
-  const primary = navItems.filter((item) => item.placement === 'primary');
-  const secondary = navItems.filter((item) => item.placement === 'secondary');
+  const { primary, secondary } = splitNav(navItems);
 
   return (
     <div className="min-h-dvh bg-background">
-      <a
-        href={`#${MAIN_ID}`}
-        className={cn(
-          'fixed top-2 left-2 z-50 -translate-y-16 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground focus-visible:translate-y-0',
-          focusRing,
-        )}
-      >
-        {strings.skipToContent}
-      </a>
+      <SkipLink />
 
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r bg-card/40 lg:flex">
         <div className="flex h-16 items-center px-6">{brand}</div>
@@ -145,9 +118,7 @@ function MobileTabBar({
   primaryAction: PrimaryAction;
 }) {
   const { strings } = useSharedLocale();
-  const [moreOpen, setMoreOpen] = useState(false);
-  const { pathname } = useLocation();
-  const inSecondary = secondary.some((item) => matchPath({ path: item.to, end: false }, pathname));
+  const more = useMore(secondary);
   const split = Math.ceil(primary.length / 2);
 
   const tab = (item: NavItem) => (
@@ -183,48 +154,16 @@ function MobileTabBar({
           <button
             type="button"
             aria-haspopup="dialog"
-            aria-expanded={moreOpen}
-            className={tabClass(inSecondary || moreOpen)}
-            onClick={() => setMoreOpen(true)}
+            aria-expanded={more.open}
+            className={tabClass(more.active || more.open)}
+            onClick={() => more.setOpen(true)}
           >
             <Ellipsis aria-hidden className="size-[22px]" strokeWidth={1.9} />
             <span>{strings.more}</span>
           </button>
         </li>
       </ul>
-
-      <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent
-          side="bottom"
-          className="rounded-t-2xl pb-[calc(1rem+env(safe-area-inset-bottom))]"
-        >
-          <SheetHeader>
-            <SheetTitle>{strings.moreTitle}</SheetTitle>
-          </SheetHeader>
-          <ul className="grid grid-cols-3 gap-2 px-4">
-            {secondary.map((item) => (
-              <li key={item.to}>
-                <NavLink
-                  to={item.to}
-                  onClick={() => setMoreOpen(false)}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex h-20 flex-col items-center justify-center gap-2 rounded-xl border text-xs font-medium transition-colors duration-150',
-                      isActive
-                        ? 'border-primary/30 bg-accent text-accent-foreground'
-                        : 'bg-card text-foreground hover:bg-muted',
-                      focusRing,
-                    )
-                  }
-                >
-                  <item.icon aria-hidden className="size-5" strokeWidth={1.9} />
-                  <span className="max-w-full truncate px-1">{item.label}</span>
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        </SheetContent>
-      </Sheet>
+      <MoreSheet items={secondary} open={more.open} onOpenChange={more.setOpen} />
     </nav>
   );
 }

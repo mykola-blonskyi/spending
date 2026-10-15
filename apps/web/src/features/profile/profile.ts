@@ -68,15 +68,16 @@ export function useUpdateProfile() {
 }
 
 /**
- * While signed in, the profile is the source of truth for language and theme: the server's values
+ * While signed in, the profile is the source of truth for language, theme and palette: the server's values
  * win on sign-in, and later changes go through `useUpdateProfile`. The device keeps the last
  * values, so the sign-in page matches after sign-out.
  */
 export function useApplyProfilePreferences(): void {
-  const { locale, theme } = useProfile();
+  const { locale, theme, palette } = useProfile();
   const setLocale = useLocaleStore((state) => state.setLocale);
-  const { setPreference } = useTheme();
+  const { setPreference, setPalette } = useTheme();
 
   useEffect(() => setLocale(locale), [locale, setLocale]);
   useEffect(() => setPreference(theme), [theme, setPreference]);
+  useEffect(() => setPalette(palette), [palette, setPalette]);
 }

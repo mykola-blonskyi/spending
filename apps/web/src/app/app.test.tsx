@@ -74,6 +74,21 @@ describe('app routes', () => {
     await waitFor(() => expect(document.documentElement).not.toHaveClass('dark'));
   });
 
+  it('switches the palette and the layout from settings', async () => {
+    renderAt('/settings');
+    expect(document.documentElement.dataset.palette).toBe('emerald');
+    await userEvent.click(screen.getByRole('radio', { name: 'Rose' }));
+    await waitFor(() => expect(document.documentElement.dataset.palette).toBe('rose'));
+    expect(localStorage.getItem('spending.palette')).toBe('rose');
+
+    expect(document.querySelector('[data-layout]')).toHaveAttribute('data-layout', 'calm');
+    await userEvent.click(screen.getByRole('radio', { name: 'Bento' }));
+    await waitFor(() =>
+      expect(document.querySelector('[data-layout]')).toHaveAttribute('data-layout', 'bento'),
+    );
+    expect(screen.getByRole('radio', { name: 'Bento' })).toHaveAttribute('aria-checked', 'true');
+  });
+
   it('shows a not-found page inside the shell', () => {
     renderAt('/nowhere');
     expect(screen.getByRole('heading', { name: 'Page not found' })).toBeInTheDocument();

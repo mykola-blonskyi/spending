@@ -1,7 +1,7 @@
-import { Plus } from 'lucide-react';
 import type { RouteObject } from 'react-router';
 import { RedirectIfSignedIn, RequireSession } from '@features/auth';
 import { ADD_TRANSACTION_PATH, DESTINATIONS } from './destinations';
+import { LayoutScreen } from './layouts/layout-screen';
 import { PlaceholderPage } from './pages/placeholder-page';
 import { SettingsPage } from './pages/settings-page';
 import { SignInPage } from './pages/signin-page';
@@ -9,8 +9,13 @@ import { InvitePage, NotFoundPage, RouteErrorPage } from './pages/status-pages';
 import { DocumentLayout } from './document-layout';
 import { ShellLayout } from './shell-layout';
 
+const layoutScreens = { '/': 'dashboard', '/transactions': 'history' } as const;
+
 const placeholderRoutes: RouteObject[] = DESTINATIONS.filter(
-  (destination) => destination.nav !== 'settings',
+  (destination) =>
+    destination.nav !== 'settings' &&
+    destination.nav !== 'dashboard' &&
+    destination.nav !== 'transactions',
 ).map(({ path, nav, icon }) => ({
   path,
   element: <PlaceholderPage page={nav} icon={icon} />,
@@ -42,10 +47,11 @@ export const routes: RouteObject[] = [
             errorElement: <RouteErrorPage />,
             children: [
               ...placeholderRoutes,
-              {
-                path: ADD_TRANSACTION_PATH,
-                element: <PlaceholderPage page="addTransaction" icon={Plus} />,
-              },
+              ...Object.entries(layoutScreens).map(([path, screen]) => ({
+                path,
+                element: <LayoutScreen screen={screen} />,
+              })),
+              { path: ADD_TRANSACTION_PATH, element: <LayoutScreen screen="entry" /> },
               { path: '/settings', element: <SettingsPage /> },
               { path: '*', element: <NotFoundPage /> },
             ],
