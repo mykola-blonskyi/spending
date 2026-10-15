@@ -10,6 +10,7 @@ import {
   useUpdateTransaction,
   useWorkspaces,
 } from '@data/sync';
+import type { Scope } from '@features/family';
 import { useCategoryViews } from '@features/ledger';
 import { useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
@@ -69,10 +70,16 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
   const update = useUpdateTransaction();
   const removeEntry = useRemoveEntry();
 
+  const [scope, setScope] = useState<Scope>('personal');
+  const personal = workspaces.items.find((workspace) => workspace.kind === 'personal');
+  const family = workspaces.items.find((workspace) => workspace.kind === 'family');
   const workspaceId =
     mode === 'edit'
       ? stored.entry?.workspaceId
-      : workspaces.items.find((workspace) => workspace.kind === 'personal')?.id;
+      : (scope === 'family' && family ? family : personal)?.id;
+  // Only the author may put a family entry on a personal account (BR-3). A row this device
+  // created has no server author yet and is the signed-in user's own.
+  const own = !stored.entry?.author || stored.entry.author.userId === profile.id;
   const status: EntryStatus =
     localStatus === 'unavailable'
       ? 'unavailable'
@@ -102,29 +109,40 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
   // Keyed by entry so a pane that switches entries never shows the previous one's edits.
   const [edited, setEdited] = useState<{ for: string; values: FormValues } | null>(null);
   const key = entryId ?? 'new';
-  const values = edited && edited.for === key ? edited.values : initial;
+  const typed = edited && edited.for === key ? edited.values : initial;
   const change = (patch: Partial<FormValues>) =>
     setEdited((current) => ({
       for: key,
       values: { ...(current && current.for === key ? current.values : initial), ...patch },
     }));
 
+  const categories = categoryViews.items.filter(
+    (category) =>
+      category.workspaceId === workspaceId &&
+      category.kind === typed.kind &&
+      (!category.archived || category.id === typed.categoryId),
+  );
+  const workspaceAccounts = accounts.items.filter(
+    (account) =>
+      (account.workspaceId === workspaceId || (own && account.workspaceId === personal?.id)) &&
+      (account.archivedAt === null || account.id === typed.accountId),
+  );
+  // A pick the current scope or kind no longer offers is dropped; everything else typed stays.
+  const values: FormValues = {
+    ...typed,
+    accountId: workspaceAccounts.some((account) => account.id === typed.accountId)
+      ? typed.accountId
+      : null,
+    categoryId: categories.some((category) => category.id === typed.categoryId)
+      ? typed.categoryId
+      : null,
+  };
+
   const [attempted, setAttempted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const exponent = currencyExponent(values.currency);
   const errors = attempted ? validate(values, exponent).errors : {};
 
-  const categories = categoryViews.items.filter(
-    (category) =>
-      category.workspaceId === workspaceId &&
-      category.kind === values.kind &&
-      (!category.archived || category.id === values.categoryId),
-  );
-  const workspaceAccounts = accounts.items.filter(
-    (account) =>
-      account.workspaceId === workspaceId &&
-      (account.archivedAt === null || account.id === values.accountId),
-  );
   const currencies = [
     ...new Set([
       values.currency,
@@ -146,10 +164,11 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
     values,
     errors,
     set: <K extends keyof FormValues>(key: K, value: FormValues[K]) => change({ [key]: value }),
-    setKind: (kind: EntryKind) => {
-      const category = values.categoryId ? categoryViews.byId.get(values.categoryId) : undefined;
-      change({ kind, categoryId: category?.kind === kind ? values.categoryId : null });
-    },
+    setKind: (kind: EntryKind) => change({ kind }),
+    scope,
+    /** Family members choose where a new entry goes (BR-12). */
+    scopeOffered: mode === 'new' && family !== undefined,
+    setScope,
     setAccount: (accountId: string | null) => {
       const account = accounts.items.find((item) => item.id === accountId);
       change({ accountId: account?.id ?? null, ...(account && { currency: account.currency }) });

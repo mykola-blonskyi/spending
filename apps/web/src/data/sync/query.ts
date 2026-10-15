@@ -21,6 +21,8 @@ export type EntrySync =
 export type TransactionEntry = LocalTransaction &
   Readonly<{
     scope: 'personal' | 'family';
+    /** Who recorded it, as the server last reported; null for a row this device created. */
+    author: ServerTransaction['author'] | null;
     /** EUR amount; null until the server has converted it. */
     baseAmountMinor: number | null;
     /** The rate behind `baseAmountMinor`; null for EUR and for unconverted rows. */
@@ -70,6 +72,7 @@ export function localEntries(state: LocalState): TransactionEntry[] {
       entries.push({
         ...row,
         scope: scope(row.workspaceId),
+        author: record.server?.author ?? null,
         baseAmountMinor:
           row.currency === BASE_CURRENCY ? row.amountMinor : (server?.baseAmountMinor ?? null),
         fx: row.currency === BASE_CURRENCY ? null : (server?.fx ?? null),
@@ -90,6 +93,7 @@ export function localEntries(state: LocalState): TransactionEntry[] {
         note: row.note,
         createdAt: row.createdAt,
         scope: row.scope,
+        author: row.author,
         baseAmountMinor: row.baseAmountMinor,
         fx: row.fx,
         sync: syncOf(record.id),

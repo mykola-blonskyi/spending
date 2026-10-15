@@ -120,6 +120,14 @@ export function useRefreshLocalData(): () => Promise<void> {
   }, [ready]);
 }
 
+/** Pushes and pulls now, so rows the server just generated reach the device. */
+export function useSyncNow(): () => Promise<void> {
+  const engine = useReady()?.engine;
+  return useCallback(async () => {
+    await engine?.flush();
+  }, [engine]);
+}
+
 function useWriter<A extends unknown[], R>(
   write: (store: LocalStore, ...args: A) => Promise<R>,
 ): (...args: A) => Promise<R> {
@@ -133,6 +141,12 @@ function useWriter<A extends unknown[], R>(
     },
     [ready, write],
   );
+}
+
+/** Asks the engine to sync now, e.g. after joining or leaving a workspace. A no-op without a store. */
+export function useRequestSync(): () => Promise<void> {
+  const engine = useReady()?.engine;
+  return useCallback(() => engine?.flush() ?? Promise.resolve(), [engine]);
 }
 
 export const useRecordTransaction = (): ((draft: TransactionDraft) => Promise<string>) =>

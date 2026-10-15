@@ -97,6 +97,9 @@ three servers itself and stops them afterwards:
 | API          | 3410 | `node e2e/support/start-api.ts`: rebuilds `E2E_DATABASE_URL`, then runs `apps/api/dist` |
 | vite preview | 4173 | proxies `/api` to the API                                                               |
 
+Set `E2E_PORT_OFFSET` (for example 100) to shift all three ports when another checkout runs E2E
+at the same time; give each checkout its own `E2E_DATABASE_URL` too.
+
 `E2E_DATABASE_URL` defaults to `spending_e2e` on the dev Postgres and is created when missing. The
 script refuses any database whose name does not end in `_e2e`. Tests run on one worker, and each
 starts from empty tables. Use the `test` export of `apps/web/e2e/fixtures.ts`: it provides

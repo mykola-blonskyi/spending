@@ -26,6 +26,8 @@ export type SharedStrings = {
   negativeAmount: (amount: string) => string;
   typeToConfirm: (phrase: string) => string;
   confirmPhraseLabel: string;
+  /** The catalog line for an `ApiError` code. */
+  apiError: (code: string) => string;
 };
 
 export type SharedLocale = { locale: string; strings: SharedStrings };
@@ -52,6 +54,7 @@ const englishStrings: SharedStrings = {
   negativeAmount: (amount) => `minus ${amount}`,
   typeToConfirm: (phrase) => `To confirm, type ${phrase} below.`,
   confirmPhraseLabel: 'Confirmation phrase',
+  apiError: () => 'Something went wrong. Try again in a moment.',
 };
 
 const LocaleContext = createContext<SharedLocale>({ locale: 'en', strings: englishStrings });

@@ -1,6 +1,7 @@
 import { Plus, Search, SlidersHorizontal } from 'lucide-react';
 import { useId } from 'react';
 import { Link } from 'react-router';
+import { AuthorBadge } from '@features/family';
 import { useTranslations } from '@i18n/index';
 import { PageHeader } from '@shared/components';
 import { cn } from '@shared/lib/utils';
@@ -68,6 +69,7 @@ export function CalmRow({
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="flex min-w-0 items-center gap-2">
           <span className="truncate text-sm font-medium">{row.title}</span>
+          <AuthorBadge entry={row} className="max-w-[45%] text-xs text-muted-foreground" />
           <SyncMarker sync={row.sync} className="shrink-0" />
         </span>
         {row.subtitle && (

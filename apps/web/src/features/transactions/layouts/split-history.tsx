@@ -1,6 +1,7 @@
 import { ChevronRight, Search, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useId, useRef } from 'react';
 import { Link } from 'react-router';
+import { AuthorBadge } from '@features/family';
 import { useTranslations } from '@i18n/index';
 import { cn } from '@shared/lib/utils';
 import { Input } from '@shared/ui/input';
@@ -52,6 +53,7 @@ function Row({ row, selected }: { row: EntryRow; selected: boolean }) {
         <span className="min-w-0 flex-1">
           <span className="flex min-w-0 items-center gap-1.5">
             <span className="truncate font-medium">{row.title}</span>
+            <AuthorBadge entry={row} className="max-w-[45%] text-xs text-muted-foreground" />
             <SyncMarker sync={row.sync} className="shrink-0" />
           </span>
           {row.subtitle && (

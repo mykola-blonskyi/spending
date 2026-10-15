@@ -1,6 +1,7 @@
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { useId } from 'react';
 import { Link } from 'react-router';
+import { AuthorBadge } from '@features/family';
 import { useTranslations } from '@i18n/index';
 import { cn } from '@shared/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '@shared/ui/toggle-group';
@@ -63,6 +64,7 @@ function Row({ row, position }: { row: EntryRow; position: RowPosition }) {
               {row.subtitle}
             </span>
           )}
+          <AuthorBadge entry={row} className="max-w-[45%] text-xs text-muted-foreground" />
           <SyncMarker
             sync={row.sync}
             className="mt-1.5 w-fit rounded-full px-2 py-0.5 text-[11px] font-semibold data-[sync=conflict]:bg-destructive/10 data-[sync=failed]:bg-destructive/10 data-[sync=pending]:bg-warning/15"

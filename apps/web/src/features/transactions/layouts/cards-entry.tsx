@@ -17,6 +17,7 @@ import {
   Keypad,
   NoteField,
   SaveBar,
+  ScopeChoice,
 } from '../blocks';
 import { type EntryForm, HISTORY_PATH, useEntryForm } from '../use-entry-form';
 
@@ -78,6 +79,7 @@ export function CardsEntryView({ form }: { form: EntryForm }) {
           </Link>
         </header>
 
+        <ScopeChoice form={form} />
         <KindToggle
           form={form}
           className="h-11 rounded-full bg-muted p-1"

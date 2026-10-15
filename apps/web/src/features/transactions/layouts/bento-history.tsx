@@ -1,6 +1,7 @@
 import { CloudUpload, Plus, Search, SlidersHorizontal } from 'lucide-react';
 import { useId } from 'react';
 import { Link } from 'react-router';
+import { AuthorBadge } from '@features/family';
 import { useTranslations } from '@i18n/index';
 import { PageHeader } from '@shared/components';
 import { cn } from '@shared/lib/utils';
@@ -81,6 +82,7 @@ function Row({ row, position }: { row: EntryRow; position: RowPosition }) {
           <span className="truncate text-sm font-medium">{row.title}</span>
           <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
             {row.subtitle && <span className="truncate">{row.subtitle}</span>}
+            <AuthorBadge entry={row} className="max-w-[45%] text-xs text-muted-foreground" />
             <SyncMarker sync={row.sync} className="font-medium" />
           </span>
         </span>

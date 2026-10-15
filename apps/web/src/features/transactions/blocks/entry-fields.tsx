@@ -1,5 +1,6 @@
 import { Trash2 } from 'lucide-react';
 import { type ReactNode, useId, useState } from 'react';
+import { ScopeField } from '@features/family';
 import { useTranslations } from '@i18n/index';
 import { ConfirmDialog } from '@shared/components';
 import { cn } from '@shared/lib/utils';
@@ -92,6 +93,10 @@ export function KindToggle({
       ))}
     </ToggleGroup>
   );
+}
+
+export function ScopeChoice({ form }: { form: EntryForm }) {
+  return form.scopeOffered ? <ScopeField value={form.scope} onValueChange={form.setScope} /> : null;
 }
 
 /** The typed amount: decimal keyboard on phones, the error tied to the input. */

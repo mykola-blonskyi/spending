@@ -1,6 +1,7 @@
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { useId } from 'react';
 import { Link } from 'react-router';
+import { AuthorBadge } from '@features/family';
 import { useTranslations } from '@i18n/index';
 import { PageHeader } from '@shared/components';
 import { cn } from '@shared/lib/utils';
@@ -57,6 +58,7 @@ function Row({ row, position }: { row: EntryRow; position: RowPosition }) {
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="flex min-w-0 items-center gap-2">
             <span className="truncate font-medium">{row.title}</span>
+            <AuthorBadge entry={row} className="max-w-[45%] text-xs text-muted-foreground" />
             <SyncMarker
               sync={row.sync}
               className="h-6 shrink-0 rounded-full px-2 font-medium data-[sync=conflict]:bg-destructive/10 data-[sync=failed]:bg-destructive/10 data-[sync=pending]:bg-warning/15"

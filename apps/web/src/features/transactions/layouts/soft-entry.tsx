@@ -13,6 +13,7 @@ import {
   KindToggle,
   NoteField,
   SaveBar,
+  ScopeChoice,
 } from '../blocks';
 import { type EntryForm, useEntryForm } from '../use-entry-form';
 
@@ -33,6 +34,7 @@ export function SoftEntryView({ form }: { form: EntryForm }) {
           noValidate
           className="flex flex-col gap-5"
         >
+          <ScopeChoice form={form} />
           <KindToggle
             form={form}
             className={`h-14 rounded-full bg-card p-1.5 ${card}`}

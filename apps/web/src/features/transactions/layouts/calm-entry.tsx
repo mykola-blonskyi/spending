@@ -12,6 +12,7 @@ import {
   KindToggle,
   NoteField,
   SaveBar,
+  ScopeChoice,
 } from '../blocks';
 import { type EntryForm, useEntryForm } from '../use-entry-form';
 
@@ -28,6 +29,7 @@ export function CalmEntryView({ form }: { form: EntryForm }) {
           noValidate
           className="flex flex-col gap-6"
         >
+          <ScopeChoice form={form} />
           <KindToggle
             form={form}
             className="h-11 rounded-lg bg-muted p-1"

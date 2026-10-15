@@ -1,6 +1,9 @@
 import type { RouteObject } from 'react-router';
 import { RedirectIfSignedIn, RequireSession } from '@features/auth';
 import { AccountsPage, CategoriesPage } from '@features/ledger';
+import { BudgetsPage } from '@features/budgets';
+import { EditRulePage, NewRulePage, RecurringPage } from '@features/recurring';
+import { FamilyPage } from '@features/family';
 import { ADD_TRANSACTION_PATH, DESTINATIONS } from './destinations';
 import { LayoutScreen } from './layouts/layout-screen';
 import { PlaceholderPage } from './pages/placeholder-page';
@@ -19,7 +22,10 @@ const placeholderRoutes: RouteObject[] = DESTINATIONS.filter(
     destination.nav !== 'dashboard' &&
     destination.nav !== 'transactions' &&
     destination.nav !== 'accounts' &&
-    destination.nav !== 'categories',
+    destination.nav !== 'categories' &&
+    destination.nav !== 'budgets' &&
+    destination.nav !== 'recurring' &&
+    destination.nav !== 'family',
 ).map(({ path, nav, icon }) => ({
   path,
   element: <PlaceholderPage page={nav} icon={icon} />,
@@ -61,6 +67,11 @@ export const routes: RouteObject[] = [
               { path: '/transactions/:id', element: <LayoutScreen screen="detail" /> },
               { path: '/accounts', element: <AccountsPage /> },
               { path: '/categories', element: <CategoriesPage /> },
+              { path: '/budgets', element: <BudgetsPage /> },
+              { path: '/recurring', element: <RecurringPage /> },
+              { path: '/recurring/new', element: <NewRulePage /> },
+              { path: '/recurring/:id', element: <EditRulePage /> },
+              { path: '/family', element: <FamilyPage /> },
               { path: '/settings', element: <SettingsPage /> },
               { path: '*', element: <NotFoundPage /> },
             ],

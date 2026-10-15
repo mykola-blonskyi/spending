@@ -33,10 +33,12 @@ export class E2EDatabase {
       revision: string;
       base_amount_minor: string | null;
       deleted: boolean;
+      scope: 'personal' | 'family';
     }>(
       `select t.id, t.amount_minor, t.description, t.version, t.revision, t.base_amount_minor,
-              t.deleted_at is not null as deleted
+              t.deleted_at is not null as deleted, w.kind as scope
          from transactions t join users u on u.id = t.created_by
+         join workspaces w on w.id = t.workspace_id
         where u.email = $1 order by t.created_at`,
       [email],
     );
@@ -120,6 +122,26 @@ export class E2EDatabase {
       [email],
     );
     return result.rowCount ?? 0;
+  }
+
+  /** The user's recurring rules as the server holds them. */
+  async recurringRules(email: string) {
+    const { rows } = await this.pool.query<{
+      id: string;
+      paused: boolean;
+      next_occurrence: string | null;
+    }>(
+      `select r.id, r.paused_at is not null as paused, r.next_occurrence::text as next_occurrence
+         from recurring_rules r join users u on u.id = r.created_by
+        where u.email = $1 order by r.created_at`,
+      [email],
+    );
+    return rows;
+  }
+
+  /** Every invitation link is past its expiry from now on. */
+  async expireInvitations(): Promise<void> {
+    await this.pool.query("update invitations set expires_at = now() - interval '1 minute'");
   }
 
   close(): Promise<void> {

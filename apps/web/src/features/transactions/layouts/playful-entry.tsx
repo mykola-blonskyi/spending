@@ -15,6 +15,7 @@ import {
   KindToggle,
   NoteField,
   SaveBar,
+  ScopeChoice,
 } from '../blocks';
 import { type EntryForm, useEntryForm } from '../use-entry-form';
 
@@ -37,6 +38,7 @@ export function PlayfulEntryView({ form }: { form: EntryForm }) {
           noValidate
           className="flex flex-col gap-6"
         >
+          <ScopeChoice form={form} />
           <KindToggle
             form={form}
             className="grid grid-cols-2 gap-3"

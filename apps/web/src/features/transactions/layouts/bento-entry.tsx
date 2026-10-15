@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslations } from '@i18n/index';
 import { MoneyText, PageHeader } from '@shared/components';
-import { currencyExponent } from '@shared/format';
+import { currencyExponent, parseAmount } from '@shared/format';
 import { cn } from '@shared/lib/utils';
 import { Button } from '@shared/ui/button';
 import {
@@ -15,8 +15,8 @@ import {
   EntryStatus,
   KindToggle,
   NoteField,
+  ScopeChoice,
 } from '../blocks';
-import { parseAmount } from '../form-model';
 import { type EntryForm, useEntryForm } from '../use-entry-form';
 
 /** Block labels inside a tile read as the tile's small caps heading. */
@@ -66,6 +66,7 @@ export function BentoEntryView({ form }: { form: EntryForm }) {
           </Tile>
 
           <Tile className="col-span-2 lg:col-[3/5] lg:row-[2/3]">
+            <ScopeChoice form={form} />
             <KindToggle
               form={form}
               className="h-11 rounded-xl bg-muted p-1"

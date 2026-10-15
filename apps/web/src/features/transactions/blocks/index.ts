@@ -10,6 +10,7 @@ export {
   KindToggle,
   NoteField,
   SaveBar,
+  ScopeChoice,
 } from './entry-fields';
 export { CategoryGlyph, CompactEntryForm, EntryDetail } from './entry-detail';
 export { ActiveChips, FilterSheet } from './filters';

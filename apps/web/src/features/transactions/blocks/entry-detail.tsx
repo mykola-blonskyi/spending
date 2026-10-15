@@ -1,6 +1,7 @@
 import { ArrowLeft, ChevronRight, Pencil, Tag } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import type { CategoryView } from '@features/ledger';
+import { AuthorBadge } from '@features/family';
 import { useTranslations } from '@i18n/index';
 import { MoneyText } from '@shared/components';
 import { formatDate } from '@shared/format';
@@ -21,6 +22,7 @@ import {
   KindToggle,
   NoteField,
   SaveBar,
+  ScopeChoice,
 } from './entry-fields';
 import { ConversionNote, EntryAmount } from './entry-amount';
 import { EntryStatus } from './history-status';
@@ -71,6 +73,7 @@ export function CompactEntryForm({ form, footer }: { form: EntryForm; footer?: R
         />
         <CurrencySelect form={form} labelClassName={label} controlClassName={select} />
       </div>
+      <ScopeChoice form={form} />
       <KindToggle
         form={form}
         className="h-11 rounded-md border border-input/50 p-0.5 lg:h-9"
@@ -236,6 +239,7 @@ export function EntryDetail({ id, onBack }: { id: string; onBack?: () => void })
               <div className="min-w-0">
                 <h2 className="flex items-center gap-2 text-[18px] font-semibold tracking-tight">
                   <span className="truncate">{row.title}</span>
+                  <AuthorBadge entry={row} className="max-w-[45%] text-xs text-muted-foreground" />
                   <SyncMarker sync={row.sync} className="shrink-0" />
                 </h2>
                 {row.subtitle && (

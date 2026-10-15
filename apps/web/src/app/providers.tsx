@@ -1,5 +1,6 @@
 import { QueryClientProvider, type QueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
+import type { ApiErrorCode } from '@data/api-error';
 import { I18nProvider, useLocaleStore, useTranslations } from '@i18n/index';
 import { type SharedLocale, SharedLocaleProvider } from '@shared/lib/locale-context';
 import { ThemeProvider } from '@shared/theme';
@@ -33,6 +34,7 @@ function SharedLocaleBridge({ locale, children }: { locale: string; children: Re
         negativeAmount: (amount) => t('money.negative', { amount }),
         typeToConfirm: (phrase) => t('confirm.typeToConfirm', { phrase }),
         confirmPhraseLabel: t('confirm.phraseLabel'),
+        apiError: (code) => t(`errors.${code as ApiErrorCode}`),
       },
     }),
     [locale, t],

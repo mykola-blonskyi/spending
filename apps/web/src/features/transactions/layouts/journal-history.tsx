@@ -1,6 +1,7 @@
 import { Plus, Search, SlidersHorizontal } from 'lucide-react';
 import { useId } from 'react';
 import { Link } from 'react-router';
+import { AuthorBadge } from '@features/family';
 import { useTranslations } from '@i18n/index';
 import { PageHeader } from '@shared/components';
 import { cn } from '@shared/lib/utils';
@@ -71,6 +72,7 @@ function Row({ row }: { row: EntryRow }) {
           {row.subtitle && (
             <span className="truncate text-[13px] text-muted-foreground">{row.subtitle}</span>
           )}
+          <AuthorBadge entry={row} className="max-w-[45%] text-xs text-muted-foreground" />
           <SyncMarker sync={row.sync} className="mt-0.5 italic" />
         </span>
         <EntryAmount row={row} className="shrink-0 text-[15px]" />

@@ -1,5 +1,6 @@
 import { ChevronDown } from 'lucide-react';
 import { Fragment, type ReactNode, useId, useState } from 'react';
+import type { Scope } from '@features/family';
 import { useTranslations } from '@i18n/index';
 import { PageHeader } from '@shared/components';
 import { formatRelativeDay } from '@shared/format';
@@ -228,6 +229,10 @@ export function JournalEntryView({ form }: { form: EntryForm }) {
     { value: 'expense', label: t('transactionForm.expense') },
     { value: 'income', label: t('transactionForm.income') },
   ];
+  const scopes: readonly { value: Scope; label: string }[] = [
+    { value: 'personal', label: t('family.scope.personal') },
+    { value: 'family', label: t('family.scope.family') },
+  ];
 
   return (
     <div className="flex flex-col gap-6">
@@ -235,6 +240,14 @@ export function JournalEntryView({ form }: { form: EntryForm }) {
       {form.status === 'ready' ? (
         <form onSubmit={(event) => void form.submit(event)} noValidate className="flex flex-col">
           <div className="flex flex-wrap gap-2">
+            {form.scopeOffered && (
+              <Pills
+                label={t('family.scope.label')}
+                value={form.scope}
+                items={scopes}
+                onChange={form.setScope}
+              />
+            )}
             <Pills
               label={t('transactionForm.kind')}
               value={form.values.kind}

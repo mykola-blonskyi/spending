@@ -75,24 +75,26 @@ export function fxLabels(fx: Fx, locale: string) {
   };
 }
 
-export type EntryRow = Readonly<{
-  id: string;
-  href: string;
-  /** The description, else the category name, else "Uncategorized". */
-  title: string;
-  /** Category and account, without repeating a category the title already shows. */
-  subtitle: string;
-  category: CategoryView | undefined;
-  accountName: string | undefined;
-  occurredOn: string;
-  dateLabel: string;
-  kind: EntryKind;
-  /** The original amount and currency, as entered. */
-  amountMinor: number;
-  currency: string;
-  conversion: Conversion;
-  sync: EntrySync;
-}>;
+export type EntryRow = Readonly<
+  {
+    id: string;
+    href: string;
+    /** The description, else the category name, else "Uncategorized". */
+    title: string;
+    /** Category and account, without repeating a category the title already shows. */
+    subtitle: string;
+    category: CategoryView | undefined;
+    accountName: string | undefined;
+    occurredOn: string;
+    dateLabel: string;
+    kind: EntryKind;
+    /** The original amount and currency, as entered. */
+    amountMinor: number;
+    currency: string;
+    conversion: Conversion;
+    sync: EntrySync;
+  } & Pick<TransactionEntry, 'scope' | 'author' | 'accountId'>
+>;
 
 export type RowContext = Readonly<{
   categories: ReadonlyMap<string, CategoryView>;
@@ -121,6 +123,9 @@ export function toEntryRow(entry: TransactionEntry, context: RowContext): EntryR
     currency: entry.currency,
     conversion: conversionOf(entry),
     sync: entry.sync,
+    scope: entry.scope,
+    author: entry.author,
+    accountId: entry.accountId,
   };
 }
 
