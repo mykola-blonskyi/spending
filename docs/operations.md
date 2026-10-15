@@ -243,9 +243,13 @@ Coolify, waits for the deployment to finish (`scripts/coolify-deploy.sh`), then 
 `/api/health/ready` and the security headers through the public URL
 (`scripts/check-deploy.sh`). Deploys are serialized; a second dispatch waits for the first.
 
-Coolify builds the head of `main`, not a given SHA, so the workflow fails right before the
-trigger if `main` has moved since dispatch ("re-run on the new head"). After the deploy, the
-check waits until `/api/health` reports the dispatched SHA as `version`.
+Coolify builds the head of `main`, not a given SHA: its deploy API takes only `uuid`, `tag` and
+`force`, and pinning a commit would need a token with write access to the resource. The workflow
+therefore fails right before the trigger if `main` has moved since dispatch ("re-run on the new
+head"). A push landing in the seconds between that check and Coolify's checkout would deploy
+an unverified commit; the post-deploy check then waits until `/api/health` reports the dispatched
+SHA as `version` and fails on a mismatch, so the window is detected, not prevented. Keep `main`
+quiet (squash-merge nothing) while a deploy runs, and roll back with a revert if it fails.
 
 Cloudflare bot protection may challenge requests from GitHub runners and fail the post-deploy
 check. Add a WAF custom rule: Security → WAF → Custom rules, expression
