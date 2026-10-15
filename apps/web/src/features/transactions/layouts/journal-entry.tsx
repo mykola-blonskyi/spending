@@ -12,6 +12,7 @@ import {
   DateField,
   DeleteButton,
   DescriptionField,
+  DiscardButton,
   EntryStatus,
   NoteField,
 } from '../blocks';
@@ -329,6 +330,9 @@ export function JournalEntryView({ form }: { form: EntryForm }) {
             >
               {t('transactionForm.save')}
             </Button>
+            {form.canDiscard && (
+              <DiscardButton onConfirm={() => void form.discard()} className="rounded-full" />
+            )}
             {form.canDelete && (
               <DeleteButton onConfirm={() => void form.remove()} className="rounded-full" />
             )}

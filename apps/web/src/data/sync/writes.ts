@@ -1,4 +1,5 @@
 import { isDeleted, type TransactionInput } from './model';
+import { discardFailed } from './push';
 import { applyLocalChange, type LocalChange } from './queue';
 import type { LocalStore } from './store';
 
@@ -35,4 +36,9 @@ export async function updateTransaction(
 
 export async function deleteTransaction(store: LocalStore, id: string): Promise<void> {
   await write(store, { type: 'delete', id });
+}
+
+/** Drops an entry's rejected change, back to its last server row or gone if it never synced. */
+export async function discardChange(store: LocalStore, id: string): Promise<void> {
+  await store.commit((state) => discardFailed(state, id));
 }

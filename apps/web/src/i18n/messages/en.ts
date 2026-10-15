@@ -97,10 +97,6 @@ export const en = {
     errors: {
       login_failed: 'Sign-in did not complete. Please try again.',
       login_expired: 'Your sign-in took too long and expired. Please start again.',
-      INVALID_ACCOUNT: 'This account is archived or not available here. Pick another one.',
-      INVALID_CATEGORY: 'This category is archived or does not fit this type. Pick another one.',
-      REVIEW_REQUIRED: 'This entry is waiting for review in an import and cannot be changed yet.',
-      MUTATION_ID_REUSED: 'This change could not be matched to your account. Make it again.',
     },
     pendingHint: {
       title: 'Still waiting to get in?',
@@ -237,6 +233,10 @@ export const en = {
     delete: 'Delete',
     deleteTitle: 'Delete this transaction?',
     deleteDescription: 'It leaves your history now and the server on the next sync.',
+    discard: 'Discard change',
+    discardTitle: 'Discard this change?',
+    discardDescription:
+      'The server did not accept it. The entry goes back to how it was last synced, or is removed if it never synced.',
     notReady: 'Getting your accounts and categories ready…',
     note: 'Note',
     notePlaceholder: 'Optional details',
@@ -826,6 +826,10 @@ export const en = {
     INVITATION_INVALID: 'This invitation is no longer valid.',
     INTERNAL: 'Something went wrong on our side. Try again in a moment.',
     NETWORK: 'No connection to the server. Check your internet and try again.',
+    INVALID_ACCOUNT: 'This account is archived or not available here. Pick another one.',
+    INVALID_CATEGORY: 'This category is archived or does not fit this type. Pick another one.',
+    REVIEW_REQUIRED: 'This entry is waiting for review in an import and cannot be changed yet.',
+    MUTATION_ID_REUSED: 'This change could not be matched to your account. Make it again.',
   },
 };
 

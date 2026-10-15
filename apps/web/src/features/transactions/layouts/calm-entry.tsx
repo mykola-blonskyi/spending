@@ -8,6 +8,7 @@ import {
   DateField,
   DeleteButton,
   DescriptionField,
+  DiscardButton,
   EntryStatus,
   KindToggle,
   NoteField,
@@ -51,6 +52,7 @@ export function CalmEntryView({ form }: { form: EntryForm }) {
           <DescriptionField form={form} />
           <NoteField form={form} />
           <SaveBar form={form}>
+            {form.canDiscard && <DiscardButton onConfirm={() => void form.discard()} />}
             {form.canDelete && <DeleteButton onConfirm={() => void form.remove()} />}
           </SaveBar>
         </form>

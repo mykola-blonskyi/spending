@@ -139,6 +139,12 @@ stored lucide icon name to a curated icon set (`category-icons.ts`).
   quick sync never flickers. The badge is a polite live region.
 - **Conflicts.** The server keeps its row and records the client's version (BR-19). The client
   shows both and lets the user pick or merge.
+- **Rejected changes.** A `rejected` result keeps the overlay and marks the mutation `failed`
+  with its code; history shows "Not synced" with the reason from `errors.<code>`, and other
+  entries keep syncing. Editing the entry replaces the failed mutation with a fresh one, since the
+  server stores the rejection under the old ID. Discard, on the entry screen or the detail pane,
+  drops the failed mutation and the overlay (`discardFailed`): the entry returns to its last
+  server row, or leaves the device if the server never had it.
 
 ## Sync protocol
 

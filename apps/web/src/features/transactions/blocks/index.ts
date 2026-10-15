@@ -7,6 +7,7 @@ export {
   DateField,
   DeleteButton,
   DescriptionField,
+  DiscardButton,
   KindToggle,
   NoteField,
   SaveBar,

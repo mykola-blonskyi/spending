@@ -12,6 +12,7 @@ import {
   DateField,
   DeleteButton,
   DescriptionField,
+  DiscardButton,
   EntryStatus,
   KindToggle,
   Keypad,
@@ -142,6 +143,7 @@ export function CardsEntryView({ form }: { form: EntryForm }) {
           className="mt-4"
           buttonClassName="h-14 rounded-2xl text-[15px] font-semibold"
         >
+          {form.canDiscard && <DiscardButton onConfirm={() => void form.discard()} />}
           {form.canDelete && <DeleteButton onConfirm={() => void form.remove()} />}
         </SaveBar>
       </form>

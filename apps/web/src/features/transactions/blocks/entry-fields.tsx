@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react';
+import { type LucideIcon, Trash2, Undo2 } from 'lucide-react';
 import { type ReactNode, useId, useState } from 'react';
 import { ScopeField } from '@features/family';
 import { useTranslations } from '@i18n/index';
@@ -380,14 +380,16 @@ export function SaveBar({
   );
 }
 
-export function DeleteButton({
+type ConfirmProps = { onConfirm: () => void; className?: string };
+
+function ConfirmButton({
+  icon: Icon,
+  label,
+  title,
+  description,
   onConfirm,
   className,
-}: {
-  onConfirm: () => void;
-  className?: string;
-}) {
-  const t = useTranslations('transactionForm');
+}: ConfirmProps & { icon: LucideIcon; label: string; title: string; description: string }) {
   const [confirming, setConfirming] = useState(false);
   return (
     <>
@@ -397,20 +399,47 @@ export function DeleteButton({
         className={cn('h-11', className)}
         onClick={() => setConfirming(true)}
       >
-        <Trash2 aria-hidden />
-        {t('delete')}
+        <Icon aria-hidden />
+        {label}
       </Button>
       <ConfirmDialog
         open={confirming}
         onOpenChange={setConfirming}
-        title={t('deleteTitle')}
-        description={t('deleteDescription')}
-        confirmLabel={t('delete')}
+        title={title}
+        description={description}
+        confirmLabel={label}
         onConfirm={() => {
           setConfirming(false);
           onConfirm();
         }}
       />
     </>
+  );
+}
+
+export function DeleteButton(props: ConfirmProps) {
+  const t = useTranslations('transactionForm');
+  return (
+    <ConfirmButton
+      icon={Trash2}
+      label={t('delete')}
+      title={t('deleteTitle')}
+      description={t('deleteDescription')}
+      {...props}
+    />
+  );
+}
+
+/** Drops a change the server rejected, for an entry whose sync failed. */
+export function DiscardButton(props: ConfirmProps) {
+  const t = useTranslations('transactionForm');
+  return (
+    <ConfirmButton
+      icon={Undo2}
+      label={t('discard')}
+      title={t('discardTitle')}
+      description={t('discardDescription')}
+      {...props}
+    />
   );
 }

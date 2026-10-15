@@ -12,6 +12,7 @@ import {
   DateField,
   DeleteButton,
   DescriptionField,
+  DiscardButton,
   EntryStatus,
   KindToggle,
   NoteField,
@@ -103,6 +104,7 @@ export function BentoEntryView({ form }: { form: EntryForm }) {
             </span>
           </Button>
           <div className="col-span-2 flex flex-col items-center gap-3 lg:col-span-4">
+            {form.canDiscard && <DiscardButton onConfirm={() => void form.discard()} />}
             {form.canDelete && <DeleteButton onConfirm={() => void form.remove()} />}
             <p className="text-center text-xs text-muted-foreground">
               {t('transactionForm.saveHint')}

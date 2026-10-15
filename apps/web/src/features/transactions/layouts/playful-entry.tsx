@@ -11,6 +11,7 @@ import {
   DateField,
   DeleteButton,
   DescriptionField,
+  DiscardButton,
   EntryStatus,
   KindToggle,
   NoteField,
@@ -113,6 +114,9 @@ export function PlayfulEntryView({ form }: { form: EntryForm }) {
           />
 
           <SaveBar form={form} buttonClassName="h-14 rounded-2xl text-base font-bold">
+            {form.canDiscard && (
+              <DiscardButton onConfirm={() => void form.discard()} className="h-12 rounded-2xl" />
+            )}
             {form.canDelete && (
               <DeleteButton onConfirm={() => void form.remove()} className="h-12 rounded-2xl" />
             )}

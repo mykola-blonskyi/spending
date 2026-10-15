@@ -135,3 +135,20 @@ export function applyPushResults(
 ): LocalState {
   return results.reduce((current, result) => applyResult(current, result, now), state);
 }
+
+/**
+ * Drops an entry's rejected change on purpose: the entry goes back to the last row the server
+ * confirmed, or leaves the device if the server never had it. Only a lone failed mutation is
+ * discarded, so a change made meanwhile on another tab is never lost.
+ */
+export function discardFailed(state: LocalState, transactionId: string): LocalState {
+  const record = state.transactions.get(transactionId);
+  const pending = mutationsFor(state, transactionId);
+  if (!record || pending.length !== 1 || pending[0]!.state.status !== 'failed') return state;
+  const server = record.server;
+  return commitSettled(state, transactionId, {
+    record: server ? { ...record, workspaceId: server.workspaceId, local: null } : null,
+    keep: [],
+    drop: pending,
+  });
+}

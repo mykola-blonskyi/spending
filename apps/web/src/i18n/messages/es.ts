@@ -102,11 +102,6 @@ export const es = {
     errors: {
       login_failed: 'No se ha completado el inicio de sesión. Vuelve a intentarlo.',
       login_expired: 'El inicio de sesión ha tardado demasiado y ha caducado. Empieza de nuevo.',
-      INVALID_ACCOUNT: 'Esta cuenta está archivada o no está disponible aquí. Elige otra.',
-      INVALID_CATEGORY: 'Esta categoría está archivada o no encaja con este tipo. Elige otra.',
-      REVIEW_REQUIRED:
-        'Este registro espera revisión en una importación y aún no se puede cambiar.',
-      MUTATION_ID_REUSED: 'No hemos podido asociar este cambio a tu cuenta. Vuelve a hacerlo.',
     },
     pendingHint: {
       title: '¿Sigues sin poder entrar?',
@@ -248,6 +243,10 @@ export const es = {
     delete: 'Eliminar',
     deleteTitle: '¿Eliminar este movimiento?',
     deleteDescription: 'Desaparece ya de tu historial y del servidor en la próxima sincronización.',
+    discard: 'Descartar cambio',
+    discardTitle: '¿Descartar este cambio?',
+    discardDescription:
+      'El servidor no lo aceptó. El movimiento vuelve a cómo estaba en la última sincronización, o desaparece si nunca se sincronizó.',
     notReady: 'Preparando tus cuentas y categorías…',
     note: 'Nota',
     notePlaceholder: 'Detalles opcionales',
@@ -850,5 +849,9 @@ export const es = {
     INTERNAL: 'Algo ha fallado por nuestra parte. Inténtalo de nuevo en un momento.',
     NETWORK:
       'Sin conexión con el servidor. Comprueba tu conexión a internet y vuelve a intentarlo.',
+    INVALID_ACCOUNT: 'Esta cuenta está archivada o no está disponible aquí. Elige otra.',
+    INVALID_CATEGORY: 'Esta categoría está archivada o no encaja con este tipo. Elige otra.',
+    REVIEW_REQUIRED: 'Este registro espera revisión en una importación y aún no se puede cambiar.',
+    MUTATION_ID_REUSED: 'No hemos podido asociar este cambio a tu cuenta. Vuelve a hacerlo.',
   },
 } satisfies Messages;

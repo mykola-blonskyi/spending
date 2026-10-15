@@ -9,6 +9,7 @@ import {
   DateField,
   DeleteButton,
   DescriptionField,
+  DiscardButton,
   EntryStatus,
   KindToggle,
   NoteField,
@@ -108,6 +109,9 @@ export function SoftEntryView({ form }: { form: EntryForm }) {
           />
 
           <SaveBar form={form} buttonClassName="h-14 rounded-full text-[17px] font-semibold">
+            {form.canDiscard && (
+              <DiscardButton onConfirm={() => void form.discard()} className="h-12 rounded-full" />
+            )}
             {form.canDelete && (
               <DeleteButton onConfirm={() => void form.remove()} className="h-12 rounded-full" />
             )}
