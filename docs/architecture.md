@@ -135,6 +135,12 @@ stored lucide icon name to a curated icon set (`category-icons.ts`).
   has no runtime caching. The last signed-in user is kept in `localStorage['spending.lastUser']`
   so an offline start opens their local data; it is removed on sign-out and when the session
   ends. A page started offline fetches the CSRF token before its first write (`client.ts`).
+- **Device privacy.** Signing out with unsent mutations asks first and offers "Sync now"; signing
+  out deletes the user's database, per-user keys and the query cache (`clearLocalUserData`). A
+  `401` keeps the database, so the queue syncs when the same user signs in again. Before a user's
+  store opens, every other database in the registry is deleted, along with its unsent changes.
+  Once the store is open the app calls `navigator.storage.persist()`. Without IndexedDB (private
+  mode, quota) local-data screens explain that offline is unavailable; REST screens keep working.
 - **Status badge.** "Syncing" shows only after 300 ms and "synced" stays at least 600 ms, so a
   quick sync never flickers. The badge is a polite live region.
 - **Conflicts.** The server keeps its row and records the client's version (BR-19); history

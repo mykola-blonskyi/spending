@@ -22,6 +22,8 @@ type ConfirmDialogProps = {
   onConfirm: () => void;
   /** When set, the confirm button stays disabled until this exact phrase is typed. */
   confirmPhrase?: string;
+  /** A safer way out beside the confirm button, such as syncing before signing out. */
+  alternative?: { label: string; onSelect: () => void };
 };
 
 export function ConfirmDialog({
@@ -32,6 +34,7 @@ export function ConfirmDialog({
   confirmLabel,
   onConfirm,
   confirmPhrase,
+  alternative,
 }: ConfirmDialogProps) {
   const { strings } = useSharedLocale();
   const [typed, setTyped] = useState('');
@@ -82,6 +85,11 @@ export function ConfirmDialog({
         )}
         <AlertDialogFooter>
           <AlertDialogCancel>{strings.cancel}</AlertDialogCancel>
+          {alternative && (
+            <AlertDialogAction variant="outline" onClick={alternative.onSelect}>
+              {alternative.label}
+            </AlertDialogAction>
+          )}
           <AlertDialogAction
             variant="destructive"
             disabled={blocked}

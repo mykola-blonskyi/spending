@@ -323,3 +323,13 @@ export async function deleteUserDatabase(userId: string): Promise<void> {
   await deleteDB(name);
   writeRegistry(localDatabaseNames().filter((other) => other !== name));
 }
+
+/** Someone else signed in on this device: every earlier user's database goes before theirs opens. */
+export async function deleteOtherUserDatabases(userId: string): Promise<void> {
+  const own = databaseName(userId);
+  for (const name of localDatabaseNames()) {
+    if (name === own) continue;
+    await deleteDB(name);
+    writeRegistry(localDatabaseNames().filter((other) => other !== name));
+  }
+}

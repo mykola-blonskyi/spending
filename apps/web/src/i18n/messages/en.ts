@@ -109,6 +109,7 @@ export const en = {
     pendingDescription:
       'Some changes on this device have not reached the server yet. Signing out deletes them from this device.',
     pendingConfirm: 'Sign out anyway',
+    syncNow: 'Sync now',
   },
   userMenu: {
     label: 'Account: {name}',
