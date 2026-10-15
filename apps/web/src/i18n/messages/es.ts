@@ -46,6 +46,11 @@ export const es = {
       title: 'Aún no hay nada aquí',
       description: 'Cuando haya algo que mostrar, aparecerá aquí.',
     },
+    readOnlyTab: {
+      title: 'Abierta en otra pestaña',
+      description:
+        'Este navegador no puede compartir cambios entre pestañas, así que esta es de solo lectura. Usa la otra pestaña o ciérrala y recarga esta.',
+    },
     offline: {
       title: 'Sin conexión',
       description:

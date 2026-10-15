@@ -1,9 +1,9 @@
-import { Plus } from 'lucide-react';
+import { Lock, Plus } from 'lucide-react';
 import { Link, Outlet } from 'react-router';
-import { useSyncStatus } from '@data/sync';
+import { useReadOnlyTab, useSyncStatus } from '@data/sync';
 import { useApplyProfilePreferences, useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
-import { OfflineBanner, SyncStatusBadge } from '@shared/components';
+import { OfflineBanner, StatusBanner, SyncStatusBadge } from '@shared/components';
 import { useOnlineStatus } from '@shared/lib/network';
 import { type NavItem } from '@shared/shell';
 import { Brand, BrandMark } from './brand';
@@ -15,6 +15,7 @@ export function ShellLayout() {
   const t = useTranslations();
   const online = useOnlineStatus();
   const syncStatus = useSyncStatus();
+  const readOnly = useReadOnlyTab();
   useApplyProfilePreferences();
   const { layout } = useProfile();
   const Shell = LAYOUTS[layout].shell;
@@ -51,7 +52,18 @@ export function ShellLayout() {
             <UserMenu />
           </div>
         }
-        banner={online ? undefined : <OfflineBanner />}
+        banner={
+          <>
+            {readOnly && (
+              <StatusBanner
+                icon={Lock}
+                title={t('states.readOnlyTab.title')}
+                description={t('states.readOnlyTab.description')}
+              />
+            )}
+            {!online && <OfflineBanner />}
+          </>
+        }
       >
         <Outlet />
       </Shell>

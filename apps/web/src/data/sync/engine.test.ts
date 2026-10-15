@@ -2,7 +2,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../api-error';
 import { SyncEngine, type SyncTransport } from './engine';
 import { localRow, page, sequentialIds, serverRow } from './fixtures';
-import { emptyLocalState, type LocalState, type PushResult, type WireMutation } from './model';
+import {
+  emptyLocalState,
+  type LocalState,
+  type PushResult,
+  queueOrder,
+  type WireMutation,
+} from './model';
 import { applyLocalChange, requeueInFlight } from './queue';
 import { LocalStore } from './store';
 import { deleteTransaction, recordTransaction, updateTransaction } from './writes';
@@ -108,7 +114,7 @@ describe('SyncEngine', () => {
     await new SyncEngine(store, server.transport).flush();
 
     expect(store.state.transactions.get(good)?.server?.description).toBe('good');
-    const left = [...store.state.mutations.values()];
+    const left = queueOrder(store.state);
     expect(left.map((m) => [m.transactionId, m.state.status])).toEqual([[bad, 'failed']]);
   });
 
@@ -137,7 +143,7 @@ describe('SyncEngine', () => {
     expect(pull).not.toHaveBeenCalled();
     const shown = (id: string) => store?.state.transactions.get(id)?.server?.description;
     expect(ids.map(shown)).toEqual(['a', 'b', undefined, undefined]);
-    const left = [...store.state.mutations.values()];
+    const left = queueOrder(store.state);
     expect(left.map((m) => [m.transactionId, m.state.status])).toEqual([
       [ids[2], 'queued'],
       [ids[3], 'queued'],

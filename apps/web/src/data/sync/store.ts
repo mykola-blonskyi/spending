@@ -82,33 +82,9 @@ function diff<V>(prev: ReadonlyMap<string, V>, next: ReadonlyMap<string, V>) {
   return { puts, deletes };
 }
 
-/** Writes what changed between two states in one IndexedDB transaction: all of it or none. */
-async function persist(db: Database, prev: LocalState, next: LocalState): Promise<void> {
-  const tx = db.transaction(STORES, 'readwrite');
-  const writes: Promise<unknown>[] = [];
-  try {
-    for (const name of STORES) {
-      if (name === 'meta') continue;
-      const store = tx.objectStore(name);
-      const { puts, deletes } = diff<unknown>(prev[name], next[name]);
-      for (const key of deletes) writes.push(store.delete(key));
-      for (const value of puts) writes.push(store.put(value as never));
-    }
-    if (prev.meta !== next.meta) writes.push(tx.objectStore('meta').put(next.meta, 'sync'));
-    await Promise.all([...writes, tx.done]);
-  } catch (error) {
-    try {
-      tx.abort();
-    } catch {
-      // Already finished aborting.
-    }
-    await Promise.allSettled([...writes, tx.done]);
-    throw error;
-  }
-}
+type Tx = ReturnType<Database['transaction']>;
 
-async function load(db: Database): Promise<LocalState> {
-  const tx = db.transaction(STORES, 'readonly');
+async function load(tx: Tx): Promise<LocalState> {
   const byId = <V extends { id: string }>(rows: V[]) => new Map(rows.map((row) => [row.id, row]));
   const [transactions, accounts, categories, workspaces, conflicts, mutations, meta] =
     await Promise.all([
@@ -120,7 +96,6 @@ async function load(db: Database): Promise<LocalState> {
       tx.objectStore('mutations').getAll(),
       tx.objectStore('meta').get('sync'),
     ]);
-  await tx.done;
   return {
     transactions: byId(transactions),
     accounts: byId(accounts),
@@ -132,6 +107,42 @@ async function load(db: Database): Promise<LocalState> {
   };
 }
 
+/**
+ * Reads the state on disk and writes what `transition` changed in one IndexedDB transaction: all
+ * of it or none. Reading inside the transaction is what keeps tabs safe: another tab's commit
+ * lands either wholly before or wholly after this one, so `nextSeq` and base versions are never
+ * built from a stale copy.
+ */
+async function transact(
+  db: Database,
+  transition: (state: LocalState) => LocalState,
+): Promise<{ next: LocalState; changed: boolean }> {
+  const tx = db.transaction(STORES, 'readwrite');
+  const writes: Promise<unknown>[] = [];
+  try {
+    const prev = await load(tx);
+    const next = transition(prev);
+    for (const name of STORES) {
+      if (name === 'meta') continue;
+      const store = tx.objectStore(name);
+      const { puts, deletes } = diff<unknown>(prev[name], next[name]);
+      for (const key of deletes) writes.push(store.delete(key));
+      for (const value of puts) writes.push(store.put(value as never));
+    }
+    if (prev.meta !== next.meta) writes.push(tx.objectStore('meta').put(next.meta, 'sync'));
+    await Promise.all([...writes, tx.done]);
+    return { next, changed: next !== prev };
+  } catch (error) {
+    try {
+      tx.abort();
+    } catch {
+      // Already finished aborting.
+    }
+    await Promise.allSettled([...writes, tx.done]);
+    throw error;
+  }
+}
+
 export class StoreClosedError extends Error {
   constructor() {
     super('The local store is closed');
@@ -139,13 +150,17 @@ export class StoreClosedError extends Error {
   }
 }
 
+/** Names the per-user channel and Web Lock that tabs of the same user share. */
+export const syncChannelName = (userId: string) => `spending-sync:${userId}`;
+
 /**
  * The only owner of IndexedDB. It holds the user's state in memory and serializes every change:
- * a transition computes the next state, the difference is written in one IndexedDB transaction,
- * and only then do readers see it. A failed write leaves both memory and disk as they were.
+ * a transition computes the next state from what is on disk, the difference is written in one
+ * IndexedDB transaction, and only then do readers see it. A failed write leaves both memory and
+ * disk as they were. After a write it tells the user's other tabs, which re-read the database.
  *
- * shortcut: the whole store lives in memory and loads at open; fine for household histories
- * (thousands of rows), move reads to indexes if one user's history nears 100k rows.
+ * shortcut: the whole store lives in memory and every commit re-reads it; fine for household
+ * histories (thousands of rows), move reads to indexes if one user's history nears 100k rows.
  */
 export class LocalStore {
   #db: Database;
@@ -153,10 +168,22 @@ export class LocalStore {
   #closed = false;
   #chain: Promise<unknown> = Promise.resolve();
   #listeners = new Set<() => void>();
+  #remoteListeners = new Set<() => void>();
+  #channel: BroadcastChannel | null;
 
-  private constructor(db: Database, state: LocalState) {
+  private constructor(db: Database, state: LocalState, channelName: string) {
     this.#db = db;
     this.#state = state;
+    this.#channel =
+      typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(channelName);
+    this.#channel?.addEventListener('message', () => {
+      void this.#run((state) => state).then(
+        () => {
+          for (const listener of [...this.#remoteListeners]) listener();
+        },
+        () => undefined,
+      );
+    });
   }
 
   static async open(userId: string): Promise<LocalStore> {
@@ -168,7 +195,10 @@ export class LocalStore {
     });
     const names = localDatabaseNames();
     if (!names.includes(name)) writeRegistry([...names, name]);
-    const store = new LocalStore(db, await load(db));
+    const tx = db.transaction(STORES, 'readonly');
+    const state = await load(tx);
+    await tx.done;
+    const store = new LocalStore(db, state, syncChannelName(userId));
     // Deleting the database (sign-out, another tab) asks open connections to step aside.
     db.addEventListener('versionchange', () => store.close());
     db.addEventListener('close', () => store.close());
@@ -190,17 +220,27 @@ export class LocalStore {
     };
   };
 
+  /** Called after this store has picked up a change another tab committed. */
+  subscribeRemote(listener: () => void): () => void {
+    this.#remoteListeners.add(listener);
+    return () => {
+      this.#remoteListeners.delete(listener);
+    };
+  }
+
   getState = (): LocalState => this.#state;
 
   /** Runs `transition` after every earlier one, persists its result, then publishes it. */
   commit(transition: (state: LocalState) => LocalState): Promise<LocalState> {
+    return this.#run(transition, true);
+  }
+
+  #run(transition: (state: LocalState) => LocalState, announce = false): Promise<LocalState> {
     const run = this.#chain.then(async () => {
       if (this.#closed) throw new StoreClosedError();
-      const prev = this.#state;
-      const next = transition(prev);
-      if (next === prev) return prev;
-      await persist(this.#db, prev, next);
+      const { next, changed } = await transact(this.#db, transition);
       this.#state = next;
+      if (changed && announce) this.#channel?.postMessage('changed');
       for (const listener of [...this.#listeners]) listener();
       return next;
     });
@@ -211,6 +251,7 @@ export class LocalStore {
   close(): void {
     if (this.#closed) return;
     this.#closed = true;
+    this.#channel?.close();
     this.#db.close();
     for (const listener of [...this.#listeners]) listener();
   }

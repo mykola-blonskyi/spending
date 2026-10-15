@@ -19,7 +19,7 @@ export type EngineStatus =
   | { readonly phase: 'authRequired' }
   | { readonly phase: 'stopped' };
 
-/** Runs one flush at a time. #28 replaces the default with a per-user Web Lock across tabs. */
+/** Runs a flush once this tab may flush; `tab-lock.ts` gives one flusher per user across tabs. */
 export type FlushLock = (run: () => Promise<void>) => Promise<void>;
 
 export const WRITE_DEBOUNCE_MS = 500;

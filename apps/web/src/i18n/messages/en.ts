@@ -44,6 +44,11 @@ export const en = {
       title: 'Nothing here yet',
       description: 'When there is something to show, it will appear here.',
     },
+    readOnlyTab: {
+      title: 'Open in another tab',
+      description:
+        'This browser cannot share changes between tabs, so this tab is read-only. Use the other tab, or close it and reload this one.',
+    },
     offline: {
       title: 'You are offline',
       description: 'Changes are saved on this device and will sync when you reconnect.',

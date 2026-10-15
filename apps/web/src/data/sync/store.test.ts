@@ -74,6 +74,20 @@ describe('LocalStore', () => {
     expect(reopened.state.mutations.size).toBe(0);
     reopened.close();
   });
+
+  it('builds each write from the disk, so two tabs never reuse a queue position', async () => {
+    const tabA = await LocalStore.open('ann');
+    const tabB = await LocalStore.open('ann');
+    const changed = new Promise<void>((resolve) => tabB.subscribeRemote(resolve));
+    await recordTransaction(tabA, draft);
+    await recordTransaction(tabB, draft);
+    await changed;
+
+    expect(queueOrder(tabB.state).map((mutation) => mutation.seq)).toEqual([1, 2]);
+    expect(tabB.state.transactions.size).toBe(2);
+    tabA.close();
+    tabB.close();
+  });
 });
 
 describe('local user data', () => {

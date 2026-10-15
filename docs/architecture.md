@@ -88,6 +88,12 @@ are `[data-palette]` token sets in `shared/styles.css` applied on `<html>` by `s
   transaction. Pull and push results are applied by pure reducers (`pull.ts`, `push.ts`), and
   the flusher (`engine.ts`) pushes up to 200 queued mutations in order, then pulls until
   `hasMore` is false.
+- **Tabs.** Every commit re-reads the database inside its own IndexedDB transaction, so tabs never
+  build on a stale copy. After a commit the store posts on the `BroadcastChannel`
+  `spending-sync:<userId>`, and other tabs re-read. Only the tab holding the Web Lock of the same
+  name flushes; the others wait for it and take over when that tab closes. Without Web Locks or
+  BroadcastChannel, the first tab claims the queue in `localStorage` (renewed every 5 s, stale
+  after 15 s) and later tabs are read-only (`tab-lock.ts`).
 - **Conflicts.** The server keeps its row and records the client's version (BR-19). The client
   shows both and lets the user pick or merge.
 
