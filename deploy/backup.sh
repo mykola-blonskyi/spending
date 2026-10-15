@@ -125,8 +125,15 @@ daily() {
 
 schedule() {
   run_at=$((3 * 3600))
-  # A separate process keeps set -e in force; inside `||` it would be suspended.
-  [ -e "$dir/daily/daily-$(date -u +%Y-%m-%d).dump" ] || "$0" daily || log "daily dump failed"
+  # Run at start when today's dump is missing, or when an off-host copy is configured but none is
+  # fresh (just enabled, or the last copy failed): the healthcheck needs both. A separate
+  # process keeps set -e in force; inside `||` it would be suspended.
+  if [ ! -e "$dir/daily/daily-$(date -u +%Y-%m-%d).dump" ] || {
+    [ -n "${BACKUP_OFFSITE_REMOTE:-}" ] &&
+      ! find "$dir/offsite.ok" -mmin -1560 2>/dev/null | grep -q .
+  }; then
+    "$0" daily || log "daily dump failed"
+  fi
   while :; do
     now=$(($(date -u +%s) % 86400))
     wait=$(((run_at - now + 86400) % 86400))
