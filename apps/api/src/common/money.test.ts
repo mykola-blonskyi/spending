@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   convertToEurMinor,
@@ -84,5 +86,23 @@ describe('formatMinor', () => {
 
   it('rejects amounts that are not safe integers', () => {
     expect(() => formatMinor(1.5, 2)).toThrow(RangeError);
+  });
+});
+
+describe('MINOR_DIGITS', () => {
+  it('matches the web app’s copy for every code either side knows', () => {
+    const source = readFileSync(
+      resolve(__dirname, '../../../web/src/shared/format/money.ts'),
+      'utf8',
+    );
+    const table = /const MINOR_DIGITS[^{]*\{([^}]*)\}/.exec(source)![1]!;
+    const web = new Map(
+      [...table.matchAll(/([A-Z]{3}): (\d)/g)].map(([, code, digits]) => [code!, Number(digits)]),
+    );
+    expect(web.size).toBeGreaterThan(0);
+    const codes = new Set([...web.keys(), ...Intl.supportedValuesOf('currency')]);
+    for (const code of codes) {
+      expect([code, currencyExponent(code)]).toEqual([code, web.get(code) ?? 2]);
+    }
   });
 });
