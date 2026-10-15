@@ -380,4 +380,48 @@ describe('imports', () => {
       expect(fresh.categoryId).toBe(ids.get('groceries'));
     });
   });
+
+  describe('history and undo (BR-30)', () => {
+    type Undo = { batch: { id: string; undoneAt: string | null }; deleted: number; kept: number };
+    const undo = (s: Session, id: string) => as(t, s, `/v1/imports/${id}/undo`, { method: 'POST' });
+    const statement = [row(2), row(3), row(4)];
+
+    it("lists only the actor's batches, newest first", async () => {
+      const first = await importRows(ann, [row(2)]);
+      const second = await importRows(ann, [row(2), row(3)]);
+      await importRows(bob, [row(2)], await createAccount(bob, await personal(bob)));
+      const { batches } = await json<{ batches: { id: string; importedCount: number }[] }>(
+        await as(t, ann, '/v1/imports'),
+        200,
+      );
+      expect(batches.map((b) => [b.id, b.importedCount])).toEqual([
+        [second.batch.id, 1],
+        [first.batch.id, 1],
+      ]);
+    });
+
+    it('deletes unedited rows, keeps edited ones, repeats idempotently and allows re-import', async () => {
+      const { batch } = await importRows(ann, statement);
+      const [edited, deletedBefore] = await history(ann);
+      expect((await edit(ann, edited!, { note: 'checked' })).status).toBe('applied');
+      expect((await remove(ann, deletedBefore!)).status).toBe('applied');
+
+      const first = await json<Undo>(await undo(ann, batch.id), 200);
+      expect(first).toMatchObject({ deleted: 1, kept: 1 });
+      expect(first.batch.undoneAt).not.toBeNull();
+      expect((await history(ann)).map((r) => r.id)).toEqual([edited!.id]);
+      expect(await json<Undo>(await undo(ann, batch.id), 200)).toEqual(first);
+
+      const again = await importRows(ann, statement);
+      expect(again.imported.count).toBe(1);
+      expect(again.duplicates).toBe(2);
+      expect(await history(ann)).toHaveLength(2);
+    });
+
+    it("refuses another user's batch", async () => {
+      const { batch } = await importRows(ann, statement);
+      expect((await undo(bob, batch.id)).status).toBe(404);
+      expect(await history(ann)).toHaveLength(3);
+    });
+  });
 });

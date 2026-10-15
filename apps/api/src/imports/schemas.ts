@@ -51,6 +51,14 @@ export type ImportResult = {
   rejected: RejectedRow[];
 };
 
+export const batchListSchema = z.object({ batches: z.array(importBatchViewSchema) });
+
+export const undoResultSchema = z.object({
+  batch: importBatchViewSchema,
+  deleted: z.int(),
+  kept: z.int(),
+});
+
 export const batchColumns = {
   id: importBatches.id,
   accountId: importBatches.accountId,

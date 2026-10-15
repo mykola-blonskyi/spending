@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { ApiError } from '../common/errors';
 import { BASE_CURRENCY, type CurrencyCode } from '../common/money';
 import { DB, type Db, ledgerTransaction, type Tx } from '../database/database.module';
@@ -11,7 +11,13 @@ import { categorize } from './categorize';
 import { loadCatalog } from './category-rules';
 import { importHashes } from './dedupe';
 import { type NormalizedRow, validateRows } from './rows';
-import { batchColumns, type ImportBody, type ImportResult, toBatchView } from './schemas';
+import {
+  batchColumns,
+  type ImportBatchView,
+  type ImportBody,
+  type ImportResult,
+  toBatchView,
+} from './schemas';
 
 /** Keeps one multi-row insert well under PostgreSQL's 65535 bind parameters. */
 const INSERT_CHUNK = 500;
@@ -92,6 +98,59 @@ export class ImportsService {
         duplicates,
         rejected,
       };
+    });
+  }
+
+  async list(actorId: string): Promise<ImportBatchView[]> {
+    const rows = await this.db
+      .select(batchColumns)
+      .from(importBatches)
+      .where(eq(importBatches.userId, actorId))
+      .orderBy(desc(importBatches.createdAt), desc(importBatches.id));
+    return rows.map(toBatchView);
+  }
+
+  /**
+   * BR-30. Tombstones the batch's rows nobody edited (still version 1 in the personal workspace)
+   * and clears their keys so the statement can be imported again. Repeating it changes nothing;
+   * the counts are read back from the rows, so a repeat reports the same outcome.
+   */
+  undo(actorId: string, id: string) {
+    return ledgerTransaction(this.db, async (tx) => {
+      const [batch] = await tx
+        .select({ ...batchColumns, workspaceId: importBatches.workspaceId })
+        .from(importBatches)
+        .where(and(eq(importBatches.id, id), eq(importBatches.userId, actorId)));
+      if (!batch) throw new ApiError('NOT_FOUND');
+      if (!batch.undoneAt) {
+        await tx
+          .update(transactions)
+          .set({ deletedAt: sql`now()`, importHash: null })
+          .where(
+            and(
+              eq(transactions.importBatchId, id),
+              eq(transactions.workspaceId, batch.workspaceId),
+              eq(transactions.version, 1),
+              isNull(transactions.deletedAt),
+            ),
+          );
+        await tx
+          .update(importBatches)
+          .set({ undoneAt: sql`now()` })
+          .where(eq(importBatches.id, id));
+      }
+      const [counts] = await tx
+        .select({
+          deleted: sql<number>`count(*) filter (where ${transactions.deletedAt} is not null and ${transactions.importHash} is null)::int`,
+          kept: sql<number>`count(*) filter (where ${transactions.deletedAt} is null)::int`,
+        })
+        .from(transactions)
+        .where(eq(transactions.importBatchId, id));
+      const [stored] = await tx
+        .select(batchColumns)
+        .from(importBatches)
+        .where(eq(importBatches.id, id));
+      return { batch: toBatchView(stored!), deleted: counts!.deleted, kept: counts!.kept };
     });
   }
 

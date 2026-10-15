@@ -932,6 +932,46 @@
         "tags": [
           "Imports"
         ]
+      },
+      "get": {
+        "operationId": "ImportsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchListDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Imports"
+        ]
+      }
+    },
+    "/api/v1/imports/{id}/undo": {
+      "post": {
+        "operationId": "ImportsController_undo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UndoResultDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Imports"
+        ]
       }
     }
   },
@@ -3411,6 +3451,45 @@
           "imported",
           "duplicates",
           "rejected"
+        ],
+        "additionalProperties": false
+      },
+      "BatchListDto_Output": {
+        "type": "object",
+        "properties": {
+          "batches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportBatchView_Output"
+            }
+          }
+        },
+        "required": [
+          "batches"
+        ],
+        "additionalProperties": false
+      },
+      "UndoResultDto_Output": {
+        "type": "object",
+        "properties": {
+          "batch": {
+            "$ref": "#/components/schemas/ImportBatchView_Output"
+          },
+          "deleted": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "kept": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "batch",
+          "deleted",
+          "kept"
         ],
         "additionalProperties": false
       }

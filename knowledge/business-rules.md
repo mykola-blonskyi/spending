@@ -127,7 +127,10 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
 - **BR-30.** Undoing an import batch deletes (tombstones) its transactions that were not edited
   after import and clears their dedupe keys, so the same statement can be imported again. Edited
   ones are kept and reported. Deleting a single imported transaction keeps its key, so a
-  re-import does not bring it back.
+  re-import does not bring it back, even after an undo. A row counts as edited when its `version`
+  is above 1 (any user-visible change, including review confirmation) or it left the personal
+  workspace. Only the importer can undo; repeating an undo changes nothing and reports the same
+  counts.
 
 ## Data rights
 
