@@ -19,6 +19,7 @@ import {
   DateField,
   DeleteButton,
   DescriptionField,
+  DiscardButton,
   KindToggle,
   NoteField,
   SaveBar,
@@ -165,6 +166,10 @@ function ConversionMeta({
 }
 
 const iconButton = 'h-11 gap-1.5 px-3 text-[13px] lg:h-8 lg:px-2.5';
+const quietButton = cn(
+  iconButton,
+  'border-transparent bg-transparent shadow-none dark:border-transparent dark:bg-transparent',
+);
 
 /**
  * One entry read-only with in-place editing and delete, for master-detail layouts. `onBack`
@@ -216,13 +221,10 @@ export function EntryDetail({ id, onBack }: { id: string; onBack?: () => void })
               <Pencil aria-hidden />
               {editing ? t('history.detail.cancelEdit') : t('history.detail.edit')}
             </Button>
-            <DeleteButton
-              onConfirm={() => void detail.remove()}
-              className={cn(
-                iconButton,
-                'border-transparent bg-transparent shadow-none dark:border-transparent dark:bg-transparent',
-              )}
-            />
+            {row?.sync.state === 'failed' && (
+              <DiscardButton onConfirm={() => void detail.discard()} className={quietButton} />
+            )}
+            <DeleteButton onConfirm={() => void detail.remove()} className={quietButton} />
           </div>
         )}
       </div>

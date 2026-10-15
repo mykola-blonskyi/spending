@@ -11,7 +11,7 @@ import {
 } from './fixtures';
 import { emptyLocalState, type LocalState, queueOrder } from './model';
 import { reducePull } from './pull';
-import { reducePush } from './push';
+import { discardFailed, reducePush } from './push';
 import { applyLocalChange, setMutationState } from './queue';
 import { localEntries } from './query';
 
@@ -236,5 +236,42 @@ describe('reducePush', () => {
       status: 'retrying',
     });
     expect(queueOrder(reducePush(state, [], now, []))[0]?.state).toEqual({ status: 'sending' });
+  });
+});
+
+describe('discardFailed', () => {
+  const rejected = (state: LocalState) =>
+    reducePush(
+      state,
+      [{ mutationId: 'm-1', status: 'rejected', code: 'INVALID_CATEGORY', message: 'archived' }],
+      now,
+      ['m-1'],
+    );
+
+  it('reverts an edit to the last server row and empties the queue', () => {
+    const failed = rejected(editLocally(syncedState(serverRow()), { categoryId: 'archived' }));
+    const next = discardFailed(failed, 'tx-1');
+    expect(next.transactions.get('tx-1')).toMatchObject({ server: { version: 1 }, local: null });
+    expect(next.mutations.size).toBe(0);
+    expect(localEntries(next)).toMatchObject([
+      { categoryId: serverRow().categoryId, sync: { state: 'synced' } },
+    ]);
+  });
+
+  it('removes an entry the server never had', () => {
+    const failed = rejected(editLocally(syncedState(), { categoryId: 'archived' }));
+    const next = discardFailed(failed, 'tx-1');
+    expect(next.transactions.size).toBe(0);
+    expect(next.mutations.size).toBe(0);
+  });
+
+  it('leaves an entry alone unless its only change failed', () => {
+    const pending = editLocally(syncedState(serverRow()), { amountMinor: 1 });
+    expect(discardFailed(pending, 'tx-1')).toBe(pending);
+    const fixed = editLocally(
+      rejected(editLocally(syncedState(serverRow()), { categoryId: 'archived' })),
+      { categoryId: 'cat-1' },
+    );
+    expect(discardFailed(fixed, 'tx-1')).toBe(fixed);
   });
 });

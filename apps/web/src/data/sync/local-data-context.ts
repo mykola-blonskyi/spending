@@ -22,6 +22,7 @@ import { deriveSyncStatus, smoothingDelay } from './status';
 import type { LocalStore } from './store';
 import {
   deleteTransaction,
+  discardChange,
   recordTransaction,
   type TransactionDraft,
   updateTransaction,
@@ -189,3 +190,4 @@ export const useUpdateTransaction = (): ((id: string, draft: TransactionDraft) =
   useWriter(updateTransaction);
 export const useDeleteTransaction = (): ((id: string) => Promise<void>) =>
   useWriter(deleteTransaction);
+export const useDiscardChange = (): ((id: string) => Promise<void>) => useWriter(discardChange);

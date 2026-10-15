@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import {
   useAccounts,
   useDeleteTransaction,
+  useDiscardChange,
   useLocalDataStatus,
   useLocalTransaction,
   useRecordTransaction,
@@ -32,21 +33,23 @@ const COMMON_CURRENCIES = ['EUR', 'USD', 'GBP', 'UAH', 'PLN'];
 
 export type EntryStatus = 'loading' | 'unavailable' | 'notFound' | 'ready';
 
-/** Leaves for history first, so the deleted entry's screen never shows it gone. */
-export function useRemoveEntry(): (id: string) => Promise<void> {
+/** Leaves for history first, so the entry's screen never shows it gone or reverted. */
+function useLeaveThen(write: (id: string) => Promise<void>): (id: string) => Promise<void> {
   const t = useTranslations('transactionForm');
   const navigate = useNavigate();
-  const remove = useDeleteTransaction();
   return useCallback(
     async (id: string) => {
       void navigate(HISTORY_PATH);
-      await remove(id).catch(() => {
+      await write(id).catch(() => {
         toast.error(t('saveFailed'));
       });
     },
-    [navigate, remove, t],
+    [navigate, write, t],
   );
 }
+
+export const useRemoveEntry = () => useLeaveThen(useDeleteTransaction());
+export const useDiscardEntry = () => useLeaveThen(useDiscardChange());
 
 /**
  * One entry form, new or edit. Edit mode follows the route's `:id` unless `id` is given. Values
@@ -69,6 +72,7 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
   const record = useRecordTransaction();
   const update = useUpdateTransaction();
   const removeEntry = useRemoveEntry();
+  const discardEntry = useDiscardEntry();
 
   const [scope, setScope] = useState<Scope>('personal');
   const personal = workspaces.items.find((workspace) => workspace.kind === 'personal');
@@ -204,6 +208,8 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
     },
     canDelete: mode === 'edit' && status === 'ready',
     remove: () => (entryId ? removeEntry(entryId) : Promise.resolve()),
+    canDiscard: status === 'ready' && stored.entry?.sync.state === 'failed',
+    discard: () => (entryId ? discardEntry(entryId) : Promise.resolve()),
   };
 }
 

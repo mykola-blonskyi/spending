@@ -2,6 +2,7 @@ export {
   useAccounts,
   useCategories,
   useDeleteTransaction,
+  useDiscardChange,
   useInitialSync,
   useLocalTransaction,
   useLocalDataStatus,
