@@ -499,7 +499,7 @@ export const ru = {
     emptyFile: 'В этом файле не найдена таблица операций.',
     readFailed: 'Не удалось прочитать этот файл.',
     detected:
-      'Прочитано как {encoding}, {delimiter}: {count, plural, one {# строка} few {# строки} other {# строк}}.',
+      'Прочитано как {encoding}, {delimiter}: {count, plural, one {# строка} few {# строки} many {# строк} other {# строк}}.',
     delimiters: {
       semicolon: 'разделитель — точка с запятой',
       comma: 'разделитель — запятая',
@@ -529,11 +529,12 @@ export const ru = {
     previewHint: 'Первые строки так, как они будут импортированы. Проверьте даты и суммы.',
     unreadable: 'Не читается',
     readyRows:
-      '{count, plural, one {# строка готова} few {# строки готовы} other {# строк готово}}',
+      '{count, plural, one {# строка готова} few {# строки готовы} many {# строк готово} other {# строк готово}}',
     problemRows:
-      '{count, plural, one {# строка не читается и будет отклонена} few {# строки не читаются и будут отклонены} other {# строк не читаются и будут отклонены}}',
+      '{count, plural, one {# строка не читается и будет отклонена} few {# строки не читаются и будут отклонены} many {# строк не читаются и будут отклонены} other {# строк не читаются и будут отклонены}}',
     incomplete: 'Чтобы продолжить, выберите столбцы даты, описания и суммы.',
-    submit: 'Импортировать {count, plural, one {# строку} few {# строки} other {# строк}}',
+    submit:
+      'Импортировать {count, plural, one {# строку} few {# строки} many {# строк} other {# строк}}',
     importing: 'Импортируем…',
     summary: {
       title: 'Импорт завершён',
@@ -543,7 +544,7 @@ export const ru = {
       rejected: 'Отклонено',
       duplicatesHint: 'Строки, импортированные раньше или удалённые с тех пор, пропущены.',
       pendingReview:
-        '{count, plural, one {# строка ждёт} few {# строки ждут} other {# строк ждут}} в очереди проверки. Выберите личное или семейное и категорию, чтобы опубликовать их.',
+        '{count, plural, one {# строка ждёт} few {# строки ждут} many {# строк ждут} other {# строк ждут}} в очереди проверки. Выберите личное или семейное и категорию, чтобы опубликовать их.',
       rejectedTitle: 'Отклонённые строки',
       line: 'Строка',
       reason: 'Причина',
@@ -554,7 +555,8 @@ export const ru = {
       noCategory: 'Без категории',
       selectAll: 'Выбрать все строки',
       selectRow: 'Выбрать строку {line}',
-      selected: '{count, plural, one {# выбрана} few {# выбраны} other {# выбрано}}',
+      selected:
+        '{count, plural, one {# выбрана} few {# выбраны} many {# выбрано} other {# выбрано}}',
       bulkCategory: 'Категория для выбранных',
       apply: 'Применить',
       allCategorized: 'У всех импортированных записей есть категория.',
@@ -575,22 +577,22 @@ export const ru = {
     history: {
       title: 'Предыдущие импорты',
       counts:
-        '{imported, plural, one {# импортирована} few {# импортированы} other {# импортировано}} · {duplicates, plural, one {# дубликат} few {# дубликата} other {# дубликатов}} · {rejected, plural, one {# отклонена} few {# отклонены} other {# отклонено}}',
-      rows: '{count, plural, one {# строка} few {# строки} other {# строк}}',
+        '{imported, plural, one {# импортирована} few {# импортированы} many {# импортировано} other {# импортировано}} · {duplicates, plural, one {# дубликат} few {# дубликата} many {# дубликатов} other {# дубликатов}} · {rejected, plural, one {# отклонена} few {# отклонены} many {# отклонено} other {# отклонено}}',
+      rows: '{count, plural, one {# строка} few {# строки} many {# строк} other {# строк}}',
       undone: 'Отменён',
       undo: 'Отменить',
       undoTitle: 'Отменить этот импорт?',
       undoDescription:
         'Записи из этого файла, которые вы не редактировали, будут удалены. Отредактированные останутся, а файл можно будет импортировать снова.',
       undoResult:
-        '{deleted, plural, one {# запись удалена} few {# записи удалены} other {# записей удалено}}, {kept, plural, one {# оставлена} few {# оставлены} other {# оставлено}}.',
+        '{deleted, plural, one {# запись удалена} few {# записи удалены} many {# записей удалено} other {# записей удалено}}, {kept, plural, one {# оставлена} few {# оставлены} many {# оставлено} other {# оставлено}}.',
       removedAccount: 'Удалённый счёт',
     },
     review: {
       title: 'Проверка импортированных строк',
       description: 'Решите, куда идёт каждая строка. До этого она не попадает в историю и итоги.',
       banner:
-        '{count, plural, one {# импортированная строка ждёт} few {# импортированные строки ждут} other {# импортированных строк ждут}} вашей проверки.',
+        '{count, plural, one {# импортированная строка ждёт} few {# импортированные строки ждут} many {# импортированных строк ждут} other {# импортированных строк ждут}} вашей проверки.',
       open: 'Проверить',
       emptyTitle: 'Нечего проверять',
       emptyDescription: 'Импортированные строки будут ждать здесь, пока вы их не подтвердите.',
@@ -601,14 +603,16 @@ export const ru = {
       noCategory: 'Без категории',
       selectAll: 'Выбрать все строки',
       selectRow: 'Выбрать {description}',
-      selected: '{count, plural, one {# выбрана} few {# выбраны} other {# выбрано}}',
+      selected:
+        '{count, plural, one {# выбрана} few {# выбраны} many {# выбрано} other {# выбрано}}',
       bulkScope: 'Пространство для выбранных',
       bulkCategory: 'Категория для выбранных',
       apply: 'Применить',
-      confirm: 'Опубликовать {count, plural, one {# строку} few {# строки} other {# строк}}',
+      confirm:
+        'Опубликовать {count, plural, one {# строку} few {# строки} many {# строк} other {# строк}}',
       confirming: 'Публикуем…',
       confirmed:
-        '{count, plural, one {# строка опубликована} few {# строки опубликованы} other {# строк опубликовано}}.',
+        '{count, plural, one {# строка опубликована} few {# строки опубликованы} many {# строк опубликовано} other {# строк опубликовано}}.',
     },
   },
   dashboard: {

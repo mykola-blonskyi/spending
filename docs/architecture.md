@@ -26,24 +26,25 @@ apps/api     NestJS modular monolith (ADR-001)
 apps/web     React + Vite SPA/PWA
 docs/        architecture, decisions, operations
 knowledge/   domain model, business rules, glossary
-deploy/      compose stack, nginx config, backup scripts
+deploy/      Docker images, nginx config, backup script
 ```
 
 ## Backend modules (`apps/api/src`)
 
-| Module       | Owns                                                                    |
-| ------------ | ----------------------------------------------------------------------- |
-| `database`   | Drizzle schema, migrations, connection, transaction helper              |
-| `common`     | config, actor context, error codes, rate limits, HTTP middleware        |
-| `auth`       | OIDC login/logout, sessions, grant re-check, session and CSRF guards    |
-| `users`      | profile and preferences, export, account deletion                       |
-| `workspaces` | personal/family workspaces, memberships, invitations, the access policy |
-| `ledger`     | accounts, categories, transaction reads and writes, FX conversion       |
-| `sync`       | push (idempotent mutations), pull (revision cursor), conflicts          |
-| `budgets`    | monthly category limits and progress                                    |
-| `recurring`  | recurring rules and the idempotent generator job                        |
-| `imports`    | CSV batches, dedupe, categorization, review queue, undo                 |
-| `analytics`  | totals, time series, category breakdown, period comparison              |
+| Module        | Owns                                                                    |
+| ------------- | ----------------------------------------------------------------------- |
+| `database`    | Drizzle schema, migrations, connection, transaction helper              |
+| `common`      | config, actor context, error codes, rate limits, HTTP middleware        |
+| `auth`        | OIDC login/logout, sessions, grant re-check, session and CSRF guards    |
+| `users`       | profile and preferences                                                 |
+| `data-rights` | JSON/CSV export, account deletion                                       |
+| `workspaces`  | personal/family workspaces, memberships, invitations, the access policy |
+| `ledger`      | accounts, categories, transaction reads and writes, FX conversion       |
+| `sync`        | push (idempotent mutations), pull (revision cursor), conflicts          |
+| `budgets`     | monthly category limits and progress                                    |
+| `recurring`   | recurring rules and the idempotent generator job                        |
+| `imports`     | CSV batches, dedupe, categorization, review queue, undo                 |
+| `analytics`   | totals, time series, category breakdown, period comparison              |
 
 `workspaces` exports `AccessPolicy`, which every other module calls before touching
 workspace-scoped data (BR-1, BR-2). Business logic that needs no I/O (money, schedules, dedupe
@@ -246,8 +247,8 @@ period just before, with deltas (current minus previous). Budget progress comes 
   workspace-scoped operation.
 - Sessions are opaque and stored as hashes. Cookies are `__Host-`, HttpOnly, Secure and
   SameSite=Lax. CSRF uses a synchronizer header plus an Origin check. CORS is off because the
-  app is same-origin. Rate limits apply to auth, invitations, imports and sync, per user when
-  signed in, else per IPv4 address or IPv6 /64.
+  app is same-origin. Rate limits apply to auth, invitations, imports, recurring rules, data export and
+  deletion, and sync, per user when signed in, else per IPv4 address or IPv6 /64.
 - Secrets live only in Coolify's environment panel. Logs carry request ID, route, status and
   duration only. Never bodies, amounts, notes or tokens.
 - CSP and security headers are static in nginx (`deploy/security-headers.conf`): scripts are

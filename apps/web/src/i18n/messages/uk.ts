@@ -495,7 +495,7 @@ export const uk = {
     emptyFile: 'У цьому файлі не знайдено таблиці операцій.',
     readFailed: 'Не вдалося прочитати цей файл.',
     detected:
-      'Прочитано як {encoding}, {delimiter}: {count, plural, one {# рядок} few {# рядки} other {# рядків}}.',
+      'Прочитано як {encoding}, {delimiter}: {count, plural, one {# рядок} few {# рядки} many {# рядків} other {# рядків}}.',
     delimiters: {
       semicolon: 'розділювач — крапка з комою',
       comma: 'розділювач — кома',
@@ -525,11 +525,12 @@ export const uk = {
     previewHint: 'Перші рядки так, як їх буде імпортовано. Перевірте дати й суми.',
     unreadable: 'Не читається',
     readyRows:
-      '{count, plural, one {# рядок готовий} few {# рядки готові} other {# рядків готово}}',
+      '{count, plural, one {# рядок готовий} few {# рядки готові} many {# рядків готово} other {# рядків готово}}',
     problemRows:
-      '{count, plural, one {# рядок не читається і буде відхилений} few {# рядки не читаються і будуть відхилені} other {# рядків не читаються і будуть відхилені}}',
+      '{count, plural, one {# рядок не читається і буде відхилений} few {# рядки не читаються і будуть відхилені} many {# рядків не читаються і будуть відхилені} other {# рядків не читаються і будуть відхилені}}',
     incomplete: 'Щоб продовжити, оберіть стовпці дати, опису та суми.',
-    submit: 'Імпортувати {count, plural, one {# рядок} few {# рядки} other {# рядків}}',
+    submit:
+      'Імпортувати {count, plural, one {# рядок} few {# рядки} many {# рядків} other {# рядків}}',
     importing: 'Імпортуємо…',
     summary: {
       title: 'Імпорт завершено',
@@ -539,7 +540,7 @@ export const uk = {
       rejected: 'Відхилено',
       duplicatesHint: 'Рядки, імпортовані раніше або відтоді видалені, пропущено.',
       pendingReview:
-        '{count, plural, one {# рядок чекає} few {# рядки чекають} other {# рядків чекають}} у черзі перегляду. Оберіть особисте чи сімейне та категорію, щоб опублікувати їх.',
+        '{count, plural, one {# рядок чекає} few {# рядки чекають} many {# рядків чекають} other {# рядків чекають}} у черзі перегляду. Оберіть особисте чи сімейне та категорію, щоб опублікувати їх.',
       rejectedTitle: 'Відхилені рядки',
       line: 'Рядок',
       reason: 'Причина',
@@ -550,7 +551,8 @@ export const uk = {
       noCategory: 'Без категорії',
       selectAll: 'Вибрати всі рядки',
       selectRow: 'Вибрати рядок {line}',
-      selected: '{count, plural, one {# вибрано} other {# вибрано}}',
+      selected:
+        '{count, plural, one {# вибрано} few {# вибрано} many {# вибрано} other {# вибрано}}',
       bulkCategory: 'Категорія для вибраних',
       apply: 'Застосувати',
       allCategorized: 'Усі імпортовані записи мають категорію.',
@@ -569,15 +571,15 @@ export const uk = {
     history: {
       title: 'Попередні імпорти',
       counts:
-        '{imported, plural, one {# імпортований} few {# імпортовані} other {# імпортованих}} · {duplicates, plural, one {# дублікат} few {# дублікати} other {# дублікатів}} · {rejected, plural, one {# відхилений} few {# відхилені} other {# відхилених}}',
-      rows: '{count, plural, one {# рядок} few {# рядки} other {# рядків}}',
+        '{imported, plural, one {# імпортований} few {# імпортовані} many {# імпортованих} other {# імпортованих}} · {duplicates, plural, one {# дублікат} few {# дублікати} many {# дублікатів} other {# дублікатів}} · {rejected, plural, one {# відхилений} few {# відхилені} many {# відхилених} other {# відхилених}}',
+      rows: '{count, plural, one {# рядок} few {# рядки} many {# рядків} other {# рядків}}',
       undone: 'Скасовано',
       undo: 'Скасувати',
       undoTitle: 'Скасувати цей імпорт?',
       undoDescription:
         'Записи з цього файлу, які ви не редагували, буде видалено. Відредаговані залишаться, а файл можна буде імпортувати знову.',
       undoResult:
-        '{deleted, plural, one {# запис видалено} few {# записи видалено} other {# записів видалено}}, {kept, plural, one {# залишено} few {# залишено} other {# залишено}}.',
+        '{deleted, plural, one {# запис видалено} few {# записи видалено} many {# записів видалено} other {# записів видалено}}, {kept, plural, one {# залишено} few {# залишено} many {# залишено} other {# залишено}}.',
       removedAccount: 'Видалений рахунок',
     },
     review: {
@@ -585,7 +587,7 @@ export const uk = {
       description:
         'Вирішіть, куди йде кожен рядок. До того він не потрапляє в історію та підсумки.',
       banner:
-        '{count, plural, one {# імпортований рядок чекає} few {# імпортовані рядки чекають} other {# імпортованих рядків чекають}} на ваш перегляд.',
+        '{count, plural, one {# імпортований рядок чекає} few {# імпортовані рядки чекають} many {# імпортованих рядків чекають} other {# імпортованих рядків чекають}} на ваш перегляд.',
       open: 'Переглянути',
       emptyTitle: 'Нічого переглядати',
       emptyDescription: 'Імпортовані рядки чекатимуть тут, доки ви їх не підтвердите.',
@@ -596,14 +598,16 @@ export const uk = {
       noCategory: 'Без категорії',
       selectAll: 'Вибрати всі рядки',
       selectRow: 'Вибрати {description}',
-      selected: '{count, plural, one {# вибрано} other {# вибрано}}',
+      selected:
+        '{count, plural, one {# вибрано} few {# вибрано} many {# вибрано} other {# вибрано}}',
       bulkScope: 'Простір для вибраних',
       bulkCategory: 'Категорія для вибраних',
       apply: 'Застосувати',
-      confirm: 'Опублікувати {count, plural, one {# рядок} few {# рядки} other {# рядків}}',
+      confirm:
+        'Опублікувати {count, plural, one {# рядок} few {# рядки} many {# рядків} other {# рядків}}',
       confirming: 'Публікуємо…',
       confirmed:
-        '{count, plural, one {# рядок опубліковано} few {# рядки опубліковано} other {# рядків опубліковано}}.',
+        '{count, plural, one {# рядок опубліковано} few {# рядки опубліковано} many {# рядків опубліковано} other {# рядків опубліковано}}.',
     },
   },
   dashboard: {

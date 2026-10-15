@@ -86,7 +86,7 @@ The product is being built in small pull requests.
 | Hosting      | One VPS with Coolify, Traefik and Docker Compose                                           |
 
 The API is one program with several modules: `auth`, `users`, `workspaces`, `ledger`, `sync`,
-`budgets`, `recurring`, `imports`, `analytics`, `database`. There are no microservices.
+`budgets`, `recurring`, `imports`, `data-rights`, `analytics`, `database`. There are no microservices.
 
 The web app talks to the API only through typed code generated from the API's OpenAPI file.
 
@@ -194,8 +194,8 @@ The app runs on the owner's VPS as a Coolify stack:
 - a daily backup job.
 
 A deploy starts only by hand: in GitHub, open Actions, then Deploy, then Run workflow on
-`main`. The workflow runs all checks again, tells Coolify to deploy that exact commit, and
-checks that the new version is healthy.
+`main`. The workflow runs all checks again, tells Coolify to deploy `main` (after checking it
+still points at that commit), and checks that the new version is healthy and reports that commit.
 
 `docs/operations.md` has the full runbook: first-time setup, secrets, deploys, rollback,
 backups and restore.
