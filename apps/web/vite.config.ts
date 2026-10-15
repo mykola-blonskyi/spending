@@ -16,7 +16,7 @@ export default defineConfig({
       registerType: 'prompt',
       injectRegister: false,
       // Manifest icons and the manifest itself are precached by the plugin.
-      includeAssets: ['apple-touch-icon.png'],
+      includeAssets: ['apple-touch-icon.png', 'favicon.ico', 'favicon.svg'],
       manifest: {
         name: 'Spending',
         short_name: 'Spending',
