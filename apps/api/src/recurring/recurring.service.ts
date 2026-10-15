@@ -14,14 +14,9 @@ import { DB, type Db, ledgerTransaction, type Tx } from '../database/database.mo
 import { accounts, categories, recurringRules, transactions, workspaces } from '../database/schema';
 import { FxService } from '../ledger/fx/fx.service';
 import { UsersService } from '../users/users.service';
+import { referenceError, type ReferenceFacts } from '../sync/mutations';
 import { AccessPolicy } from '../workspaces/access-policy';
-import {
-  type CreateRule,
-  type RuleView,
-  templateError,
-  type TemplateFacts,
-  type UpdateRule,
-} from './rules';
+import { type CreateRule, type RuleView, type UpdateRule } from './rules';
 import { nextOccurrence, occurrences } from './schedule';
 
 type Rule = typeof recurringRules.$inferSelect;
@@ -228,11 +223,11 @@ export class RecurringService {
           .from(categories)
           .where(eq(categories.id, rule.categoryId))
       : [];
-    const facts: TemplateFacts = {
+    const facts: ReferenceFacts = {
       ...rule,
       current,
-      isCreator: rule.createdBy === actorId,
-      creatorPersonalWorkspaceId: rule.createdBy
+      isAuthor: rule.createdBy === actorId,
+      authorPersonalWorkspaceId: rule.createdBy
         ? await this.policy.personalWorkspaceId(rule.createdBy, tx)
         : null,
       account: account
@@ -240,7 +235,7 @@ export class RecurringService {
         : null,
       category: category ? { ...category, archived: !!category.archivedAt } : null,
     };
-    const error = templateError(facts);
+    const error = referenceError(facts);
     if (error) throw new ApiError(error);
   }
 

@@ -1,11 +1,9 @@
 import { z } from 'zod';
-import type { ErrorCode } from '../common/errors';
 import {
   amountMinorSchema,
   calendarDateSchema,
   currencySchema,
   ENTRY_KINDS,
-  type EntryKind,
 } from '../ledger/views';
 import { timezoneSchema } from '../users/profile';
 import { WORKSPACE_KINDS } from '../workspaces/family';
@@ -78,44 +76,3 @@ export const ruleViewSchema = z.object({
 });
 export type RuleView = z.infer<typeof ruleViewSchema>;
 export const ruleListSchema = z.object({ rules: z.array(ruleViewSchema) });
-
-export type TemplateFacts = Readonly<{
-  workspaceId: string;
-  kind: EntryKind;
-  accountId: string | null;
-  categoryId: string | null;
-  /** The rule's current references, which stay allowed even when archived. Null on create. */
-  current: { accountId: string | null; categoryId: string | null } | null;
-  isCreator: boolean;
-  creatorPersonalWorkspaceId: string | null;
-  account: { workspaceId: string; archived: boolean } | null;
-  category: { workspaceId: string; kind: EntryKind; archived: boolean } | null;
-}>;
-
-/** The sync upsert's reference rules (BR-3, BR-4) applied to a rule's template. */
-export function templateError(
-  facts: TemplateFacts,
-): Extract<ErrorCode, 'INVALID_ACCOUNT' | 'INVALID_CATEGORY'> | null {
-  const { account, category } = facts;
-  if (facts.accountId !== null) {
-    const unchanged = facts.current?.accountId === facts.accountId;
-    const allowed =
-      account !== null &&
-      (account.workspaceId === facts.workspaceId ||
-        (account.workspaceId === facts.creatorPersonalWorkspaceId &&
-          (facts.isCreator || unchanged)));
-    if (!allowed || (account.archived && !unchanged)) return 'INVALID_ACCOUNT';
-  }
-  if (facts.categoryId !== null) {
-    const unchanged = facts.current?.categoryId === facts.categoryId;
-    if (
-      category === null ||
-      category.workspaceId !== facts.workspaceId ||
-      category.kind !== facts.kind ||
-      (category.archived && !unchanged)
-    ) {
-      return 'INVALID_CATEGORY';
-    }
-  }
-  return null;
-}
