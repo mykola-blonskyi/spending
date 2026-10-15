@@ -102,6 +102,14 @@ export function useInitialSync(): { active: boolean; loaded: number } {
   return { active, loaded: state?.transactions.size ?? 0 };
 }
 
+/** Pushes and pulls now, so rows the server just generated reach the device. */
+export function useSyncNow(): () => Promise<void> {
+  const engine = useReady()?.engine;
+  return useCallback(async () => {
+    await engine?.flush();
+  }, [engine]);
+}
+
 function useWriter<A extends unknown[], R>(
   write: (store: LocalStore, ...args: A) => Promise<R>,
 ): (...args: A) => Promise<R> {

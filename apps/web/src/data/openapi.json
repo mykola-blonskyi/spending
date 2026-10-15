@@ -1189,7 +1189,17 @@
     "/api/v1/budgets/{id}": {
       "delete": {
         "operationId": "BudgetsController_remove",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "204": {
             "description": ""
@@ -1264,7 +1274,17 @@
     "/api/v1/recurring-rules/{id}": {
       "patch": {
         "operationId": "RecurringController_update",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1293,7 +1313,17 @@
       },
       "delete": {
         "operationId": "RecurringController_remove",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "204": {
             "description": ""
