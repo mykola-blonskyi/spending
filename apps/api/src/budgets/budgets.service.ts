@@ -40,7 +40,8 @@ export class BudgetsService {
 
   /** Every budget of the visible workspaces (BR-2), with progress for `month` or the current one. */
   async list(actorId: string, query: BudgetQuery): Promise<BudgetView[]> {
-    const kinds = await this.visibleKinds(actorId, query.workspaceId);
+    const memberships = await this.policy.scope(actorId, query.workspaceId);
+    const kinds = new Map(memberships.map((m) => [m.workspaceId, m.kind]));
     const rows = await this.db
       .select(budgetColumns)
       .from(budgets)
@@ -156,16 +157,6 @@ export class BudgetsService {
       month,
       ...progress(row.amountMinor, byBudget.get(row.id) ?? []),
     }));
-  }
-
-  private async visibleKinds(
-    actorId: string,
-    workspaceId: string | undefined,
-  ): Promise<Map<string, WorkspaceKind>> {
-    const memberships = workspaceId
-      ? [await this.policy.requireMember(actorId, workspaceId)]
-      : await this.policy.memberships(actorId);
-    return new Map(memberships.map((m) => [m.workspaceId, m.kind]));
   }
 
   private async currentMonth(actorId: string): Promise<string> {

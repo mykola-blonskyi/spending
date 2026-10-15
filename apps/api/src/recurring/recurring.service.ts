@@ -39,9 +39,7 @@ export class RecurringService {
   ) {}
 
   async list(actorId: string, workspaceId?: string): Promise<RuleView[]> {
-    const memberships = workspaceId
-      ? [await this.policy.requireMember(actorId, workspaceId)]
-      : await this.policy.memberships(actorId);
+    const memberships = await this.policy.scope(actorId, workspaceId);
     const visible = new Set(memberships.map((m) => m.workspaceId));
     return this.views(this.db, visible, inArray(recurringRules.workspaceId, [...visible]));
   }
