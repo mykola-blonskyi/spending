@@ -31,6 +31,10 @@ test('a monthly budget tracks spending, then its limit changes and it goes', asy
   const row = page.getByRole('listitem').filter({ has: bar });
   await expect(bar).toHaveAttribute('aria-valuetext', '€0.00 of €100.00');
   await expect(row).toContainText('On track');
+  await expect(page.getByRole('button', { name: 'Next month' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Previous month' }).click();
+  await expect(page.getByRole('button', { name: 'Next month' })).toBeEnabled();
+  await page.getByRole('button', { name: 'This month' }).click();
 
   await recordGroceries(page, '90');
   await page.goto('/budgets');

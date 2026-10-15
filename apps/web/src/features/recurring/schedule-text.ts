@@ -5,7 +5,7 @@ import type { Rule } from './rules';
 export type Translator = ReturnType<typeof useTranslations<'recurring'>>;
 export type ScheduleWords = { every: string; clampNote: string | null };
 
-/** "Every month on the 31st" plus, from the 29th on, the BR-23 clamp to shorter months. */
+/** "Every month on the 31st" plus the BR-23 clamp: days from the 29th on, and Feb 29 yearly. */
 export function scheduleWords(
   rule: Pick<Rule, 'frequency' | 'interval' | 'startsOn'>,
   t: Translator,
@@ -26,7 +26,10 @@ export function scheduleWords(
       const date = new Intl.DateTimeFormat(locale, { month: 'long', day: 'numeric' }).format(
         parseDateOnly(startsOn),
       );
-      return { every: t('frequency.yearly', { interval, date }), clampNote: null };
+      return {
+        every: t('frequency.yearly', { interval, date }),
+        clampNote: startsOn.slice(5) === '02-29' ? t('leapClamp') : null,
+      };
     }
   }
 }

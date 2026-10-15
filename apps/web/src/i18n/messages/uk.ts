@@ -326,6 +326,7 @@ export const uk = {
         '{interval, plural, =1 {Щороку} one {Кожен # рік} few {Кожні # роки} many {Кожні # років} other {Кожні # року}} {date}',
     },
     monthClamp: 'або в останній день коротшого місяця',
+    leapClamp: 'або 28 лютого в невисокосні роки',
     next: 'Наступний запис: {date}',
     until: 'До {date}',
     paused: 'Призупинено',

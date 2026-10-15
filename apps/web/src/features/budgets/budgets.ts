@@ -1,4 +1,10 @@
-import { keepPreviousData, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  queryOptions,
+  useMutation,
+  useQueryClient,
+  type UseQueryResult,
+} from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import type { components } from '@data/api.gen';
@@ -46,6 +52,19 @@ export const useDeleteBudget = () =>
   useBudgetMutation(async (id: string): Promise<void> => {
     await api.DELETE('/api/v1/budgets/{id}', { params: { path: { id } } });
   });
+
+/** A refetch that fails while a list is on screen is told, not swapped for an error state. */
+export function useRefetchErrorToast(query: UseQueryResult<unknown>): void {
+  const t = useTranslations();
+  const toasted = useRef(0);
+  const { isError, error, errorUpdatedAt, data, isPlaceholderData } = query;
+  useEffect(() => {
+    if (!isError || data === undefined || isPlaceholderData) return;
+    if (toasted.current === errorUpdatedAt) return;
+    toasted.current = errorUpdatedAt;
+    if (!isSignedOutError(error)) toast.error(t(`errors.${errorCode(error)}`));
+  }, [isError, error, errorUpdatedAt, data, isPlaceholderData, t]);
+}
 
 /** Spending reaches the server through sync, so a finished sync may have moved progress. */
 export function useRefreshBudgetsOnSync(): void {

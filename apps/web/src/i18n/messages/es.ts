@@ -322,6 +322,7 @@ export const es = {
       yearly: '{interval, plural, =1 {Cada año} other {Cada # años}} el {date}',
     },
     monthClamp: 'o el último día de los meses más cortos',
+    leapClamp: 'o el 28 de febrero en los años no bisiestos',
     next: 'Próximo: {date}',
     until: 'Hasta el {date}',
     paused: 'En pausa',

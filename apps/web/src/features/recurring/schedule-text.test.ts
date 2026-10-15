@@ -46,5 +46,8 @@ describe('scheduleWords', () => {
     expect(words('en', 'yearly', 1, '2026-03-15')).toBe('Every year on March 15');
     expect(words('ru', 'yearly', 1, '2026-03-15')).toBe('Каждый год 15 марта');
     expect(words('es', 'yearly', 2, '2026-03-15')).toBe('Cada 2 años el 15 de marzo');
+    expect(words('en', 'yearly', 1, '2024-02-29')).toBe(
+      'Every year on February 29, or February 28 in other years',
+    );
   });
 });

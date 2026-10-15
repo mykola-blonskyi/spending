@@ -312,6 +312,7 @@ export const en = {
       yearly: '{interval, plural, =1 {Every year} other {Every # years}} on {date}',
     },
     monthClamp: 'or the last day of shorter months',
+    leapClamp: 'or February 28 in other years',
     next: 'Next: {date}',
     until: 'Until {date}',
     paused: 'Paused',

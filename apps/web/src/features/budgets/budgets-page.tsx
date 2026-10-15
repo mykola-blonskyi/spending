@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   ChevronLeft,
   ChevronRight,
+  CircleAlert,
   CloudOff,
   Pencil,
   PiggyBank,
@@ -27,7 +28,13 @@ import { cn } from '@shared/lib/utils';
 import { Button } from '@shared/ui/button';
 import { Progress } from '@shared/ui/progress';
 import { BUDGET_CURRENCY, BudgetDialog } from './budget-dialog';
-import { type Budget, budgetsQuery, useDeleteBudget, useRefreshBudgetsOnSync } from './budgets';
+import {
+  type Budget,
+  budgetsQuery,
+  useDeleteBudget,
+  useRefetchErrorToast,
+  useRefreshBudgetsOnSync,
+} from './budgets';
 import { currentMonth, type Month, shiftMonth } from './month';
 import { budgetBar } from './progress';
 
@@ -47,11 +54,13 @@ export function BudgetsPage() {
   const deleteBudget = useDeleteBudget();
   const [deleting, setDeleting] = useState<Budget | null>(null);
   useRefreshBudgetsOnSync();
+  useRefetchErrorToast(query);
 
-  const budgets = query.data;
+  // Another month's rows are no answer for this one; a failed refetch keeps this month's list.
+  const budgets = query.isError && query.isPlaceholderData ? undefined : query.data;
   const offline =
-    (query.fetchStatus === 'paused' && budgets === undefined) ||
-    (query.isError && errorCode(query.error) === 'NETWORK');
+    budgets === undefined &&
+    (query.fetchStatus === 'paused' || (query.isError && errorCode(query.error) === 'NETWORK'));
   const addButton = (
     <Button size="lg">
       <Plus aria-hidden />
@@ -68,7 +77,7 @@ export function BudgetsPage() {
         description={t('budgets.offlineDescription')}
       />
     );
-  } else if (query.isError) {
+  } else if (budgets === undefined && query.isError) {
     body = (
       <ErrorState
         title={t(`errors.${errorCode(query.error)}`)}
@@ -184,6 +193,7 @@ function MonthSwitcher({
         variant="outline"
         size="icon-lg"
         aria-label={t('next')}
+        disabled={month >= thisMonth}
         onClick={() => onChange(shiftMonth(month, 1))}
       >
         <ChevronRight aria-hidden />
@@ -286,7 +296,11 @@ function BudgetStatus({
         status === 'near' ? 'text-warning-foreground' : 'text-expense',
       )}
     >
-      {status === 'near' && <TriangleAlert aria-hidden className="size-4" />}
+      {status === 'near' ? (
+        <TriangleAlert aria-hidden className="size-4" />
+      ) : (
+        <CircleAlert aria-hidden className="size-4" />
+      )}
       {status === 'near' ? t('near') : t('over', { amount: money(overMinor) })}
     </span>
   );

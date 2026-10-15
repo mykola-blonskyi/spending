@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { errorCode } from '@data/api-error';
 import { useCategories } from '@data/sync';
+import { useRefetchErrorToast } from '@features/budgets';
 import { useTranslations } from '@i18n/index';
 import {
   ConfirmDialog,
@@ -77,6 +78,7 @@ export function RecurringPage() {
   const t = useTranslations();
   const query = useQuery(rulesQuery);
   const [deleting, setDeleting] = useState<Rule | null>(null);
+  useRefetchErrorToast(query);
   const rules = query.data;
   const newRule = (
     <Button asChild size="lg">
@@ -88,7 +90,7 @@ export function RecurringPage() {
   );
 
   let body: React.ReactNode;
-  if (query.isError || rules === undefined) {
+  if (rules === undefined) {
     body = <RulesUnavailable query={query} />;
   } else if (rules.length === 0) {
     body = (
