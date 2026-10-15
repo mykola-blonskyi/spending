@@ -51,6 +51,21 @@ describe('queryTransactions', () => {
       ['a', 5, 'pending'],
     ]);
   });
+
+  it('shows the server row of a rejected delete as failed, so it can be discarded', () => {
+    const deleted = applyLocalChange(history, { type: 'delete', id: 'b' }, sequentialIds());
+    const rejected = setMutationState(deleted, ['m-1'], {
+      status: 'failed',
+      code: 'FORBIDDEN',
+      message: '',
+    });
+    const entry = queryTransactions(rejected, {}).find((e) => e.id === 'b');
+    expect([entry?.description, entry?.version, entry?.sync]).toEqual([
+      'Coffee beans',
+      1,
+      { state: 'failed', code: 'FORBIDDEN' },
+    ]);
+  });
 });
 
 describe('localEntries conversion', () => {
