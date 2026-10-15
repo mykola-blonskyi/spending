@@ -106,7 +106,7 @@ export default tseslint.config(
   },
   {
     // Per-layout screens are presentation only: logic and data access live in the feature's hooks.
-    files: ['apps/web/src/features/transactions/layouts/**'],
+    files: ['apps/web/src/features/{transactions,dashboard}/layouts/**'],
     rules: {
       'no-restricted-imports': [
         'error',

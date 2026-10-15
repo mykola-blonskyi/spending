@@ -17,7 +17,8 @@ describe('layout registry', () => {
     }
   });
 
-  it('gives hybrid the calm shell', () => {
+  it('gives hybrid the calm shell and the bento dashboard', () => {
     expect(LAYOUTS.hybrid.shell).toBe(LAYOUTS.calm.shell);
+    expect(screenFor('hybrid', 'dashboard')).toBe(screenFor('bento', 'dashboard'));
   });
 });

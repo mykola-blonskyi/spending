@@ -53,6 +53,7 @@ test('screenshots', async ({ page, signInAs, db }) => {
   const usd = (await stored()).find((t) => t.description === 'Seed 3 Housing')!;
   const chf = (await stored()).find((t) => t.description === 'Zurich tram')!;
   const screens = [
+    ['dashboard', '/'],
     ['history', '/transactions'],
     ['entry', '/transactions/new'],
     ['edit-usd', `/transactions/${usd.id}`],

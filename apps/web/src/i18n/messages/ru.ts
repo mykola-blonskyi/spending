@@ -146,9 +146,7 @@ export const ru = {
   pages: {
     dashboard: {
       title: 'Обзор',
-      description: 'На что ушли деньги в этом месяце.',
-      emptyTitle: 'Ваш месяц с первого взгляда',
-      emptyDescription: 'Добавьте первую операцию, чтобы видеть здесь расходы, доходы и бюджеты.',
+      description: 'Доходы, расходы и бюджеты за любой период.',
     },
     transactions: {
       title: 'Операции',
@@ -585,6 +583,60 @@ export const ru = {
       confirmed:
         '{count, plural, one {# строка опубликована} few {# строки опубликованы} other {# строк опубликовано}}.',
     },
+  },
+  dashboard: {
+    period: {
+      label: 'Период',
+      month: 'Месяц',
+      quarter: 'Квартал',
+      year: 'Год',
+      custom: 'Свой',
+      from: 'С',
+      to: 'По',
+      previous: 'Предыдущий период',
+      next: 'Следующий период',
+      range: '{from} – {to}',
+      quarterName: '{quarter} кв. {year}',
+      order: 'Дата окончания раньше даты начала.',
+      length: 'Выберите период не длиннее десяти лет.',
+    },
+    scope: { label: 'Чьи деньги', all: 'Вместе', personal: 'Личные', family: 'Семейные' },
+    totals: {
+      title: 'Итоги',
+      income: 'Доходы',
+      expense: 'Расходы',
+      balance: 'Баланс',
+      change: '{amount} по сравнению с предыдущим периодом',
+      comparedWith: 'Сравнение с {period}',
+    },
+    trend: {
+      title: 'Динамика',
+      chart: 'Доходы и расходы во времени. Самый высокий столбец: {amount}.',
+      table: 'Показать таблицей',
+      bucket: 'Период',
+      weekOf: 'Неделя с {date}',
+    },
+    categories: {
+      title: 'По категориям',
+      expense: 'Расходы',
+      income: 'Доходы',
+      share: '{share} от общей суммы',
+      change: '{amount} по сравнению с предыдущим периодом',
+      empty: 'За этот период ничего не записано.',
+    },
+    budgets: {
+      title: 'Бюджеты на {month}',
+      empty: 'На этот месяц бюджетов нет.',
+      manage: 'Управлять бюджетами',
+    },
+    unconverted: {
+      title: 'Не конвертировано',
+      description: 'Курса EUR ещё нет, поэтому эти суммы не входят в итоги выше.',
+      spent: 'Потрачено {amount}',
+      received: 'Получено {amount}',
+    },
+    offlineTitle: 'Для обзора нужно подключение',
+    offlineDescription: 'Итоги и графики приходят с сервера. Подключитесь, чтобы их увидеть.',
   },
   budgets: {
     add: 'Задать бюджет',

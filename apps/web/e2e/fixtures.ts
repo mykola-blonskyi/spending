@@ -31,7 +31,7 @@ let testIndex = 0;
  */
 export async function apiCall<T = unknown>(
   page: Page,
-  method: 'GET' | 'POST' | 'DELETE',
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
   path: string,
   body?: unknown,
 ): Promise<T> {
