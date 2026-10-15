@@ -126,8 +126,8 @@ test('split layout: the list stays mounted and bounded while the pane edits and 
     .first()
     .click();
   await expect(page).toHaveURL(/\/transactions\/[^/]+$/);
+  await expect(detail.locator('h2').first()).toHaveText(/^Seed 1 /);
   const title = (await detail.locator('h2').first().innerText()).trim();
-  expect(title).toMatch(/^Seed 1 /);
   await expect(search(page)).toHaveValue('Seed 1');
   await expect(list).toBeVisible();
 
@@ -141,6 +141,8 @@ test('split layout: the list stays mounted and bounded while the pane edits and 
   await detail.getByRole('button', { name: 'Edit' }).click();
   await detail.getByLabel('Description').fill('Pane edited entry');
   await detail.getByRole('button', { name: 'Save' }).click();
+  // Saving in the pane keeps the entry selected.
+  await expect(detail.locator('h2').first()).toHaveText('Pane edited entry');
   await search(page).fill('Pane edited');
   await expect(row(page, /Pane edited entry/)).toBeVisible();
   await expect(row(page, /Seed 1 /).filter({ hasText: title })).toHaveCount(0);

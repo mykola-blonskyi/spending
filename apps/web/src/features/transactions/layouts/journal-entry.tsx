@@ -6,7 +6,14 @@ import { formatRelativeDay } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import { cn } from '@shared/lib/utils';
 import { Button } from '@shared/ui/button';
-import { DateField, DeleteButton, DescriptionField, EntryStatus, NoteField } from '../blocks';
+import {
+  ConversionNote,
+  DateField,
+  DeleteButton,
+  DescriptionField,
+  EntryStatus,
+  NoteField,
+} from '../blocks';
 import type { EntryKind } from '../form-model';
 import { type EntryForm, useEntryForm } from '../use-entry-form';
 
@@ -205,6 +212,7 @@ function Sentence({
           {t('transactionForm.amountInvalid')}
         </p>
       )}
+      <ConversionNote conversion={form.conversion} className="mt-2" />
     </div>
   );
 }

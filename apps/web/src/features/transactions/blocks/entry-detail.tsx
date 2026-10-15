@@ -7,6 +7,7 @@ import { formatDate } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import { cn } from '@shared/lib/utils';
 import { Button } from '@shared/ui/button';
+import { type EntryRow, fxLabels } from '../history-model';
 import { type EntryForm, useEntryForm } from '../use-entry-form';
 import { useTransactionDetail } from '../use-transaction-detail';
 import {
@@ -21,6 +22,7 @@ import {
   NoteField,
   SaveBar,
 } from './entry-fields';
+import { ConversionNote, EntryAmount } from './entry-amount';
 import { EntryStatus } from './history-status';
 import { SyncMarker } from './sync-marker';
 
@@ -104,8 +106,8 @@ export function CompactEntryForm({ form, footer }: { form: EntryForm; footer?: R
   );
 }
 
-function EditEntry({ id }: { id: string }) {
-  const form = useEntryForm(id);
+function EditEntry({ id, onSaved }: { id: string; onSaved: () => void }) {
+  const form = useEntryForm(id, onSaved);
   return form.status === 'ready' ? (
     <CompactEntryForm form={form} />
   ) : (
@@ -119,6 +121,43 @@ function MetaRow({ label, children }: { label: string; children: ReactNode }) {
       <dt className="text-[13px] text-muted-foreground">{label}</dt>
       <dd className="min-w-0 break-words">{children}</dd>
     </div>
+  );
+}
+
+/** Original amount, EUR amount, rate, rate date and source of a non-EUR entry. */
+function ConversionMeta({
+  conversion,
+  amountMinor,
+  currency,
+}: Pick<EntryRow, 'conversion' | 'amountMinor' | 'currency'>) {
+  const t = useTranslations('history');
+  const { locale } = useSharedLocale();
+  if (conversion.state === 'same') return null;
+  const fx = conversion.state === 'converted' ? fxLabels(conversion.fx, locale) : null;
+  return (
+    <>
+      <MetaRow label={t('originalAmount')}>
+        <MoneyText amountMinor={amountMinor} currency={currency} />
+      </MetaRow>
+      <MetaRow label={t('eurAmount')}>
+        {conversion.state === 'converted' ? (
+          <MoneyText amountMinor={conversion.baseAmountMinor} currency="EUR" />
+        ) : (
+          <ConversionNote conversion={conversion} className="text-sm" />
+        )}
+      </MetaRow>
+      {fx && (
+        <>
+          <MetaRow label={t('rate')}>
+            <span className="tabular">{fx.rate}</span>
+          </MetaRow>
+          <MetaRow label={t('rateDate')}>
+            <span className="tabular">{fx.date}</span>
+          </MetaRow>
+          <MetaRow label={t('rateSource')}>{fx.source}</MetaRow>
+        </>
+      )}
+    </>
   );
 }
 
@@ -189,7 +228,7 @@ export function EntryDetail({ id, onBack }: { id: string; onBack?: () => void })
         {detail.status !== 'ready' || !row ? (
           <EntryStatus status={detail.status} />
         ) : editing ? (
-          <EditEntry id={id} />
+          <EditEntry id={id} onSaved={() => setEditing(false)} />
         ) : (
           <>
             <div className="flex items-center gap-3">
@@ -204,14 +243,18 @@ export function EntryDetail({ id, onBack }: { id: string; onBack?: () => void })
                 )}
               </div>
             </div>
-            <MoneyText
-              amountMinor={row.kind === 'expense' ? -row.amountMinor : row.amountMinor}
-              currency={row.currency}
-              className={cn(
-                'mt-6 block text-4xl font-semibold tracking-tight',
-                row.kind === 'income' && 'text-income',
-              )}
-            />
+            <div className="mt-6">
+              <EntryAmount
+                row={row}
+                align="start"
+                colored={false}
+                className={cn(
+                  'text-4xl font-semibold tracking-tight',
+                  row.kind === 'income' && 'text-income',
+                )}
+                secondaryClassName="text-[13px]"
+              />
+            </div>
             <p className="mt-1 text-[13px] text-muted-foreground">
               {t(`transactionForm.${row.kind}`)}
             </p>
@@ -239,6 +282,11 @@ export function EntryDetail({ id, onBack }: { id: string; onBack?: () => void })
                   {formatDate(row.occurredOn, locale, { dateStyle: 'long' })}
                 </span>
               </MetaRow>
+              <ConversionMeta
+                conversion={row.conversion}
+                amountMinor={row.amountMinor}
+                currency={row.currency}
+              />
               <MetaRow label={t('transactionForm.description')}>
                 {detail.description || notSet}
               </MetaRow>

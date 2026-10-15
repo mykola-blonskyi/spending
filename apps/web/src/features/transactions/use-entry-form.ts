@@ -24,6 +24,7 @@ import {
   validate,
   valuesFromDraft,
 } from './form-model';
+import { conversionOf } from './history-model';
 
 export const HISTORY_PATH = '/transactions';
 const COMMON_CURRENCIES = ['EUR', 'USD', 'GBP', 'UAH', 'PLN'];
@@ -48,9 +49,10 @@ export function useRemoveEntry(): (id: string) => Promise<void> {
 
 /**
  * One entry form, new or edit. Edit mode follows the route's `:id` unless `id` is given. Values
- * follow the stored entry until the user changes something.
+ * follow the stored entry until the user changes something. A save leaves for history unless
+ * `onSaved` is given (a detail pane stays on its entry).
  */
-export function useEntryForm(id?: string) {
+export function useEntryForm(id?: string, onSaved?: () => void) {
   const t = useTranslations('transactionForm');
   const { locale } = useSharedLocale();
   const params = useParams();
@@ -132,6 +134,11 @@ export function useEntryForm(id?: string) {
   ].sort();
 
   const separator = decimalSeparator(locale);
+  // The stored conversion describes the stored amount; an edited amount has none until saved.
+  const conversion =
+    stored.entry && values.amount === initial.amount && values.currency === initial.currency
+      ? conversionOf(stored.entry)
+      : null;
 
   return {
     status,
@@ -153,6 +160,7 @@ export function useEntryForm(id?: string) {
       separator,
       press: (key: KeypadKey) => change({ amount: pressKey(values.amount, key, exponent) }),
     },
+    conversion,
     categories,
     accounts: workspaceAccounts,
     currencies,
@@ -167,7 +175,8 @@ export function useEntryForm(id?: string) {
         const draft = { ...draftFields, workspaceId };
         if (entryId) await update(entryId, draft);
         else await record(draft);
-        await navigate(HISTORY_PATH);
+        if (onSaved) onSaved();
+        else await navigate(HISTORY_PATH);
       } catch {
         toast.error(t('saveFailed'));
       } finally {

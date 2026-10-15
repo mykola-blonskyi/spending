@@ -41,7 +41,7 @@ function Items<S extends Element | Window>({
   return (
     <ul
       aria-label={props.label}
-      className={cn('relative', props.className)}
+      className={cn('@container/history relative', props.className)}
       style={{ height: virtualizer.getTotalSize() }}
     >
       {virtualizer.getVirtualItems().map((virtual) => {

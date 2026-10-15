@@ -250,6 +250,16 @@ export const en = {
     unavailableTitle: 'This device cannot keep your data',
     unavailableDescription:
       'The browser blocks local storage, which Spending needs to work offline. Leave private browsing or allow site data, then reload.',
+    conversionUnavailable: 'Conversion unavailable',
+    conversionUnavailableHint:
+      'The ECB has not published a rate for this date yet. The EUR amount appears once it does.',
+    notConverted: 'Not converted',
+    rate: 'Rate',
+    rateDate: 'Rate date',
+    rateSource: 'Source',
+    convertedTo: 'Converted to {amount} at {rate} ({source}, {date})',
+    originalAmount: 'Original amount',
+    eurAmount: 'Amount in EUR',
     detail: {
       label: 'Selected transaction',
       count: '{count, plural, one {# transaction} other {# transactions}}',

@@ -33,3 +33,8 @@ export function formatPercent(
     signDisplay: options.signDisplay,
   }).format(ratio);
 }
+
+/** An exchange rate as stored (a decimal string), always with four decimals. */
+export function formatRate(rate: string, locale: string): string {
+  return formatNumber(Number(rate), locale, { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+}

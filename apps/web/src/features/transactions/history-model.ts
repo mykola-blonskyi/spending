@@ -1,5 +1,6 @@
-import type { Account, EntrySync, TransactionEntry, TransactionFilter } from '@data/sync';
+import type { Account, EntrySync, Fx, TransactionEntry, TransactionFilter } from '@data/sync';
 import type { CategoryView } from '@features/ledger';
+import { formatDate, formatRate } from '@shared/format';
 import type { EntryKind } from './form-model';
 
 export type HistoryKind = 'all' | EntryKind;
@@ -51,6 +52,29 @@ export function clearFilter(filters: HistoryFilters, filter: ActiveFilter): Hist
   return filter === 'period' ? { ...filters, from: '', to: '' } : { ...filters, [filter]: '' };
 }
 
+/** How an entry relates to EUR, the base currency (BR-14). */
+export type Conversion =
+  | Readonly<{ state: 'same' }>
+  | Readonly<{ state: 'converted'; baseAmountMinor: number; fx: Fx }>
+  | Readonly<{ state: 'unavailable' }>;
+
+export function conversionOf(
+  entry: Pick<TransactionEntry, 'currency' | 'baseAmountMinor' | 'fx'>,
+): Conversion {
+  if (entry.currency === 'EUR') return { state: 'same' };
+  if (entry.baseAmountMinor === null || !entry.fx) return { state: 'unavailable' };
+  return { state: 'converted', baseAmountMinor: entry.baseAmountMinor, fx: entry.fx };
+}
+
+/** Rate, rate date and source as people read them: "1.0850", "Oct 14, 2026", "ECB". */
+export function fxLabels(fx: Fx, locale: string) {
+  return {
+    rate: formatRate(fx.rate, locale),
+    date: formatDate(fx.rateDate, locale),
+    source: fx.source.toUpperCase(),
+  };
+}
+
 export type EntryRow = Readonly<{
   id: string;
   href: string;
@@ -63,8 +87,10 @@ export type EntryRow = Readonly<{
   occurredOn: string;
   dateLabel: string;
   kind: EntryKind;
+  /** The original amount and currency, as entered. */
   amountMinor: number;
   currency: string;
+  conversion: Conversion;
   sync: EntrySync;
 }>;
 
@@ -93,23 +119,58 @@ export function toEntryRow(entry: TransactionEntry, context: RowContext): EntryR
     kind: entry.kind,
     amountMinor: entry.amountMinor,
     currency: entry.currency,
+    conversion: conversionOf(entry),
     sync: entry.sync,
   };
 }
 
-/** Spent and received per currency, in minor units, ordered by currency. Never mixed. */
-export type Totals = readonly Readonly<{ currency: string; expense: number; income: number }>[];
+type Sums = { expense: number; income: number };
+
+/**
+ * Spent and received in EUR, plus what has no EUR amount yet per currency, ordered by currency.
+ * Never mixed (BR-15).
+ */
+export type Totals = Readonly<{
+  base: Readonly<Sums>;
+  unconverted: readonly Readonly<Sums & { currency: string }>[];
+}>;
 
 export function summarize(
-  entries: readonly Pick<EntryRow, 'kind' | 'amountMinor' | 'currency'>[],
+  entries: readonly Pick<EntryRow, 'kind' | 'amountMinor' | 'currency' | 'conversion'>[],
 ): Totals {
-  const sums = new Map<string, { currency: string; expense: number; income: number }>();
+  const base = { expense: 0, income: 0 };
+  const unconverted = new Map<string, Sums & { currency: string }>();
   for (const entry of entries) {
-    const sum = sums.get(entry.currency) ?? { currency: entry.currency, expense: 0, income: 0 };
-    sum[entry.kind] += entry.amountMinor;
-    sums.set(entry.currency, sum);
+    const { conversion } = entry;
+    if (conversion.state === 'unavailable') {
+      const sum = unconverted.get(entry.currency) ?? {
+        currency: entry.currency,
+        expense: 0,
+        income: 0,
+      };
+      sum[entry.kind] += entry.amountMinor;
+      unconverted.set(entry.currency, sum);
+    } else {
+      base[entry.kind] +=
+        conversion.state === 'converted' ? conversion.baseAmountMinor : entry.amountMinor;
+    }
   }
-  return [...sums.values()].sort((a, b) => a.currency.localeCompare(b.currency));
+  return {
+    base,
+    unconverted: [...unconverted.values()].sort((a, b) => a.currency.localeCompare(b.currency)),
+  };
+}
+
+/** A day's net per currency: EUR when the day has any EUR amount, then each unconverted currency. */
+export function dayNets(totals: Totals): { currency: string; net: number }[] {
+  const { base, unconverted } = totals;
+  const nets = unconverted.map((sum) => ({
+    currency: sum.currency,
+    net: sum.income - sum.expense,
+  }));
+  return base.expense + base.income > 0
+    ? [{ currency: 'EUR', net: base.income - base.expense }, ...nets]
+    : nets;
 }
 
 export type DayItem = Readonly<{

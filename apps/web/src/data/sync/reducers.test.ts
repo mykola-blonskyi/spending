@@ -56,6 +56,21 @@ describe('reducePull', () => {
     expect(localEntries(next).map((e) => e.amountMinor)).toEqual([999]);
   });
 
+  it('takes a backfilled conversion (same version, higher revision) without a conflict', () => {
+    const unconverted = serverRow({ currency: 'CHF', amountMinor: 500, baseAmountMinor: null });
+    const fx = { rate: '0.9400', rateDate: '2026-10-14', source: 'ecb' };
+    const { state: next } = reducePull(
+      syncedState(unconverted),
+      page({ transactions: [{ ...unconverted, revision: 11, baseAmountMinor: 532, fx }] }),
+      now,
+    );
+    expect(next.transactions.get('tx-1')?.server).toMatchObject({ version: 1, revision: 11 });
+    expect(localEntries(next)).toMatchObject([
+      { baseAmountMinor: 532, fx, sync: { state: 'synced' } },
+    ]);
+    expect(next.conflicts.size).toBe(0);
+  });
+
   it('removes a row on a tombstone unless a change to it is pending', () => {
     const clean = syncedState(serverRow({ id: 'a' }), serverRow({ id: 'b' }));
     const pending = applyLocalChange(

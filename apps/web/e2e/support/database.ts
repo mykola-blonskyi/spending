@@ -30,14 +30,22 @@ export class E2EDatabase {
       amount_minor: string;
       description: string;
       version: number;
+      revision: string;
+      base_amount_minor: string | null;
       deleted: boolean;
     }>(
-      `select t.id, t.amount_minor, t.description, t.version, t.deleted_at is not null as deleted
+      `select t.id, t.amount_minor, t.description, t.version, t.revision, t.base_amount_minor,
+              t.deleted_at is not null as deleted
          from transactions t join users u on u.id = t.created_by
         where u.email = $1 order by t.created_at`,
       [email],
     );
-    return rows.map((row) => ({ ...row, amount_minor: Number(row.amount_minor) }));
+    return rows.map((row) => ({
+      ...row,
+      amount_minor: Number(row.amount_minor),
+      revision: Number(row.revision),
+      base_amount_minor: row.base_amount_minor === null ? null : Number(row.base_amount_minor),
+    }));
   }
 
   /** The user's accounts as the server holds them, archived ones included. */
@@ -75,6 +83,43 @@ export class E2EDatabase {
       [email],
     );
     return rows;
+  }
+
+  async insertFxRate(rate: { date: string; currency: string; ratePerEur: string; source: string }) {
+    await this.pool.query(
+      `insert into fx_rates (date, currency, rate_per_eur, source) values ($1, $2, $3, $4)
+       on conflict (currency, date) do update set rate_per_eur = excluded.rate_per_eur`,
+      [rate.date, rate.currency, rate.ratePerEur, rate.source],
+    );
+  }
+
+  /**
+   * What the API's FX backfill does to the user's unconverted rows (BR-14): the conversion
+   * columns change, the `ledger_stamp` trigger bumps `revision`, and `version` stays.
+   * shortcut: rounds half up and assumes 2-decimal currencies; the API rounds half even by ISO
+   * exponent, so keep test amounts away from ties and 0- or 3-decimal currencies.
+   */
+  async backfillConversions(email: string): Promise<number> {
+    const result = await this.pool.query(
+      `with picked as (
+         select t.id, r.date, r.rate_per_eur, r.source
+           from transactions t
+           join users u on u.id = t.created_by
+          cross join lateral (
+            select date, rate_per_eur, source from fx_rates
+             where currency = t.currency and date between t.occurred_on - 7 and t.occurred_on
+             order by date desc limit 1
+          ) r
+          where u.email = $1 and t.currency <> 'EUR' and t.base_amount_minor is null
+       )
+       update transactions t
+          set base_amount_minor = round(t.amount_minor / p.rate_per_eur),
+              fx_rate = p.rate_per_eur, fx_rate_date = p.date, fx_source = p.source
+         from picked p
+        where t.id = p.id`,
+      [email],
+    );
+    return result.rowCount ?? 0;
   }
 
   close(): Promise<void> {

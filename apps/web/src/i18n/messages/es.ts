@@ -262,6 +262,16 @@ export const es = {
     unavailableTitle: 'Este dispositivo no puede guardar tus datos',
     unavailableDescription:
       'El navegador bloquea el almacenamiento local, que Spending necesita para funcionar sin conexión. Sal del modo privado o permite los datos del sitio y vuelve a cargar la página.',
+    conversionUnavailable: 'Conversión no disponible',
+    conversionUnavailableHint:
+      'El BCE aún no ha publicado el tipo de cambio de esta fecha. El importe en euros aparecerá cuando lo haga.',
+    notConverted: 'Sin convertir',
+    rate: 'Tipo de cambio',
+    rateDate: 'Fecha del tipo',
+    rateSource: 'Fuente',
+    convertedTo: 'Convertido a {amount} al tipo {rate} ({source}, {date})',
+    originalAmount: 'Importe original',
+    eurAmount: 'Importe en euros',
     detail: {
       label: 'Movimiento seleccionado',
       count: '{count, plural, one {# movimiento} other {# movimientos}}',

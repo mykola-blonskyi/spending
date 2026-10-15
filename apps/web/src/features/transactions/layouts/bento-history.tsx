@@ -2,7 +2,7 @@ import { CloudUpload, Plus, Search, SlidersHorizontal } from 'lucide-react';
 import { useId } from 'react';
 import { Link } from 'react-router';
 import { useTranslations } from '@i18n/index';
-import { MoneyText, PageHeader } from '@shared/components';
+import { PageHeader } from '@shared/components';
 import { cn } from '@shared/lib/utils';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
@@ -15,6 +15,8 @@ import {
   HistoryStatus,
   SyncMarker,
   TotalsLine,
+  DayNets,
+  EntryAmount,
 } from '../blocks';
 import type { DayItem, EntryRow, HistoryKind, RowPosition } from '../history-model';
 import { useHistory } from '../use-history';
@@ -29,16 +31,7 @@ function Day({ day }: { day: DayItem }) {
         <h2 className="truncate text-[11px] font-semibold tracking-[0.08em] text-muted-foreground uppercase">
           {day.label}
         </h2>
-        <span className="flex gap-2 text-xs text-muted-foreground">
-          {day.totals.map((total) => (
-            <MoneyText
-              key={total.currency}
-              amountMinor={total.income - total.expense}
-              currency={total.currency}
-              signDisplay="exceptZero"
-            />
-          ))}
-        </span>
+        <DayNets totals={day.totals} className="text-xs text-muted-foreground" />
       </header>
     </div>
   );
@@ -91,12 +84,7 @@ function Row({ row, position }: { row: EntryRow; position: RowPosition }) {
             <SyncMarker sync={row.sync} className="font-medium" />
           </span>
         </span>
-        <MoneyText
-          amountMinor={row.kind === 'expense' ? -row.amountMinor : row.amountMinor}
-          currency={row.currency}
-          colored
-          className="shrink-0 text-sm font-semibold"
-        />
+        <EntryAmount row={row} className="shrink-0 text-sm font-semibold" />
       </Link>
     </div>
   );

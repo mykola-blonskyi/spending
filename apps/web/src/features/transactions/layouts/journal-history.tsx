@@ -2,7 +2,7 @@ import { Plus, Search, SlidersHorizontal } from 'lucide-react';
 import { useId } from 'react';
 import { Link } from 'react-router';
 import { useTranslations } from '@i18n/index';
-import { MoneyText, PageHeader } from '@shared/components';
+import { PageHeader } from '@shared/components';
 import { cn } from '@shared/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '@shared/ui/toggle-group';
 import {
@@ -12,6 +12,8 @@ import {
   HistoryStatus,
   SyncMarker,
   TotalsLine,
+  DayNets,
+  EntryAmount,
 } from '../blocks';
 import type { DayItem, EntryRow, HistoryKind } from '../history-model';
 import { useHistory } from '../use-history';
@@ -31,16 +33,7 @@ function Day({ day }: { day: DayItem }) {
       />
       <div className="flex items-baseline justify-between gap-3 pl-9">
         <h2 className="font-serif text-[19px] font-semibold">{day.label}</h2>
-        <span className="flex gap-2 text-[13px] text-muted-foreground">
-          {day.totals.map((total) => (
-            <MoneyText
-              key={total.currency}
-              amountMinor={total.income - total.expense}
-              currency={total.currency}
-              signDisplay="exceptZero"
-            />
-          ))}
-        </span>
+        <DayNets totals={day.totals} className="text-[13px] text-muted-foreground" />
       </div>
     </div>
   );
@@ -80,12 +73,7 @@ function Row({ row }: { row: EntryRow }) {
           )}
           <SyncMarker sync={row.sync} className="mt-0.5 italic" />
         </span>
-        <MoneyText
-          amountMinor={row.kind === 'expense' ? -row.amountMinor : row.amountMinor}
-          currency={row.currency}
-          colored
-          className="shrink-0 text-[15px]"
-        />
+        <EntryAmount row={row} className="shrink-0 text-[15px]" />
       </Link>
     </div>
   );

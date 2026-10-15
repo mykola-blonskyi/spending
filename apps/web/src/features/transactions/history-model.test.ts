@@ -6,6 +6,7 @@ import type { CategoryView } from '@features/ledger';
 import {
   activeFilters,
   clearFilter,
+  dayNets,
   EMPTY_FILTERS,
   groupByDay,
   type RowContext,
@@ -37,6 +38,7 @@ function entry(patch: Partial<TransactionEntry> = {}): TransactionEntry {
     ...localRow(),
     scope: 'personal',
     baseAmountMinor: 1250,
+    fx: null,
     sync: { state: 'synced' },
     ...patch,
   };
@@ -118,18 +120,51 @@ describe('toEntryRow', () => {
 const row = (id: string, occurredOn: string, patch: Partial<TransactionEntry> = {}) =>
   toEntryRow(entry({ id, occurredOn, ...patch }), context);
 
+const fx = { rate: '1.0850', rateDate: '2026-10-14', source: 'ecb' };
+const usd = { currency: 'USD', amountMinor: 1085, baseAmountMinor: 1000, fx };
+const chf = { currency: 'CHF', amountMinor: 500, baseAmountMinor: null, fx: null };
+
+describe('conversion', () => {
+  it('is same for EUR, converted with a rate, unavailable without one', () => {
+    expect(row('a', '2026-10-14').conversion).toEqual({ state: 'same' });
+    expect(row('b', '2026-10-14', usd).conversion).toEqual({
+      state: 'converted',
+      baseAmountMinor: 1000,
+      fx,
+    });
+    expect(row('c', '2026-10-14', chf).conversion).toEqual({ state: 'unavailable' });
+  });
+});
+
 describe('summarize', () => {
-  it('sums each currency on its own', () => {
+  it('sums EUR and converted amounts in EUR and lists unconverted ones per currency', () => {
     expect(
       summarize([
-        { kind: 'expense', amountMinor: 100, currency: 'USD' },
-        { kind: 'expense', amountMinor: 250, currency: 'EUR' },
-        { kind: 'income', amountMinor: 1000, currency: 'EUR' },
-        { kind: 'expense', amountMinor: 5, currency: 'USD' },
+        row('a', '2026-10-14', { amountMinor: 250 }),
+        row('b', '2026-10-14', { kind: 'income', amountMinor: 3000 }),
+        row('c', '2026-10-14', usd),
+        row('d', '2026-10-14', chf),
+        row('e', '2026-10-14', { ...chf, kind: 'income', amountMinor: 70 }),
+        row('f', '2026-10-14', { ...chf, currency: 'AUD' }),
       ]),
-    ).toEqual([
-      { currency: 'EUR', expense: 250, income: 1000 },
-      { currency: 'USD', expense: 105, income: 0 },
+    ).toEqual({
+      base: { expense: 1250, income: 3000 },
+      unconverted: [
+        { currency: 'AUD', expense: 500, income: 0 },
+        { currency: 'CHF', expense: 500, income: 70 },
+      ],
+    });
+  });
+});
+
+describe('dayNets', () => {
+  it('nets EUR first when the day has any, then each unconverted currency', () => {
+    expect(dayNets(summarize([row('a', '2026-10-14', usd), row('b', '2026-10-14', chf)]))).toEqual([
+      { currency: 'EUR', net: -1000 },
+      { currency: 'CHF', net: -500 },
+    ]);
+    expect(dayNets(summarize([row('a', '2026-10-14', chf)]))).toEqual([
+      { currency: 'CHF', net: -500 },
     ]);
   });
 });
@@ -143,7 +178,7 @@ describe('groupByDay', () => {
         row('c', '2026-10-14'),
         row('d', '2026-10-13'),
         row('e', '2026-10-12', { kind: 'income', amountMinor: 500 }),
-        row('f', '2026-10-12', { currency: 'USD', amountMinor: 300 }),
+        row('f', '2026-10-12', { ...chf, currency: 'USD', amountMinor: 300 }),
       ],
       (date) => `label ${date}`,
     );
@@ -164,13 +199,13 @@ describe('groupByDay', () => {
       key: 'day-2026-10-14',
       label: 'label 2026-10-14',
       count: 3,
-      totals: [{ currency: 'EUR', expense: 3750, income: 0 }],
+      totals: { base: { expense: 3750, income: 0 }, unconverted: [] },
     });
     expect(items[6]).toMatchObject({
-      totals: [
-        { currency: 'EUR', expense: 0, income: 500 },
-        { currency: 'USD', expense: 300, income: 0 },
-      ],
+      totals: {
+        base: { expense: 0, income: 500 },
+        unconverted: [{ currency: 'USD', expense: 300, income: 0 }],
+      },
     });
   });
 

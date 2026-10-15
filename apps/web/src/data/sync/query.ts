@@ -4,9 +4,12 @@ import {
   type LocalTransaction,
   type QueuedMutation,
   queueOrder,
+  type ServerTransaction,
 } from './model';
 
 const BASE_CURRENCY = 'EUR';
+
+export type Fx = NonNullable<ServerTransaction['fx']>;
 
 export type EntrySync =
   | { readonly state: 'synced' }
@@ -20,6 +23,8 @@ export type TransactionEntry = LocalTransaction &
     scope: 'personal' | 'family';
     /** EUR amount; null until the server has converted it. */
     baseAmountMinor: number | null;
+    /** The rate behind `baseAmountMinor`; null for EUR and for unconverted rows. */
+    fx: Fx | null;
     sync: EntrySync;
   }>;
 
@@ -58,17 +63,16 @@ export function localEntries(state: LocalState): TransactionEntry[] {
     if (isDeleted(record.local)) continue;
     if (record.local) {
       const row = record.local;
-      const unchangedAmount =
-        record.server?.amountMinor === row.amountMinor && record.server.currency === row.currency;
+      const server =
+        record.server?.amountMinor === row.amountMinor && record.server.currency === row.currency
+          ? record.server
+          : null;
       entries.push({
         ...row,
         scope: scope(row.workspaceId),
         baseAmountMinor:
-          row.currency === BASE_CURRENCY
-            ? row.amountMinor
-            : unchangedAmount
-              ? (record.server?.baseAmountMinor ?? null)
-              : null,
+          row.currency === BASE_CURRENCY ? row.amountMinor : (server?.baseAmountMinor ?? null),
+        fx: row.currency === BASE_CURRENCY ? null : (server?.fx ?? null),
         sync: syncOf(record.id),
       });
     } else if (record.server && record.server.reviewStatus === 'confirmed') {
@@ -87,6 +91,7 @@ export function localEntries(state: LocalState): TransactionEntry[] {
         createdAt: row.createdAt,
         scope: row.scope,
         baseAmountMinor: row.baseAmountMinor,
+        fx: row.fx,
         sync: syncOf(record.id),
       });
     }

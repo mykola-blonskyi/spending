@@ -15,6 +15,7 @@ function history(count: number): HistoryItem[] {
         ...localRow({ id: `tx-${index}`, occurredOn: day(index) }),
         scope: 'personal',
         baseAmountMinor: 1250,
+        fx: null,
         sync: { state: 'synced' },
       },
       { categories: new Map(), accounts: new Map(), dayLabel: String, uncategorized: '' },

@@ -12,6 +12,7 @@ import { ToggleGroup, ToggleGroupItem } from '@shared/ui/toggle-group';
 import type { EntryKind } from '../form-model';
 import type { EntryForm } from '../use-entry-form';
 import { CategoryBadge } from './category-badge';
+import { ConversionNote } from './entry-amount';
 
 const KINDS: readonly EntryKind[] = ['expense', 'income'];
 const NONE = 'none';
@@ -132,6 +133,7 @@ export function AmountInput({
           {t('amountInvalid')}
         </p>
       )}
+      <ConversionNote conversion={form.conversion} />
     </div>
   );
 }

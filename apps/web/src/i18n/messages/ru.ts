@@ -264,6 +264,16 @@ export const ru = {
     unavailableTitle: 'Это устройство не может хранить ваши данные',
     unavailableDescription:
       'Браузер блокирует локальное хранилище, без которого Spending не работает офлайн. Выйдите из приватного режима или разрешите данные сайта и перезагрузите страницу.',
+    conversionUnavailable: 'Конвертация недоступна',
+    conversionUnavailableHint:
+      'ЕЦБ ещё не опубликовал курс на эту дату. Сумма в евро появится, как только он выйдет.',
+    notConverted: 'Не конвертировано',
+    rate: 'Курс',
+    rateDate: 'Дата курса',
+    rateSource: 'Источник',
+    convertedTo: 'Конвертировано в {amount} по курсу {rate} ({source}, {date})',
+    originalAmount: 'Исходная сумма',
+    eurAmount: 'Сумма в евро',
     detail: {
       label: 'Выбранная операция',
       count:

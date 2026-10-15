@@ -73,3 +73,18 @@ export async function seedEntries(page: Page, count: number): Promise<void> {
       throw new Error(`push failed: ${response.status()} ${await response.text()}`);
   }
 }
+
+/** Creates an account in the signed-in user's personal workspace through the API. */
+export async function createAccount(
+  page: Page,
+  account: { name: string; kind: 'cash' | 'card'; currency: string },
+): Promise<void> {
+  const session = await (await page.request.get('/api/v1/auth/session')).json();
+  const pull = await (await page.request.get('/api/v1/sync/pull?cursor=0&limit=1000')).json();
+  const personal = pull.workspaces.find((w: { kind: string }) => w.kind === 'personal');
+  const created = await page.request.post('/api/v1/accounts', {
+    headers: { 'X-CSRF-Token': session.csrfToken, Origin: APP_ORIGIN },
+    data: { workspaceId: personal.id, ...account },
+  });
+  if (!created.ok()) throw new Error(`account failed: ${created.status()} ${await created.text()}`);
+}

@@ -34,12 +34,19 @@ describe('useHistory', () => {
     expect(empty.result.current.status).toBe('noMatches');
   });
 
-  it('groups matching rows by day and totals them per currency', () => {
+  it('groups matching rows by day and totals them in EUR', () => {
     const data = fakeLocalData(
       withLedger(
         syncedState(
           serverRow({ id: 'a', occurredOn: '2026-10-14', categoryId: 'cat-groceries' }),
-          serverRow({ id: 'b', occurredOn: '2026-10-13', currency: 'USD', amountMinor: 300 }),
+          serverRow({
+            id: 'b',
+            occurredOn: '2026-10-13',
+            currency: 'USD',
+            amountMinor: 300,
+            baseAmountMinor: 276,
+            fx: { rate: '1.0850', rateDate: '2026-10-13', source: 'ecb' },
+          }),
           serverRow({ id: 'c', occurredOn: '2026-10-13', kind: 'income', amountMinor: 900 }),
         ),
       ),
@@ -55,10 +62,7 @@ describe('useHistory', () => {
       'c',
       'b',
     ]);
-    expect(totals).toEqual([
-      { currency: 'EUR', expense: 1250, income: 900 },
-      { currency: 'USD', expense: 300, income: 0 },
-    ]);
+    expect(totals).toEqual({ base: { expense: 1526, income: 900 }, unconverted: [] });
     expect(result.current.options.currencies).toEqual(['EUR', 'USD']);
   });
 

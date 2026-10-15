@@ -18,4 +18,5 @@ export { EntryStatus, HistoryStatus } from './history-status';
 export { Keypad } from './keypad';
 export { MasterDetail } from './master-detail';
 export { SyncMarker } from './sync-marker';
-export { TotalsLine } from './totals-line';
+export { DayNets, TotalsLine } from './totals-line';
+export { ConversionNote, ConversionUnavailable, EntryAmount } from './entry-amount';

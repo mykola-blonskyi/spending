@@ -262,6 +262,16 @@ export const uk = {
     unavailableTitle: 'Цей пристрій не може зберігати ваші дані',
     unavailableDescription:
       'Браузер блокує локальне сховище, без якого Spending не працює офлайн. Вийдіть із приватного режиму або дозвольте дані сайту й перезавантажте сторінку.',
+    conversionUnavailable: 'Конвертація недоступна',
+    conversionUnavailableHint:
+      'ЄЦБ ще не опублікував курс на цю дату. Сума в євро зʼявиться, щойно він вийде.',
+    notConverted: 'Не конвертовано',
+    rate: 'Курс',
+    rateDate: 'Дата курсу',
+    rateSource: 'Джерело',
+    convertedTo: 'Конвертовано в {amount} за курсом {rate} ({source}, {date})',
+    originalAmount: 'Початкова сума',
+    eurAmount: 'Сума в євро',
     detail: {
       label: 'Вибрана операція',
       count:

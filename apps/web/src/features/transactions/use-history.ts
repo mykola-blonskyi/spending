@@ -64,7 +64,7 @@ export function useHistory() {
     [transactions.items, context],
   );
   const items = useMemo(() => groupByDay(rows, context.dayLabel), [rows, context.dayLabel]);
-  const totals = useMemo(() => summarize(transactions.items), [transactions.items]);
+  const totals = useMemo(() => summarize(rows), [rows]);
 
   const status: HistoryStatus =
     localStatus === 'unavailable'

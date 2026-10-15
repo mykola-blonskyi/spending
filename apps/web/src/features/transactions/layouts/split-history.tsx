@@ -2,7 +2,6 @@ import { ChevronRight, Search, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useId, useRef } from 'react';
 import { Link } from 'react-router';
 import { useTranslations } from '@i18n/index';
-import { MoneyText } from '@shared/components';
 import { cn } from '@shared/lib/utils';
 import { Input } from '@shared/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@shared/ui/toggle-group';
@@ -13,6 +12,8 @@ import {
   MasterDetail,
   SyncMarker,
   TotalsLine,
+  DayNets,
+  EntryAmount,
 } from '../blocks';
 import type { DayItem, EntryRow, HistoryKind } from '../history-model';
 import { type History, useHistory } from '../use-history';
@@ -25,16 +26,7 @@ function Day({ day }: { day: DayItem }) {
   return (
     <div className="flex h-8 items-end justify-between gap-3 px-4 pb-1.5 text-[12px] font-medium text-muted-foreground">
       <h2>{day.label}</h2>
-      <span className="flex gap-2">
-        {day.totals.map((total) => (
-          <MoneyText
-            key={total.currency}
-            amountMinor={total.income - total.expense}
-            currency={total.currency}
-            signDisplay="exceptZero"
-          />
-        ))}
-      </span>
+      <DayNets totals={day.totals} />
     </div>
   );
 }
@@ -58,21 +50,20 @@ function Row({ row, selected }: { row: EntryRow; selected: boolean }) {
         )}
         <CategoryGlyph category={row.category} className={cn(selected && 'bg-card/70')} />
         <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-2">
-            <span className="flex min-w-0 flex-1 items-center gap-1.5">
-              <span className="truncate font-medium">{row.title}</span>
-              <SyncMarker sync={row.sync} className="shrink-0" />
-            </span>
-            <MoneyText
-              amountMinor={row.kind === 'expense' ? -row.amountMinor : row.amountMinor}
-              currency={row.currency}
-              className={cn('shrink-0 font-medium', row.kind === 'income' && 'text-income')}
-            />
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate font-medium">{row.title}</span>
+            <SyncMarker sync={row.sync} className="shrink-0" />
           </span>
           {row.subtitle && (
             <span className={cn('mt-0.5 block truncate text-[13px]', sub)}>{row.subtitle}</span>
           )}
         </span>
+        <EntryAmount
+          row={row}
+          colored={false}
+          className={cn('font-medium', row.kind === 'income' && 'text-income')}
+          secondaryClassName={selected ? 'text-accent-foreground/75' : undefined}
+        />
         <ChevronRight aria-hidden className={cn('size-4 shrink-0 lg:hidden', sub)} />
       </Link>
     </div>

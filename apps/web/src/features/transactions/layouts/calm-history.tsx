@@ -2,7 +2,7 @@ import { Plus, Search, SlidersHorizontal } from 'lucide-react';
 import { useId } from 'react';
 import { Link } from 'react-router';
 import { useTranslations } from '@i18n/index';
-import { MoneyText, PageHeader } from '@shared/components';
+import { PageHeader } from '@shared/components';
 import { cn } from '@shared/lib/utils';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
@@ -15,6 +15,8 @@ import {
   HistoryStatus,
   SyncMarker,
   TotalsLine,
+  DayNets,
+  EntryAmount,
 } from '../blocks';
 import type { DayItem, EntryRow, HistoryKind, RowPosition } from '../history-model';
 import { type History, useHistory } from '../use-history';
@@ -26,16 +28,7 @@ export function CalmDay({ day }: { day: DayItem }) {
   return (
     <div className="flex items-baseline justify-between gap-3 px-1 pt-5 pb-1.5 text-xs text-muted-foreground">
       <h2 className="font-medium">{day.label}</h2>
-      <span className="flex gap-2">
-        {day.totals.map((total) => (
-          <MoneyText
-            key={total.currency}
-            amountMinor={total.income - total.expense}
-            currency={total.currency}
-            signDisplay="exceptZero"
-          />
-        ))}
-      </span>
+      <DayNets totals={day.totals} />
     </div>
   );
 }
@@ -81,12 +74,7 @@ export function CalmRow({
           <span className="truncate text-xs text-muted-foreground">{row.subtitle}</span>
         )}
       </span>
-      <MoneyText
-        amountMinor={row.kind === 'expense' ? -row.amountMinor : row.amountMinor}
-        currency={row.currency}
-        colored
-        className="text-sm font-medium"
-      />
+      <EntryAmount row={row} className="text-sm font-medium" />
     </Link>
   );
 }
