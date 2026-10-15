@@ -46,6 +46,7 @@ async function navigateTo(page: Page, label: string) {
     .getByRole('menuitem', { name: label })
     .or(page.getByRole('dialog').getByRole('link', { name: label }))
     .click();
+  await expect(page.getByRole('dialog')).toBeHidden();
 }
 
 test('layout and palette persist across a reload', async ({ page, signInAs }) => {

@@ -1,9 +1,8 @@
-import { Ellipsis } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { NavLink } from 'react-router';
-import { useSharedLocale } from '@shared/lib/locale-context';
 import { cn } from '@shared/lib/utils';
-import { focusRing, isEnd, MAIN_ID, type ShellProps, splitNav, useMore } from './nav';
-import { MoreSheet, SkipLink } from './shell-primitives';
+import { focusRing, MAIN_ID, type ShellProps, splitNav } from './nav';
+import { MobileTabBar, SkipLink } from './shell-primitives';
 
 const tabClass = (active: boolean) =>
   cn(
@@ -11,6 +10,10 @@ const tabClass = (active: boolean) =>
     active ? 'text-primary' : 'text-muted-foreground',
     focusRing,
   );
+
+const tabIcon = (Icon: LucideIcon, active: boolean) => (
+  <Icon aria-hidden className="size-6" strokeWidth={active ? 2.2 : 1.8} />
+);
 
 /** Card stack: a phone-width column on a muted canvas, an iOS tab bar and a floating add pill. */
 export function CardsShell({
@@ -21,9 +24,7 @@ export function CardsShell({
   banner,
   children,
 }: ShellProps) {
-  const { strings } = useSharedLocale();
   const { primary, secondary } = splitNav(navItems);
-  const more = useMore(secondary);
 
   return (
     <div className="min-h-dvh bg-muted">
@@ -49,53 +50,20 @@ export function CardsShell({
         <NavLink
           to={primaryAction.to}
           className={cn(
-            'absolute right-4 bottom-[calc(100%+12px)] flex h-14 items-center gap-2 rounded-2xl bg-primary pr-5 pl-4 text-[15px] font-semibold whitespace-nowrap text-primary-foreground shadow-[0_10px_24px_-10px_var(--primary)] transition-transform duration-150 ease-out active:scale-[0.96]',
+            'absolute right-4 bottom-[calc(100%+12px)] flex h-14 items-center gap-2 rounded-2xl bg-primary pr-5 pl-4 text-[15px] font-semibold whitespace-nowrap text-primary-foreground shadow-[0_10px_24px_-10px_var(--primary)] transition-transform duration-150 ease-out active:scale-[0.96] dark:ring-1 dark:ring-foreground/15',
             focusRing,
           )}
         >
           <primaryAction.icon aria-hidden className="size-5" strokeWidth={2.4} />
           {primaryAction.label}
         </NavLink>
-        <nav
-          aria-label={strings.mainNavigation}
-          className="border-t bg-card pb-[env(safe-area-inset-bottom)] lg:border-x"
-        >
-          <ul className="flex px-2">
-            {primary.map((item) => (
-              <li key={item.to} className="flex flex-1">
-                <NavLink
-                  to={item.to}
-                  end={isEnd(item.to)}
-                  className={({ isActive }) => tabClass(isActive)}
-                >
-                  {({ isActive }) => (
-                    <>
-                      <item.icon
-                        aria-hidden
-                        className="size-6"
-                        strokeWidth={isActive ? 2.2 : 1.8}
-                      />
-                      <span className="max-w-full truncate px-0.5">{item.label}</span>
-                    </>
-                  )}
-                </NavLink>
-              </li>
-            ))}
-            <li className="flex flex-1">
-              <button
-                type="button"
-                aria-haspopup="dialog"
-                aria-expanded={more.open}
-                className={tabClass(more.active || more.open)}
-                onClick={() => more.setOpen(true)}
-              >
-                <Ellipsis aria-hidden className="size-6" strokeWidth={1.8} />
-                <span>{strings.more}</span>
-              </button>
-            </li>
-          </ul>
-          <MoreSheet items={secondary} open={more.open} onOpenChange={more.setOpen} />
-        </nav>
+        <MobileTabBar
+          primary={primary}
+          secondary={secondary}
+          tabClass={tabClass}
+          icon={tabIcon}
+          className="bg-card lg:border-x"
+        />
       </div>
     </div>
   );

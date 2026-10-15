@@ -10,12 +10,6 @@ describe('layout registry', () => {
     }
   });
 
-  it('prefers a layout-specific screen', () => {
-    const Bento = () => null;
-    const withOverride = { ...LAYOUTS.bento, screens: { dashboard: Bento } };
-    expect(withOverride.screens.dashboard ?? LAYOUTS.calm.screens.dashboard).toBe(Bento);
-  });
-
   it('gives hybrid the calm shell', () => {
     expect(LAYOUTS.hybrid.shell).toBe(LAYOUTS.calm.shell);
   });

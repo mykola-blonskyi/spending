@@ -1,18 +1,22 @@
-import { Ellipsis } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { NavLink } from 'react-router';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import { cn } from '@shared/lib/utils';
-import {
-  focusRing,
-  isEnd,
-  MAIN_ID,
-  type NavItem,
-  type PrimaryAction,
-  type ShellProps,
-  splitNav,
-  useMore,
-} from './nav';
-import { MoreSheet, SkipLink } from './shell-primitives';
+import { focusRing, MAIN_ID, type ShellProps, splitNav } from './nav';
+import { MobileTabBar, SidebarList, SkipLink } from './shell-primitives';
+
+const sidebarItem = 'h-10 gap-3 rounded-lg px-3 text-sm [&>svg]:size-[18px]';
+
+const tabClass = (active: boolean) =>
+  cn(
+    'flex min-h-14 flex-1 flex-col items-center justify-center gap-1 rounded-lg text-[11px] leading-none font-medium transition-colors duration-150 [&>svg]:transition-transform [&>svg]:duration-150 [&>svg]:ease-out active:[&>svg]:scale-90',
+    active ? 'text-primary' : 'text-muted-foreground',
+    focusRing,
+  );
+
+const tabIcon = (Icon: LucideIcon) => (
+  <Icon aria-hidden className="size-[22px]" strokeWidth={1.9} />
+);
 
 /** Calm minimal: sidebar on desktop, bottom tabs with a round add button on mobile. */
 export function CalmShell({
@@ -45,9 +49,9 @@ export function CalmShell({
           </NavLink>
         </div>
         <nav aria-label={strings.mainNavigation} className="flex-1 overflow-y-auto px-3 pb-6">
-          <SidebarList items={primary} />
+          <SidebarList items={primary} itemClass={sidebarItem} className="gap-0.5" />
           <div role="separator" className="mx-3 my-3 h-px bg-border" />
-          <SidebarList items={secondary} />
+          <SidebarList items={secondary} itemClass={sidebarItem} className="gap-0.5" />
         </nav>
       </aside>
 
@@ -69,75 +73,13 @@ export function CalmShell({
         </main>
       </div>
 
-      <MobileTabBar primary={primary} secondary={secondary} primaryAction={primaryAction} />
-    </div>
-  );
-}
-
-function SidebarList({ items }: { items: readonly NavItem[] }) {
-  return (
-    <ul className="flex flex-col gap-0.5">
-      {items.map((item) => (
-        <li key={item.to}>
-          <NavLink
-            to={item.to}
-            end={isEnd(item.to)}
-            className={({ isActive }) =>
-              cn(
-                'flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors duration-150',
-                isActive
-                  ? 'bg-accent text-accent-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                focusRing,
-              )
-            }
-          >
-            <item.icon aria-hidden className="size-[18px]" strokeWidth={1.9} />
-            {item.label}
-          </NavLink>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-const tabClass = (active: boolean) =>
-  cn(
-    'flex min-h-14 flex-1 flex-col items-center justify-center gap-1 rounded-lg text-[11px] leading-none font-medium transition-colors duration-150 [&>svg]:transition-transform [&>svg]:duration-150 [&>svg]:ease-out active:[&>svg]:scale-90',
-    active ? 'text-primary' : 'text-muted-foreground',
-    focusRing,
-  );
-
-function MobileTabBar({
-  primary,
-  secondary,
-  primaryAction,
-}: {
-  primary: readonly NavItem[];
-  secondary: readonly NavItem[];
-  primaryAction: PrimaryAction;
-}) {
-  const { strings } = useSharedLocale();
-  const more = useMore(secondary);
-  const split = Math.ceil(primary.length / 2);
-
-  const tab = (item: NavItem) => (
-    <li key={item.to} className="flex flex-1">
-      <NavLink to={item.to} end={isEnd(item.to)} className={({ isActive }) => tabClass(isActive)}>
-        <item.icon aria-hidden className="size-[22px]" strokeWidth={1.9} />
-        <span className="max-w-full truncate px-0.5">{item.label}</span>
-      </NavLink>
-    </li>
-  );
-
-  return (
-    <nav
-      aria-label={strings.mainNavigation}
-      className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md supports-[backdrop-filter]:bg-background/75 lg:hidden"
-    >
-      <ul className="mx-auto flex max-w-lg items-stretch px-2">
-        {primary.slice(0, split).map(tab)}
-        <li className="flex flex-1 items-center justify-center">
+      <MobileTabBar
+        primary={primary}
+        secondary={secondary}
+        tabClass={tabClass}
+        icon={tabIcon}
+        className="fixed inset-x-0 bottom-0 z-40 bg-background/90 backdrop-blur-md supports-[backdrop-filter]:bg-background/75 lg:hidden"
+        add={
           <NavLink
             to={primaryAction.to}
             aria-label={primaryAction.label}
@@ -148,22 +90,8 @@ function MobileTabBar({
           >
             <primaryAction.icon aria-hidden className="size-6" strokeWidth={2.2} />
           </NavLink>
-        </li>
-        {primary.slice(split).map(tab)}
-        <li className="flex flex-1">
-          <button
-            type="button"
-            aria-haspopup="dialog"
-            aria-expanded={more.open}
-            className={tabClass(more.active || more.open)}
-            onClick={() => more.setOpen(true)}
-          >
-            <Ellipsis aria-hidden className="size-[22px]" strokeWidth={1.9} />
-            <span>{strings.more}</span>
-          </button>
-        </li>
-      </ul>
-      <MoreSheet items={secondary} open={more.open} onOpenChange={more.setOpen} />
-    </nav>
+        }
+      />
+    </div>
   );
 }

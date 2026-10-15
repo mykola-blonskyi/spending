@@ -2,8 +2,8 @@ import { Ellipsis } from 'lucide-react';
 import { NavLink } from 'react-router';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import { cn } from '@shared/lib/utils';
-import { focusRing, isEnd, MAIN_ID, type NavItem, type ShellProps, splitNav, useMore } from './nav';
-import { MoreSheet, SkipLink } from './shell-primitives';
+import { focusRing, isEnd, MAIN_ID, type ShellProps, splitNav, useMore } from './nav';
+import { MoreMenu, MoreSheet, SkipLink } from './shell-primitives';
 
 const segment = (active: boolean) =>
   cn(
@@ -16,7 +16,7 @@ const underline = (
   <span aria-hidden className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary" />
 );
 
-/** Timeline / journal: a quiet 640px column, segmented top navigation, text links in a side column. */
+/** Timeline / journal: a quiet 640px column under one segmented navigation. */
 export function JournalShell({
   brand,
   navItems,
@@ -30,7 +30,7 @@ export function JournalShell({
   const more = useMore(secondary);
 
   const segments = (
-    <ul className="flex gap-6">
+    <ul className="flex gap-3 lg:gap-6">
       {primary.map((item) => (
         <li key={item.to} className="flex-1 lg:flex-none">
           <NavLink
@@ -47,18 +47,28 @@ export function JournalShell({
           </NavLink>
         </li>
       ))}
-      <li className="flex-1 lg:hidden">
+      <li className="flex-1 lg:flex-none">
         <button
           type="button"
           aria-haspopup="dialog"
           aria-expanded={more.open}
-          className={segment(more.active || more.open)}
+          className={cn(segment(more.active || more.open), 'lg:hidden')}
           onClick={() => more.setOpen(true)}
         >
           <Ellipsis aria-hidden className="size-4" strokeWidth={1.8} />
           {strings.more}
           {more.active && underline}
         </button>
+        <MoreMenu
+          items={secondary}
+          trigger={
+            <button type="button" className={cn(segment(more.active), 'hidden px-1 lg:flex')}>
+              <Ellipsis aria-hidden className="size-4" strokeWidth={1.8} />
+              {strings.more}
+              {more.active && underline}
+            </button>
+          }
+        />
       </li>
     </ul>
   );
@@ -69,10 +79,6 @@ export function JournalShell({
 
       <aside className="fixed inset-y-0 left-0 hidden w-56 flex-col px-8 pt-10 lg:flex">
         {brand}
-        <nav aria-label={strings.mainNavigation} className="mt-10 flex-1 overflow-y-auto">
-          <SideList items={primary} />
-          <SideList items={secondary} className="mt-6" />
-        </nav>
       </aside>
 
       <div className="flex min-h-dvh flex-col lg:pl-56">
@@ -93,14 +99,11 @@ export function JournalShell({
               {status}
             </div>
           </div>
-          <nav aria-label={strings.mainNavigation} className="border-b px-4 lg:hidden">
-            {segments}
-          </nav>
-          <div className="mx-auto hidden max-w-[640px] items-center justify-between gap-6 border-b pt-3 lg:flex">
+          <div className="mx-auto flex max-w-[640px] items-center justify-between gap-6 border-b px-4 lg:px-0 lg:pt-3">
             <nav aria-label={strings.mainNavigation} className="flex-1">
               {segments}
             </nav>
-            <div className="flex items-center gap-3">
+            <div className="hidden items-center gap-3 lg:flex">
               <NavLink
                 to={primaryAction.to}
                 className={cn(
@@ -127,39 +130,5 @@ export function JournalShell({
       </div>
       <MoreSheet items={secondary} open={more.open} onOpenChange={more.setOpen} />
     </div>
-  );
-}
-
-function SideList({ items, className }: { items: readonly NavItem[]; className?: string }) {
-  return (
-    <ul className={cn('flex flex-col gap-1', className)}>
-      {items.map((item) => (
-        <li key={item.to}>
-          <NavLink
-            to={item.to}
-            end={isEnd(item.to)}
-            className={({ isActive }) =>
-              cn(
-                'flex h-9 items-center gap-3 rounded-sm text-sm transition-colors duration-150',
-                isActive
-                  ? 'font-medium text-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
-                focusRing,
-              )
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <span
-                  aria-hidden
-                  className={cn('h-px w-4 shrink-0', isActive ? 'bg-primary' : 'bg-border')}
-                />
-                {item.label}
-              </>
-            )}
-          </NavLink>
-        </li>
-      ))}
-    </ul>
   );
 }

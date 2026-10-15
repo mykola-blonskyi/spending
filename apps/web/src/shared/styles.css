@@ -328,3 +328,26 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Focus and scrollIntoView keep content clear of each layout's fixed bottom bar on phones. */
+html {
+  scroll-padding-bottom: calc(var(--bottom-bar, 0px) + env(safe-area-inset-bottom));
+}
+html:has([data-layout]) {
+  --bottom-bar: 6rem;
+}
+html:has([data-layout='cards']),
+html:has([data-layout='soft']) {
+  --bottom-bar: 9rem;
+}
+html:has([data-layout='playful']) {
+  --bottom-bar: 8rem;
+}
+html:has([data-layout='journal']) {
+  --bottom-bar: 0px;
+}
+@media (width >= 64rem) {
+  html {
+    --bottom-bar: 0px;
+  }
+}

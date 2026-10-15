@@ -121,7 +121,7 @@ export function SoftShell({
           className={pillTab(more.active || more.open)}
           onClick={() => more.setOpen(true)}
         >
-          <Ellipsis aria-hidden className="size-[22px] shrink-0" strokeWidth={2} />
+          <Ellipsis aria-hidden className="size-[22px]" strokeWidth={2} />
         </button>
         <MoreSheet items={secondary} open={more.open} onOpenChange={more.setOpen} />
       </nav>
@@ -131,12 +131,12 @@ export function SoftShell({
 
 const pillTab = (active: boolean) =>
   cn(
-    'flex h-12 min-w-12 items-center justify-center gap-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-150',
-    active ? 'bg-accent px-3 text-accent-foreground' : 'px-2.5 text-muted-foreground',
+    'flex size-12 shrink-0 items-center justify-center rounded-full transition-colors duration-150',
+    active ? 'bg-accent text-accent-foreground' : 'text-muted-foreground',
     focusRing,
   );
 
-/** Icon only, with the label shown while the tab is the current page. */
+/** Icon only: four labels do not fit a 390px pill bar in every language. */
 function PillTab({ item }: { item: NavItem }) {
   return (
     <NavLink
@@ -145,12 +145,7 @@ function PillTab({ item }: { item: NavItem }) {
       aria-label={item.label}
       className={({ isActive }) => pillTab(isActive)}
     >
-      {({ isActive }) => (
-        <>
-          <item.icon aria-hidden className="size-[22px] shrink-0" strokeWidth={2} />
-          {isActive && <span className="truncate">{item.label}</span>}
-        </>
-      )}
+      <item.icon aria-hidden className="size-[22px]" strokeWidth={2} />
     </NavLink>
   );
 }
