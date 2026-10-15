@@ -93,7 +93,7 @@ history for both `history` and `detail`, so selecting a row keeps the list mount
 holds the period math (calendar month, quarter, year or a custom range, and stepping) and pairs
 each category with its previous-period amount; `useDashboard` owns the period and scope and reads
 `/analytics/summary` and `/budgets` (budgets of the chosen month, otherwise this month), refetching
-both after every completed sync (`useRefreshOnSync`). `blocks/` are self-titled sections (totals, trend,
+both after the first completed sync and each one that moved the cursor (`useRefreshOnSync`). `blocks/` are self-titled sections (totals, trend,
 categories, budgets via `BudgetProgress`, unconverted amounts); `layouts/<layout>-dashboard.tsx`
 only arrange them, under the same ESLint rule, and hybrid uses the bento one. Charts are plain SVG
 in theme tokens; the trend has a table under "Show as a table" and category bars carry their

@@ -11,7 +11,15 @@ import {
 import type { SyncStatus } from '@shared/components';
 import { useOnlineStatus } from '@shared/lib/network';
 import type { EngineStatus, SyncEngine } from './engine';
-import type { Account, Category, Conflict, LocalState, Resolution, Workspace } from './model';
+import type {
+  Account,
+  Category,
+  Conflict,
+  LocalState,
+  Resolution,
+  SyncMeta,
+  Workspace,
+} from './model';
 import {
   localEntries,
   queryTransactions,
@@ -149,8 +157,8 @@ function useSmoothed(next: SyncStatus | null): SyncStatus | null {
 }
 
 /** When a pull last reached the end; undefined while there is no local store. */
-export function useLastSyncedAt(): string | null | undefined {
-  return useLocalState()?.meta.lastSyncedAt;
+export function useSyncMeta(): SyncMeta | undefined {
+  return useLocalState()?.meta;
 }
 
 /** The first sync on an empty device: active until a pull first reaches the end. */

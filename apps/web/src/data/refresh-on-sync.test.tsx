@@ -9,7 +9,7 @@ import { type LocalData, LocalDataContext } from './sync/local-data-context';
 import type { LocalState } from './sync/model';
 import type { LocalStore } from './sync/store';
 
-it('refetches after every completed sync, however quick, even while the badge is pinned', () => {
+it('refetches after each completed sync that brought changes, even while the badge is pinned', () => {
   let state: LocalState = syncedState();
   const idle = { phase: 'idle' } as const;
   const listeners = new Set<() => void>();
@@ -37,12 +37,14 @@ it('refetches after every completed sync, however quick, even while the badge is
   renderHook(() => useRefreshOnSync(['analytics']), { wrapper });
   expect(invalidate).not.toHaveBeenCalled();
 
-  for (const lastSyncedAt of ['2026-10-15T10:00:00.000Z', '2026-10-15T10:01:00.000Z']) {
+  const sync = (cursor: number, lastSyncedAt: string) =>
     act(() => {
-      state = { ...state, meta: { ...state.meta, lastSyncedAt } };
+      state = { ...state, meta: { ...state.meta, cursor, lastSyncedAt } };
       for (const listener of listeners) listener();
     });
-  }
+  sync(11, '2026-10-15T10:00:00.000Z');
+  sync(11, '2026-10-15T10:01:00.000Z');
+  sync(12, '2026-10-15T10:02:00.000Z');
   expect(invalidate).toHaveBeenCalledTimes(2);
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ['analytics'] });
 });
