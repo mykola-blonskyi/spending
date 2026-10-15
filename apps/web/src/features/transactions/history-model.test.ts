@@ -37,6 +37,7 @@ function entry(patch: Partial<TransactionEntry> = {}): TransactionEntry {
   return {
     ...localRow(),
     scope: 'personal',
+    version: null,
     author: null,
     baseAmountMinor: 1250,
     fx: null,

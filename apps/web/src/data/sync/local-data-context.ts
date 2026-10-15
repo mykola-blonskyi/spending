@@ -201,8 +201,11 @@ export function useRequestSync(): () => Promise<void> {
 
 export const useRecordTransaction = (): ((draft: TransactionDraft) => Promise<string>) =>
   useWriter(recordTransaction);
-export const useUpdateTransaction = (): ((id: string, draft: TransactionDraft) => Promise<void>) =>
-  useWriter(updateTransaction);
+export const useUpdateTransaction = (): ((
+  id: string,
+  draft: TransactionDraft,
+  editedVersion?: number | null,
+) => Promise<void>) => useWriter(updateTransaction);
 export const useDeleteTransaction = (): ((id: string) => Promise<void>) =>
   useWriter(deleteTransaction);
 export const useDiscardChange = (): ((id: string) => Promise<void>) => useWriter(discardChange);

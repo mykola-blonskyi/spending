@@ -21,6 +21,8 @@ export type EntrySync =
 export type TransactionEntry = LocalTransaction &
   Readonly<{
     scope: 'personal' | 'family';
+    /** The server version shown; null while a local change is pending, which carries its own base. */
+    version: number | null;
     /** Who recorded it, as the server last reported; null for a row this device created. */
     author: ServerTransaction['author'] | null;
     /** EUR amount; null until the server has converted it. */
@@ -72,6 +74,7 @@ export function localEntries(state: LocalState): TransactionEntry[] {
       entries.push({
         ...row,
         scope: scope(row.workspaceId),
+        version: null,
         author: record.server?.author ?? null,
         baseAmountMinor:
           row.currency === BASE_CURRENCY ? row.amountMinor : (server?.baseAmountMinor ?? null),
@@ -93,6 +96,7 @@ export function localEntries(state: LocalState): TransactionEntry[] {
         note: row.note,
         createdAt: row.createdAt,
         scope: row.scope,
+        version: row.version,
         author: row.author,
         baseAmountMinor: row.baseAmountMinor,
         fx: row.fx,

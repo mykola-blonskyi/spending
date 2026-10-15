@@ -28,12 +28,17 @@ export async function updateTransaction(
   store: LocalStore,
   id: string,
   draft: TransactionDraft,
+  editedVersion: number | null = null,
 ): Promise<void> {
   const record = store.state.transactions.get(id);
   const local = record?.local ?? null;
   const current = isDeleted(local) ? null : (local ?? record?.server);
   if (!current) throw new Error(`Transaction ${id} is not on this device`);
-  await write(store, { type: 'upsert', row: { ...draft, id, createdAt: current.createdAt } });
+  await write(store, {
+    type: 'upsert',
+    row: { ...draft, id, createdAt: current.createdAt },
+    editedVersion,
+  });
 }
 
 export async function deleteTransaction(store: LocalStore, id: string): Promise<void> {
