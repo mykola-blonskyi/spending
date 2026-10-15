@@ -157,7 +157,8 @@ stored lucide icon name to a curated icon set (`category-icons.ts`).
   reached from the badge) lists open conflicts. Its review dialog shows both versions side by
   side, highlights the differing fields and names them in its description, so a screen reader
   announces them. A deletion on either side is shown as "Deleted" and offers only keep server or
-  keep mine; otherwise each differing field can be picked (amount and currency together).
+  keep mine; otherwise each differing field can be picked (amount and currency together; a
+  category with its kind and workspace, an account with its workspace, so a merge stays valid).
   Resolving needs the network: `POST /sync/conflicts/:id/resolve` runs at once, and its row
   closes the conflict locally (`settleConflict`). Other devices drop it on their next pull,
   which replaces the full conflict list.
