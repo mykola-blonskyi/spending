@@ -10,6 +10,7 @@ export {
   currencyExponent,
   formatMoney,
   minorToDecimalString,
+  parseAmount,
   type MoneyFormatOptions,
 } from './money';
 export { formatNumber, formatPercent } from './number';
