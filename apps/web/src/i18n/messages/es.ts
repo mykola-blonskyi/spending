@@ -310,6 +310,17 @@ export const es = {
       title: 'Miembros',
       count: '{count, plural, one {# miembro} other {# miembros}}',
       joined: 'Se unió el {date}',
+      remove: 'Quitar',
+      removeTitle: '¿Quitar a {name} de la familia?',
+      removeDescription:
+        'Las entradas familiares que registró {name} se quedan en la familia. Sus datos personales nunca se compartieron.',
+      removed: 'Se quitó a {name}',
+      makeOwner: 'Hacer propietario',
+      transferTitle: '¿Hacer propietario a {name}?',
+      transferDescription:
+        'Pasarás a ser un miembro normal. Solo {name} podrá invitar, quitar miembros y eliminar la familia.',
+      transferConfirm: 'Transferir la propiedad',
+      transferred: '{name} ahora es el propietario',
     },
     invitations: {
       title: 'Invitaciones',
@@ -334,6 +345,41 @@ export const es = {
       expires: 'Caduca el {date}',
       acceptedBy: 'Aceptada por {name}',
       createdOn: 'Creada el {date}',
+    },
+    leave: {
+      title: 'Salir de la familia',
+      description:
+        'Tus entradas personales se quedan contigo. Las entradas familiares que registraste se quedan en la familia.',
+      ownerNote:
+        'Como propietario no puedes salir. Haz propietario a otro miembro primero, o elimina la familia.',
+      action: 'Salir de la familia',
+      confirmTitle: '¿Salir de {family}?',
+      confirmDescription:
+        'Pierdes el acceso a las entradas familiares de inmediato. Puedes volver a unirte con una invitación nueva.',
+      left: 'Has salido de la familia',
+    },
+    delete: {
+      title: 'Eliminar la familia',
+      description:
+        'Cada entrada familiar vuelve al espacio personal del miembro que la registró, con su categoría recreada allí. Las cuentas, categorías, presupuestos y pagos recurrentes de la familia se eliminan.',
+      action: 'Eliminar familia',
+      confirmTitle: '¿Eliminar {family}?',
+      confirmDescription: 'Las entradas vuelven a sus autores. Esto no se puede deshacer.',
+      deleted: 'Familia eliminada',
+    },
+    dangerZone: 'Salir o eliminar',
+    events: {
+      title: 'Actividad',
+      empty: 'Todavía no ha pasado nada.',
+      formerMember: 'Un antiguo miembro',
+      family_created: '{actor} creó la familia',
+      renamed: '{actor} cambió el nombre de la familia',
+      invitation_created: '{actor} creó un enlace de invitación',
+      invitation_revoked: '{actor} revocó un enlace de invitación',
+      member_joined: '{subject} se unió',
+      member_left: '{subject} salió',
+      member_removed: '{actor} quitó a {subject}',
+      ownership_transferred: '{actor} hizo propietario a {subject}',
     },
     scope: {
       label: 'Para quién es',

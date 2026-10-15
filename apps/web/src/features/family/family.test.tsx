@@ -10,9 +10,13 @@ import {
   acceptInvitation,
   createFamily,
   createInvitation,
+  deleteFamily,
+  eventsQuery,
+  type FamilyEvent,
   type Invitation,
   invitationPreviewQuery,
   invitationsQuery,
+  leaveFamily,
   revokeInvitation,
   type WorkspaceView,
   workspacesQuery,
@@ -35,6 +39,8 @@ vi.mock(import('@data/family'), async (importOriginal) => ({
   createInvitation: vi.fn(),
   revokeInvitation: vi.fn(),
   acceptInvitation: vi.fn(),
+  leaveFamily: vi.fn(),
+  deleteFamily: vi.fn(),
 }));
 vi.mock(import('@data/sync'), async (importOriginal) => ({
   ...(await importOriginal()),
@@ -83,10 +89,14 @@ function setup(ui: React.ReactNode, seed: (client: Client) => void = () => {}, p
 }
 
 const seeded =
-  (workspaces: WorkspaceView[], extra: { invitations?: Invitation[] } = {}) =>
+  (
+    workspaces: WorkspaceView[],
+    extra: { invitations?: Invitation[]; events?: FamilyEvent[] } = {},
+  ) =>
   (client: Client) => {
     client.setQueryData(workspacesQuery.queryKey, workspaces);
     client.setQueryData(invitationsQuery.queryKey, extra.invitations ?? []);
+    client.setQueryData(eventsQuery.queryKey, extra.events ?? []);
   };
 
 beforeEach(() => {
@@ -109,7 +119,7 @@ describe('FamilyPage', () => {
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Family created'));
   });
 
-  it('lists members with roles and offers invitations to the owner', async () => {
+  it('lists members with roles and offers invitations and deletion to the owner', async () => {
     setup(
       <FamilyPage />,
       seeded([PERSONAL, family('owner')], {
@@ -145,16 +155,37 @@ describe('FamilyPage', () => {
 
     expect(screen.getByText('Pending')).toBeInTheDocument();
     expect(screen.getByText('Accepted by Bob')).toBeInTheDocument();
+    expect(screen.getByText(/As the owner you cannot leave/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Leave family' })).not.toBeInTheDocument();
 
     vi.mocked(revokeInvitation).mockResolvedValue();
     await userEvent.click(screen.getByRole('button', { name: 'Revoke' }));
     await waitFor(() => expect(vi.mocked(revokeInvitation).mock.calls[0]?.[0]).toEqual('inv-1'));
+
+    vi.mocked(deleteFamily).mockResolvedValue();
+    await userEvent.click(screen.getByRole('button', { name: 'Delete family' }));
+    const dialog = screen.getByRole('alertdialog');
+    expect(dialog).toHaveTextContent('Entries return to their authors');
+    const confirm = within(dialog).getByRole('button', { name: 'Delete family' });
+    expect(confirm).toBeDisabled();
+    await userEvent.type(within(dialog).getByLabelText('Confirmation phrase'), 'Home');
+    await userEvent.click(confirm);
+    await waitFor(() => expect(vi.mocked(deleteFamily).mock.calls[0]?.[0]).toEqual('Home'));
   });
 
-  it('hides invitations from a member', async () => {
+  it('shows a member the copyable link flow only after creating one, and lets them leave', async () => {
     setup(<FamilyPage />, seeded([PERSONAL, family('member')]));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Home' })).toBeInTheDocument();
+
+    expect(await screen.findByRole('button', { name: 'Leave family' })).toBeInTheDocument();
     expect(screen.queryByText('Invitations')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Bob' })).not.toBeInTheDocument();
+
+    vi.mocked(leaveFamily).mockResolvedValue();
+    await userEvent.click(screen.getByRole('button', { name: 'Leave family' }));
+    await userEvent.click(
+      within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Leave family' }),
+    );
+    await waitFor(() => expect(leaveFamily).toHaveBeenCalled());
   });
 
   it('shows the invitation link once and copies it', async () => {
@@ -176,6 +207,35 @@ describe('FamilyPage', () => {
     expect(writeText).toHaveBeenCalledWith('http://app.test/invite/abc');
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Link copied'));
     vi.unstubAllGlobals();
+  });
+
+  it('reads the event log in the order given, naming former members', async () => {
+    setup(
+      <FamilyPage />,
+      seeded([PERSONAL, family('member')], {
+        events: [
+          {
+            id: 'e2',
+            type: 'member_removed',
+            actor: ann,
+            subject: null,
+            createdAt: '2026-10-03T10:00:00.000Z',
+          },
+          {
+            id: 'e1',
+            type: 'family_created',
+            actor: ann,
+            subject: null,
+            createdAt: '2026-10-01T10:00:00.000Z',
+          },
+        ],
+      }),
+    );
+    const items = within(await screen.findByRole('list', { name: 'Activity' })).getAllByRole(
+      'listitem',
+    );
+    expect(items[0]).toHaveTextContent('Ann Example removed A former member');
+    expect(items[1]).toHaveTextContent('Ann Example created the family');
   });
 });
 

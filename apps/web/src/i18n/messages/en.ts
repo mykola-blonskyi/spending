@@ -298,6 +298,17 @@ export const en = {
       title: 'Members',
       count: '{count, plural, one {# member} other {# members}}',
       joined: 'Joined {date}',
+      remove: 'Remove',
+      removeTitle: 'Remove {name} from the family?',
+      removeDescription:
+        'The family entries {name} recorded stay in the family. Their personal data was never shared.',
+      removed: '{name} was removed',
+      makeOwner: 'Make owner',
+      transferTitle: 'Make {name} the owner?',
+      transferDescription:
+        'You become a regular member. Only {name} can then invite, remove members and delete the family.',
+      transferConfirm: 'Transfer ownership',
+      transferred: '{name} is now the owner',
     },
     invitations: {
       title: 'Invitations',
@@ -321,6 +332,41 @@ export const en = {
       expires: 'Expires {date}',
       acceptedBy: 'Accepted by {name}',
       createdOn: 'Created {date}',
+    },
+    leave: {
+      title: 'Leave the family',
+      description:
+        'Your personal entries stay with you. The family entries you recorded stay with the family.',
+      ownerNote:
+        'As the owner you cannot leave. Make another member the owner first, or delete the family.',
+      action: 'Leave family',
+      confirmTitle: 'Leave {family}?',
+      confirmDescription:
+        'You lose access to family entries right away. You can join again with a new invitation.',
+      left: 'You left the family',
+    },
+    delete: {
+      title: 'Delete the family',
+      description:
+        'Every family entry goes back to the personal workspace of the member who recorded it, with its category recreated there. Family accounts, categories, budgets and recurring rules are deleted.',
+      action: 'Delete family',
+      confirmTitle: 'Delete {family}?',
+      confirmDescription: 'Entries return to their authors. This cannot be undone.',
+      deleted: 'Family deleted',
+    },
+    dangerZone: 'Leave or delete',
+    events: {
+      title: 'Activity',
+      empty: 'Nothing has happened yet.',
+      formerMember: 'A former member',
+      family_created: '{actor} created the family',
+      renamed: '{actor} renamed the family',
+      invitation_created: '{actor} created an invitation link',
+      invitation_revoked: '{actor} revoked an invitation link',
+      member_joined: '{subject} joined',
+      member_left: '{subject} left',
+      member_removed: '{actor} removed {subject}',
+      ownership_transferred: '{actor} made {subject} the owner',
     },
     scope: {
       label: 'Who is this for',

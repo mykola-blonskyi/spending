@@ -133,5 +133,72 @@ test('revoked, expired and used links all read the same', async ({
   await bobPage.goto(used);
   await expect(bobPage.getByRole('heading', { name: 'You are already in a family' })).toBeVisible();
 
+  await bobPage.getByRole('link', { name: 'Open your family' }).click();
+  await bobPage.getByRole('button', { name: 'Leave family' }).click();
+  await bobPage.getByRole('alertdialog').getByRole('button', { name: 'Leave family' }).click();
+  await expect(bobPage.getByRole('button', { name: 'Create family' })).toBeVisible();
+  await bobPage.goto(used);
+  await expect(invalid).toBeVisible();
+  await bobPage.context().close();
+});
+
+test('the owner manages members, reads the log and deletes the family, returning entries', async ({
+  page,
+  signInAs,
+  browser,
+  db,
+}) => {
+  await signInAs('ann');
+  await createFamily(page, 'Home');
+  const bobPage = await secondDevice(browser);
+  await joinThroughLink(bobPage, await inviteLink(page), 'Home');
+  await addEntry(bobPage, 'Bob groceries', 'Family');
+  await addEntry(page, 'Ann rent', 'Family');
+
+  await page.goto('/family');
+  await expect(page.getByText('As the owner you cannot leave')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Leave family' })).toHaveCount(0);
+  const log = page.getByRole('list', { name: 'Activity' }).getByRole('listitem');
+  await expect(log.first()).toHaveText(/Bob Example joined/);
+  await expect(log.last()).toHaveText(/Ann Example created the family/);
+
+  await page.getByRole('button', { name: bob.name }).click();
+  await page.getByRole('menuitem', { name: 'Make owner' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Transfer ownership' }).click();
+  await expect(page.getByRole('button', { name: 'Leave family' })).toBeVisible();
+  await expect(log.first()).toHaveText(/Ann Example made Bob Example the owner/);
+
+  await bobPage.goto('/family');
+  await bobPage.getByRole('button', { name: ann.name }).click();
+  await bobPage.getByRole('menuitem', { name: 'Remove' }).click();
+  await bobPage.getByRole('alertdialog').getByRole('button', { name: 'Remove' }).click();
+  await expect(bobPage.getByRole('list', { name: 'Members' })).not.toContainText(ann.name);
+  await expect(
+    bobPage.getByRole('list', { name: 'Activity' }).getByRole('listitem').first(),
+  ).toHaveText(/Bob Example removed Ann Example/);
+  await bobPage.goto('/transactions');
+  await expect(bobPage.getByRole('link', { name: /Ann rent/ })).toBeVisible();
+
+  await bobPage.goto('/family');
+  await bobPage.getByRole('button', { name: 'Delete family' }).click();
+  const dialog = bobPage.getByRole('alertdialog');
+  await expect(dialog).toContainText('Entries return to their authors');
+  await expect(dialog.getByRole('button', { name: 'Delete family' })).toBeDisabled();
+  await dialog.getByLabel('Confirmation phrase').fill('Home');
+  await dialog.getByRole('button', { name: 'Delete family' }).click();
+  await expect(bobPage.getByRole('button', { name: 'Create family' })).toBeVisible();
+
+  await expect
+    .poll(() => db.transactions(ann.email))
+    .toMatchObject([{ description: 'Ann rent', scope: 'personal' }]);
+  await expect
+    .poll(() => db.transactions(bob.email))
+    .toMatchObject([{ description: 'Bob groceries', scope: 'personal' }]);
+  await bobPage.goto('/transactions');
+  await expect(bobPage.getByRole('link', { name: /Bob groceries/ })).toBeVisible();
+  await expect(bobPage.getByRole('link', { name: /Ann rent/ })).toHaveCount(0);
+  await page.goto('/transactions');
+  await expect(page.getByRole('link', { name: /Ann rent/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Ann rent/ })).not.toContainText(ann.name);
   await bobPage.context().close();
 });
