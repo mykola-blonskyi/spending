@@ -1,5 +1,6 @@
 import type { RouteObject } from 'react-router';
 import { RedirectIfSignedIn, RequireSession } from '@features/auth';
+import { ImportsPage, NewImportPage, ReviewPage } from '@features/imports';
 import { BudgetsPage } from '@features/budgets';
 import { EditRulePage, NewRulePage, RecurringPage } from '@features/recurring';
 import { FamilyPage } from '@features/family';
@@ -21,6 +22,7 @@ const placeholderRoutes: RouteObject[] = DESTINATIONS.filter(
     destination.nav !== 'settings' &&
     destination.nav !== 'dashboard' &&
     destination.nav !== 'transactions' &&
+    destination.nav !== 'imports' &&
     destination.nav !== 'budgets' &&
     destination.nav !== 'recurring' &&
     destination.nav !== 'family',
@@ -63,6 +65,9 @@ export const routes: RouteObject[] = [
               })),
               { path: ADD_TRANSACTION_PATH, element: <LayoutScreen screen="entry" /> },
               { path: '/transactions/:id', element: <EditTransactionPage /> },
+              { path: '/imports', element: <ImportsPage /> },
+              { path: '/imports/new', element: <NewImportPage /> },
+              { path: '/imports/review', element: <ReviewPage /> },
               { path: '/budgets', element: <BudgetsPage /> },
               { path: '/recurring', element: <RecurringPage /> },
               { path: '/recurring/new', element: <NewRulePage /> },
