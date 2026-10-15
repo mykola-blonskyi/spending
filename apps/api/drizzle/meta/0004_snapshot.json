@@ -1,5 +1,5 @@
 {
-  "id": "c4a36b02-bce4-46a5-b44e-c415d9a08161",
+  "id": "a44c0f6b-7874-4984-9e71-ed9cf32c8a5d",
   "prevId": "a4e71330-26de-4e30-b03c-78f0fa3d4370",
   "version": "7",
   "dialect": "postgresql",
@@ -1531,6 +1531,89 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.sync_tombstones": {
+      "name": "sync_tombstones",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "transaction_id": {
+          "name": "transaction_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision": {
+          "name": "revision",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "nextval('ledger_revision')"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "sync_tombstones_revision_idx": {
+          "name": "sync_tombstones_revision_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "revision",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "sync_tombstones_workspace_id_workspaces_id_fk": {
+          "name": "sync_tombstones_workspace_id_workspaces_id_fk",
+          "tableFrom": "sync_tombstones",
+          "tableTo": "workspaces",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "sync_tombstones_workspace_id_transaction_id_pk": {
+          "name": "sync_tombstones_workspace_id_transaction_id_pk",
+          "columns": [
+            "workspace_id",
+            "transaction_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.transactions": {
       "name": "transactions",
       "schema": "",
@@ -1666,12 +1749,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "previous_workspace_id": {
-          "name": "previous_workspace_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
         "review_status": {
           "name": "review_status",
           "type": "review_status",
@@ -1749,28 +1826,6 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "transactions_moved_idx": {
-          "name": "transactions_moved_idx",
-          "columns": [
-            {
-              "expression": "previous_workspace_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "revision",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"transactions\".\"previous_workspace_id\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1946,19 +2001,6 @@
           "tableTo": "recurring_rules",
           "columnsFrom": [
             "recurring_rule_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "transactions_previous_workspace_id_workspaces_id_fk": {
-          "name": "transactions_previous_workspace_id_workspaces_id_fk",
-          "tableFrom": "transactions",
-          "tableTo": "workspaces",
-          "columnsFrom": [
-            "previous_workspace_id"
           ],
           "columnsTo": [
             "id"

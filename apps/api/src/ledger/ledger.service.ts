@@ -18,8 +18,7 @@ import {
   createAccountSchema,
   createCategorySchema,
   type LedgerRow,
-  toAccountView,
-  toCategoryView,
+  toView,
   toLedgerRow,
   type TransactionView,
   updateAccountSchema,
@@ -89,9 +88,9 @@ const viewColumns = {
 const historyKey = sql<string>`to_char(${transactions.createdAt} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
 
 /** Transactions joined with what `toLedgerRow` needs. Callers add the workspace constraint. */
-export function selectViewRows(tx: Tx) {
+export function selectViewRows<E extends Record<string, SQL>>(tx: Tx, extra: E = {} as E) {
   return tx
-    .select(viewColumns)
+    .select({ ...viewColumns, ...extra })
     .from(transactions)
     .innerJoin(workspaces, eq(workspaces.id, transactions.workspaceId))
     .leftJoin(users, eq(users.id, transactions.createdBy))
@@ -130,14 +129,14 @@ export class LedgerService {
       .from(accounts)
       .where(inArray(accounts.workspaceId, ids))
       .orderBy(accounts.createdAt, accounts.id);
-    return rows.map(toAccountView);
+    return rows.map(toView);
   }
 
   createAccount(actorId: string, input: CreateAccount): Promise<AccountView> {
     return this.write(async (tx) => {
       await this.policy.requireMember(actorId, input.workspaceId, tx);
       const [row] = await tx.insert(accounts).values(input).returning(accountColumns);
-      return toAccountView(row!);
+      return toView(row!);
     });
   }
 
@@ -147,13 +146,13 @@ export class LedgerService {
       if (!current) throw new ApiError('NOT_FOUND');
       await this.policy.requireMember(actorId, current.workspaceId, tx);
       const { archived, ...fields } = changes(current, patch);
-      if (Object.keys(fields).length === 0 && archived === undefined) return toAccountView(current);
+      if (Object.keys(fields).length === 0 && archived === undefined) return toView(current);
       const [row] = await tx
         .update(accounts)
         .set({ ...fields, ...archivedPatch(archived) })
         .where(eq(accounts.id, id))
         .returning(accountColumns);
-      return toAccountView(row!);
+      return toView(row!);
     });
   }
 
@@ -164,14 +163,14 @@ export class LedgerService {
       .from(categories)
       .where(inArray(categories.workspaceId, ids))
       .orderBy(categories.kind, categories.name, categories.id);
-    return rows.map(toCategoryView);
+    return rows.map(toView);
   }
 
   createCategory(actorId: string, input: CreateCategory): Promise<CategoryView> {
     return this.write(async (tx) => {
       await this.policy.requireMember(actorId, input.workspaceId, tx);
       const [row] = await tx.insert(categories).values(input).returning(categoryColumns);
-      return toCategoryView(row!);
+      return toView(row!);
     });
   }
 
@@ -185,14 +184,14 @@ export class LedgerService {
       await this.policy.requireMember(actorId, current.workspaceId, tx);
       const { archived, ...fields } = changes(current, patch);
       if (Object.keys(fields).length === 0 && archived === undefined) {
-        return toCategoryView(current);
+        return toView(current);
       }
       const [row] = await tx
         .update(categories)
         .set({ ...fields, ...archivedPatch(archived) })
         .where(eq(categories.id, id))
         .returning(categoryColumns);
-      return toCategoryView(row!);
+      return toView(row!);
     });
   }
 
@@ -246,12 +245,7 @@ export class LedgerService {
             < (${cursor.occurredOn}::date, ${cursor.createdAt}::timestamptz, ${cursor.id}::uuid)`,
       );
     }
-    const rows = await this.db
-      .select({ ...viewColumns, historyKey })
-      .from(transactions)
-      .innerJoin(workspaces, eq(workspaces.id, transactions.workspaceId))
-      .leftJoin(users, eq(users.id, transactions.createdBy))
-      .leftJoin(accounts, eq(accounts.id, transactions.accountId))
+    const rows = await selectViewRows(this.db, { historyKey })
       .where(and(...conditions))
       .orderBy(desc(transactions.occurredOn), desc(transactions.createdAt), desc(transactions.id))
       .limit(query.limit + 1);

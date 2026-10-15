@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, exists, gt, inArray, ne, not, sql } from 'drizzle-orm';
 import { ApiError } from '../common/errors';
@@ -6,7 +7,6 @@ import { DB, type Db, ledgerTransaction, type Tx } from '../database/database.mo
 import {
   accounts,
   categories,
-  memberships,
   syncConflicts,
   syncMutations,
   syncTombstones,
@@ -17,15 +17,14 @@ import { LedgerService, selectViewRows } from '../ledger/ledger.service';
 import {
   type AccountView,
   type CategoryView,
-  type LedgerRow,
   type Tombstone,
-  toAccountView,
-  toCategoryView,
+  toView,
   toLedgerRow,
 } from '../ledger/views';
 import { AccessPolicy } from '../workspaces/access-policy';
 import {
   type ConflictLocal,
+  conflictViewSchema,
   decideDelete,
   decideUpsert,
   DELETED,
@@ -34,6 +33,7 @@ import {
   type IntendedFields,
   type Mutation,
   pullWindow,
+  pushResultSchema,
   type RejectCode,
   type TransactionInput,
 } from './mutations';
@@ -44,20 +44,8 @@ type Outcome =
   | { status: 'conflict'; conflictId: string; transactionId: string }
   | { status: 'rejected'; code: string; message: string };
 
-export type PushResult =
-  | { mutationId: string; status: 'applied'; transaction: LedgerRow }
-  | { mutationId: string; status: 'conflict'; conflictId: string; transaction: LedgerRow }
-  | { mutationId: string; status: 'rejected'; code: string; message: string };
-
-export type ConflictView = {
-  id: string;
-  transactionId: string;
-  baseVersion: number;
-  serverVersion: number;
-  local: ConflictLocal;
-  server: LedgerRow;
-  createdAt: string;
-};
+export type PushResult = z.infer<typeof pushResultSchema>;
+export type ConflictView = z.infer<typeof conflictViewSchema>;
 
 const rejected = (code: RejectCode | 'MUTATION_ID_REUSED'): Outcome => ({
   status: 'rejected',
@@ -65,7 +53,7 @@ const rejected = (code: RejectCode | 'MUTATION_ID_REUSED'): Outcome => ({
   message: code,
 });
 
-/** `current` writes against whatever version the server holds now (conflict resolution). */
+/** `current` writes against whatever version the server holds now; it exists only for conflict resolution, so `conflict()` never runs for it. */
 type Base = number | null | 'current';
 type DeleteBase = number | 'current';
 
@@ -200,8 +188,8 @@ export class SyncService {
         name: m.name,
         role: m.role,
       })),
-      accounts: upTo(accountRows).map(toAccountView) satisfies AccountView[],
-      categories: upTo(categoryRows).map(toCategoryView) satisfies CategoryView[],
+      accounts: upTo(accountRows).map(toView) satisfies AccountView[],
+      categories: upTo(categoryRows).map(toView) satisfies CategoryView[],
       transactions: [
         ...upTo(transactionRows).map((row) => toLedgerRow(row, visible)),
         ...upTo(tombstoneRows).map((row): Tombstone => ({
@@ -307,7 +295,9 @@ export class SyncService {
     input: TransactionInput,
     base: Base,
   ): Promise<Outcome> {
-    const workspaces = await this.workspaceIds(tx, actorId);
+    const workspaces = new Set(
+      (await this.policy.memberships(actorId, tx)).map((m) => m.workspaceId),
+    );
     const loaded = await this.existing(tx, input.id);
     const existing = loaded?.row ?? null;
     const accountHidden =
@@ -386,7 +376,9 @@ export class SyncService {
   }
 
   private async delete(tx: Tx, actorId: string, id: string, base: DeleteBase): Promise<Outcome> {
-    const workspaces = await this.workspaceIds(tx, actorId);
+    const workspaces = new Set(
+      (await this.policy.memberships(actorId, tx)).map((m) => m.workspaceId),
+    );
     const existing = (await this.existing(tx, id))?.row ?? null;
     const decision = decideDelete({
       workspaces,
@@ -451,14 +443,6 @@ export class SyncService {
     return outcome.status === 'applied'
       ? { mutationId, status: 'applied', transaction: view }
       : { mutationId, status: 'conflict', conflictId: outcome.conflictId, transaction: view };
-  }
-
-  private async workspaceIds(tx: Tx, actorId: string): Promise<Set<string>> {
-    const rows = await tx
-      .select({ id: memberships.workspaceId })
-      .from(memberships)
-      .where(eq(memberships.userId, actorId));
-    return new Set(rows.map((r) => r.id));
   }
 
   private async existing(

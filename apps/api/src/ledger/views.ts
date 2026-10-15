@@ -189,14 +189,10 @@ export function toLedgerRow(row: TransactionViewRow, visible: ReadonlySet<string
 }
 
 type Dated = { archivedAt: Date | null; createdAt: Date; updatedAt: Date };
-const dates = <T extends Dated>(row: T) => ({
+/** Serves accounts and categories alike: their dated columns are the only ones that need converting. */
+export const toView = <T extends Dated>(row: T) => ({
   ...row,
   archivedAt: row.archivedAt?.toISOString() ?? null,
   createdAt: row.createdAt.toISOString(),
   updatedAt: row.updatedAt.toISOString(),
 });
-
-export const toAccountView = (row: Omit<AccountView, keyof Dated> & Dated): AccountView =>
-  dates(row);
-export const toCategoryView = (row: Omit<CategoryView, keyof Dated> & Dated): CategoryView =>
-  dates(row);
