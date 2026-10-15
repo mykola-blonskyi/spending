@@ -62,7 +62,7 @@ export class ErrorFilter implements ExceptionFilter {
     const status =
       exception instanceof HttpException ? exception.getStatus() : exposedStatus(exception);
     if (status !== undefined) {
-      const code = STATUS_CODES[status] ?? 'INTERNAL';
+      const code = STATUS_CODES[status] ?? (status < 500 ? 'VALIDATION_FAILED' : 'INTERNAL');
       return [status, { error: { code, message: code } }];
     }
     this.logger.error(describeUnexpected(exception));
