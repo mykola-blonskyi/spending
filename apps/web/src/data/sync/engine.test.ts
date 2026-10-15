@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../api-error';
-import { SyncEngine, type SyncTransport } from './engine';
+import { SyncEngine, type SyncTransport, userFlushLock } from './engine';
 import { localRow, page, sequentialIds, serverRow } from './fixtures';
 import {
   emptyLocalState,
@@ -232,5 +232,45 @@ describe('SyncEngine', () => {
     await vi.advanceTimersByTimeAsync(1);
     expect(push).toHaveBeenCalledTimes(2);
     engine.stop();
+  });
+
+  it('stops between batches once stopped mid-push', async () => {
+    let state = emptyLocalState();
+    const ids = sequentialIds();
+    for (let i = 0; i < 201; i += 1) {
+      state = applyLocalChange(state, { type: 'upsert', row: localRow({ id: `tx-${i}` }) }, ids);
+    }
+    const memory = {
+      get state() {
+        return state;
+      },
+      closed: false,
+      commit: (transition: (current: LocalState) => LocalState) =>
+        Promise.resolve((state = transition(state))),
+    } as unknown as LocalStore;
+    const pull = vi.fn(() => Promise.resolve(page()));
+    const server = fakeServer({ onPush: () => engine.stop() });
+    const engine = new SyncEngine(memory, { ...server.transport, pull });
+
+    await engine.flush();
+
+    expect(server.pushes).toHaveLength(1);
+    expect(pull).not.toHaveBeenCalled();
+  });
+});
+
+describe('userFlushLock', () => {
+  const run = () => Promise.resolve();
+
+  it('holds the user’s Web Lock for each flush, so tabs take turns', async () => {
+    const request = vi.fn((_name: string, callback: () => Promise<void>) => callback());
+    await userFlushLock('ann', { request } as unknown as LockManager)(run);
+    expect(request).toHaveBeenCalledWith('spending-sync:ann', run);
+  });
+
+  it('flushes uncoordinated where the browser has no Web Locks', async () => {
+    const flushed = vi.fn(run);
+    await userFlushLock('ann', undefined)(flushed);
+    expect(flushed).toHaveBeenCalledOnce();
   });
 });

@@ -117,17 +117,8 @@ export function LoadingState({
   );
 }
 
-export function StatusBanner({
-  icon: Icon,
-  title,
-  description,
-  className,
-}: {
-  icon: LucideIcon;
-  title: string;
-  description: string;
-  className?: string;
-}) {
+export function OfflineBanner({ className }: { className?: string }) {
+  const { strings } = useSharedLocale();
   return (
     <div
       role="status"
@@ -136,23 +127,11 @@ export function StatusBanner({
         className,
       )}
     >
-      <Icon aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground sm:mt-0" />
+      <CloudOff aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground sm:mt-0" />
       <p className="text-pretty">
-        <span className="font-medium">{title}.</span>{' '}
-        <span className="text-muted-foreground">{description}</span>
+        <span className="font-medium">{strings.offlineTitle}.</span>{' '}
+        <span className="text-muted-foreground">{strings.offlineDescription}</span>
       </p>
     </div>
-  );
-}
-
-export function OfflineBanner({ className }: { className?: string }) {
-  const { strings } = useSharedLocale();
-  return (
-    <StatusBanner
-      icon={CloudOff}
-      title={strings.offlineTitle}
-      description={strings.offlineDescription}
-      className={className}
-    />
   );
 }

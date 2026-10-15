@@ -143,6 +143,12 @@ async function transact(
   }
 }
 
+async function read(db: Database): Promise<LocalState> {
+  const tx = db.transaction(STORES, 'readonly');
+  const [state] = await Promise.all([load(tx), tx.done]);
+  return state;
+}
+
 export class StoreClosedError extends Error {
   constructor() {
     super('The local store is closed');
@@ -168,7 +174,6 @@ export class LocalStore {
   #closed = false;
   #chain: Promise<unknown> = Promise.resolve();
   #listeners = new Set<() => void>();
-  #remoteListeners = new Set<() => void>();
   #channel: BroadcastChannel | null;
 
   private constructor(db: Database, state: LocalState, channelName: string) {
@@ -177,12 +182,7 @@ export class LocalStore {
     this.#channel =
       typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(channelName);
     this.#channel?.addEventListener('message', () => {
-      void this.#run((state) => state).then(
-        () => {
-          for (const listener of [...this.#remoteListeners]) listener();
-        },
-        () => undefined,
-      );
+      void this.#reload().catch(() => undefined);
     });
   }
 
@@ -195,10 +195,7 @@ export class LocalStore {
     });
     const names = localDatabaseNames();
     if (!names.includes(name)) writeRegistry([...names, name]);
-    const tx = db.transaction(STORES, 'readonly');
-    const state = await load(tx);
-    await tx.done;
-    const store = new LocalStore(db, state, syncChannelName(userId));
+    const store = new LocalStore(db, await read(db), syncChannelName(userId));
     // Deleting the database (sign-out, another tab) asks open connections to step aside.
     db.addEventListener('versionchange', () => store.close());
     db.addEventListener('close', () => store.close());
@@ -220,32 +217,39 @@ export class LocalStore {
     };
   };
 
-  /** Called after this store has picked up a change another tab committed. */
-  subscribeRemote(listener: () => void): () => void {
-    this.#remoteListeners.add(listener);
-    return () => {
-      this.#remoteListeners.delete(listener);
-    };
-  }
-
   getState = (): LocalState => this.#state;
 
   /** Runs `transition` after every earlier one, persists its result, then publishes it. */
   commit(transition: (state: LocalState) => LocalState): Promise<LocalState> {
-    return this.#run(transition, true);
-  }
-
-  #run(transition: (state: LocalState) => LocalState, announce = false): Promise<LocalState> {
-    const run = this.#chain.then(async () => {
+    return this.#serialize(async () => {
       if (this.#closed) throw new StoreClosedError();
       const { next, changed } = await transact(this.#db, transition);
+      if (!changed) return next;
       this.#state = next;
-      if (changed && announce) this.#channel?.postMessage('changed');
-      for (const listener of [...this.#listeners]) listener();
+      // The write is on disk; a channel closed meanwhile must not turn it into a failure.
+      if (!this.#closed) this.#channel?.postMessage('changed');
+      this.#notify();
       return next;
     });
+  }
+
+  /** Another tab committed: pick up what is on disk now. */
+  #reload(): Promise<void> {
+    return this.#serialize(async () => {
+      if (this.#closed) return;
+      this.#state = await read(this.#db);
+      this.#notify();
+    });
+  }
+
+  #serialize<T>(work: () => Promise<T>): Promise<T> {
+    const run = this.#chain.then(work);
     this.#chain = run.catch(() => undefined);
     return run;
+  }
+
+  #notify(): void {
+    for (const listener of [...this.#listeners]) listener();
   }
 
   close(): void {
@@ -253,7 +257,7 @@ export class LocalStore {
     this.#closed = true;
     this.#channel?.close();
     this.#db.close();
-    for (const listener of [...this.#listeners]) listener();
+    this.#notify();
   }
 }
 

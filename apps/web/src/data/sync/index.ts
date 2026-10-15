@@ -5,7 +5,6 @@ export {
   useInitialSync,
   useLocalTransaction,
   useLocalTransactions,
-  useReadOnlyTab,
   useRecordTransaction,
   useSyncStatus,
   useUpdateTransaction,

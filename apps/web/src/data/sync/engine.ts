@@ -5,7 +5,7 @@ import { toWire } from './model';
 import { reducePull } from './pull';
 import { reducePush } from './push';
 import { requeueInFlight, selectBatch, setMutationState } from './queue';
-import { type LocalStore, StoreClosedError } from './store';
+import { type LocalStore, StoreClosedError, syncChannelName } from './store';
 
 export type SyncTransport = {
   push(mutations: WireMutation[]): Promise<PushResult[]>;
@@ -19,8 +19,19 @@ export type EngineStatus =
   | { readonly phase: 'authRequired' }
   | { readonly phase: 'stopped' };
 
-/** Runs a flush once this tab may flush; `tab-lock.ts` gives one flusher per user across tabs. */
+/** Runs one flush once no other flush of the same queue is running. */
 export type FlushLock = (run: () => Promise<void>) => Promise<void>;
+
+/**
+ * Each flush holds the user's Web Lock while it runs, so any tab may flush and two never overlap.
+ * Without Web Locks, flushes run uncoordinated: the server applies a mutation ID once, so a rare
+ * overlapping push is harmless.
+ */
+export function userFlushLock(userId: string, locks: LockManager | undefined): FlushLock {
+  if (!locks) return (run) => run();
+  const name = syncChannelName(userId);
+  return (run) => locks.request(name, run);
+}
 
 export const WRITE_DEBOUNCE_MS = 500;
 
@@ -140,7 +151,7 @@ export class SyncEngine {
   }
 
   async #pushAll(): Promise<void> {
-    for (;;) {
+    while (!this.#halted()) {
       let batch: QueuedMutation[] = [];
       // Selecting inside the commit sends the payloads as they are when marked sending.
       await this.#store.commit((state) => {
@@ -193,7 +204,7 @@ export class SyncEngine {
 
   async #pullAll(): Promise<void> {
     let hasMore = true;
-    while (hasMore) {
+    while (hasMore && !this.#halted()) {
       const page = await this.#transport.pull(this.#store.state.meta.cursor);
       const now = new Date().toISOString();
       await this.#store.commit((state) => {

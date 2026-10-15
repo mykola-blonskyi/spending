@@ -21,13 +21,7 @@ import {
 export type LocalData =
   | { readonly status: 'opening' }
   | { readonly status: 'unavailable' }
-  | {
-      readonly status: 'ready';
-      readonly store: LocalStore;
-      readonly engine: SyncEngine;
-      /** Another tab owns the queue and this browser cannot share it (no Web Locks). */
-      readonly readOnly: boolean;
-    };
+  | { readonly status: 'ready'; readonly store: LocalStore; readonly engine: SyncEngine };
 
 export const LocalDataContext = createContext<LocalData>({ status: 'opening' });
 
@@ -99,11 +93,6 @@ export function useSyncStatus(): SyncStatus | null {
   return state && engine ? deriveSyncStatus(engine, state, online) : null;
 }
 
-/** True when another tab owns this user's queue and this tab cannot write. */
-export function useReadOnlyTab(): boolean {
-  return useReady()?.readOnly ?? false;
-}
-
 /** The first sync on an empty device: active until a pull first reaches the end. */
 export function useInitialSync(): { active: boolean; loaded: number } {
   const state = useLocalState();
@@ -120,7 +109,6 @@ function useWriter<A extends unknown[], R>(
   return useCallback(
     async (...args: A) => {
       if (!ready) throw new Error('The local store is not open');
-      if (ready.readOnly) throw new Error('This tab is read-only');
       const result = await write(ready.store, ...args);
       ready.engine.notifyLocalWrite();
       return result;
