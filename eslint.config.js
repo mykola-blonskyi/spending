@@ -105,6 +105,16 @@ export default tseslint.config(
     rules: { 'no-empty-pattern': 'off', 'react-hooks/rules-of-hooks': 'off' },
   },
   {
+    // Per-layout screens are presentation only: logic and data access live in the feature's hooks.
+    files: ['apps/web/src/features/{transactions,dashboard}/layouts/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [{ group: ['@data/*', '@tanstack/*'], message: 'Use the feature hooks.' }] },
+      ],
+    },
+  },
+  {
     files: ['apps/web/src/shared/ui/**/*.tsx'],
     rules: { 'react-refresh/only-export-components': 'off' },
   },

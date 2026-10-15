@@ -4,8 +4,10 @@ export {
   useDeleteTransaction,
   useInitialSync,
   useLocalTransaction,
+  useLocalDataStatus,
   useLocalTransactions,
   useRecordTransaction,
+  useRefreshLocalData,
   useSyncNow,
   useRequestSync,
   useSyncStatus,
@@ -18,6 +20,7 @@ export type { Account, Category, Workspace } from './model';
 export {
   totalsByCurrency,
   type EntrySync,
+  type Fx,
   type TransactionEntry,
   type TransactionFilter,
 } from './query';

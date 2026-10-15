@@ -13,4 +13,4 @@ export {
   parseAmount,
   type MoneyFormatOptions,
 } from './money';
-export { formatNumber, formatPercent } from './number';
+export { formatNumber, formatPercent, formatRate } from './number';

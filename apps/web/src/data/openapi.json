@@ -579,7 +579,17 @@
     "/api/v1/accounts/{id}": {
       "patch": {
         "operationId": "LedgerController_updateAccount",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -671,7 +681,17 @@
     "/api/v1/categories/{id}": {
       "patch": {
         "operationId": "LedgerController_updateCategory",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1098,7 +1118,17 @@
     "/api/v1/imports/{id}/undo": {
       "post": {
         "operationId": "ImportsController_undo",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",

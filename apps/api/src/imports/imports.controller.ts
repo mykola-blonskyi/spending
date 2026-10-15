@@ -8,7 +8,7 @@ import {
   ParseUUIDPipe,
   Post,
 } from '@nestjs/common';
-import { ApiBody } from '@nestjs/swagger';
+import { ApiBody, ApiParam } from '@nestjs/swagger';
 import { createZodDto, ZodResponse } from 'nestjs-zod';
 import { type Actor, CurrentActor } from '../common/actor';
 import { RateLimit } from '../common/rate-limit';
@@ -67,6 +67,7 @@ export class ImportsController {
   @Post(':id/undo')
   @HttpCode(200)
   @RateLimit('sensitive')
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
   @ZodResponse({ status: 200, type: UndoResultDto })
   undo(@CurrentActor() actor: Actor, @Param('id', ParseUUIDPipe) id: string) {
     return this.imports.undo(actor.userId, id);

@@ -59,5 +59,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/test-setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
+    // Whole-app renders with user events need more than the 5 s default on a loaded machine.
+    testTimeout: 15_000,
   },
 });

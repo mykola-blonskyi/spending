@@ -105,6 +105,13 @@ script refuses any database whose name does not end in `_e2e`. Tests run on one 
 starts from empty tables. Use the `test` export of `apps/web/e2e/fixtures.ts`: it provides
 `signInAs('ann')` and `db` (direct access, e.g. `db.endSessions(email)` to simulate a revoked
 session). Each test sends its own `X-Forwarded-For`, so the per-IP sign-in limit never couples tests.
+`seedEntries(page, count)` (`e2e/support/seed.ts`) fills a history through the sync push API, as
+another device would.
+
+Runs side by side (several worktrees, or agents): `E2E_PORT_OFFSET=100` shifts all three ports,
+`E2E_DATABASE_URL` names a separate `_e2e` database, and `E2E_WEB_DIST` previews a bundle built
+elsewhere (`vite build --outDir <dir>`) instead of the shared `dist/`. `e2e/shots.spec.ts` is a
+screenshot tool, not a check: it runs only with `SHOTS_DIR` set (and `SHOT_LAYOUTS` to narrow it).
 
 ## Production topology
 

@@ -53,6 +53,40 @@ describe('queryTransactions', () => {
   });
 });
 
+describe('localEntries conversion', () => {
+  const fx = { rate: '1.0850', rateDate: '2026-10-14', source: 'ecb' };
+  const usd = serverRow({ currency: 'USD', amountMinor: 1085, baseAmountMinor: 1000, fx });
+  const conversion = (state: LocalState) =>
+    queryTransactions(state, {}).map((e) => [e.baseAmountMinor, e.fx]);
+
+  it('takes the EUR amount and rate from the server row', () => {
+    expect(conversion(syncedState(usd))).toEqual([[1000, fx]]);
+  });
+
+  it('keeps them while a pending edit leaves amount and currency unchanged', () => {
+    const edited = applyLocalChange(
+      syncedState(usd),
+      { type: 'upsert', row: localRow({ currency: 'USD', amountMinor: 1085, note: 'Tip' }) },
+      sequentialIds(),
+    );
+    expect(conversion(edited)).toEqual([[1000, fx]]);
+  });
+
+  it('drops them while a pending edit changes the amount or currency', () => {
+    const changed = (patch: Parameters<typeof localRow>[0]) =>
+      conversion(
+        applyLocalChange(
+          syncedState(usd),
+          { type: 'upsert', row: localRow(patch) },
+          sequentialIds(),
+        ),
+      );
+    expect(changed({ currency: 'USD', amountMinor: 2000 })).toEqual([[null, null]]);
+    expect(changed({ currency: 'GBP', amountMinor: 1085 })).toEqual([[null, null]]);
+    expect(changed({ currency: 'EUR', amountMinor: 1085 })).toEqual([[1085, null]]);
+  });
+});
+
 describe('totalsByCurrency', () => {
   it('counts an entry with a pending edit once, at its local amount', () => {
     const state = applyLocalChange(
