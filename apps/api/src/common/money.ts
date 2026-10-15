@@ -41,8 +41,11 @@ const MINOR_DIGITS: Readonly<Record<string, number>> = {
   TND: 3,
 };
 
-/** Number of minor-unit digits (EUR 2, JPY 0, KWD 3), per BR-13. */
-export function currencyExponent(code: CurrencyCode): number {
+/**
+ * Number of minor-unit digits (EUR 2, JPY 0, KWD 3), per BR-13. Takes any stored code, so a
+ * currency a newer ICU withdrew still renders.
+ */
+export function currencyExponent(code: string): number {
   return MINOR_DIGITS[code] ?? 2;
 }
 
