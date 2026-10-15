@@ -120,12 +120,17 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
   } | null>(null);
   const key = entryId ?? 'new';
   const ours = edited && edited.for === key ? edited : null;
+  // Editing began on a pending change: its base is the version that change becomes.
+  const settledVersion = stored.entry?.version ?? null;
+  if (ours && ours.version === null && settledVersion !== null) {
+    setEdited({ ...ours, version: settledVersion });
+  }
   const typed = ours ? ours.values : initial;
   const change = (patch: Partial<FormValues>) =>
     setEdited((current) =>
       current && current.for === key
         ? { ...current, values: { ...current.values, ...patch } }
-        : { for: key, values: { ...initial, ...patch }, version: stored.entry?.version ?? null },
+        : { for: key, values: { ...initial, ...patch }, version: settledVersion },
     );
 
   const categories = categoryViews.items.filter(
