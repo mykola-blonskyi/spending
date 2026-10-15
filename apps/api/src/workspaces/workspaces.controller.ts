@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiBody, ApiNoContentResponse, ApiParam } from '@nestjs/swagger';
 import { createZodDto, ZodResponse } from 'nestjs-zod';
-import { type Actor, CurrentActor } from '../common/actor';
+import { type Actor, CurrentActor, Public } from '../common/actor';
 import { RateLimit } from '../common/rate-limit';
 import {
   createdInvitationSchema,
@@ -124,7 +124,9 @@ export class WorkspacesController {
     return { events: await this.family.events(actor.userId) };
   }
 
+  /** Public: a visitor sees who invited them before signing in. Accepting stays authenticated. */
   @Get('invitations/:token')
+  @Public()
   @RateLimit('sensitive')
   @ApiParam({ name: 'token' })
   @ZodResponse({ status: 200, type: InvitationPreviewDto })

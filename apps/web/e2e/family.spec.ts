@@ -1,5 +1,5 @@
 import type { Browser, Page } from '@playwright/test';
-import { clientHeaders, expect, signIn, test } from './fixtures';
+import { clientHeaders, expect, test } from './fixtures';
 import { E2E_USERS } from './support/env';
 
 const ann = E2E_USERS.ann;
@@ -27,17 +27,14 @@ async function secondDevice(browser: Browser): Promise<Page> {
   return context.newPage();
 }
 
-/** Opens an invitation link while signed out: the guard sends the visitor through sign-in. */
-async function openLinkAsBob(page: Page, url: string) {
-  await page.goto(url);
-  await expect(page).toHaveURL(/\/signin\?returnTo=%2Finvite%2F/);
-  await signIn(page, 'bob');
-}
-
+/** A signed-out visitor: the preview is public, Join goes through sign-in and comes back. */
 async function joinThroughLink(page: Page, url: string, familyName: string) {
-  await openLinkAsBob(page, url);
+  await page.goto(url);
   await expect(page.getByRole('heading', { name: `Join ${familyName}?` })).toBeVisible();
   await expect(page.getByText(`${ann.name} invited you`)).toBeVisible();
+  await page.getByRole('link', { name: `Join ${familyName}` }).click();
+  await page.getByRole('link', { name: `Sign in as ${bob.name}` }).click();
+  await page.waitForURL(/\/invite\//);
   await page.getByRole('button', { name: `Join ${familyName}` }).click();
   await expect(page).toHaveURL('/family');
   await expect(page.getByRole('heading', { level: 1, name: familyName })).toBeVisible();
@@ -95,7 +92,7 @@ test('two people share family entries but never personal ones', async ({
   await expect(bobPage.getByRole('link', { name: /Bob private/ })).toBeVisible();
 
   await page.goto('/transactions');
-  await expect(page.getByRole('link', { name: /Family dinner/ })).toContainText(ann.name);
+  await expect(page.getByRole('link', { name: /Family dinner/ })).not.toContainText(ann.name);
   await expect(page.getByRole('link', { name: /Bob private/ })).toHaveCount(0);
 
   await page.goto('/family');
@@ -118,7 +115,7 @@ test('revoked, expired and used links all read the same', async ({
   const revoked = await inviteLink(page);
   await page.getByRole('button', { name: 'Revoke' }).click();
   await expect(page.getByText('Revoked', { exact: true })).toBeVisible();
-  await openLinkAsBob(bobPage, revoked);
+  await bobPage.goto(revoked);
   await expect(invalid).toBeVisible();
 
   const expired = await inviteLink(page);
@@ -127,9 +124,7 @@ test('revoked, expired and used links all read the same', async ({
   await expect(invalid).toBeVisible();
 
   const used = await inviteLink(page);
-  await bobPage.goto(used);
-  await bobPage.getByRole('button', { name: 'Join Home' }).click();
-  await expect(bobPage).toHaveURL('/family');
+  await joinThroughLink(bobPage, used, 'Home');
   await bobPage.goto(used);
   await expect(bobPage.getByRole('heading', { name: 'You are already in a family' })).toBeVisible();
 

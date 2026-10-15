@@ -10,8 +10,8 @@ export const findFamily = (workspaces: readonly WorkspaceView[]): WorkspaceView 
   workspaces.find((workspace) => workspace.kind === 'family') ?? null;
 
 /** The family the signed-in user belongs to; `data` is null without one. */
-export function useFamily() {
-  return useQuery({ ...workspacesQuery, select: findFamily });
+export function useFamily(enabled = true) {
+  return useQuery({ ...workspacesQuery, select: findFamily, enabled });
 }
 
 /**

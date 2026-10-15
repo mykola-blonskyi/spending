@@ -22,7 +22,7 @@ import {
   workspacesQuery,
 } from '@data/family';
 import { createQueryClient } from '@data/query-client';
-import { meQuery } from '@data/session';
+import { meQuery, sessionQuery } from '@data/session';
 import { useWorkspaces } from '@data/sync';
 import { testProfile, testSession } from '@data/testing';
 import { I18nProvider } from '@i18n/index';
@@ -31,7 +31,10 @@ import { FamilyPage } from './family-page';
 import { InviteFlow } from './invite-flow';
 import { ScopeField } from './scope-field';
 
-vi.mock('@features/auth', () => ({ useSession: () => testSession() }));
+vi.mock(import('@features/auth'), async (importOriginal) => ({
+  ...(await importOriginal()),
+  useSession: () => testSession(),
+}));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock(import('@data/family'), async (importOriginal) => ({
   ...(await importOriginal()),
@@ -72,6 +75,7 @@ type Client = ReturnType<typeof createQueryClient>;
 function setup(ui: React.ReactNode, seed: (client: Client) => void = () => {}, path = '/family') {
   const client = createQueryClient();
   client.setQueryData(meQuery.queryKey, testProfile);
+  client.setQueryData(sessionQuery.queryKey, testSession());
   seed(client);
   const utils = render(
     <QueryClientProvider client={client}>
@@ -190,7 +194,8 @@ describe('FamilyPage', () => {
 
   it('shows the invitation link once and copies it', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
-    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
+    // Scoped to this window: replacing `navigator` itself leaks into other files' user events.
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     vi.mocked(createInvitation).mockResolvedValue({
       id: 'inv-3',
       url: 'http://app.test/invite/abc',
@@ -206,7 +211,7 @@ describe('FamilyPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Copy link' }));
     expect(writeText).toHaveBeenCalledWith('http://app.test/invite/abc');
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Link copied'));
-    vi.unstubAllGlobals();
+    Reflect.deleteProperty(navigator, 'clipboard');
   });
 
   it('reads the event log in the order given, naming former members', async () => {
@@ -266,6 +271,27 @@ describe('InviteFlow', () => {
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Welcome to Home'));
   });
 
+  it('sends a signed-out visitor through sign-in and back to the link', async () => {
+    setup(
+      <InviteFlow token={token} />,
+      (client) => {
+        client.setQueryData(sessionQuery.queryKey, null);
+        client.setQueryData(invitationPreviewQuery(token).queryKey, {
+          familyName: 'Home',
+          ownerName: 'Bob',
+          expiresAt: '2026-10-22T00:00:00.000Z',
+          state: 'pending',
+        });
+      },
+      `/invite/${token}`,
+    );
+    expect(await screen.findByRole('heading', { name: 'Join Home?' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Join Home' })).toHaveAttribute(
+      'href',
+      `/api/v1/auth/login?returnTo=%2Finvite%2F${token}`,
+    );
+  });
+
   it('shows one generic message for any unusable link', async () => {
     vi.spyOn(api, 'GET').mockRejectedValue(gone);
     setup(<InviteFlow token={token} />, seeded([PERSONAL]), `/invite/${token}`);
@@ -305,7 +331,7 @@ describe('ScopeField and AuthorBadge', () => {
     expect(screen.getByRole('radio', { name: 'Family' })).toBeInTheDocument();
   });
 
-  it('names the author of a family entry and who paid when the account is hidden', () => {
+  it("names another member's family entry and who paid when the account is hidden", () => {
     setup(
       <>
         <AuthorBadge entry={{ scope: 'personal', author: ann, accountId: null }} />
@@ -315,7 +341,7 @@ describe('ScopeField and AuthorBadge', () => {
       </>,
       seeded([PERSONAL, family('member')]),
     );
-    expect(screen.getByText('Ann Example')).toBeInTheDocument();
+    expect(screen.queryByText('Ann Example')).not.toBeInTheDocument();
     expect(screen.getByText('Paid by Bob')).toBeInTheDocument();
     expect(screen.getByText('Bob')).toBeInTheDocument();
   });
