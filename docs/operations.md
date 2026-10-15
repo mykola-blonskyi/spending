@@ -350,5 +350,5 @@ and in every location that sets its own `Cache-Control` (nginx drops inherited `
 directives otherwise). The CSP allows no inline scripts; `style-src` includes `'unsafe-inline'` because sonner and
 Radix inject styles (ADR-011). Caching:
 `/assets/*` is immutable for a year, `/api/` is `no-store`, everything else (including
-`index.html`, `sw.js`, `registerSW.js`, `manifest.webmanifest`) is `no-cache`. Source maps are
+`index.html`, `sw.js`, `manifest.webmanifest`) is `no-cache`. Source maps are
 not shipped and `*.map` returns 404.
