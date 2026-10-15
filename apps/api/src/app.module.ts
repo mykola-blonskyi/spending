@@ -11,6 +11,7 @@ import { ErrorFilter } from './common/error.filter';
 import { rateLimitOptions } from './common/rate-limit';
 import { DatabaseModule } from './database/database.module';
 import { HealthController } from './health/health.controller';
+import { ImportsModule } from './imports/imports.module';
 import { LedgerModule } from './ledger/ledger.module';
 import { RecurringModule } from './recurring/recurring.module';
 import { SyncModule } from './sync/sync.module';
@@ -31,6 +32,7 @@ export class AppModule {
         WorkspacesModule,
         LedgerModule,
         SyncModule,
+        ImportsModule,
         BudgetsModule,
         RecurringModule,
         AnalyticsModule,

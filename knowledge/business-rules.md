@@ -133,17 +133,30 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
 - **BR-27.** The dedupe key is the provider transaction ID when mapped. Otherwise it is
   SHA-256 of account, date, amount, currency, normalized description, and the ordinal of that
   identical tuple within the file. Re-importing the same statement adds nothing. Two identical
-  purchases in one statement are both kept.
+  purchases in one statement are both kept. The amount in the tuple is signed (income and expense
+  differ); the description is NFKC-normalized, lowercased and whitespace-collapsed. A provider ID
+  repeated within one file rejects the later rows (`DUPLICATE_IN_FILE_EXTERNAL_ID`).
 - **BR-28.** For a user without a family, imported rows are confirmed immediately in the personal
   workspace and auto-categorized. For a user with a family, they are `pending_review` until the
-  user confirms category and scope for each row.
+  user confirms category and scope for each row. They wait in the importer's personal workspace
+  with the personal category suggestion. Confirming moves a family row to the family workspace
+  with its account kept (BR-3); the category must belong to the target workspace (BR-4). One
+  confirmation request is all or nothing.
 - **BR-29.** Auto-categorization first uses the user's learned CategoryRules (per merchant key),
   then built-in keyword rules for default categories, and otherwise leaves the category empty.
-  Confirming or changing the category of an imported row updates the learned rule.
+  Only categories of the row's kind qualify, and archived ones are skipped. Confirming or changing
+  the category of an imported row (sync push or review confirmation) updates the learned rule of
+  the row's workspace. The merchant key is the first three words of the stored description, folded
+  to lowercase without accents, with dates, card masks, numbers and bank boilerplate ("compra",
+  "tarjeta", "recibo") removed.
 - **BR-30.** Undoing an import batch deletes (tombstones) its transactions that were not edited
   after import and clears their dedupe keys, so the same statement can be imported again. Edited
   ones are kept and reported. Deleting a single imported transaction keeps its key, so a
-  re-import does not bring it back.
+  re-import does not bring it back, even after an undo. A row counts as edited when its `version`
+  is above 1 (any user-visible change, including review confirmation) or it left the personal
+  workspace. Only the importer can undo; repeating an undo changes nothing. Undo reports the deleted
+  and kept counts as they are when it runs, so a manual deletion made in between can change what
+  a repeat reports.
 
 ## Data rights
 

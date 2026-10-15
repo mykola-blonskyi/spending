@@ -57,7 +57,18 @@ export class FxService {
     currency: CurrencyCode,
     dates: readonly string[],
   ): Promise<Conversion[]> {
-    if (currency === BASE_CURRENCY) return dates.map(() => convert(amountMinor, currency, null));
+    const quotes = await this.quotes(tx, currency, dates);
+    return dates.map((date) => convert(amountMinor, currency, quotes.get(date) ?? null));
+  }
+
+  /** BR-14 rate per date (the latest within 7 days before it), read with one query. */
+  async quotes(
+    tx: Tx,
+    currency: CurrencyCode,
+    dates: readonly string[],
+  ): Promise<Map<string, RateQuote | null>> {
+    const result = new Map<string, RateQuote | null>();
+    if (currency === BASE_CURRENCY || dates.length === 0) return result;
     const sorted = [...dates].sort();
     const rates = await tx
       .select({ date: fxRates.date, ratePerEur: fxRates.ratePerEur, source: fxRates.source })
@@ -69,14 +80,15 @@ export class FxService {
         ),
       );
     const byDate = new Map(rates.map((rate) => [rate.date, rate]));
-    return dates.map((date) => {
+    for (const date of dates) {
       const { from, to } = rateWindow(date);
       let quote: RateQuote | null = null;
       for (let day = to; !quote && day >= from; day = addDays(day, -1)) {
         quote = byDate.get(day) ?? null;
       }
-      return convert(amountMinor, currency, quote);
-    });
+      result.set(date, quote);
+    }
+    return result;
   }
 
   /**
