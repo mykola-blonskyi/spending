@@ -2,6 +2,7 @@ import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { invitationPreviewQuery, workspacesQuery } from '@data/family';
 import { createQueryClient } from '@data/query-client';
 import { type Profile, type ProfilePatch, type Session, sessionQuery } from '@data/session';
 import { testProfile, testSession } from '@data/testing';
@@ -14,9 +15,14 @@ vi.mock(import('@data/session'), async (importOriginal) => ({
   updateMe: async (patch: ProfilePatch): Promise<Profile> => ({ ...testProfile, ...patch }),
 }));
 
-function renderAt(path: string, session: Session | null = testSession()) {
+function renderAt(
+  path: string,
+  session: Session | null = testSession(),
+  seed: (queryClient: ReturnType<typeof createQueryClient>) => void = () => {},
+) {
   const queryClient = createQueryClient();
   queryClient.setQueryData(sessionQuery.queryKey, session);
+  seed(queryClient);
   const router = createMemoryRouter(routes, { initialEntries: [path] });
   render(
     <AppProviders queryClient={queryClient}>
@@ -114,10 +120,20 @@ describe('app routes', () => {
   });
 
   it('retitles and focuses pages outside the shell too', async () => {
-    const router = renderAt('/settings');
+    const router = renderAt('/settings', testSession(), (queryClient) => {
+      queryClient.setQueryData(workspacesQuery.queryKey, [
+        { id: 'ws-1', kind: 'personal', name: 'Ann', role: 'owner', members: [] },
+      ]);
+      queryClient.setQueryData(invitationPreviewQuery('abc').queryKey, {
+        familyName: 'Home',
+        ownerName: 'Bob',
+        expiresAt: '2026-10-22T00:00:00.000Z',
+        state: 'pending',
+      });
+    });
     expect(document.title).toBe('Settings · Spending');
     await act(() => router.navigate('/invite/abc'));
-    expect(document.title).toBe('You have been invited · Spending');
+    expect(document.title).toBe('Join Home? · Spending');
     expect(screen.getByRole('main')).toHaveFocus();
   });
 

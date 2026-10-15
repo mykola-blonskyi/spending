@@ -124,9 +124,20 @@ export const es = {
     label: 'Cuenta: {name}',
   },
   invite: {
-    title: 'Te han invitado',
-    description: 'Inicia sesión para unirte a este espacio familiar y compartir los gastos juntos.',
-    accept: 'Iniciar sesión y aceptar',
+    title: '¿Unirte a {family}?',
+    description:
+      '{owner} te invita a compartir los gastos familiares. Las entradas personales siguen siendo privadas.',
+    validUntil: 'Este enlace funciona hasta el {date}.',
+    accept: 'Unirme a {family}',
+    notNow: 'Ahora no',
+    joined: 'Bienvenido a {family}',
+    invalidTitle: 'Esta invitación ya no es válida',
+    invalidDescription:
+      'El enlace puede haber caducado, haberse usado ya o haberse revocado. Pide al propietario de la familia uno nuevo.',
+    alreadyTitle: 'Ya formas parte de una familia',
+    alreadyDescription:
+      'Solo se puede pertenecer a una familia a la vez. Sal de {family} antes de unirte a otra.',
+    openFamily: 'Abrir mi familia',
   },
   pages: {
     dashboard: {
@@ -202,8 +213,6 @@ export const es = {
     family: {
       title: 'Familia',
       description: 'Comparte un espacio con las personas con las que vives.',
-      emptyTitle: 'De momento, solo tú',
-      emptyDescription: 'Invita a tu familia para llevar juntos los gastos compartidos.',
     },
     settings: {
       title: 'Ajustes',
@@ -282,6 +291,60 @@ export const es = {
     signOutNote:
       'Al cerrar sesión, tus datos se borran de este dispositivo. En el servidor todo sigue a salvo.',
   },
+  family: {
+    create: {
+      title: 'Crear un espacio familiar',
+      description:
+        'Los gastos compartidos viven en la familia. Tus entradas personales siguen siendo tuyas, y cada entrada nueva pregunta a cuál pertenece.',
+      nameLabel: 'Nombre de la familia',
+      namePlaceholder: 'Los García',
+      submit: 'Crear familia',
+      created: 'Familia creada',
+    },
+    roles: {
+      owner: 'Propietario',
+      member: 'Miembro',
+    },
+    you: 'tú',
+    members: {
+      title: 'Miembros',
+      count: '{count, plural, one {# miembro} other {# miembros}}',
+      joined: 'Se unió el {date}',
+    },
+    invitations: {
+      title: 'Invitaciones',
+      description:
+        'Cada enlace funciona una sola vez y se muestra una sola vez. Compártelo como prefieras.',
+      expiry: 'Enlace válido durante',
+      days: '{count, plural, one {# día} other {# días}}',
+      create: 'Crear enlace de invitación',
+      linkLabel: 'Enlace de invitación',
+      copy: 'Copiar enlace',
+      copied: 'Enlace copiado',
+      copyFailed: 'Aquí no se puede copiar automáticamente. Selecciona el enlace y cópialo tú.',
+      empty: 'Todavía no hay enlaces de invitación.',
+      revoke: 'Revocar',
+      revoked: 'Invitación revocada',
+      state: {
+        pending: 'Pendiente',
+        accepted: 'Aceptada',
+        revoked: 'Revocada',
+        expired: 'Caducada',
+      },
+      expires: 'Caduca el {date}',
+      acceptedBy: 'Aceptada por {name}',
+      createdOn: 'Creada el {date}',
+    },
+    scope: {
+      label: 'Para quién es',
+      personal: 'Personal',
+      family: 'Familia',
+    },
+    author: {
+      paidBy: 'Pagado por {name}',
+      formerMember: 'Antiguo miembro',
+    },
+  },
   errors: {
     AUTH_REQUIRED: 'Inicia sesión para continuar.',
     SESSION_REVOKED: 'Se ha cerrado tu sesión. Vuelve a iniciar sesión.',
@@ -293,6 +356,12 @@ export const es = {
     RATE_LIMITED: 'Demasiados intentos. Espera un momento y vuelve a intentarlo.',
     PAYLOAD_TOO_LARGE: 'El archivo es demasiado grande para subirlo.',
     UNAVAILABLE: 'El servicio no está disponible temporalmente. Inténtalo de nuevo en breve.',
+    CONFIRMATION_MISMATCH: 'El nombre que escribiste no coincide.',
+    FAMILY_EXISTS: 'Ya formas parte de una familia.',
+    OWNER_CANNOT_LEAVE:
+      'El propietario no puede salir. Transfiere la propiedad o elimina la familia.',
+    FAMILY_OWNER_MUST_TRANSFER: 'Primero transfiere la propiedad o elimina la familia.',
+    INVITATION_INVALID: 'Esta invitación ya no es válida.',
     INTERNAL: 'Algo ha fallado por nuestra parte. Inténtalo de nuevo en un momento.',
     NETWORK:
       'Sin conexión con el servidor. Comprueba tu conexión a internet y vuelve a intentarlo.',

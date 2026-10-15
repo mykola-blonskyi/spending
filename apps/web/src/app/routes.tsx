@@ -1,5 +1,6 @@
 import type { RouteObject } from 'react-router';
 import { RedirectIfSignedIn, RequireSession } from '@features/auth';
+import { FamilyPage } from '@features/family';
 import { EditTransactionPage } from '@features/transactions';
 import { ADD_TRANSACTION_PATH, DESTINATIONS } from './destinations';
 import { LayoutScreen } from './layouts/layout-screen';
@@ -17,7 +18,8 @@ const placeholderRoutes: RouteObject[] = DESTINATIONS.filter(
   (destination) =>
     destination.nav !== 'settings' &&
     destination.nav !== 'dashboard' &&
-    destination.nav !== 'transactions',
+    destination.nav !== 'transactions' &&
+    destination.nav !== 'family',
 ).map(({ path, nav, icon }) => ({
   path,
   element: <PlaceholderPage page={nav} icon={icon} />,
@@ -36,7 +38,15 @@ export const routes: RouteObject[] = [
         ),
         errorElement: <RouteErrorPage />,
       },
-      { path: '/invite/:token', element: <InvitePage />, errorElement: <RouteErrorPage /> },
+      {
+        path: '/invite/:token',
+        element: (
+          <RequireSession>
+            <InvitePage />
+          </RequireSession>
+        ),
+        errorElement: <RouteErrorPage />,
+      },
       {
         element: (
           <RequireSession>
@@ -57,6 +67,7 @@ export const routes: RouteObject[] = [
               })),
               { path: ADD_TRANSACTION_PATH, element: <LayoutScreen screen="entry" /> },
               { path: '/transactions/:id', element: <EditTransactionPage /> },
+              { path: '/family', element: <FamilyPage /> },
               { path: '/settings', element: <SettingsPage /> },
               { path: '*', element: <NotFoundPage /> },
             ],

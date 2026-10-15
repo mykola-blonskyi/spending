@@ -10,7 +10,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { ApiBody, ApiNoContentResponse } from '@nestjs/swagger';
+import { ApiBody, ApiNoContentResponse, ApiParam } from '@nestjs/swagger';
 import { createZodDto, ZodResponse } from 'nestjs-zod';
 import { type Actor, CurrentActor } from '../common/actor';
 import { RateLimit } from '../common/rate-limit';
@@ -39,7 +39,8 @@ class InvitationPreviewDto extends createZodDto(invitationPreviewSchema) {}
 class TransferDto extends createZodDto(transferBodySchema) {}
 class EventListDto extends createZodDto(eventListSchema) {}
 
-// @ApiBody is explicit because tsx, which writes the OpenAPI file, emits no parameter metadata.
+// @ApiBody and @ApiParam are explicit because tsx, which writes the OpenAPI file, emits no
+// parameter metadata.
 @Controller('v1')
 export class WorkspacesController {
   constructor(@Inject(FamilyService) private readonly family: FamilyService) {}
@@ -88,6 +89,7 @@ export class WorkspacesController {
 
   @Delete('family/invitations/:id')
   @HttpCode(204)
+  @ApiParam({ name: 'id', format: 'uuid' })
   @ApiNoContentResponse()
   revoke(@CurrentActor() actor: Actor, @Param('id', ParseUUIDPipe) id: string) {
     return this.family.revokeInvitation(actor.userId, id);
@@ -102,6 +104,7 @@ export class WorkspacesController {
 
   @Delete('family/members/:userId')
   @HttpCode(204)
+  @ApiParam({ name: 'userId', format: 'uuid' })
   @ApiNoContentResponse()
   removeMember(@CurrentActor() actor: Actor, @Param('userId', ParseUUIDPipe) userId: string) {
     return this.family.removeMember(actor.userId, userId);
@@ -123,6 +126,7 @@ export class WorkspacesController {
 
   @Get('invitations/:token')
   @RateLimit('sensitive')
+  @ApiParam({ name: 'token' })
   @ZodResponse({ status: 200, type: InvitationPreviewDto })
   preview(@Param('token') token: string) {
     return this.family.previewInvitation(token);
@@ -131,6 +135,7 @@ export class WorkspacesController {
   @Post('invitations/:token/accept')
   @HttpCode(200)
   @RateLimit('sensitive')
+  @ApiParam({ name: 'token' })
   @ZodResponse({ status: 200, type: WorkspaceDto })
   accept(@CurrentActor() actor: Actor, @Param('token') token: string) {
     return this.family.acceptInvitation(actor.userId, token);

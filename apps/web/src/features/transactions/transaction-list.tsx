@@ -2,6 +2,7 @@ import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import type { Account, Category, TransactionEntry } from '@data/sync';
+import { AuthorBadge } from '@features/family';
 import { useTranslations } from '@i18n/index';
 import { MoneyText } from '@shared/components';
 import { formatRelativeDay } from '@shared/format';
@@ -36,6 +37,7 @@ function Row({
         <span className="truncate text-sm font-medium">{title}</span>
         <span className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
           <span className="truncate">{details}</span>
+          <AuthorBadge entry={entry} className="shrink-0" />
           <SyncMarker sync={entry.sync} className="shrink-0" />
         </span>
       </span>

@@ -118,9 +118,19 @@ export const en = {
     label: 'Account: {name}',
   },
   invite: {
-    title: 'You have been invited',
-    description: 'Sign in to join this family workspace and share expenses together.',
-    accept: 'Sign in to accept',
+    title: 'Join {family}?',
+    description: '{owner} invited you to share family expenses. Personal entries stay private.',
+    validUntil: 'This link works until {date}.',
+    accept: 'Join {family}',
+    notNow: 'Not now',
+    joined: 'Welcome to {family}',
+    invalidTitle: 'This invitation is no longer valid',
+    invalidDescription:
+      'The link may have expired, been used already or been revoked. Ask the family owner for a new one.',
+    alreadyTitle: 'You are already in a family',
+    alreadyDescription:
+      'A person belongs to one family at a time. Leave {family} before joining another.',
+    openFamily: 'Open your family',
   },
   pages: {
     dashboard: {
@@ -192,8 +202,6 @@ export const en = {
     family: {
       title: 'Family',
       description: 'Share a workspace with the people you live with.',
-      emptyTitle: 'Just you for now',
-      emptyDescription: 'Invite family members to track shared expenses together.',
     },
     settings: {
       title: 'Settings',
@@ -271,6 +279,59 @@ export const en = {
     signOutNote:
       'Signing out removes your data from this device. Everything stays safe on the server.',
   },
+  family: {
+    create: {
+      title: 'Start a family workspace',
+      description:
+        'Shared expenses live in the family. Your personal entries stay yours, and every new entry asks which one it belongs to.',
+      nameLabel: 'Family name',
+      namePlaceholder: 'The Smiths',
+      submit: 'Create family',
+      created: 'Family created',
+    },
+    roles: {
+      owner: 'Owner',
+      member: 'Member',
+    },
+    you: 'you',
+    members: {
+      title: 'Members',
+      count: '{count, plural, one {# member} other {# members}}',
+      joined: 'Joined {date}',
+    },
+    invitations: {
+      title: 'Invitations',
+      description: 'Each link works once and is shown only once. Share it however you like.',
+      expiry: 'Link valid for',
+      days: '{count, plural, one {# day} other {# days}}',
+      create: 'Create invitation link',
+      linkLabel: 'Invitation link',
+      copy: 'Copy link',
+      copied: 'Link copied',
+      copyFailed: 'Copying is blocked here. Select the link and copy it yourself.',
+      empty: 'No invitation links yet.',
+      revoke: 'Revoke',
+      revoked: 'Invitation revoked',
+      state: {
+        pending: 'Pending',
+        accepted: 'Accepted',
+        revoked: 'Revoked',
+        expired: 'Expired',
+      },
+      expires: 'Expires {date}',
+      acceptedBy: 'Accepted by {name}',
+      createdOn: 'Created {date}',
+    },
+    scope: {
+      label: 'Who is this for',
+      personal: 'Personal',
+      family: 'Family',
+    },
+    author: {
+      paidBy: 'Paid by {name}',
+      formerMember: 'Former member',
+    },
+  },
   errors: {
     AUTH_REQUIRED: 'Please sign in to continue.',
     SESSION_REVOKED: 'You were signed out. Please sign in again.',
@@ -282,6 +343,11 @@ export const en = {
     RATE_LIMITED: 'Too many attempts. Wait a moment and try again.',
     PAYLOAD_TOO_LARGE: 'This file is too large to upload.',
     UNAVAILABLE: 'The service is temporarily unavailable. Try again shortly.',
+    CONFIRMATION_MISMATCH: 'The name you typed does not match.',
+    FAMILY_EXISTS: 'You are already in a family.',
+    OWNER_CANNOT_LEAVE: 'The owner cannot leave. Transfer ownership or delete the family.',
+    FAMILY_OWNER_MUST_TRANSFER: 'Transfer ownership or delete the family first.',
+    INVITATION_INVALID: 'This invitation is no longer valid.',
     INTERNAL: 'Something went wrong on our side. Try again in a moment.',
     NETWORK: 'No connection to the server. Check your internet and try again.',
   },

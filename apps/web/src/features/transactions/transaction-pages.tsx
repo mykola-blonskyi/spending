@@ -12,6 +12,7 @@ import {
   useUpdateTransaction,
   useWorkspaces,
 } from '@data/sync';
+import { type Scope, ScopeField } from '@features/family';
 import { useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
 import { ConfirmDialog, EmptyState, LoadingState, PageHeader } from '@shared/components';
@@ -49,7 +50,10 @@ export function NewTransactionPage() {
   const categories = useCategories();
   const record = useRecordTransaction();
   const saveFailed = () => toast.error(t('transactionForm.saveFailed'));
+  const [scope, setScope] = useState<Scope>('personal');
   const personal = workspaces.items.find((workspace) => workspace.kind === 'personal');
+  const family = workspaces.items.find((workspace) => workspace.kind === 'family');
+  const target = scope === 'family' && family ? family : personal;
   const initial = useMemo<FormValues>(
     () => ({
       kind: 'expense',
@@ -69,20 +73,28 @@ export function NewTransactionPage() {
         title={t('pages.addTransaction.title')}
         description={t('pages.addTransaction.description')}
       />
-      {personal ? (
-        <TransactionForm
-          initial={initial}
-          accounts={accounts.items.filter((a) => a.workspaceId === personal.id)}
-          categories={categories.items.filter((c) => c.workspaceId === personal.id)}
-          onSubmit={async (values) => {
-            try {
-              await record(draftOf(values, personal.id, ''));
-              await navigate(LIST_PATH);
-            } catch {
-              saveFailed();
-            }
-          }}
-        />
+      {personal && target ? (
+        <div className="flex max-w-xl flex-col gap-5">
+          <ScopeField value={scope} onValueChange={setScope} />
+          <TransactionForm
+            // A family entry may also use the author's own personal account (BR-3). The form
+            // restarts on a scope change because the other workspace's categories do not apply.
+            key={target.id}
+            initial={initial}
+            accounts={accounts.items.filter(
+              (a) => a.workspaceId === target.id || a.workspaceId === personal.id,
+            )}
+            categories={categories.items.filter((c) => c.workspaceId === target.id)}
+            onSubmit={async (values) => {
+              try {
+                await record(draftOf(values, target.id, ''));
+                await navigate(LIST_PATH);
+              } catch {
+                saveFailed();
+              }
+            }}
+          />
+        </div>
       ) : (
         <LoadingState rows={4} />
       )}
@@ -95,6 +107,7 @@ export function EditTransactionPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const { ready, entry } = useLocalTransaction(id);
+  const personal = useWorkspaces().items.find((workspace) => workspace.kind === 'personal');
   const accounts = useAccounts();
   const categories = useCategories();
   const update = useUpdateTransaction();
@@ -135,7 +148,9 @@ export function EditTransactionPage() {
       <TransactionForm
         key={entry.id}
         initial={valuesFromDraft(entry)}
-        accounts={accounts.items.filter((a) => a.workspaceId === entry.workspaceId)}
+        accounts={accounts.items.filter(
+          (a) => a.workspaceId === entry.workspaceId || a.workspaceId === personal?.id,
+        )}
         categories={categories.items.filter((c) => c.workspaceId === entry.workspaceId)}
         onSubmit={async (values) => {
           try {
