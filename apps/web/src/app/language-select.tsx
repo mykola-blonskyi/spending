@@ -1,11 +1,28 @@
 import { Languages } from 'lucide-react';
-import { isLocale, LOCALE_NAMES, LOCALES, useLocaleStore, useTranslations } from '@i18n/index';
+import {
+  isLocale,
+  type Locale,
+  LOCALE_NAMES,
+  LOCALES,
+  useLocaleStore,
+  useTranslations,
+} from '@i18n/index';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui/select';
 
-export function LanguageSelect({ compact = false, id }: { compact?: boolean; id?: string }) {
+/** Changes the device language unless `onValueChange` takes over (signed in, it saves to the profile). */
+export function LanguageSelect({
+  compact = false,
+  id,
+  onValueChange,
+}: {
+  compact?: boolean;
+  id?: string;
+  onValueChange?: (locale: Locale) => void;
+}) {
   const t = useTranslations('settings.language');
   const locale = useLocaleStore((state) => state.locale);
-  const setLocale = useLocaleStore((state) => state.setLocale);
+  const setDeviceLocale = useLocaleStore((state) => state.setLocale);
+  const setLocale = onValueChange ?? setDeviceLocale;
 
   return (
     <Select value={locale} onValueChange={(value) => isLocale(value) && setLocale(value)}>

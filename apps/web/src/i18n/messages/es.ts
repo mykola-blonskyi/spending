@@ -98,6 +98,14 @@ export const es = {
       login_failed: 'No se ha completado el inicio de sesión. Vuelve a intentarlo.',
       login_expired: 'El inicio de sesión ha tardado demasiado y ha caducado. Empieza de nuevo.',
     },
+    pendingHint: {
+      title: '¿Sigues sin poder entrar?',
+      description:
+        'Si inicias sesión pero siempre vuelves aquí, puede que el propietario aún no haya aprobado tu cuenta o no te haya dado acceso a Spending. Pídeselo y vuelve a intentarlo.',
+    },
+  },
+  userMenu: {
+    label: 'Cuenta: {name}',
   },
   invite: {
     title: 'Te han invitado',
@@ -164,7 +172,7 @@ export const es = {
     },
     settings: {
       title: 'Ajustes',
-      description: 'Preferencias de este dispositivo.',
+      description: 'Tu perfil y tus preferencias.',
     },
     sync: {
       title: 'Sincronización',
@@ -187,6 +195,15 @@ export const es = {
       dark: 'Oscuro',
       system: 'Sistema',
     },
+    timezone: {
+      label: 'Zona horaria',
+      description: 'Se usa en fechas, presupuestos y pagos periódicos.',
+      suggested: 'Este dispositivo',
+      all: 'Todas las zonas horarias',
+    },
+    account: 'Cuenta',
+    signOutNote:
+      'Al cerrar sesión, tus datos se borran de este dispositivo. En el servidor todo sigue a salvo.',
   },
   errors: {
     AUTH_REQUIRED: 'Inicia sesión para continuar.',

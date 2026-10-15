@@ -1,10 +1,10 @@
 import { Compass, MailOpen } from 'lucide-react';
 import { isRouteErrorResponse, Link, useParams, useRouteError } from 'react-router';
 import { errorCode } from '@data/api-error';
+import { loginHref } from '@features/auth';
 import { useTranslations } from '@i18n/index';
 import { EmptyState, ErrorState } from '@shared/components';
 import { Button } from '@shared/ui/button';
-import { loginHref } from '../auth-links';
 import { BrandMark } from '../brand';
 
 export function NotFoundPage() {

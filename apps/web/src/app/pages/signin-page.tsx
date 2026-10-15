@@ -1,8 +1,9 @@
-import { AlertCircle, ShieldCheck } from 'lucide-react';
+import { AlertCircle, Info, ShieldCheck } from 'lucide-react';
 import { useSearchParams } from 'react-router';
+import { AUTH_LOST_CODES, type AuthLostCode } from '@data/auth-events';
+import { ApprovalHint, loginHref, safeReturnTo } from '@features/auth';
 import { useTranslations } from '@i18n/index';
 import { Alert, AlertDescription } from '@shared/ui/alert';
-import { loginHref, safeReturnTo } from '../auth-links';
 import { BrandMark } from '../brand';
 import { LanguageSelect } from '../language-select';
 
@@ -11,6 +12,9 @@ type LoginError = (typeof LOGIN_ERRORS)[number];
 
 const isLoginError = (value: string | null): value is LoginError =>
   LOGIN_ERRORS.includes(value as LoginError);
+
+const isSessionEndReason = (value: string | null): value is AuthLostCode =>
+  AUTH_LOST_CODES.includes(value as AuthLostCode);
 
 function GoogleIcon() {
   return (
@@ -39,6 +43,7 @@ export function SignInPage() {
   const t = useTranslations();
   const [params] = useSearchParams();
   const error = params.get('error');
+  const reason = params.get('reason');
   const returnTo = safeReturnTo(params.get('returnTo'));
 
   return (
@@ -57,12 +62,21 @@ export function SignInPage() {
           </div>
         </div>
 
-        {isLoginError(error) && (
+        {isLoginError(error) ? (
           <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
             <AlertCircle aria-hidden />
             <AlertDescription>{t(`signin.errors.${error}`)}</AlertDescription>
           </Alert>
+        ) : (
+          isSessionEndReason(reason) && (
+            <Alert>
+              <Info aria-hidden />
+              <AlertDescription>{t(`errors.${reason}`)}</AlertDescription>
+            </Alert>
+          )
         )}
+
+        <ApprovalHint />
 
         <div className="flex flex-col gap-4">
           <a

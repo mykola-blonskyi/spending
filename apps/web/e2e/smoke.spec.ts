@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('sign-in page follows the chosen language', async ({ page }) => {
   await page.goto('/signin');
@@ -17,8 +17,8 @@ test('sign-in page follows the chosen language', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Вітаємо в Spending');
 });
 
-test('shell navigates between sections', async ({ page }) => {
-  await page.goto('/');
+test('shell navigates between sections', async ({ page, signInAs }) => {
+  await signInAs('ann');
   await expect(page.getByRole('heading', { level: 1, name: 'Overview' })).toBeVisible();
   await page
     .getByRole('navigation', { name: 'Main navigation' })

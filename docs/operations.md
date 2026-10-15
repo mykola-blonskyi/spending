@@ -72,10 +72,36 @@ missing or invalid. `apps/api/.env.example` documents every variable with local 
 Register these URIs with the provider: redirect `${APP_ORIGIN}/api/v1/auth/callback` and
 post-logout `${APP_ORIGIN}/signin`.
 
-For local sign-in without the real provider, run `pnpm --filter @spending/api fake-oidc` (port
-4400). It offers one button per test user, configured with `FAKE_OIDC_USERS`,
-`FAKE_OIDC_CLIENT_ID`, `FAKE_OIDC_CLIENT_SECRET` and `FAKE_OIDC_APP_ORIGIN`. The API talks to a
-plain-http issuer only when `NODE_ENV=test`, so run it that way against the fake provider.
+### Signing in locally
+
+The fake provider stands in for `login.blonskyi.dev`. It offers one button per test user
+(`FAKE_OIDC_USERS`, default Owner and Member) and accepts the client in `apps/api/.env.example`.
+
+```bash
+cp apps/api/.env.example apps/api/.env   # set NODE_ENV=test and a SESSION_ENCRYPTION_KEY
+DATABASE_URL=postgres://spending:spending@127.0.0.1:55440/spending pnpm --filter @spending/api db:migrate
+pnpm --filter @spending/api fake-oidc    # provider on :4400
+pnpm dev                                 # open http://localhost:5173 and continue with Google
+```
+
+`pnpm dev` loads `apps/api/.env`. The API talks to a plain-http issuer only when `NODE_ENV=test`.
+
+### End-to-end tests
+
+`pnpm test:e2e` runs against the production build, so run `pnpm build` first. Playwright starts
+three servers itself and stops them afterwards:
+
+| Server       | Port | Started as                                                                              |
+| ------------ | ---- | --------------------------------------------------------------------------------------- |
+| fake OIDC    | 4410 | `node --import tsx test/fake-oidc/main.ts` with user ann                                |
+| API          | 3410 | `node e2e/support/start-api.ts`: rebuilds `E2E_DATABASE_URL`, then runs `apps/api/dist` |
+| vite preview | 4173 | proxies `/api` to the API                                                               |
+
+`E2E_DATABASE_URL` defaults to `spending_e2e` on the dev Postgres and is created when missing. The
+script refuses any database whose name does not end in `_e2e`. Tests run on one worker, and each
+starts from empty tables. Use the `test` export of `apps/web/e2e/fixtures.ts`: it provides
+`signInAs('ann')` and `db` (direct access, e.g. `db.endSessions(email)` to simulate a revoked
+session). Each test sends its own `X-Forwarded-For`, so the per-IP sign-in limit never couples tests.
 
 ## Production topology
 
