@@ -284,6 +284,36 @@ export const en = {
     account: 'Account',
     signOutNote:
       'Signing out removes your data from this device. Everything stays safe on the server.',
+    dataRights: {
+      title: 'Your data',
+      export: {
+        title: 'Export your data',
+        description:
+          "Everything you can see: your personal data and your family's shared data, never another member's personal data.",
+        json: 'Download JSON (complete)',
+        csv: 'Download CSV (transactions)',
+      },
+      delete: {
+        title: 'Delete account',
+        intro: 'Deleting your account cannot be undone.',
+        consequences: {
+          personal: 'Your personal data is permanently deleted.',
+          family: 'Family entries you wrote stay for the others and show you as "Former member".',
+          sessions: 'You are signed out everywhere and your sessions end.',
+          local:
+            'Data stored on this device is cleared. Signing in again starts a fresh, empty personal workspace.',
+        },
+        ownerTitle: 'You own a family with other members',
+        ownerDescription:
+          'Transfer ownership or delete the family first, then delete your account.',
+        ownerLink: 'Go to family settings',
+        action: 'Delete my account',
+        confirmTitle: 'Delete your account?',
+        confirmDescription:
+          'This permanently deletes your personal data and signs you out. Family entries you wrote stay as "Former member".',
+        confirm: 'Delete account',
+      },
+    },
   },
   imports: {
     start: 'Import statement',

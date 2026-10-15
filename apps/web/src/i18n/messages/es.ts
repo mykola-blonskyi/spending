@@ -296,6 +296,37 @@ export const es = {
     account: 'Cuenta',
     signOutNote:
       'Al cerrar sesión, tus datos se borran de este dispositivo. En el servidor todo sigue a salvo.',
+    dataRights: {
+      title: 'Tus datos',
+      export: {
+        title: 'Exportar tus datos',
+        description:
+          'Todo lo que puedes ver: tus datos personales y los datos compartidos de tu familia, nunca los datos personales de otro miembro.',
+        json: 'Descargar JSON (completo)',
+        csv: 'Descargar CSV (movimientos)',
+      },
+      delete: {
+        title: 'Eliminar cuenta',
+        intro: 'Eliminar tu cuenta no se puede deshacer.',
+        consequences: {
+          personal: 'Tus datos personales se eliminan de forma permanente.',
+          family:
+            'Los movimientos familiares que escribiste se quedan para los demás y aparecen como "Antiguo miembro".',
+          sessions: 'Se cierra tu sesión en todas partes y tus sesiones terminan.',
+          local:
+            'Los datos de este dispositivo se borran. Al volver a entrar empezarás con un espacio personal nuevo y vacío.',
+        },
+        ownerTitle: 'Eres propietario de una familia con otros miembros',
+        ownerDescription:
+          'Transfiere la propiedad o elimina la familia primero y luego elimina tu cuenta.',
+        ownerLink: 'Ir a la familia',
+        action: 'Eliminar mi cuenta',
+        confirmTitle: '¿Eliminar tu cuenta?',
+        confirmDescription:
+          'Esto elimina de forma permanente tus datos personales y cierra tu sesión. Los movimientos familiares que escribiste quedan como "Antiguo miembro".',
+        confirm: 'Eliminar cuenta',
+      },
+    },
   },
   imports: {
     start: 'Importar extracto',
