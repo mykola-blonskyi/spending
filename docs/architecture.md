@@ -126,6 +126,35 @@ edited through REST and arrive through pull like transactions.
   `accountId: null`. Sending that null back in an upsert keeps the author's account. Only the
   author may choose an account from their own personal workspace.
 
+## Budgets
+
+`GET /budgets?workspaceId=&month=YYYY-MM` lists the budgets of every visible workspace (or one),
+with progress for that month or the current month in the actor's timezone. `PUT /budgets` upserts
+the limit of one expense category, and `DELETE /budgets/:id` removes it. The month range,
+thresholds and progress fold are pure (`budgets/progress.ts`); one grouped query sums expenses
+per budget and currency.
+
+## Recurring rules
+
+`GET|POST /recurring-rules`, `PATCH|DELETE /recurring-rules/:id` (`paused` in the PATCH body
+pauses or resumes). The schedule (`recurring/schedule.ts`) is pure and works on calendar dates:
+monthly and yearly rules keep `startsOn`'s day, clamped to shorter months. `RecurringService.runDue`
+runs 10 s after startup and every 15 minutes (off when `NODE_ENV=test`). Each due rule commits in
+its own `ledgerTransaction`, re-reads its row `for update`, inserts every occurrence up to today in
+the rule's timezone with `ON CONFLICT (recurring_rule_id, recurring_occurrence) DO NOTHING`, and
+advances `nextOccurrence` (null after `endsOn`). Create and edit generate due occurrences at once.
+
+## Analytics
+
+`GET /analytics/summary?from=&to=&scope=personal|family|all&compare=previous|none` (defaults
+`all` and `previous`, at most 3660 days). One grouped query per period sums confirmed, live rows
+of the scoped workspaces by day, kind, category and currency; pure folds (`analytics/summary.ts`)
+build the totals, the unconverted list, the category breakdown (shares per kind, four decimals,
+largest remainder so they sum to 1) and a zero-filled series by day (up to 31 days), ISO week (up
+to 92) or month. Buckets are named by their first day inside the period. `previous` covers the
+previous calendar month or year for a whole-month or whole-year period, else the equal-length
+period just before, with deltas (current minus previous). Budget progress comes from `/budgets`.
+
 ## Security
 
 - Authentication runs only through the shared OIDC provider. The API is a confidential client

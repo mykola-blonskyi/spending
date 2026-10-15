@@ -420,6 +420,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/budgets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["BudgetsController_list"];
+        put: operations["BudgetsController_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/budgets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["BudgetsController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recurring-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RecurringController_list"];
+        put?: never;
+        post: operations["RecurringController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recurring-rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["RecurringController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["RecurringController_update"];
+        trace?: never;
+    };
+    "/api/v1/analytics/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AnalyticsController_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -925,6 +1005,212 @@ export interface components {
             /** Format: date-time */
             resolvedAt: string;
             transaction: components["schemas"]["TransactionView_Output"] | components["schemas"]["Tombstone_Output"];
+        };
+        BudgetListDto_Output: {
+            budgets: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                /** @enum {string} */
+                scope: "personal" | "family";
+                /** Format: uuid */
+                categoryId: string;
+                amountMinor: number;
+                month: string;
+                spentMinor: number;
+                unconverted: {
+                    currency: string;
+                    amountMinor: number;
+                }[];
+                /** @enum {string} */
+                status: "ok" | "near" | "over";
+            }[];
+        };
+        PutBudgetDto: {
+            /** Format: uuid */
+            workspaceId: string;
+            /** Format: uuid */
+            categoryId: string;
+            amountMinor: number;
+        };
+        BudgetDto_Output: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** @enum {string} */
+            scope: "personal" | "family";
+            /** Format: uuid */
+            categoryId: string;
+            amountMinor: number;
+            month: string;
+            spentMinor: number;
+            unconverted: {
+                currency: string;
+                amountMinor: number;
+            }[];
+            /** @enum {string} */
+            status: "ok" | "near" | "over";
+        };
+        NullableId_Output: string | null;
+        NullableDate_Output: string | null;
+        NullableTimestamp_Output: string | null;
+        RuleListDto_Output: {
+            rules: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                /** @enum {string} */
+                scope: "personal" | "family";
+                createdBy: components["schemas"]["NullableId_Output"];
+                /** @enum {string} */
+                kind: "income" | "expense";
+                amountMinor: number;
+                currency: string;
+                accountId: components["schemas"]["NullableId_Output"];
+                categoryId: components["schemas"]["NullableId_Output"];
+                description: string;
+                /** @enum {string} */
+                frequency: "daily" | "weekly" | "monthly" | "yearly";
+                interval: number;
+                startsOn: string;
+                endsOn: components["schemas"]["NullableDate_Output"];
+                timezone: string;
+                nextOccurrence: components["schemas"]["NullableDate_Output"];
+                pausedAt: components["schemas"]["NullableTimestamp_Output"];
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+        };
+        EndsOn: string | null;
+        CreateRuleDto: {
+            /** Format: uuid */
+            workspaceId: string;
+            /** @enum {string} */
+            kind: "income" | "expense";
+            amountMinor: number;
+            currency: string;
+            /** @default null */
+            accountId: string | null;
+            /** @default null */
+            categoryId: string | null;
+            /** @default  */
+            description: string;
+            /** @enum {string} */
+            frequency: "daily" | "weekly" | "monthly" | "yearly";
+            /** @default 1 */
+            interval: number;
+            startsOn: string;
+            /** @default null */
+            endsOn: components["schemas"]["EndsOn"];
+            timezone?: string;
+        };
+        RuleDto_Output: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** @enum {string} */
+            scope: "personal" | "family";
+            createdBy: components["schemas"]["NullableId_Output"];
+            /** @enum {string} */
+            kind: "income" | "expense";
+            amountMinor: number;
+            currency: string;
+            accountId: components["schemas"]["NullableId_Output"];
+            categoryId: components["schemas"]["NullableId_Output"];
+            description: string;
+            /** @enum {string} */
+            frequency: "daily" | "weekly" | "monthly" | "yearly";
+            interval: number;
+            startsOn: string;
+            endsOn: components["schemas"]["NullableDate_Output"];
+            timezone: string;
+            nextOccurrence: components["schemas"]["NullableDate_Output"];
+            pausedAt: components["schemas"]["NullableTimestamp_Output"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UpdateRuleDto: {
+            /** @enum {string} */
+            kind?: "income" | "expense";
+            amountMinor?: number;
+            currency?: string;
+            accountId?: string | null;
+            categoryId?: string | null;
+            description?: string;
+            /** @enum {string} */
+            frequency?: "daily" | "weekly" | "monthly" | "yearly";
+            interval?: number;
+            startsOn?: string;
+            endsOn?: components["schemas"]["EndsOn"];
+            timezone?: string;
+            paused?: boolean;
+        };
+        SummaryDto_Output: {
+            period: {
+                from: string;
+                to: string;
+            };
+            /** @enum {string} */
+            granularity: "day" | "week" | "month";
+            totals: {
+                incomeMinor: number;
+                expenseMinor: number;
+                balanceMinor: number;
+            };
+            unconverted: {
+                currency: string;
+                incomeMinor: number;
+                expenseMinor: number;
+            }[];
+            byCategory: {
+                categoryId: string | null;
+                name: string | null;
+                systemKey: string | null;
+                /** @enum {string} */
+                kind: "income" | "expense";
+                color: string | null;
+                amountMinor: number;
+                share: number;
+            }[];
+            series: {
+                bucket: string;
+                incomeMinor: number;
+                expenseMinor: number;
+            }[];
+            previous?: {
+                period: {
+                    from: string;
+                    to: string;
+                };
+                totals: {
+                    incomeMinor: number;
+                    expenseMinor: number;
+                    balanceMinor: number;
+                };
+                byCategory: {
+                    categoryId: string | null;
+                    name: string | null;
+                    systemKey: string | null;
+                    /** @enum {string} */
+                    kind: "income" | "expense";
+                    color: string | null;
+                    amountMinor: number;
+                    share: number;
+                }[];
+                deltas: {
+                    incomeMinor: number;
+                    expenseMinor: number;
+                    balanceMinor: number;
+                };
+            };
         };
     };
     responses: never;
@@ -1599,6 +1885,176 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ResolveResponseDto_Output"];
+                };
+            };
+        };
+    };
+    BudgetsController_list: {
+        parameters: {
+            query?: {
+                workspaceId?: string;
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetListDto_Output"];
+                };
+            };
+        };
+    };
+    BudgetsController_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutBudgetDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetDto_Output"];
+                };
+            };
+        };
+    };
+    BudgetsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RecurringController_list: {
+        parameters: {
+            query?: {
+                workspaceId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleListDto_Output"];
+                };
+            };
+        };
+    };
+    RecurringController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRuleDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleDto_Output"];
+                };
+            };
+        };
+    };
+    RecurringController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RecurringController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRuleDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleDto_Output"];
+                };
+            };
+        };
+    };
+    AnalyticsController_summary: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                scope?: string;
+                compare?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummaryDto_Output"];
                 };
             };
         };

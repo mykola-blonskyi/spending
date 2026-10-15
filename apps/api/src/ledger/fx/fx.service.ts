@@ -5,10 +5,10 @@ import {
   type OnApplicationBootstrap,
   type OnApplicationShutdown,
 } from '@nestjs/common';
-import { and, between, desc, eq, max, sql } from 'drizzle-orm';
+import { and, between, eq, max, sql } from 'drizzle-orm';
 import { APP_CONFIG, type AppConfig } from '../../common/config';
 import { addDays } from '../../common/dates';
-import type { CurrencyCode } from '../../common/money';
+import { BASE_CURRENCY, type CurrencyCode } from '../../common/money';
 import { DB, type Db, ledgerTransaction, type Tx } from '../../database/database.module';
 import { fxRates, transactions } from '../../database/schema';
 import {
@@ -47,7 +47,36 @@ export class FxService {
     currency: CurrencyCode,
     occurredOn: string,
   ): Promise<Conversion> {
-    return convert(amountMinor, currency, await this.quote(tx, currency, occurredOn));
+    return (await this.conversions(tx, amountMinor, currency, [occurredOn]))[0]!;
+  }
+
+  /** `conversion` of one amount on many dates, with one rate query for all of them. */
+  async conversions(
+    tx: Tx,
+    amountMinor: number,
+    currency: CurrencyCode,
+    dates: readonly string[],
+  ): Promise<Conversion[]> {
+    if (currency === BASE_CURRENCY) return dates.map(() => convert(amountMinor, currency, null));
+    const sorted = [...dates].sort();
+    const rates = await tx
+      .select({ date: fxRates.date, ratePerEur: fxRates.ratePerEur, source: fxRates.source })
+      .from(fxRates)
+      .where(
+        and(
+          eq(fxRates.currency, currency),
+          between(fxRates.date, rateWindow(sorted[0]!).from, sorted.at(-1)!),
+        ),
+      );
+    const byDate = new Map(rates.map((rate) => [rate.date, rate]));
+    return dates.map((date) => {
+      const { from, to } = rateWindow(date);
+      let quote: RateQuote | null = null;
+      for (let day = to; !quote && day >= from; day = addDays(day, -1)) {
+        quote = byDate.get(day) ?? null;
+      }
+      return convert(amountMinor, currency, quote);
+    });
   }
 
   /**
@@ -163,21 +192,6 @@ export class FxService {
       if (batch.length < BACKFILL_BATCH) return filled;
       after = batch.at(-1)!.id;
     }
-  }
-
-  private async quote(
-    tx: Tx,
-    currency: CurrencyCode,
-    occurredOn: string,
-  ): Promise<RateQuote | null> {
-    const { from, to } = rateWindow(occurredOn);
-    const [row] = await tx
-      .select({ date: fxRates.date, ratePerEur: fxRates.ratePerEur, source: fxRates.source })
-      .from(fxRates)
-      .where(and(eq(fxRates.currency, currency), between(fxRates.date, from, to)))
-      .orderBy(desc(fxRates.date))
-      .limit(1);
-    return row ?? null;
   }
 }
 
