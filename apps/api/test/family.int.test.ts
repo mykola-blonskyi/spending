@@ -220,6 +220,10 @@ describe('family workspaces', () => {
   it('keeps a member whose accept commits while the sole owner deletes the account', async () => {
     const family = await familyWith(ann);
     // An accept in flight: it holds the family row `for key share` and has inserted its member.
+    let inserted!: () => void;
+    let release!: () => void;
+    const insertedP = new Promise<void>((resolve) => (inserted = resolve));
+    const releaseP = new Promise<void>((resolve) => (release = resolve));
     const accepting = t.db.transaction(async (tx) => {
       await tx.execute(sql`select 1 from workspaces where id = ${family.id} for key share`);
       await tx.insert(memberships).values({
@@ -228,14 +232,31 @@ describe('family workspaces', () => {
         userId: bob.userId,
         role: 'member',
       });
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      inserted();
+      await releaseP;
     });
-    await new Promise((resolve) => setTimeout(resolve, 150));
-    const deleted = await as(t, ann, '/v1/me', {
+    await insertedP;
+    const deleting = as(t, ann, '/v1/me', {
       method: 'DELETE',
       body: { confirmation: 'DELETE MY DATA' },
     });
+    // Commit the accept only once the delete is blocked on a lock, so the order is not timing luck.
+    const deadline = Date.now() + 5000;
+    for (;;) {
+      const waiting = await t.db.execute(
+        sql`select 1 from pg_stat_activity where datname = current_database() and wait_event_type = 'Lock'`,
+      );
+      if (waiting.rows.length > 0) break;
+      if (Date.now() > deadline) {
+        release();
+        await accepting;
+        throw new Error('account deletion never blocked on the accept transaction lock');
+      }
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    release();
     await accepting;
+    const deleted = await deleting;
     expect(deleted.status).toBe(409);
     expect(await errorCode(deleted)).toBe('FAMILY_OWNER_MUST_TRANSFER');
     expect(

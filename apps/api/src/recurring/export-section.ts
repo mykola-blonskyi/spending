@@ -1,6 +1,6 @@
 import { eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
-import type { ExportSection } from '../data-rights/export-section';
+import { exportSection } from '../data-rights/export-section';
 import { accounts, frequencyEnum, recurringRules } from '../database/schema';
 import { ENTRY_KINDS } from '../ledger/views';
 
@@ -26,7 +26,7 @@ const recurringRuleExportSchema = z.object({
 });
 
 /** A family rule may use its author's personal account, which other members see as null (BR-3). */
-export const recurringRulesExport = {
+export const recurringRulesExport = exportSection({
   schema: z.array(recurringRuleExportSchema),
   async read(tx, scope) {
     const rows = await tx
@@ -46,4 +46,4 @@ export const recurringRulesExport = {
       updatedAt: rule.updatedAt.toISOString(),
     }));
   },
-} satisfies ExportSection<z.ZodType>;
+});

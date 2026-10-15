@@ -19,3 +19,6 @@ export type ExportSection<S extends z.ZodType> = Readonly<{
   schema: S;
   read: (tx: Tx, scope: ExportScope) => Promise<z.infer<S>>;
 }>;
+
+/** Identity helper that infers `S` from `schema`, so a `read` returning the wrong shape fails typecheck. */
+export const exportSection = <S extends z.ZodType>(section: ExportSection<S>) => section;

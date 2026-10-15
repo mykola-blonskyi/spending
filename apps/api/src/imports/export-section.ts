@@ -1,6 +1,6 @@
 import { eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
-import type { ExportSection } from '../data-rights/export-section';
+import { exportSection } from '../data-rights/export-section';
 import { categoryRules, importBatches } from '../database/schema';
 
 const importBatchExportSchema = z.object({
@@ -26,7 +26,7 @@ const categoryRuleExportSchema = z.object({
 });
 
 /** Batches live in their importer's personal workspace; only the actor's own are exported. */
-export const importBatchesExport = {
+export const importBatchesExport = exportSection({
   schema: z.array(importBatchExportSchema),
   async read(tx, scope) {
     const rows = await tx
@@ -40,9 +40,9 @@ export const importBatchesExport = {
       undoneAt: row.undoneAt?.toISOString() ?? null,
     }));
   },
-} satisfies ExportSection<z.ZodType>;
+});
 
-export const categoryRulesExport = {
+export const categoryRulesExport = exportSection({
   schema: z.array(categoryRuleExportSchema),
   async read(tx, scope) {
     const rows = await tx
@@ -52,4 +52,4 @@ export const categoryRulesExport = {
       .orderBy(categoryRules.workspaceId, categoryRules.merchantKey);
     return rows.map((row) => ({ ...row, updatedAt: row.updatedAt.toISOString() }));
   },
-} satisfies ExportSection<z.ZodType>;
+});
