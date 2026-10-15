@@ -15,7 +15,7 @@ import type { Scope } from '@features/family';
 import { useCategoryViews } from '@features/ledger';
 import { useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
-import { currencyExponent, todayIn } from '@shared/format';
+import { COMMON_CURRENCIES, currencyExponent, todayIn } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import {
   decimalSeparator,
@@ -29,7 +29,6 @@ import {
 import { conversionOf } from './history-model';
 
 export const HISTORY_PATH = '/transactions';
-const COMMON_CURRENCIES = ['EUR', 'USD', 'GBP', 'UAH', 'PLN'];
 
 export type EntryStatus = 'loading' | 'unavailable' | 'notFound' | 'ready';
 
