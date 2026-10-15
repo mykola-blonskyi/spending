@@ -125,6 +125,12 @@ function useWriter<A extends unknown[], R>(
   );
 }
 
+/** Asks the engine to sync now, e.g. after joining or leaving a workspace. A no-op without a store. */
+export function useRequestSync(): () => Promise<void> {
+  const engine = useReady()?.engine;
+  return useCallback(() => engine?.flush() ?? Promise.resolve(), [engine]);
+}
+
 export const useRecordTransaction = (): ((draft: TransactionDraft) => Promise<string>) =>
   useWriter(recordTransaction);
 export const useUpdateTransaction = (): ((id: string, draft: TransactionDraft) => Promise<void>) =>
