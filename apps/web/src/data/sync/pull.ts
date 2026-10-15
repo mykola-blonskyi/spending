@@ -1,6 +1,7 @@
 import {
   isTombstone,
   type LocalState,
+  mutationsFor,
   type PullPage,
   type QueuedMutation,
   queueOrder,
@@ -114,11 +115,25 @@ export function reducePull(state: LocalState, page: PullPage, now: string): Pull
 
 /**
  * A conflict the server just resolved: it closes here at once and the entry takes the row the
- * server answered with, so this device does not wait for the next pull.
+ * server answered with, so this device does not wait for the next pull. A change queued meanwhile
+ * now builds on the resolved row; one already sent keeps its frozen base (BR-18).
  */
 export function settleConflict(state: LocalState, conflictId: string, row: ServerRow): LocalState {
   const transactions = new Map(state.transactions);
-  const pending = [...state.mutations.values()].some((m) => m.transactionId === row.id);
-  applyServerRow(transactions, row, pending);
-  return { ...state, transactions, conflicts: withoutEntries(state.conflicts, [conflictId]) };
+  const pending = mutationsFor(state, row.id);
+  applyServerRow(transactions, row, pending.length > 0);
+  const mutations = new Map(state.mutations);
+  if (!isTombstone(row)) {
+    for (const mutation of pending) {
+      if (mutation.state.status === 'queued') {
+        mutations.set(mutation.mutationId, { ...mutation, baseVersion: row.version });
+      }
+    }
+  }
+  return {
+    ...state,
+    transactions,
+    mutations,
+    conflicts: withoutEntries(state.conflicts, [conflictId]),
+  };
 }

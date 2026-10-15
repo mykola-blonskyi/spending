@@ -160,7 +160,8 @@ stored lucide icon name to a curated icon set (`category-icons.ts`).
   keep mine; otherwise each differing field can be picked (amount and currency together; a
   category with its kind and workspace, an account with its workspace, so a merge stays valid).
   Resolving needs the network: `POST /sync/conflicts/:id/resolve` runs at once, and its row
-  closes the conflict locally (`settleConflict`). Other devices drop it on their next pull,
+  closes the conflict locally (`settleConflict`); a change still queued for the
+  entry is rebased onto that row, so it does not conflict again. Other devices drop it on their next pull,
   which replaces the full conflict list.
 - **Rejected changes.** A `rejected` result keeps the overlay and marks the mutation `failed`
   with its code; history shows "Not synced" with the reason from `errors.<code>` (for a rejected
