@@ -436,6 +436,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/imports/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ImportsController_review"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/review/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ImportsController_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/imports/{id}/undo": {
         parameters: {
             query?: never;
@@ -1002,6 +1034,24 @@ export interface components {
         };
         BatchListDto_Output: {
             batches: components["schemas"]["ImportBatchView_Output"][];
+        };
+        ReviewListDto_Output: {
+            items: {
+                transaction: components["schemas"]["TransactionView_Output"];
+                familyCategoryId: string | null;
+            }[];
+        };
+        ConfirmDto: {
+            items: {
+                /** Format: uuid */
+                transactionId: string;
+                /** @enum {string} */
+                scope: "personal" | "family";
+                categoryId: string | null;
+            }[];
+        };
+        ConfirmResultDto_Output: {
+            transactions: components["schemas"]["TransactionView_Output"][];
         };
         UndoResultDto_Output: {
             batch: components["schemas"]["ImportBatchView_Output"];
@@ -1723,6 +1773,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImportResultDto_Output"];
+                };
+            };
+        };
+    };
+    ImportsController_review: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewListDto_Output"];
+                };
+            };
+        };
+    };
+    ImportsController_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmResultDto_Output"];
                 };
             };
         };

@@ -424,4 +424,137 @@ describe('imports', () => {
       expect(await history(ann)).toHaveLength(3);
     });
   });
+
+  describe('family review queue (BR-28)', () => {
+    type Review = { items: { transaction: View; familyCategoryId: string | null }[] };
+    let family: string;
+
+    beforeEach(async () => {
+      family = (
+        await json<{ id: string }>(
+          await as(t, ann, '/v1/family', { method: 'POST', body: { name: 'Home' } }),
+          201,
+        )
+      ).id;
+      const { url } = await json<{ url: string }>(
+        await as(t, ann, '/v1/family/invitations', { method: 'POST', body: {} }),
+        201,
+      );
+      await as(t, bob, `/v1/invitations/${url.split('/invite/')[1]}/accept`, { method: 'POST' });
+    });
+
+    const confirm = (s: Session, items: unknown[]) =>
+      as(t, s, '/v1/imports/review/confirm', { method: 'POST', body: { items } });
+    const pulled = async (s: Session) =>
+      (await json<{ transactions: { id: string }[] }>(await as(t, s, '/v1/sync/pull'), 200))
+        .transactions;
+
+    it('holds imported rows for review, invisible to everyone else', async () => {
+      const personalIds = await categoryIds(ann, annPersonal);
+      const familyIds = await categoryIds(ann, family);
+      const { imported } = await importRows(ann, [row(2, { description: 'MERCADONA' }), row(3)]);
+      expect(await history(ann)).toEqual([]);
+      expect(await history(ann, '?reviewStatus=pending_review')).toHaveLength(2);
+      expect(await history(bob)).toEqual([]);
+      const bobPull = (await pulled(bob)).map((r) => r.id);
+      expect(bobPull.filter((id) => imported.transactionIds.includes(id))).toEqual([]);
+
+      const review = await json<Review>(await as(t, ann, '/v1/imports/review'), 200);
+      const mercadona = review.items.find((i) => i.transaction.description === 'MERCADONA')!;
+      expect(mercadona.transaction).toMatchObject({
+        reviewStatus: 'pending_review',
+        categoryId: personalIds.get('groceries'),
+      });
+      expect(mercadona.familyCategoryId).toBe(familyIds.get('groceries'));
+      expect((await json<Review>(await as(t, bob, '/v1/imports/review'), 200)).items).toEqual([]);
+    });
+
+    it('confirms rows as family or personal and learns the categories', async () => {
+      const personalIds = await categoryIds(ann, annPersonal);
+      const familyIds = await categoryIds(ann, family);
+      const { imported } = await importRows(ann, [
+        row(2, { description: 'MERCADONA' }),
+        row(3, { description: 'Bar Pepe' }),
+      ]);
+      const [shared, mine] = imported.transactionIds;
+      const { transactions: confirmed } = await json<{ transactions: View[] }>(
+        await confirm(ann, [
+          { transactionId: shared, scope: 'family', categoryId: familyIds.get('groceries') },
+          { transactionId: mine, scope: 'personal', categoryId: personalIds.get('entertainment') },
+        ]),
+        200,
+      );
+      expect(confirmed).toMatchObject([
+        { id: shared, workspaceId: family, reviewStatus: 'confirmed', accountId: account },
+        { id: mine, workspaceId: annPersonal, categoryId: personalIds.get('entertainment') },
+      ]);
+      const bobSees = await history(bob);
+      expect(bobSees.map((r) => r.id)).toEqual([shared]);
+      expect(bobSees[0]).toMatchObject({ accountId: null, categoryId: familyIds.get('groceries') });
+      expect((await pulled(bob)).map((r) => r.id)).toContain(shared);
+      expect((await history(ann)).map((r) => r.id).sort()).toEqual([shared, mine].sort());
+
+      const rules = await t.db.select().from(categoryRules);
+      expect(rules).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ workspaceId: family, merchantKey: 'mercadona' }),
+          expect.objectContaining({
+            workspaceId: annPersonal,
+            merchantKey: 'bar pepe',
+            categoryId: personalIds.get('entertainment'),
+          }),
+        ]),
+      );
+      expect(
+        (await confirm(ann, [{ transactionId: mine, scope: 'personal', categoryId: null }])).status,
+      ).toBe(404);
+    });
+
+    it('rejects foreign rows, foreign or mismatched categories, all or nothing', async () => {
+      const personalIds = await categoryIds(ann, annPersonal);
+      const bobIds = await categoryIds(bob, await personal(bob));
+      const { imported } = await importRows(ann, [row(2), row(3)]);
+      const [a, b] = imported.transactionIds;
+      const item = (
+        transactionId: string,
+        scope: string,
+        categoryId: string | null | undefined,
+      ) => ({
+        transactionId,
+        scope,
+        categoryId,
+      });
+
+      expect((await confirm(bob, [item(a!, 'family', null)])).status).toBe(404);
+      for (const bad of [
+        item(a!, 'personal', bobIds.get('groceries')),
+        item(a!, 'family', personalIds.get('groceries')),
+        item(a!, 'personal', personalIds.get('salary')),
+      ]) {
+        const response = await confirm(ann, [item(b!, 'personal', null), bad]);
+        expect(response.status).toBe(422);
+        expect(await errorCode(response)).toBe('INVALID_CATEGORY');
+      }
+      expect(
+        (await confirm(ann, [item(a!, 'family', null), item(a!, 'personal', null)])).status,
+      ).toBe(400);
+      expect(await history(ann, '?reviewStatus=pending_review')).toHaveLength(2);
+    });
+
+    it('lets a pending row of a former member be confirmed as personal only', async () => {
+      const { imported } = await importRows(
+        bob,
+        [row(2)],
+        await createAccount(bob, await personal(bob)),
+      );
+      expect((await as(t, bob, '/v1/family/leave', { method: 'POST' })).status).toBeLessThan(300);
+      const [id] = imported.transactionIds;
+      expect(
+        (await confirm(bob, [{ transactionId: id, scope: 'family', categoryId: null }])).status,
+      ).toBe(404);
+      expect(
+        (await confirm(bob, [{ transactionId: id, scope: 'personal', categoryId: null }])).status,
+      ).toBe(200);
+    });
+  });
 });

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { importBatches } from '../database/schema';
+import { transactionViewSchema } from '../ledger/views';
+import { WORKSPACE_KINDS } from '../workspaces/family';
 import {
   IMPORT_ROWS_MAX,
   importRowSchema,
@@ -58,6 +60,36 @@ export const undoResultSchema = z.object({
   deleted: z.int(),
   kept: z.int(),
 });
+
+export const reviewListSchema = z.object({
+  items: z.array(
+    z.object({
+      transaction: transactionViewSchema,
+      // The transaction's own categoryId is the personal suggestion.
+      familyCategoryId: z.uuid().nullable(),
+    }),
+  ),
+});
+
+export const confirmBodySchema = z.strictObject({
+  items: z
+    .array(
+      z.strictObject({
+        transactionId: z.uuid(),
+        scope: z.enum(WORKSPACE_KINDS),
+        categoryId: z.uuid().nullable(),
+      }),
+    )
+    .min(1)
+    .max(500)
+    .refine(
+      (items) => new Set(items.map((i) => i.transactionId)).size === items.length,
+      'each transaction may appear once',
+    ),
+});
+export type ConfirmItem = z.infer<typeof confirmBodySchema>['items'][number];
+
+export const confirmResultSchema = z.object({ transactions: z.array(transactionViewSchema) });
 
 export const batchColumns = {
   id: importBatches.id,

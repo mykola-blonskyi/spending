@@ -3,16 +3,19 @@ import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { ApiError } from '../common/errors';
 import { BASE_CURRENCY, type CurrencyCode } from '../common/money';
 import { DB, type Db, ledgerTransaction, type Tx } from '../database/database.module';
-import { accounts, importBatches, transactions } from '../database/schema';
+import { accounts, categories, importBatches, transactions } from '../database/schema';
 import { convert } from '../ledger/fx/conversion';
 import { FxService } from '../ledger/fx/fx.service';
+import { LedgerService, selectViewRows } from '../ledger/ledger.service';
+import { toLedgerRow, type TransactionView } from '../ledger/views';
 import { AccessPolicy } from '../workspaces/access-policy';
 import { categorize } from './categorize';
-import { loadCatalog } from './category-rules';
+import { learnCategoryRule, loadCatalog } from './category-rules';
 import { importHashes } from './dedupe';
 import { type NormalizedRow, validateRows } from './rows';
 import {
   batchColumns,
+  type ConfirmItem,
   type ImportBatchView,
   type ImportBody,
   type ImportResult,
@@ -28,9 +31,13 @@ export class ImportsService {
     @Inject(DB) private readonly db: Db,
     @Inject(AccessPolicy) private readonly policy: AccessPolicy,
     @Inject(FxService) private readonly fx: FxService,
+    @Inject(LedgerService) private readonly ledger: LedgerService,
   ) {}
 
-  /** BR-26. Imports land in the actor's personal workspace; one transaction holds the batch. */
+  /**
+   * BR-26. Imports land in the actor's personal workspace; one transaction holds the batch. A
+   * family member's rows wait for review (BR-28) with the personal category suggestion.
+   */
   create(actorId: string, body: ImportBody): Promise<ImportResult> {
     return ledgerTransaction(this.db, async (tx) => {
       const workspaceId = await this.policy.personalWorkspaceId(actorId, tx);
@@ -53,6 +60,9 @@ export class ImportsService {
         .returning({ id: importBatches.id });
       const hashes = importHashes(account.id, valid);
       const catalog = await loadCatalog(tx, workspaceId);
+      const reviewStatus = (await this.policy.familyMembership(actorId, tx))
+        ? ('pending_review' as const)
+        : ('confirmed' as const);
       const values = [];
       for (const [index, row] of valid.entries()) {
         values.push({
@@ -69,6 +79,7 @@ export class ImportsService {
           externalId: row.externalId,
           importHash: hashes[index]!,
           source: 'import' as const,
+          reviewStatus,
           importBatchId: batch!.id,
           ...(await this.conversion(tx, row)),
         });
@@ -151,6 +162,110 @@ export class ImportsService {
         .from(importBatches)
         .where(eq(importBatches.id, id));
       return { batch: toBatchView(stored!), deleted: counts!.deleted, kept: counts!.kept };
+    });
+  }
+
+  /** BR-28. The actor's rows awaiting review, with what the family workspace would suggest. */
+  async review(actorId: string) {
+    return this.db.transaction(async (tx) => {
+      const personalId = await this.policy.personalWorkspaceId(actorId, tx);
+      const family = await this.policy.familyMembership(actorId, tx);
+      const familyCatalog = family ? await loadCatalog(tx, family.workspaceId) : null;
+      const rows = await selectViewRows(tx)
+        .where(
+          and(
+            eq(transactions.workspaceId, personalId),
+            eq(transactions.createdBy, actorId),
+            eq(transactions.reviewStatus, 'pending_review'),
+            isNull(transactions.deletedAt),
+          ),
+        )
+        .orderBy(
+          desc(transactions.occurredOn),
+          desc(transactions.createdAt),
+          desc(transactions.id),
+        );
+      const visible = new Set([personalId, ...(family ? [family.workspaceId] : [])]);
+      return rows.map((row) => ({
+        transaction: toLedgerRow(row, visible) as TransactionView,
+        familyCategoryId: familyCatalog
+          ? categorize(row.description, row.kind, familyCatalog)
+          : null,
+      }));
+    });
+  }
+
+  /**
+   * BR-28. Publishes reviewed rows in one transaction: each takes its category (of the target
+   * workspace and the row's kind, BR-4) and moves to the family when asked. The account stays,
+   * which BR-3 allows for the author's personal account. Each chosen category is learned (BR-29).
+   */
+  confirm(actorId: string, items: readonly ConfirmItem[]): Promise<TransactionView[]> {
+    return ledgerTransaction(this.db, async (tx) => {
+      const personalId = await this.policy.personalWorkspaceId(actorId, tx);
+      const familyId = (await this.policy.familyMembership(actorId, tx))?.workspaceId;
+      const ids = items.map((i) => i.transactionId);
+      const pending = await tx
+        .select({
+          id: transactions.id,
+          kind: transactions.kind,
+          description: transactions.description,
+        })
+        .from(transactions)
+        .where(
+          and(
+            inArray(transactions.id, ids),
+            eq(transactions.workspaceId, personalId),
+            eq(transactions.createdBy, actorId),
+            eq(transactions.reviewStatus, 'pending_review'),
+            isNull(transactions.deletedAt),
+          ),
+        );
+      const rows = new Map(pending.map((r) => [r.id, r]));
+      const categoryIds = items.flatMap((i) => (i.categoryId ? [i.categoryId] : []));
+      const found =
+        categoryIds.length === 0
+          ? []
+          : await tx
+              .select({
+                id: categories.id,
+                workspaceId: categories.workspaceId,
+                kind: categories.kind,
+                archivedAt: categories.archivedAt,
+              })
+              .from(categories)
+              .where(inArray(categories.id, categoryIds));
+      const categoryById = new Map(found.map((c) => [c.id, c]));
+      for (const item of items) {
+        const row = rows.get(item.transactionId);
+        const target = item.scope === 'family' ? familyId : personalId;
+        if (!row || !target) throw new ApiError('NOT_FOUND');
+        if (item.categoryId) {
+          const category = categoryById.get(item.categoryId);
+          if (
+            !category ||
+            category.workspaceId !== target ||
+            category.kind !== row.kind ||
+            category.archivedAt
+          ) {
+            throw new ApiError('INVALID_CATEGORY');
+          }
+        }
+        await tx
+          .update(transactions)
+          .set({
+            workspaceId: target,
+            categoryId: item.categoryId,
+            reviewStatus: 'confirmed',
+            ...(target === personalId ? {} : { previousWorkspaceId: personalId }),
+          })
+          .where(eq(transactions.id, row.id));
+        if (item.categoryId) {
+          await learnCategoryRule(tx, target, row.description, item.categoryId);
+        }
+      }
+      const views = await this.ledger.ledgerRows(tx, actorId, ids);
+      return ids.map((id) => views.get(id) as TransactionView);
     });
   }
 

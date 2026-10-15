@@ -116,7 +116,10 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   repeated within one file rejects the later rows (`DUPLICATE_IN_FILE_EXTERNAL_ID`).
 - **BR-28.** For a user without a family, imported rows are confirmed immediately in the personal
   workspace and auto-categorized. For a user with a family, they are `pending_review` until the
-  user confirms category and scope for each row.
+  user confirms category and scope for each row. They wait in the importer's personal workspace
+  with the personal category suggestion. Confirming moves a family row to the family workspace
+  with its account kept (BR-3); the category must belong to the target workspace (BR-4). One
+  confirmation request is all or nothing.
 - **BR-29.** Auto-categorization first uses the user's learned CategoryRules (per merchant key),
   then built-in keyword rules for default categories, and otherwise leaves the category empty.
   Only categories of the row's kind qualify, and archived ones are skipped. Confirming or changing
