@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { addDays, daysBetween } from '../common/dates';
+import { addDays, daysBetween, daysInMonth } from '../common/dates';
 import { calendarDateSchema, ENTRY_KINDS, type EntryKind } from '../ledger/views';
 
 export const GRANULARITIES = ['day', 'week', 'month'] as const;
@@ -20,8 +20,23 @@ export function granularityOf(period: Period): Granularity {
   return 'month';
 }
 
-/** The equal-length period that ends the day before `period` starts. */
+/**
+ * What a period is compared with: the previous calendar month for exactly one month, the previous
+ * calendar year for exactly one year, otherwise the equal-length period right before it.
+ */
 export function previousPeriod(period: Period): Period {
+  const [year, month, day] = period.from.split('-').map(Number) as [number, number, number];
+  if (day === 1) {
+    const monthEnd = `${period.from.slice(0, 7)}-${String(daysInMonth(year, month)).padStart(2, '0')}`;
+    if (period.to === monthEnd) {
+      const [py, pm] = month === 1 ? [year - 1, 12] : [year, month - 1];
+      const mm = String(pm).padStart(2, '0');
+      return { from: `${py}-${mm}-01`, to: `${py}-${mm}-${daysInMonth(py, pm)}` };
+    }
+    if (month === 1 && period.to === `${year}-12-31`) {
+      return { from: `${year - 1}-01-01`, to: `${year - 1}-12-31` };
+    }
+  }
   return { from: addDays(period.from, -lengthInDays(period)), to: addDays(period.from, -1) };
 }
 

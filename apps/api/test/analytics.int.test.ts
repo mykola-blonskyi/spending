@@ -156,7 +156,7 @@ describe('analytics', () => {
     expect(all.series.reduce((sum, b) => sum + b.expenseMinor, 0)).toBe(12_000);
 
     expect(all.previous).toEqual({
-      period: { from: '2026-08-31', to: '2026-09-30' },
+      period: { from: '2026-09-01', to: '2026-09-30' },
       totals: { incomeMinor: 0, expenseMinor: 3_000, balanceMinor: -3_000 },
       byCategory: [
         expect.objectContaining({ categoryId: annGroceries, amountMinor: 3_000, share: 1 }),

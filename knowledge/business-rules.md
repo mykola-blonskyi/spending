@@ -61,7 +61,10 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
 - **BR-15.** Analytics sum `baseAmountMinor`. Transactions with no conversion are reported in a
   separate "not converted" list per currency, never silently dropped or counted at 1:1.
   Analytics count only confirmed, non-deleted rows of the actor's workspaces in the chosen scope
-  (personal, family or both), and the comparison period has the same number of days.
+  (personal, family or both). The comparison period is the previous calendar month for exactly one
+  calendar month, the previous calendar year for exactly one calendar year, otherwise the
+  equal-length period right before. Categories are never merged across scopes: same-named personal
+  and family categories stay separate rows in "all".
 
 ## Ledger, history and sync
 
@@ -110,6 +113,10 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   Deleting a rule keeps the transactions it already generated. A rule's template follows the
   transaction reference rules (BR-3, BR-4), with the rule's creator as the author, and generated
   transactions are authored by the creator.
+- **BR-33.** A rule with a backdated `startsOn` generates every past occurrence from that date. A
+  family rule keeps generating after its creator leaves the family; the creator stays the author.
+  Resuming a paused rule skips the occurrences missed meanwhile (BR-24); spending exactly at a
+  budget limit is `near`, not `over` (BR-22).
 
 ## Imports
 
