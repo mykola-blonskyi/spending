@@ -156,7 +156,8 @@ describe('family workspaces', () => {
     const expired = await invite(ann);
     await t.db
       .update(invitations)
-      .set({ expiresAt: new Date(Date.now() - 1000) })
+      // Accept checks expiry against the database clock, which can lag this process by seconds.
+      .set({ expiresAt: new Date(Date.now() - 86_400_000) })
       .where(eq(invitations.id, expired.id));
     const revoked = await invite(ann);
     expect(
