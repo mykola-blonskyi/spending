@@ -16,7 +16,7 @@ vi.mock('@data/ledger', () => ({
   createCategory: vi.fn(),
   updateCategory: vi.fn(),
 }));
-vi.mock('@data/sync', () => ({ useRefreshLocalData: () => refresh }));
+vi.mock('@data/sync', () => ({ useSyncNow: () => refresh }));
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <QueryClientProvider client={createQueryClient()}>

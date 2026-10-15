@@ -10,7 +10,6 @@ export {
   useLocalDataStatus,
   useLocalTransactions,
   useRecordTransaction,
-  useRefreshLocalData,
   useSyncNow,
   useResolveConflict,
   useSyncStatus,

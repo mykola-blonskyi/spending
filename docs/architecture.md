@@ -100,7 +100,7 @@ in theme tokens; the trend has a table under "Show as a table" and category bars
 figures as text.
 
 **Ledger feature** (`features/ledger`). Accounts and categories screens write through REST
-(`data/ledger.ts`) and then call `useRefreshLocalData()` (a push and pull), so the local store
+(`data/ledger.ts`) and then call `useSyncNow()` (a push and pull), so the local store
 stays the only inbound path and every picker updates from it. `categoryView` localizes a default
 category by `systemKey` while its stored name still equals the English default, and maps the
 stored lucide icon name to a curated icon set (`category-icons.ts`).

@@ -12,7 +12,7 @@ import {
   updateCategory,
 } from '@data/ledger';
 import { isSignedOutError } from '@data/session';
-import { useRefreshLocalData } from '@data/sync';
+import { useSyncNow } from '@data/sync';
 import { useTranslations } from '@i18n/index';
 
 /**
@@ -22,7 +22,7 @@ import { useTranslations } from '@i18n/index';
  */
 function useLedgerWrite() {
   const t = useTranslations();
-  const refresh = useRefreshLocalData();
+  const refresh = useSyncNow();
   const mutation = useMutation({
     mutationFn: (write: () => Promise<unknown>) => write(),
     onSuccess: async () => {

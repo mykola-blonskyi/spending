@@ -163,21 +163,8 @@ export function useInitialSync(): { active: boolean; loaded: number } {
 }
 
 /**
- * Pushes queued changes and pulls what the server has, now. Accounts and categories are edited
- * through REST and reach the local store only through a pull, so their screens call this after
- * each write. Resolves once the store holds the server's rows.
- */
-export function useRefreshLocalData(): () => Promise<void> {
-  const ready = useReady();
-  return useCallback(async () => {
-    if (!ready) throw new Error('The local store is not open');
-    await ready.engine.flush();
-  }, [ready]);
-}
-
-/**
- * Pushes and pulls now, e.g. after joining or leaving a workspace or when the server generated
- * rows. A no-op without a store.
+ * Pushes and pulls now, e.g. after a REST write to accounts or categories, joining or leaving a
+ * workspace, or when the server generated rows. A no-op without a store.
  */
 export function useSyncNow(): () => Promise<void> {
   const engine = useReady()?.engine;
