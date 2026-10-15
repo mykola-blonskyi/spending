@@ -224,3 +224,40 @@ test('a corrected category teaches the next import', async ({ page, signInAs, db
   await expect(stat(page, 'Imported')).toHaveText('1');
   await expect(categoryOf(page, fruteria)).toHaveText('Groceries');
 });
+
+test('undoing an import keeps the edited entry and lets the statement in again', async ({
+  page,
+  signInAs,
+  db,
+}) => {
+  await signInAs('ann');
+  await createAccount(page, 'BBVA');
+  await importFile(page, 'bbva.csv', 6);
+
+  await page.goto('/transactions');
+  await page.getByRole('link', { name: /ENDESA/ }).click();
+  await page.getByLabel('Amount').fill('90');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('banner').getByRole('status')).toHaveText('Up to date');
+  await expect
+    .poll(async () => (await db.history(ann.email)).find((r) => /ENDESA/.test(r.description)))
+    .toMatchObject({ version: 2 });
+
+  await page.goto('/imports');
+  const batch = page.getByRole('listitem').filter({ hasText: 'bbva.csv' });
+  await batch.getByRole('button', { name: 'Undo' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Undo' }).click();
+  await expect(page.getByText('4 entries deleted, 1 kept.')).toBeVisible();
+  await expect(batch.getByText('Undone')).toBeVisible();
+  await expect(batch.getByRole('button', { name: 'Undo' })).toHaveCount(0);
+
+  await page.goto('/transactions');
+  await expect(page.getByRole('link', { name: /ENDESA/ })).toContainText('-€90.00');
+  await expect(page.getByRole('link', { name: /MERCADONA/ })).toHaveCount(0);
+  expect((await db.history(ann.email)).filter((r) => !r.deleted)).toHaveLength(1);
+
+  // After undo the statement imports again; the kept entry stays a duplicate (BR-30).
+  await importFile(page, 'bbva.csv', 6);
+  await expect(stat(page, 'Imported')).toHaveText('4');
+  await expect(stat(page, 'Already imported')).toHaveText('1');
+});

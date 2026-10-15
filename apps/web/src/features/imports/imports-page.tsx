@@ -1,23 +1,40 @@
-import { FileUp } from 'lucide-react';
+import { FileUp, Undo2 } from 'lucide-react';
+import { useState } from 'react';
 import { Link } from 'react-router';
+import { toast } from 'sonner';
 import { errorCode } from '@data/api-error';
 import type { ImportBatch } from '@data/imports';
 import { useAccounts } from '@data/sync';
 import { useTranslations } from '@i18n/index';
-import { EmptyState, ErrorState, LoadingState, PageHeader } from '@shared/components';
+import {
+  ConfirmDialog,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  PageHeader,
+} from '@shared/components';
 import { formatDate } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import { useOnlineStatus } from '@shared/lib/network';
 import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
 import { Card } from '@shared/ui/card';
-import { useImportBatches } from './imports';
+import { useImportBatches, useUndoImport } from './imports';
 
 export const NEW_IMPORT_PATH = '/imports/new';
 
-function BatchRow({ batch, accountName }: { batch: ImportBatch; accountName: string }) {
+function BatchRow({
+  batch,
+  accountName,
+  onUndo,
+}: {
+  batch: ImportBatch;
+  accountName: string;
+  onUndo: () => void;
+}) {
   const t = useTranslations('imports.history');
   const { locale } = useSharedLocale();
+  const online = useOnlineStatus();
   return (
     <li className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:gap-6">
       <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -37,6 +54,12 @@ function BatchRow({ batch, accountName }: { batch: ImportBatch; accountName: str
           })}
         </span>
       </div>
+      {!batch.undoneAt && (
+        <Button variant="outline" size="sm" disabled={!online} onClick={onUndo}>
+          <Undo2 aria-hidden />
+          {t('undo')}
+        </Button>
+      )}
     </li>
   );
 }
@@ -46,6 +69,8 @@ export function ImportsPage() {
   const online = useOnlineStatus();
   const batches = useImportBatches();
   const accounts = useAccounts();
+  const undo = useUndoImport();
+  const [undoing, setUndoing] = useState<ImportBatch | null>(null);
   const accountName = (id: string | null) =>
     accounts.items.find((account) => account.id === id)?.name ??
     t('imports.history.removedAccount');
@@ -94,12 +119,34 @@ export function ImportsPage() {
           <Card className="gap-0 py-0">
             <ul aria-label={t('imports.history.title')} className="divide-y">
               {batches.data.map((batch) => (
-                <BatchRow key={batch.id} batch={batch} accountName={accountName(batch.accountId)} />
+                <BatchRow
+                  key={batch.id}
+                  batch={batch}
+                  accountName={accountName(batch.accountId)}
+                  onUndo={() => setUndoing(batch)}
+                />
               ))}
             </ul>
           </Card>
         </section>
       )}
+
+      <ConfirmDialog
+        open={undoing !== null}
+        onOpenChange={(open) => !open && setUndoing(null)}
+        title={t('imports.history.undoTitle')}
+        description={t('imports.history.undoDescription')}
+        confirmLabel={t('imports.history.undo')}
+        onConfirm={() => {
+          const batch = undoing;
+          setUndoing(null);
+          if (!batch) return;
+          undo.mutate(batch.id, {
+            onSuccess: ({ deleted, kept }) =>
+              toast.success(t('imports.history.undoResult', { deleted, kept })),
+          });
+        }}
+      />
     </div>
   );
 }
