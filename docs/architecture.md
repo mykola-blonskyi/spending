@@ -137,6 +137,17 @@ its own `ledgerTransaction`, re-reads its row `for update`, inserts every occurr
 the rule's timezone with `ON CONFLICT (recurring_rule_id, recurring_occurrence) DO NOTHING`, and
 advances `nextOccurrence` (null after `endsOn`). Create and edit generate due occurrences at once.
 
+## Analytics
+
+`GET /analytics/summary?from=&to=&scope=personal|family|all&compare=previous|none` (defaults
+`all` and `previous`, at most 3660 days). One grouped query per period sums confirmed, live rows
+of the scoped workspaces by day, kind, category and currency; pure folds (`analytics/summary.ts`)
+build the totals, the unconverted list, the category breakdown (shares per kind, four decimals,
+largest remainder so they sum to 1) and a zero-filled series by day (up to 31 days), ISO week (up
+to 92) or month. Buckets are named by their first day inside the period. `previous` covers the
+equal-length period just before, with deltas (current minus previous). Budget progress comes from
+`/budgets`.
+
 ## Security
 
 - Authentication runs only through the shared OIDC provider. The API is a confidential client

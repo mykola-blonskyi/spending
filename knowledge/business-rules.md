@@ -60,6 +60,8 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   day's rate once it is published (a transaction entered before the ECB's afternoon release).
 - **BR-15.** Analytics sum `baseAmountMinor`. Transactions with no conversion are reported in a
   separate "not converted" list per currency, never silently dropped or counted at 1:1.
+  Analytics count only confirmed, non-deleted rows of the actor's workspaces in the chosen scope
+  (personal, family or both), and the comparison period has the same number of days.
 
 ## Ledger, history and sync
 

@@ -2,6 +2,7 @@ import { type DynamicModule, Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { AuthModule } from './auth/auth.module';
 import { BudgetsModule } from './budgets/budgets.module';
 import { CsrfGuard, SessionGuard } from './auth/guards';
@@ -32,6 +33,7 @@ export class AppModule {
         SyncModule,
         BudgetsModule,
         RecurringModule,
+        AnalyticsModule,
       ],
       controllers: [HealthController],
       providers: [

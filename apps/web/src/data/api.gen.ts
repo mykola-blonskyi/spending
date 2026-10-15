@@ -484,6 +484,22 @@ export interface paths {
         patch: operations["RecurringController_update"];
         trace?: never;
     };
+    "/api/v1/analytics/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AnalyticsController_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1136,6 +1152,65 @@ export interface components {
             endsOn?: components["schemas"]["EndsOn"];
             timezone?: string;
             paused?: boolean;
+        };
+        SummaryDto_Output: {
+            period: {
+                from: string;
+                to: string;
+            };
+            /** @enum {string} */
+            granularity: "day" | "week" | "month";
+            totals: {
+                incomeMinor: number;
+                expenseMinor: number;
+                balanceMinor: number;
+            };
+            unconverted: {
+                currency: string;
+                incomeMinor: number;
+                expenseMinor: number;
+            }[];
+            byCategory: {
+                categoryId: string | null;
+                name: string | null;
+                systemKey: string | null;
+                /** @enum {string} */
+                kind: "income" | "expense";
+                color: string | null;
+                amountMinor: number;
+                share: number;
+            }[];
+            series: {
+                bucket: string;
+                incomeMinor: number;
+                expenseMinor: number;
+            }[];
+            previous?: {
+                period: {
+                    from: string;
+                    to: string;
+                };
+                totals: {
+                    incomeMinor: number;
+                    expenseMinor: number;
+                    balanceMinor: number;
+                };
+                byCategory: {
+                    categoryId: string | null;
+                    name: string | null;
+                    systemKey: string | null;
+                    /** @enum {string} */
+                    kind: "income" | "expense";
+                    color: string | null;
+                    amountMinor: number;
+                    share: number;
+                }[];
+                deltas: {
+                    incomeMinor: number;
+                    expenseMinor: number;
+                    balanceMinor: number;
+                };
+            };
         };
     };
     responses: never;
@@ -1956,6 +2031,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RuleDto_Output"];
+                };
+            };
+        };
+    };
+    AnalyticsController_summary: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                scope?: string;
+                compare?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummaryDto_Output"];
                 };
             };
         };
