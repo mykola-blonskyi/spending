@@ -4,6 +4,7 @@ import { createQueryClient } from '@data/query-client';
 import { installAuthLostHandler } from '@features/auth';
 import { AppProviders } from './providers';
 import { routes } from './routes';
+import { UpdatePrompt } from './update-prompt';
 
 export function App() {
   const [queryClient] = useState(createQueryClient);
@@ -17,6 +18,7 @@ export function App() {
   return (
     <AppProviders queryClient={queryClient}>
       <RouterProvider router={router} />
+      <UpdatePrompt />
     </AppProviders>
   );
 }

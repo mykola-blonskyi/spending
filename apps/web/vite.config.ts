@@ -12,16 +12,14 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      // A new version waits for every tab to close; #32 adds the reload prompt.
+      // A new version waits until the user accepts the reload prompt (app/update-prompt.tsx).
       registerType: 'prompt',
-      injectRegister: 'script',
+      injectRegister: false,
       // Manifest icons and the manifest itself are precached by the plugin.
       includeAssets: ['apple-touch-icon.png'],
       manifest: {
         name: 'Spending',
         short_name: 'Spending',
-        description: 'Personal and family expenses, offline first.',
-        lang: 'en',
         start_url: '/',
         scope: '/',
         display: 'standalone',

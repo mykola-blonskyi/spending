@@ -8,7 +8,7 @@
     "noEmit": true,
     "allowImportingTsExtensions": false,
     "verbatimModuleSyntax": true,
-    "types": ["vite/client", "node", "@testing-library/jest-dom/vitest"],
+    "types": ["vite/client", "vite-plugin-pwa/react", "node", "@testing-library/jest-dom/vitest"],
     "paths": {
       "@app/*": ["./src/app/*"],
       "@data/*": ["./src/data/*"],
