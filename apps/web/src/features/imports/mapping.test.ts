@@ -87,6 +87,11 @@ describe('parseAmountToMinor', () => {
     expect(parseAmountToMinor('12,50-', 2, ',')).toBeNull();
     expect(parseAmountToMinor('12,50 EUR', 2, ',')).toBeNull();
   });
+
+  it('accepts at most 10^12 minor units either way (BR-13)', () => {
+    expect(parseAmountToMinor('-10000000000.00', 2, '.')).toBe(-1_000_000_000_000);
+    expect(parseAmountToMinor('-10000000000.01', 2, '.')).toBeNull();
+  });
 });
 
 describe('normalizeRow', () => {

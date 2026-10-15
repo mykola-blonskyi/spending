@@ -558,7 +558,7 @@ export const es = {
     },
     reasons: {
       INVALID_DATE: 'No se pudo leer la fecha',
-      INVALID_AMOUNT: 'No se pudo leer el importe o es cero',
+      INVALID_AMOUNT: 'No se pudo leer el importe, es cero o es demasiado grande',
       INVALID_CURRENCY: 'Código de moneda desconocido',
       DESCRIPTION_TOO_LONG: 'El concepto supera los 200 caracteres',
       EXTERNAL_ID_TOO_LONG: 'La referencia supera los 100 caracteres',

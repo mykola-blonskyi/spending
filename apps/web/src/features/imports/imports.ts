@@ -9,7 +9,7 @@ import {
   undoImport,
 } from '@data/imports';
 import { isSignedOutError } from '@data/session';
-import { useRequestSync, useWorkspaces } from '@data/sync';
+import { useSyncNow, useWorkspaces } from '@data/sync';
 import { useTranslations } from '@i18n/index';
 
 export const useImportBatches = () => useQuery(importBatchesQuery);
@@ -33,20 +33,20 @@ function useExplainFailure() {
 /** Imports write on the server, so a pull brings the new rows to this device. */
 export function useCreateImport() {
   const queryClient = useQueryClient();
-  const requestSync = useRequestSync();
+  const syncNow = useSyncNow();
   return useMutation({
     mutationFn: createImport,
     onError: useExplainFailure(),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: importBatchesQuery.queryKey });
-      void requestSync();
+      void syncNow();
     },
   });
 }
 
 export function useUndoImport() {
   const queryClient = useQueryClient();
-  const requestSync = useRequestSync();
+  const syncNow = useSyncNow();
   return useMutation({
     mutationFn: undoImport,
     onError: useExplainFailure(),
@@ -54,14 +54,14 @@ export function useUndoImport() {
       queryClient.setQueryData(importBatchesQuery.queryKey, (batches) =>
         batches?.map((batch) => (batch.id === result.batch.id ? result.batch : batch)),
       );
-      void requestSync();
+      void syncNow();
     },
   });
 }
 
 export function useConfirmReview() {
   const queryClient = useQueryClient();
-  const requestSync = useRequestSync();
+  const syncNow = useSyncNow();
   return useMutation({
     mutationFn: confirmReview,
     onError: useExplainFailure(),
@@ -70,7 +70,7 @@ export function useConfirmReview() {
       queryClient.setQueryData(reviewQueueQuery.queryKey, (items) =>
         items?.filter((item) => !done.has(item.transaction.id)),
       );
-      void requestSync();
+      void syncNow();
     },
   });
 }

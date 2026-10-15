@@ -541,7 +541,7 @@ export const en = {
     },
     reasons: {
       INVALID_DATE: 'The date could not be read',
-      INVALID_AMOUNT: 'The amount could not be read or is zero',
+      INVALID_AMOUNT: 'The amount could not be read, is zero, or is too large',
       INVALID_CURRENCY: 'Unknown currency code',
       DESCRIPTION_TOO_LONG: 'The description is longer than 200 characters',
       EXTERNAL_ID_TOO_LONG: 'The transaction ID is longer than 100 characters',

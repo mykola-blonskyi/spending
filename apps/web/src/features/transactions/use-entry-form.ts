@@ -110,15 +110,23 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
           },
     [stored.entry, today],
   );
-  // Keyed by entry so a pane that switches entries never shows the previous one's edits.
-  const [edited, setEdited] = useState<{ for: string; values: FormValues } | null>(null);
+  // Keyed by entry so a pane that switches entries never shows the previous one's edits. The
+  // server version on screen when editing starts is the save's base, so a row pulled meanwhile
+  // turns the save into a conflict instead of being overwritten (BR-19).
+  const [edited, setEdited] = useState<{
+    for: string;
+    values: FormValues;
+    version: number | null;
+  } | null>(null);
   const key = entryId ?? 'new';
-  const typed = edited && edited.for === key ? edited.values : initial;
+  const ours = edited && edited.for === key ? edited : null;
+  const typed = ours ? ours.values : initial;
   const change = (patch: Partial<FormValues>) =>
-    setEdited((current) => ({
-      for: key,
-      values: { ...(current && current.for === key ? current.values : initial), ...patch },
-    }));
+    setEdited((current) =>
+      current && current.for === key
+        ? { ...current, values: { ...current.values, ...patch } }
+        : { for: key, values: { ...initial, ...patch }, version: stored.entry?.version ?? null },
+    );
 
   const categories = categoryViews.items.filter(
     (category) =>
@@ -165,6 +173,7 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
   return {
     status,
     mode,
+    today,
     values,
     errors,
     set: <K extends keyof FormValues>(key: K, value: FormValues[K]) => change({ [key]: value }),
@@ -196,8 +205,11 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
       setSubmitting(true);
       try {
         const draft = { ...draftFields, workspaceId };
-        if (entryId) await update(entryId, draft);
-        else await record(draft);
+        if (entryId) {
+          await update(entryId, draft, ours?.version);
+          // Later saves build on this one, whose base is now on the queue.
+          setEdited((current) => current && { ...current, version: null });
+        } else await record(draft);
         if (onSaved) onSaved();
         else await navigate(HISTORY_PATH);
       } catch {

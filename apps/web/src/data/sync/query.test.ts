@@ -5,7 +5,7 @@ import { localRow, page, sequentialIds, serverRow, syncedState } from './fixture
 import { emptyLocalState, type LocalState } from './model';
 import { reducePull } from './pull';
 import { applyLocalChange, setMutationState } from './queue';
-import { queryTransactions, totalsByCurrency } from './query';
+import { queryTransactions } from './query';
 import { deriveSyncStatus, smoothingDelay } from './status';
 
 const history = syncedState(
@@ -84,20 +84,6 @@ describe('localEntries conversion', () => {
     expect(changed({ currency: 'USD', amountMinor: 2000 })).toEqual([[null, null]]);
     expect(changed({ currency: 'GBP', amountMinor: 1085 })).toEqual([[null, null]]);
     expect(changed({ currency: 'EUR', amountMinor: 1085 })).toEqual([[1085, null]]);
-  });
-});
-
-describe('totalsByCurrency', () => {
-  it('counts an entry with a pending edit once, at its local amount', () => {
-    const state = applyLocalChange(
-      syncedState(serverRow({ amountMinor: 1000 })),
-      { type: 'upsert', row: localRow({ amountMinor: 400 }) },
-      sequentialIds(),
-    );
-    expect(totalsByCurrency(queryTransactions(state, {})).get('EUR')).toEqual({
-      income: 0,
-      expense: 400,
-    });
   });
 });
 

@@ -13,10 +13,6 @@ import {
 } from 'lucide-react';
 import type { Messages } from '@i18n/index';
 
-export type PlaceholderPageKey = {
-  [K in keyof Messages['pages']]: Messages['pages'][K] extends { emptyTitle: string } ? K : never;
-}[keyof Messages['pages']];
-
 type Destination = {
   path: string;
   nav: keyof Messages['nav'];

@@ -52,6 +52,7 @@ function isTransient(error: ApiError): boolean {
   return (
     error.code === 'NETWORK' ||
     error.code === 'CSRF_FAILED' ||
+    error.status === 401 ||
     error.status === 429 ||
     error.status >= 500
   );

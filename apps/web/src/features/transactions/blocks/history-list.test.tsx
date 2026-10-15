@@ -14,6 +14,7 @@ function history(count: number): HistoryItem[] {
       {
         ...localRow({ id: `tx-${index}`, occurredOn: day(index) }),
         scope: 'personal',
+        version: null,
         author: null,
         baseAmountMinor: 1250,
         fx: null,

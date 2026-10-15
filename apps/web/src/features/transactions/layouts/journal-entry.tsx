@@ -178,7 +178,7 @@ function Sentence({
     <div>
       <p className="font-serif text-[24px] leading-[1.9] text-foreground/90 lg:text-[28px]">
         {fill(t.raw(`entry.journal.${values.kind}`), {
-          date: chip('date', formatRelativeDay(values.occurredOn, locale), ''),
+          date: chip('date', formatRelativeDay(values.occurredOn, locale, form.today), ''),
           amount: (
             <label
               htmlFor={amountId}

@@ -17,7 +17,12 @@ import {
 export const PUSH_LIMIT = 200;
 
 export type LocalChange =
-  | { readonly type: 'upsert'; readonly row: LocalTransaction }
+  | {
+      readonly type: 'upsert';
+      readonly row: LocalTransaction;
+      /** The server version the user started editing from, when it was the row on screen. */
+      readonly editedVersion?: number | null;
+    }
   | { readonly type: 'delete'; readonly id: string };
 
 function inputOf(row: LocalTransaction): TransactionInput {
@@ -84,7 +89,11 @@ export function applyLocalChange(
       mutationId: newMutationId(),
       seq: meta.nextSeq,
       transactionId: id,
-      baseVersion: latest ? latest.baseVersion : (record?.server?.version ?? null),
+      baseVersion: latest
+        ? latest.baseVersion
+        : ((change.type === 'upsert' ? change.editedVersion : null) ??
+          record?.server?.version ??
+          null),
       change: mutationChange,
       state: { status: 'queued' },
     };

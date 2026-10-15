@@ -118,7 +118,7 @@ describe('dates', () => {
   });
 
   it('names nearby days and falls back to a date', () => {
-    const today = new Date(2026, 9, 14, 23, 30);
+    const today = '2026-10-14';
     expect(formatRelativeDay('2026-10-14', 'en', today)).toBe('Today');
     expect(formatRelativeDay('2026-10-13', 'ru', today)).toBe('Вчера');
     expect(formatRelativeDay('2026-10-15', 'es', today)).toBe('Mañana');
@@ -148,6 +148,11 @@ describe('parseAmount', () => {
 
   it.each([[''], ['0'], ['0.00'], ['-5'], ['1.234'], ['abc'], ['1e3']])('refuses %j', (text) => {
     expect(parseAmount(text, 2)).toBeNull();
+  });
+
+  it('accepts at most 10^12 minor units (BR-13)', () => {
+    expect(parseAmount('10000000000.00', 2)).toBe(1_000_000_000_000);
+    expect(parseAmount('10000000000.01', 2)).toBeNull();
   });
 
   it('round-trips through the editable text', () => {

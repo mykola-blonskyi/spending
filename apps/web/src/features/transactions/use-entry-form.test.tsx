@@ -2,7 +2,8 @@ import { act, waitFor } from '@testing-library/react';
 import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { testSession } from '@data/testing';
-import { PERSONAL, serverRow, syncedState } from '@data/sync/fixtures';
+import { page, PERSONAL, serverRow, syncedState } from '@data/sync/fixtures';
+import { reducePull } from '@data/sync/pull';
 import { emptyLocalState, type LocalState, queueOrder } from '@data/sync/model';
 import { account, category, fakeLocalData, renderTransactionHook } from './test-helpers';
 import { useEntryForm } from './use-entry-form';
@@ -10,6 +11,7 @@ import { useEntryForm } from './use-entry-form';
 vi.mock('@features/auth', () => ({ useSession: () => testSession() }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn() } }));
 
+const NOW = '2026-10-15T00:00:00.000Z';
 const salary = category({ id: 'cat-salary', name: 'Salary', kind: 'income', systemKey: 'salary' });
 const usd = account({ id: 'acc-usd', name: 'Dollars', currency: 'USD' });
 
@@ -92,6 +94,23 @@ describe('useEntryForm', () => {
       transaction: { id: 'tx-1', amountMinor: 2000, note: 'oat milk' },
     });
     expect(location()).toBe('/transactions');
+  });
+
+  it('bases a save on the version editing started from, so a row pulled meanwhile conflicts', async () => {
+    const { result, data } = setup(
+      '/transactions/tx-1',
+      ledger(syncedState(serverRow({ version: 3 }))),
+    );
+    act(() => result.current.set('amount', '20'));
+    await act(() =>
+      data.store.commit(
+        (state) =>
+          reducePull(state, page({ transactions: [serverRow({ version: 4, note: 'Bob' })] }), NOW)
+            .state,
+      ),
+    );
+    await act(() => result.current.submit());
+    expect(queueOrder(data.current())).toMatchObject([{ baseVersion: 3 }]);
   });
 
   it('removes through the queue and toasts when the device cannot write', async () => {

@@ -20,6 +20,7 @@ export function isSignedOutError(error: unknown): boolean {
   return (
     error instanceof ApiError &&
     error.status === 401 &&
+    error.fromEnvelope &&
     AUTH_LOST_CODES.includes(error.code as AuthLostCode)
   );
 }

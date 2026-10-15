@@ -78,10 +78,10 @@ describe('pressKey', () => {
     ).toBe('');
   });
 
-  it('caps the whole part so the amount stays a safe integer', () => {
-    const amount = press(Array<KeypadKey>(20).fill('9'), 3);
-    expect(amount).toHaveLength(12);
-    expect(parseAmount(`${amount}.999`, 3)).not.toBeNull();
+  it.each([0, 2, 3])('caps the whole part at the BR-13 limit with exponent %i', (exponent) => {
+    const amount = press(Array<KeypadKey>(20).fill('9'), exponent);
+    expect(amount).toHaveLength(12 - exponent);
+    expect(parseAmount(`${amount}.${'9'.repeat(exponent)}`, exponent)).not.toBeNull();
   });
 });
 

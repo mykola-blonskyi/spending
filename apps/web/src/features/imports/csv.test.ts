@@ -62,13 +62,13 @@ describe('detectDelimiter', () => {
 describe('parseCsv', () => {
   it('follows RFC 4180: quotes, doubled quotes, line breaks in cells, CRLF', () => {
     expect(parseCsv('a;"b;c";"say ""hi"""\r\n"multi\nline";x\n', ';')).toEqual([
-      ['a', 'b;c', 'say "hi"'],
-      ['multi\nline', 'x'],
+      { line: 1, cells: ['a', 'b;c', 'say "hi"'] },
+      { line: 2, cells: ['multi\nline', 'x'] },
     ]);
   });
 
   it('keeps empty cells and trims whitespace', () => {
-    expect(parseCsv(' a ;; c', ';')).toEqual([['a', '', 'c']]);
+    expect(parseCsv(' a ;; c', ';')).toEqual([{ line: 1, cells: ['a', '', 'c'] }]);
   });
 });
 
@@ -114,6 +114,13 @@ describe('parseStatement', () => {
         ],
       },
     });
+  });
+
+  it('numbers rows by the file line they start on, past cells holding line breaks', () => {
+    const result = parseStatement(
+      utf8('Fecha;Concepto;Importe\r\n01/10/2026;"two\r\nlines";-1,00\r\n02/10/2026;x;-2,00\r\n'),
+    );
+    expect(result.ok && result.statement.rows.map((row) => row.line)).toEqual([2, 4]);
   });
 
   it('refuses an empty file and one with too many rows', () => {

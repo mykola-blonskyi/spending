@@ -1,19 +1,19 @@
 import { type QueryKey, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
-import { useSyncStatus } from './sync';
+import { useLastSyncedAt } from './sync';
 
 /**
  * Server figures move with every synced transaction, including ones recorded on other screens,
- * so a finished sync refetches the queries under `queryKey` (a module constant).
+ * so each completed sync refetches the queries under `queryKey` (a module constant).
  */
 export function useRefreshOnSync(queryKey: QueryKey): void {
-  const state = useSyncStatus()?.state;
+  const syncedAt = useLastSyncedAt();
   const queryClient = useQueryClient();
-  const previous = useRef(state);
+  const previous = useRef(syncedAt);
   useEffect(() => {
-    if (state === 'synced' && previous.current !== undefined && previous.current !== 'synced') {
+    if (previous.current !== undefined && syncedAt !== previous.current) {
       void queryClient.invalidateQueries({ queryKey });
     }
-    previous.current = state;
-  }, [state, queryClient, queryKey]);
+    previous.current = syncedAt;
+  }, [syncedAt, queryClient, queryKey]);
 }

@@ -148,6 +148,11 @@ function useSmoothed(next: SyncStatus | null): SyncStatus | null {
   return shown;
 }
 
+/** When a pull last reached the end; undefined while there is no local store. */
+export function useLastSyncedAt(): string | null | undefined {
+  return useLocalState()?.meta.lastSyncedAt;
+}
+
 /** The first sync on an empty device: active until a pull first reaches the end. */
 export function useInitialSync(): { active: boolean; loaded: number } {
   const state = useLocalState();
@@ -170,7 +175,10 @@ export function useRefreshLocalData(): () => Promise<void> {
   }, [ready]);
 }
 
-/** Pushes and pulls now, so rows the server just generated reach the device. */
+/**
+ * Pushes and pulls now, e.g. after joining or leaving a workspace or when the server generated
+ * rows. A no-op without a store.
+ */
 export function useSyncNow(): () => Promise<void> {
   const engine = useReady()?.engine;
   return useCallback(async () => {
@@ -193,16 +201,13 @@ function useWriter<A extends unknown[], R>(
   );
 }
 
-/** Asks the engine to sync now, e.g. after joining or leaving a workspace. A no-op without a store. */
-export function useRequestSync(): () => Promise<void> {
-  const engine = useReady()?.engine;
-  return useCallback(() => engine?.flush() ?? Promise.resolve(), [engine]);
-}
-
 export const useRecordTransaction = (): ((draft: TransactionDraft) => Promise<string>) =>
   useWriter(recordTransaction);
-export const useUpdateTransaction = (): ((id: string, draft: TransactionDraft) => Promise<void>) =>
-  useWriter(updateTransaction);
+export const useUpdateTransaction = (): ((
+  id: string,
+  draft: TransactionDraft,
+  editedVersion?: number | null,
+) => Promise<void>) => useWriter(updateTransaction);
 export const useDeleteTransaction = (): ((id: string) => Promise<void>) =>
   useWriter(deleteTransaction);
 export const useDiscardChange = (): ((id: string) => Promise<void>) => useWriter(discardChange);

@@ -1,5 +1,10 @@
 import type { TransactionDraft } from '@data/sync';
-import { currencyExponent, minorToDecimalString, parseAmount } from '@shared/format';
+import {
+  currencyExponent,
+  MAX_AMOUNT_MINOR,
+  minorToDecimalString,
+  parseAmount,
+} from '@shared/format';
 
 export type EntryKind = TransactionDraft['kind'];
 
@@ -65,9 +70,6 @@ export const KEYPAD_KEYS: readonly KeypadKey[] = [
   'backspace',
 ];
 
-/** Twelve whole digits stay a safe integer in minor units for every ISO exponent (at most 3). */
-const MAX_WHOLE_DIGITS = 12;
-
 /** The keypad reducer: it refuses a key that would make the amount unparseable. */
 export function pressKey(amount: string, key: KeypadKey, exponent: number): string {
   if (key === 'backspace') return amount.slice(0, -1);
@@ -78,7 +80,8 @@ export function pressKey(amount: string, key: KeypadKey, exponent: number): stri
   }
   if (fraction !== undefined) return fraction.length < exponent ? amount + key : amount;
   if (whole === '0') return key;
-  return whole.length < MAX_WHOLE_DIGITS ? amount + key : amount;
+  // One digit short of the cap's, so every amount the keypad builds is within it (BR-13).
+  return whole.length < String(MAX_AMOUNT_MINOR).length - 1 - exponent ? amount + key : amount;
 }
 
 /** The decimal mark this locale writes, for the keypad label and the shown amount. */

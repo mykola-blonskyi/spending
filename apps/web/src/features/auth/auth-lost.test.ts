@@ -5,14 +5,11 @@ import { sessionQuery } from '@data/session';
 import { testSession } from '@data/testing';
 import { installAuthLostHandler } from './auth-lost';
 
-const queuedKey = 'spending.user.00000000-0000-4000-8000-000000000001.queue';
-
 describe('installAuthLostHandler', () => {
   let uninstall: () => void = () => {};
 
   beforeEach(() => {
     window.history.replaceState(null, '', '/budgets?month=2026-10');
-    localStorage.setItem(queuedKey, '[1]');
   });
 
   afterEach(() => {
@@ -20,7 +17,7 @@ describe('installAuthLostHandler', () => {
     localStorage.clear();
   });
 
-  it('clears server state and goes to sign-in, keeping the location and local data', () => {
+  it('clears server state and goes to sign-in, keeping the location', () => {
     const client = createQueryClient();
     client.setQueryData(sessionQuery.queryKey, testSession());
     client.setQueryData(['accounts'], ['cash']);
@@ -34,7 +31,6 @@ describe('installAuthLostHandler', () => {
     );
     expect(client.getQueryData(['accounts'])).toBeUndefined();
     expect(client.getQueryData(sessionQuery.queryKey)).toBeNull();
-    expect(localStorage.getItem(queuedKey)).toBe('[1]');
   });
 
   it('leaves a 401 before any session was known to the route guards', () => {

@@ -17,6 +17,7 @@ const row = (patch: Partial<TransactionEntry>) =>
     {
       ...localRow(),
       scope: 'personal',
+      version: null,
       author: null,
       baseAmountMinor: null,
       fx: null,
