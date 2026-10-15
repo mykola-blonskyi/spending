@@ -5,6 +5,8 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   applyStoredTheme,
+  PALETTE_STORAGE_KEY,
+  PALETTES,
   THEME_PREFERENCES,
   THEME_STORAGE_KEY,
   ThemeProvider,
@@ -26,12 +28,13 @@ function mockSystemDark(initial: boolean) {
 }
 
 function Probe() {
-  const { preference, resolved, setPreference } = useTheme();
+  const { preference, resolved, palette, setPreference, setPalette } = useTheme();
   return (
     <>
-      <output>{`${preference}:${resolved}`}</output>
+      <output>{`${preference}:${resolved}:${palette}`}</output>
       <button onClick={() => setPreference('light')}>light</button>
       <button onClick={() => setPreference('system')}>system</button>
+      <button onClick={() => setPalette('rose')}>rose</button>
     </>
   );
 }
@@ -47,20 +50,24 @@ describe('theme', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it('applies the stored preference before render', () => {
+  it('applies the stored preference and palette before render', () => {
     mockSystemDark(false);
     localStorage.setItem(THEME_STORAGE_KEY, 'dark');
+    localStorage.setItem(PALETTE_STORAGE_KEY, 'sand');
     applyStoredTheme();
     expect(root).toHaveClass('dark');
     expect(root.style.colorScheme).toBe('dark');
     expect(themeColor()).toBe('#0d1013');
+    expect(root.dataset.palette).toBe('sand');
   });
 
-  it('ignores an unknown stored value and follows the system', () => {
+  it('ignores unknown stored values and falls back to system and emerald', () => {
     mockSystemDark(true);
     localStorage.setItem(THEME_STORAGE_KEY, 'sepia');
+    localStorage.setItem(PALETTE_STORAGE_KEY, 'teal');
     applyStoredTheme();
     expect(root).toHaveClass('dark');
+    expect(root.dataset.palette).toBe('emerald');
   });
 
   it('follows prefers-color-scheme live while set to system', () => {
@@ -70,11 +77,11 @@ describe('theme', () => {
         <Probe />
       </ThemeProvider>,
     );
-    expect(screen.getByRole('status')).toHaveTextContent('system:light');
+    expect(screen.getByRole('status')).toHaveTextContent('system:light:emerald');
     expect(root).not.toHaveClass('dark');
 
     act(() => setSystemDark(true));
-    expect(screen.getByRole('status')).toHaveTextContent('system:dark');
+    expect(screen.getByRole('status')).toHaveTextContent('system:dark:emerald');
     expect(root).toHaveClass('dark');
     expect(themeColor()).toBe('#0d1013');
   });
@@ -95,6 +102,20 @@ describe('theme', () => {
     expect(root).not.toHaveClass('dark');
   });
 
+  it('persists the palette and applies it to the document', async () => {
+    mockSystemDark(false);
+    render(
+      <ThemeProvider>
+        <Probe />
+      </ThemeProvider>,
+    );
+    expect(root.dataset.palette).toBe('emerald');
+    await userEvent.click(screen.getByRole('button', { name: 'rose' }));
+    expect(localStorage.getItem(PALETTE_STORAGE_KEY)).toBe('rose');
+    expect(root.dataset.palette).toBe('rose');
+    expect(screen.getByRole('status')).toHaveTextContent('system:light:rose');
+  });
+
   it('keeps working when storage throws', async () => {
     mockSystemDark(false);
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
@@ -106,7 +127,7 @@ describe('theme', () => {
       </ThemeProvider>,
     );
     await userEvent.click(screen.getByRole('button', { name: 'light' }));
-    expect(screen.getByRole('status')).toHaveTextContent('light:light');
+    expect(screen.getByRole('status')).toHaveTextContent('light:light:emerald');
     vi.restoreAllMocks();
   });
 
@@ -115,6 +136,8 @@ describe('theme', () => {
     expect(script).toContain(`'${THEME_STORAGE_KEY}'`);
     for (const value of ['light', 'dark']) expect(script).toContain(`'${value}'`);
     expect(THEME_PREFERENCES).toContain('system');
+    expect(script).toContain(`'${PALETTE_STORAGE_KEY}'`);
+    for (const palette of PALETTES) expect(script).toContain(`'${palette}'`);
     expect(script).toContain('(prefers-color-scheme: dark)');
     expect(script).toContain("'#fafaf9'");
     expect(script).toContain("'#0d1013'");
@@ -122,22 +145,25 @@ describe('theme', () => {
 
   it('theme-init.js resolves the same result as applyStoredTheme', () => {
     const script = readFileSync(resolve(process.cwd(), 'public/theme-init.js'), 'utf8');
-    for (const [stored, systemDark] of [
-      ['dark', false],
-      ['light', true],
-      ['sepia', true],
-      [null, false],
+    const observed = () => [root.classList.contains('dark'), themeColor(), root.dataset.palette];
+    for (const [stored, systemDark, palette] of [
+      ['dark', false, 'ocean'],
+      ['light', true, null],
+      ['sepia', true, 'teal'],
+      [null, false, 'graphite'],
     ] as const) {
       mockSystemDark(systemDark);
       localStorage.clear();
       if (stored) localStorage.setItem(THEME_STORAGE_KEY, stored);
+      if (palette) localStorage.setItem(PALETTE_STORAGE_KEY, palette);
       root.className = '';
       applyStoredTheme();
-      const expected = [root.classList.contains('dark'), themeColor()];
+      const expected = observed();
       root.className = '';
+      delete root.dataset.palette;
       document.querySelector('meta[name="theme-color"]')?.remove();
       new Function(script)();
-      expect([root.classList.contains('dark'), themeColor()]).toEqual(expected);
+      expect(observed()).toEqual(expected);
     }
   });
 });
