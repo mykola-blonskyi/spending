@@ -25,8 +25,10 @@ import {
 import { nextOccurrence, occurrences } from './schedule';
 
 type Rule = typeof recurringRules.$inferSelect;
+type Generated = { inserted: number; more: boolean };
 
-const INSERT_BATCH = 1000;
+/** Occurrences per `generate` call, so a long backlog holds the ledger lock briefly (BR-33). */
+const OCCURRENCE_LIMIT = 1000;
 
 const later = (a: string, b: string | null) => (b !== null && b > a ? b : a);
 
@@ -73,6 +75,8 @@ export class RecurringService {
    * occurrence is recomputed from max(today, the current next), so the edit reaches only the future.
    */
   async update(actorId: string, id: string, patch: UpdateRule): Promise<RuleView> {
+    // A backlog longer than one call is committed call by call first, still with the old template.
+    while ((await this.catchUp(id, new Date())).more);
     return ledgerTransaction(this.db, async (tx) => {
       await this.generate(tx, await this.load(tx, actorId, id), new Date());
       const current = await this.load(tx, actorId, id);
@@ -113,9 +117,10 @@ export class RecurringService {
   }
 
   /**
-   * Generates every due occurrence of every active rule, catching up after downtime (BR-23). Each
-   * rule commits on its own under the ledger lock and re-reads its next occurrence there, and the
-   * unique (rule, occurrence) key makes inserts no-ops, so concurrent or repeated runs add nothing.
+   * Generates due occurrences of every active rule, catching up after downtime (BR-23); a backlog
+   * past `OCCURRENCE_LIMIT` completes over later runs (BR-33). Each rule commits on its own under
+   * the ledger lock and re-reads its next occurrence there, and the unique (rule, occurrence) key
+   * makes inserts no-ops, so concurrent or repeated runs add nothing.
    */
   async runDue(now: Date): Promise<number> {
     const candidates = await this.db
@@ -131,14 +136,7 @@ export class RecurringService {
     let generated = 0;
     for (const { id } of candidates) {
       try {
-        generated += await ledgerTransaction(this.db, async (tx) => {
-          const [rule] = await tx
-            .select()
-            .from(recurringRules)
-            .where(eq(recurringRules.id, id))
-            .for('update');
-          return rule ? this.generate(tx, rule, now) : 0;
-        });
+        generated += (await this.catchUp(id, now)).inserted;
       } catch (error) {
         this.logger.warn(
           `recurring_rule_failed id=${id} ${error instanceof Error ? error.message : 'unknown'}`,
@@ -148,15 +146,36 @@ export class RecurringService {
     return generated;
   }
 
-  private async generate(tx: Tx, rule: Rule, now: Date): Promise<number> {
+  private catchUp(id: string, now: Date): Promise<Generated> {
+    return ledgerTransaction(this.db, async (tx) => {
+      const [rule] = await tx
+        .select()
+        .from(recurringRules)
+        .where(eq(recurringRules.id, id))
+        .for('update');
+      return rule ? this.generate(tx, rule, now) : { inserted: 0, more: false };
+    });
+  }
+
+  /** Generates up to `OCCURRENCE_LIMIT` due occurrences; `more` says some are still due. */
+  private async generate(tx: Tx, rule: Rule, now: Date): Promise<Generated> {
     const today = todayIn(now, rule.timezone);
-    if (rule.pausedAt || !rule.nextOccurrence || rule.nextOccurrence > today) return 0;
-    const dates = occurrences(rule, rule.nextOccurrence, today);
-    let inserted = 0;
-    for (let i = 0; i < dates.length; i += INSERT_BATCH) {
-      const values = [];
-      for (const occurredOn of dates.slice(i, i + INSERT_BATCH)) {
-        values.push({
+    if (rule.pausedAt || !rule.nextOccurrence || rule.nextOccurrence > today) {
+      return { inserted: 0, more: false };
+    }
+    const due = occurrences(rule, rule.nextOccurrence, today);
+    const dates = due.slice(0, OCCURRENCE_LIMIT);
+    const conversions = await this.fx.conversions(
+      tx,
+      rule.amountMinor,
+      rule.currency as CurrencyCode,
+      dates,
+    );
+    // A tombstoned occurrence keeps its row, so the conflict skips it too (BR-23).
+    const rows = await tx
+      .insert(transactions)
+      .values(
+        dates.map((occurredOn, i) => ({
           id: crypto.randomUUID(),
           workspaceId: rule.workspaceId,
           createdBy: rule.createdBy,
@@ -170,30 +189,20 @@ export class RecurringService {
           source: 'recurring' as const,
           recurringRuleId: rule.id,
           recurringOccurrence: occurredOn,
-          ...(await this.fx.conversion(
-            tx,
-            rule.amountMinor,
-            rule.currency as CurrencyCode,
-            occurredOn,
-          )),
-        });
-      }
-      // A tombstoned occurrence keeps its row, so the conflict skips it too (BR-23).
-      const rows = await tx
-        .insert(transactions)
-        .values(values)
-        .onConflictDoNothing({
-          target: [transactions.recurringRuleId, transactions.recurringOccurrence],
-          where: sql`${transactions.recurringRuleId} is not null`,
-        })
-        .returning({ id: transactions.id });
-      inserted += rows.length;
-    }
+          ...conversions[i]!,
+        })),
+      )
+      .onConflictDoNothing({
+        target: [transactions.recurringRuleId, transactions.recurringOccurrence],
+        where: sql`${transactions.recurringRuleId} is not null`,
+      })
+      .returning({ id: transactions.id });
+    const more = due.length > dates.length;
     await tx
       .update(recurringRules)
-      .set({ nextOccurrence: nextOccurrence(rule, addDays(today, 1)) })
+      .set({ nextOccurrence: more ? due[dates.length]! : nextOccurrence(rule, addDays(today, 1)) })
       .where(eq(recurringRules.id, rule.id));
-    return inserted;
+    return { inserted: rows.length, more };
   }
 
   private async checkTemplate(

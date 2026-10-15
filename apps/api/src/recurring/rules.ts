@@ -1,13 +1,19 @@
 import { z } from 'zod';
 import type { ErrorCode } from '../common/errors';
-import { calendarDateSchema, currencySchema, ENTRY_KINDS, type EntryKind } from '../ledger/views';
+import {
+  amountMinorSchema,
+  calendarDateSchema,
+  currencySchema,
+  ENTRY_KINDS,
+  type EntryKind,
+} from '../ledger/views';
 import { timezoneSchema } from '../users/profile';
 import { WORKSPACE_KINDS } from '../workspaces/family';
 import { FREQUENCIES } from './schedule';
 
 const template = {
   kind: z.enum(ENTRY_KINDS),
-  amountMinor: z.int().positive(),
+  amountMinor: amountMinorSchema,
   currency: currencySchema,
   accountId: z.uuid().nullable(),
   categoryId: z.uuid().nullable(),

@@ -1,7 +1,7 @@
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { todayIn } from '../src/common/dates';
-import { recurringRules, transactions } from '../src/database/schema';
+import { addDays, todayIn } from '../src/common/dates';
+import { fxRates, recurringRules, transactions } from '../src/database/schema';
 import { RecurringService } from '../src/recurring/recurring.service';
 import { occurrences } from '../src/recurring/schedule';
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
@@ -132,6 +132,51 @@ describe('recurring rules', () => {
       .where(eq(recurringRules.id, rule.id));
     expect(await recurring.runDue(now)).toBe(0);
     expect(await generated(rule.id)).toHaveLength(10);
+  });
+
+  it('catches up a long backlog 1000 occurrences per run (BR-33)', async () => {
+    const rule = await json<Rule>(
+      await create(ann, { frequency: 'daily', startsOn: '2030-01-01' }),
+      201,
+    );
+    const now = new Date('2032-12-31T12:00:00Z');
+    expect(await recurring.runDue(now)).toBe(1000);
+    expect(await recurring.runDue(now)).toBe(96);
+    expect(await recurring.runDue(now)).toBe(0);
+    const days = (await generated(rule.id)).map((r) => r.occurredOn);
+    expect(new Set(days).size).toBe(1096);
+    expect(days.at(-1)).toBe('2032-12-31');
+  });
+
+  it('generates a long backlog with the old template before an edit (BR-24)', async () => {
+    const startsOn = addDays(todayIn(new Date(), 'Europe/Madrid'), -1100);
+    const rule = await json<Rule>(await create(ann, { frequency: 'daily', startsOn }), 201);
+    expect(await generated(rule.id)).toHaveLength(1000);
+    await json<Rule>(await patch(ann, rule.id, { amountMinor: 2_000 }), 200);
+    const rows = await generated(rule.id);
+    expect(rows).toHaveLength(1101);
+    expect(rows.every((r) => r.amountMinor === 1_000)).toBe(true);
+  });
+
+  it('converts each occurrence with its own rate, looking back 7 days (BR-14)', async () => {
+    await t.db.insert(fxRates).values([
+      { date: '2030-01-03', currency: 'USD', ratePerEur: '1.25', source: 'ecb' },
+      { date: '2030-01-05', currency: 'USD', ratePerEur: '1.6', source: 'ecb' },
+    ]);
+    const rule = await json<Rule>(
+      await create(ann, { frequency: 'daily', startsOn: '2030-01-01', currency: 'USD' }),
+      201,
+    );
+    await recurring.runDue(new Date('2030-01-13T12:00:00Z'));
+    const rows = await generated(rule.id);
+    expect(rows.map((r) => [r.occurredOn.slice(8), r.baseAmountMinor, r.fxRateDate])).toEqual([
+      ['01', null, null],
+      ['02', null, null],
+      ['03', 800, '2030-01-03'],
+      ['04', 800, '2030-01-03'],
+      ...['05', '06', '07', '08', '09', '10', '11', '12'].map((d) => [d, 625, '2030-01-05']),
+      ['13', null, null],
+    ]);
   });
 
   it('does not recreate a deleted occurrence', async () => {

@@ -51,7 +51,8 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
 
 ## Money and currency
 
-- **BR-13.** Amounts are positive integers of minor units. The sign comes from `kind`. The
+- **BR-13.** Amounts are positive integers of minor units, at most 10^12 (`400 VALIDATION_FAILED`
+  above it), so sums and conversions stay safe integers. The sign comes from `kind`. The
   minor-unit exponent comes from ISO 4217 (EUR 2, JPY 0, KWD 3).
 - **BR-14.** EUR is the base currency. A non-EUR transaction stores the ECB rate of its
   `occurredOn` date, or of the latest earlier published date within 7 days, together with the
@@ -113,8 +114,12 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   Deleting a rule keeps the transactions it already generated. A rule's template follows the
   transaction reference rules (BR-3, BR-4), with the rule's creator as the author, and generated
   transactions are authored by the creator.
-- **BR-33.** A rule with a backdated `startsOn` generates every past occurrence from that date. A
-  family rule keeps generating after its creator leaves the family; the creator stays the author.
+- **BR-33.** A rule with a backdated `startsOn` generates every past occurrence from that date,
+  at most 1000 per generator run, so a long backlog completes over several runs; an edit first
+  generates the whole backlog with the old template (BR-24). A rule keeps generating into an
+  account or category it already references after that is archived; archiving only hides it from
+  lists and pickers. A family rule keeps generating after its creator leaves the family; the
+  creator stays the author.
   Resuming a paused rule skips the occurrences missed meanwhile (BR-24); spending exactly at a
   budget limit is `near`, not `over` (BR-22).
 

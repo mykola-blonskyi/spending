@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { budgetStatus, monthIn, monthRange, progress } from './progress';
+import { budgetStatus, monthIn, monthRange, progress, putBudgetSchema } from './progress';
 
 describe('monthIn', () => {
   it('uses the calendar month of the user, not of the server', () => {
@@ -59,5 +59,20 @@ describe('progress', () => {
 
   it('is ok with nothing spent', () => {
     expect(progress(1, [])).toEqual({ spentMinor: 0, unconverted: [], status: 'ok' });
+  });
+});
+
+describe('putBudgetSchema', () => {
+  it('caps amountMinor at 1e12 (BR-13)', () => {
+    const budget = {
+      workspaceId: 'a0000000-0000-4000-8000-000000000001',
+      categoryId: 'ca000000-0000-4000-8000-000000000005',
+    };
+    expect(putBudgetSchema.safeParse({ ...budget, amountMinor: 1_000_000_000_000 }).success).toBe(
+      true,
+    );
+    expect(putBudgetSchema.safeParse({ ...budget, amountMinor: 1_000_000_000_001 }).success).toBe(
+      false,
+    );
   });
 });

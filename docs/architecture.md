@@ -145,8 +145,8 @@ of the scoped workspaces by day, kind, category and currency; pure folds (`analy
 build the totals, the unconverted list, the category breakdown (shares per kind, four decimals,
 largest remainder so they sum to 1) and a zero-filled series by day (up to 31 days), ISO week (up
 to 92) or month. Buckets are named by their first day inside the period. `previous` covers the
-previous calendar month or year for a whole-month or whole-year period, else the equal-length period just before, with deltas (current minus previous). Budget progress comes from
-`/budgets`.
+previous calendar month or year for a whole-month or whole-year period, else the equal-length
+period just before, with deltas (current minus previous). Budget progress comes from `/budgets`.
 
 ## Security
 

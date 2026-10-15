@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { daysInMonth, todayIn } from '../common/dates';
 import { WORKSPACE_KINDS } from '../workspaces/family';
+import { amountMinorSchema } from '../ledger/views';
 
 export const BUDGET_STATUSES = ['ok', 'near', 'over'] as const;
 export type BudgetStatus = (typeof BUDGET_STATUSES)[number];
@@ -44,7 +45,7 @@ export type BudgetQuery = z.infer<typeof budgetQuerySchema>;
 export const putBudgetSchema = z.strictObject({
   workspaceId: z.uuid(),
   categoryId: z.uuid(),
-  amountMinor: z.int().positive(),
+  amountMinor: amountMinorSchema,
 });
 export type PutBudget = z.infer<typeof putBudgetSchema>;
 
