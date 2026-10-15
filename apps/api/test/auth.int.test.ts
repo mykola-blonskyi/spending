@@ -5,11 +5,13 @@ import { loginAttempts, memberships, sessions, users, workspaces } from '../src/
 import { type FakeOidc, startFakeOidc, type Tamper } from './fake-oidc/server';
 import {
   api,
+  as,
   callback,
   freshIp,
   login,
   loginAs,
   resetData,
+  type Session,
   sessionCookieFrom,
   startTestApp,
   TEST_CLIENT,
@@ -225,6 +227,17 @@ describe('authentication', () => {
       }
       expect(statuses.slice(0, 20).every((status) => status === 302)).toBe(true);
       expect(statuses[20]).toBe(429);
+    });
+
+    it('rate-limits each signed-in user on their own budget, whatever their IP', async () => {
+      const [annSession, bobSession] = [await signedIn(ann.sub), await signedIn(bob.sub)];
+      const invite = (session: Session) =>
+        as(t, session, '/v1/family/invitations', { method: 'POST', body: {} });
+      const statuses: number[] = [];
+      for (let i = 0; i < 31; i += 1) statuses.push((await invite(annSession)).status);
+      expect(statuses.slice(0, 30)).not.toContain(429);
+      expect(statuses[30]).toBe(429);
+      expect((await invite(bobSession)).status).not.toBe(429);
     });
   });
 
