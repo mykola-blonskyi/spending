@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { categoryRules, importBatches, transactions } from '../src/database/schema';
+import { categoryRules, fxRates, importBatches, transactions } from '../src/database/schema';
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
 import {
   as,
@@ -188,6 +188,32 @@ describe('imports', () => {
         currency: 'USD',
         baseAmountMinor: null,
       });
+    });
+
+    it('converts a large foreign-currency batch with one rate per day (BR-14)', async () => {
+      await t.db.insert(fxRates).values([
+        { date: '2026-10-01', currency: 'USD', ratePerEur: '1.25', source: 'ecb' },
+        { date: '2026-10-02', currency: 'USD', ratePerEur: '2', source: 'ecb' },
+      ]);
+      const usdAccount = await json<{ id: string }>(
+        await as(t, ann, '/v1/accounts', {
+          method: 'POST',
+          body: { workspaceId: annPersonal, name: 'Visa', kind: 'card', currency: 'USD' },
+        }),
+        201,
+      );
+      const days = ['2026-10-01', '2026-10-02', '2026-10-03'];
+      const rows = Array.from({ length: 300 }, (_, i) =>
+        row(i + 2, { occurredOn: days[i % 3]!, currency: 'USD', amountMinor: -1000 }),
+      );
+      const result = await importRows(ann, rows, usdAccount.id);
+      expect(result.imported.count).toBe(300);
+      const stored = await t.db.select().from(transactions);
+      const baseByDay = new Map(stored.map((r) => [r.occurredOn, r.baseAmountMinor]));
+      // 10.00 USD at 1.25 and 2 USD per EUR; the 3rd takes the 2nd's rate (latest earlier day).
+      expect(baseByDay.get('2026-10-01')).toBe(800);
+      expect(baseByDay.get('2026-10-02')).toBe(500);
+      expect(baseByDay.get('2026-10-03')).toBe(500);
     });
 
     it('refuses an account outside the personal workspace, archived or not visible', async () => {

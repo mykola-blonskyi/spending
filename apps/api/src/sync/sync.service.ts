@@ -465,7 +465,7 @@ export class SyncService {
   ): Promise<{
     row: ExistingRow;
     accountWorkspaceId: string | null;
-    source: 'manual' | 'import' | 'recurring';
+    source: typeof transactions.$inferSelect.source;
   } | null> {
     const [found] = await tx
       .select({

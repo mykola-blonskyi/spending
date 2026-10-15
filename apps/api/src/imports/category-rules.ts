@@ -44,6 +44,8 @@ export async function learnCategoryRule(
 ): Promise<void> {
   const key = merchantKey(description);
   if (key === '') return;
+  // shortcut: one learned rule per merchant regardless of kind, so a refund can replace the expense
+  // rule; key by (merchant, kind) if that shows up in practice.
   await tx
     .insert(categoryRules)
     .values({ workspaceId, merchantKey: key, categoryId })

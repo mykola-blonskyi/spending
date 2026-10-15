@@ -2,13 +2,7 @@ import { z } from 'zod';
 import { importBatches } from '../database/schema';
 import { transactionViewSchema } from '../ledger/views';
 import { WORKSPACE_KINDS } from '../workspaces/family';
-import {
-  IMPORT_ROWS_MAX,
-  importRowSchema,
-  MAPPING_MAX_BYTES,
-  REJECT_REASONS,
-  type RejectedRow,
-} from './rows';
+import { IMPORT_ROWS_MAX, importRowSchema, MAPPING_MAX_BYTES, REJECT_REASONS } from './rows';
 
 export const importBodySchema = z.strictObject({
   accountId: z.uuid(),
@@ -46,12 +40,6 @@ export const importResultSchema = z.object({
   duplicates: z.int(),
   rejected: z.array(rejectedRowSchema),
 });
-export type ImportResult = {
-  batch: ImportBatchView;
-  imported: { count: number; transactionIds: string[] };
-  duplicates: number;
-  rejected: RejectedRow[];
-};
 
 export const batchListSchema = z.object({ batches: z.array(importBatchViewSchema) });
 

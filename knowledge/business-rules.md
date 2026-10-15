@@ -132,8 +132,9 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   ones are kept and reported. Deleting a single imported transaction keeps its key, so a
   re-import does not bring it back, even after an undo. A row counts as edited when its `version`
   is above 1 (any user-visible change, including review confirmation) or it left the personal
-  workspace. Only the importer can undo; repeating an undo changes nothing and reports the same
-  counts.
+  workspace. Only the importer can undo; repeating an undo changes nothing. Undo reports the deleted
+  and kept counts as they are when it runs, so a manual deletion made in between can change what
+  a repeat reports.
 
 ## Data rights
 

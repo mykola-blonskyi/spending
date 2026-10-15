@@ -165,11 +165,7 @@ export class FxService {
     }
   }
 
-  private async quote(
-    tx: Tx,
-    currency: CurrencyCode,
-    occurredOn: string,
-  ): Promise<RateQuote | null> {
+  async quote(tx: Tx, currency: CurrencyCode, occurredOn: string): Promise<RateQuote | null> {
     const { from, to } = rateWindow(occurredOn);
     const [row] = await tx
       .select({ date: fxRates.date, ratePerEur: fxRates.ratePerEur, source: fxRates.source })

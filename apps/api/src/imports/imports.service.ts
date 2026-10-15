@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
+import type { z } from 'zod';
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { ApiError } from '../common/errors';
 import { BASE_CURRENCY, type CurrencyCode } from '../common/money';
 import { DB, type Db, ledgerTransaction, type Tx } from '../database/database.module';
 import { accounts, categories, importBatches, transactions } from '../database/schema';
-import { convert } from '../ledger/fx/conversion';
+import { convert, type RateQuote } from '../ledger/fx/conversion';
 import { FxService } from '../ledger/fx/fx.service';
 import { LedgerService, selectViewRows } from '../ledger/ledger.service';
 import { toLedgerRow, type TransactionView } from '../ledger/views';
@@ -18,7 +19,7 @@ import {
   type ConfirmItem,
   type ImportBatchView,
   type ImportBody,
-  type ImportResult,
+  type importResultSchema,
   toBatchView,
 } from './schemas';
 
@@ -38,7 +39,7 @@ export class ImportsService {
    * BR-26. Imports land in the actor's personal workspace; one transaction holds the batch. A
    * family member's rows wait for review (BR-28) with the personal category suggestion.
    */
-  create(actorId: string, body: ImportBody): Promise<ImportResult> {
+  create(actorId: string, body: ImportBody): Promise<z.infer<typeof importResultSchema>> {
     return ledgerTransaction(this.db, async (tx) => {
       const workspaceId = await this.policy.personalWorkspaceId(actorId, tx);
       const account = await this.importAccount(tx, actorId, workspaceId, body.accountId);
@@ -63,6 +64,8 @@ export class ImportsService {
       const reviewStatus = (await this.policy.familyMembership(actorId, tx))
         ? ('pending_review' as const)
         : ('confirmed' as const);
+      // One rate lookup per distinct (currency, day), not per row: the ledger lock is held.
+      const quotes = new Map<string, RateQuote | null>();
       const values = [];
       for (const [index, row] of valid.entries()) {
         values.push({
@@ -81,7 +84,7 @@ export class ImportsService {
           source: 'import' as const,
           reviewStatus,
           importBatchId: batch!.id,
-          ...(await this.conversion(tx, row)),
+          ...(await this.conversion(tx, quotes, row)),
         });
       }
       const transactionIds: string[] = [];
@@ -133,6 +136,7 @@ export class ImportsService {
         .from(importBatches)
         .where(and(eq(importBatches.id, id), eq(importBatches.userId, actorId)));
       if (!batch) throw new ApiError('NOT_FOUND');
+      let stored = batch;
       if (!batch.undoneAt) {
         await tx
           .update(transactions)
@@ -145,10 +149,12 @@ export class ImportsService {
               isNull(transactions.deletedAt),
             ),
           );
-        await tx
+        const [updated] = await tx
           .update(importBatches)
           .set({ undoneAt: sql`now()` })
-          .where(eq(importBatches.id, id));
+          .where(eq(importBatches.id, id))
+          .returning({ ...batchColumns, workspaceId: importBatches.workspaceId });
+        stored = updated!;
       }
       const [counts] = await tx
         .select({
@@ -157,11 +163,7 @@ export class ImportsService {
         })
         .from(transactions)
         .where(eq(transactions.importBatchId, id));
-      const [stored] = await tx
-        .select(batchColumns)
-        .from(importBatches)
-        .where(eq(importBatches.id, id));
-      return { batch: toBatchView(stored!), deleted: counts!.deleted, kept: counts!.kept };
+      return { batch: toBatchView(stored), deleted: counts!.deleted, kept: counts!.kept };
     });
   }
 
@@ -257,7 +259,6 @@ export class ImportsService {
             workspaceId: target,
             categoryId: item.categoryId,
             reviewStatus: 'confirmed',
-            ...(target === personalId ? {} : { previousWorkspaceId: personalId }),
           })
           .where(eq(transactions.id, row.id));
         if (item.categoryId) {
@@ -288,10 +289,11 @@ export class ImportsService {
     return { id: account.id, currency: account.currency as CurrencyCode };
   }
 
-  /** EUR needs no rate lookup; other currencies read the rate inside this transaction (BR-14). */
-  private conversion(tx: Tx, row: NormalizedRow) {
-    return row.currency === BASE_CURRENCY
-      ? convert(row.amountMinor, row.currency, null)
-      : this.fx.conversion(tx, row.amountMinor, row.currency, row.occurredOn);
+  /** BR-14. EUR needs no rate; other currencies read the rate inside this transaction. */
+  private async conversion(tx: Tx, quotes: Map<string, RateQuote | null>, row: NormalizedRow) {
+    if (row.currency === BASE_CURRENCY) return convert(row.amountMinor, row.currency, null);
+    const key = `${row.currency}|${row.occurredOn}`;
+    if (!quotes.has(key)) quotes.set(key, await this.fx.quote(tx, row.currency, row.occurredOn));
+    return convert(row.amountMinor, row.currency, quotes.get(key)!);
   }
 }
