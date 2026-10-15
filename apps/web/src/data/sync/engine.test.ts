@@ -1,16 +1,20 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../api-error';
-import { SyncEngine, type SyncTransport, userFlushLock } from './engine';
+import { api, createApiClient } from '../client';
+import { setCsrfToken } from '../csrf';
+import { type FlushLock, SyncEngine, type SyncTransport, userFlushLock } from './engine';
 import { localRow, page, sequentialIds, serverRow } from './fixtures';
 import {
   emptyLocalState,
   type LocalState,
+  mutationsFor,
   type PushResult,
   queueOrder,
   type WireMutation,
 } from './model';
-import { applyLocalChange, requeueInFlight } from './queue';
+import { applyLocalChange, requeueInFlight, setMutationState } from './queue';
 import { LocalStore } from './store';
+import { apiTransport, SYNC_TIMEOUT_MS } from './transport';
 import { deleteTransaction, recordTransaction, updateTransaction } from './writes';
 
 const draft = (({ id: _id, createdAt: _createdAt, ...rest }) => rest)(localRow());
@@ -232,6 +236,67 @@ describe('SyncEngine', () => {
     await vi.advanceTimersByTimeAsync(1);
     expect(push).toHaveBeenCalledTimes(2);
     engine.stop();
+  });
+
+  it('leaves another tab’s push in flight alone when its own push fails', async () => {
+    store = await LocalStore.open('ann');
+    const local = store;
+    await recordTransaction(local, { ...draft, description: 'mine' });
+    const push = vi.fn<SyncTransport['push']>(async () => {
+      // Without Web Locks, another tab may send its own batch meanwhile.
+      const id = await recordTransaction(local, { ...draft, description: 'theirs' });
+      const theirs = mutationsFor(local.state, id).map((mutation) => mutation.mutationId);
+      await local.commit((state) => setMutationState(state, theirs, { status: 'sending' }));
+      throw new ApiError({ status: 0, code: 'NETWORK', message: 'offline' });
+    });
+    const engine = new SyncEngine(local, { push, pull: () => Promise.resolve(page()) });
+
+    await engine.flush();
+    engine.stop();
+
+    expect(queueOrder(local.state).map((mutation) => mutation.state.status)).toEqual([
+      'queued',
+      'sending',
+    ]);
+  });
+
+  it('gives up a hung push, so the lock passes to the next flush', async () => {
+    store = await LocalStore.open('ann');
+    const local = store;
+    await recordTransaction(local, draft);
+    setCsrfToken('tok');
+    const timeouts: AbortController[] = [];
+    vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms) => {
+      expect(ms).toBe(SYNC_TIMEOUT_MS);
+      const controller = new AbortController();
+      timeouts.push(controller);
+      return controller.signal;
+    });
+    const fetchMock = vi.fn(
+      (request: Request) =>
+        new Promise<Response>((_resolve, reject) =>
+          request.signal.addEventListener('abort', () => reject(request.signal.reason)),
+        ),
+    );
+    const client = createApiClient({ baseUrl: 'http://localhost', fetch: fetchMock });
+    vi.spyOn(api, 'POST').mockImplementation(client.POST);
+    let held = Promise.resolve();
+    const lock: FlushLock = (run) => (held = held.then(run));
+    const server = fakeServer();
+    const hung = new SyncEngine(local, apiTransport, lock);
+    const otherTab = new SyncEngine(local, server.transport, lock);
+
+    const first = hung.flush();
+    const second = otherTab.flush();
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+    timeouts[0]!.abort(new DOMException('timed out', 'TimeoutError'));
+    await first;
+    hung.stop();
+    expect(hung.getStatus().phase).toBe('stopped');
+    await second;
+
+    expect(server.pushes).toHaveLength(1);
+    expect(local.state.mutations.size).toBe(0);
   });
 
   it('stops between batches once stopped mid-push', async () => {

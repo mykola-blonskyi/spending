@@ -64,6 +64,8 @@ export class SyncEngine {
   #running: Promise<void> | null = null;
   #again = false;
   #attempt = 0;
+  /** This flush's batch on its way, the only mutations it may settle. */
+  #sent: readonly string[] = [];
   #timer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(store: LocalStore, transport: SyncTransport, lock: FlushLock = (run) => run()) {
@@ -138,11 +140,13 @@ export class SyncEngine {
     } catch (error) {
       if (error instanceof StoreClosedError || this.#store.closed) {
         this.stop();
-      } else if (isSignedOutError(error)) {
-        await this.#store.commit(requeueInFlight).catch(() => undefined);
-        this.#setStatus({ phase: 'authRequired' });
       } else {
-        await this.#store.commit(requeueInFlight).catch(() => undefined);
+        const sent = this.#sent;
+        await this.#store.commit((state) => requeueInFlight(state, sent)).catch(() => undefined);
+        if (isSignedOutError(error)) {
+          this.#setStatus({ phase: 'authRequired' });
+          return;
+        }
         this.#attempt += 1;
         this.#setStatus({ phase: 'retrying' });
         this.#schedule(backoffDelay(this.#attempt));
@@ -156,13 +160,17 @@ export class SyncEngine {
       // Selecting inside the commit sends the payloads as they are when marked sending.
       await this.#store.commit((state) => {
         batch = selectBatch(state);
-        const ids = batch.map((mutation) => mutation.mutationId);
-        return ids.length === 0 ? state : setMutationState(state, ids, { status: 'sending' });
+        this.#sent = batch.map((mutation) => mutation.mutationId);
+        return batch.length === 0
+          ? state
+          : setMutationState(state, this.#sent, { status: 'sending' });
       });
       if (batch.length === 0) return;
       const results = await this.#send(batch);
       const now = new Date().toISOString();
-      await this.#store.commit((state) => reducePush(state, results, now));
+      const sent = this.#sent;
+      await this.#store.commit((state) => reducePush(state, results, now, sent));
+      this.#sent = [];
     }
   }
 
@@ -182,10 +190,10 @@ export class SyncEngine {
         try {
           for (const mutation of batch) results.push(...(await this.#send([mutation])));
         } catch (failure) {
-          // Keep what the server already applied; reducePush requeues the rest.
+          // Keep what the server already applied; the flusher requeues the rest.
           if (results.length > 0) {
             const now = new Date().toISOString();
-            await this.#store.commit((state) => reducePush(state, results, now));
+            await this.#store.commit((state) => reducePush(state, results, now, []));
           }
           throw failure;
         }

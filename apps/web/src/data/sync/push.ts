@@ -115,13 +115,15 @@ function applyResult(state: LocalState, result: PushResult, now: string): LocalS
 /**
  * Applies push results in order. Applied: the server row replaces the overlay. Conflict: the
  * server row stays canonical and the conflict is stored. Rejected: the overlay stays and the
- * mutation is marked failed with its code.
+ * mutation is marked failed with its code. Anything of the batch `sent` left without a result
+ * goes back to the queue.
  */
 export function reducePush(
   state: LocalState,
   results: readonly PushResult[],
   now: string,
+  sent: readonly string[],
 ): LocalState {
   const next = results.reduce((current, result) => applyResult(current, result, now), state);
-  return requeueInFlight(next);
+  return requeueInFlight(next, sent);
 }
