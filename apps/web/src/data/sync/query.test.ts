@@ -114,7 +114,9 @@ describe('deriveSyncStatus', () => {
   ).state;
 
   it.each<[string, EngineStatus, LocalState, boolean, ReturnType<typeof deriveSyncStatus>]>([
-    ['synced', idle, emptyLocalState(), true, { state: 'synced' }],
+    ['synced', idle, syncedState(), true, { state: 'synced' }],
+    ['first pull not finished', idle, emptyLocalState(), true, { state: 'syncing' }],
+    ['offline before first pull', idle, emptyLocalState(), false, { state: 'offline', count: 0 }],
     ['pending', idle, pending, true, { state: 'pending', count: 1 }],
     ['syncing', { phase: 'syncing' }, pending, true, { state: 'syncing' }],
     ['retrying', { phase: 'retrying' }, pending, true, { state: 'retrying' }],

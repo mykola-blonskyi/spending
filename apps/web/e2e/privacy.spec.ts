@@ -82,7 +82,7 @@ test('a revoked session keeps queued changes, which sync once the same user sign
 }) => {
   await signInAs('ann');
   await page.goto('/transactions/new');
-  await expect(page.getByLabel('Amount')).toBeVisible();
+  await expect(badge(page)).toHaveText('Up to date');
   await context.setOffline(true);
   await save(page, 'Queued before revocation');
   await expect(badge(page)).toHaveText('Working offline, 1 pending');
