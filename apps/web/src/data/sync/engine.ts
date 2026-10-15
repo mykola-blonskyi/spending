@@ -76,6 +76,8 @@ export class SyncEngine {
   #running: Promise<void> | null = null;
   #again = false;
   #attempt = 0;
+  /** This flush's batch on its way, the only mutations it may settle. */
+  #sent: readonly string[] = [];
   #timer: ReturnType<typeof setTimeout> | undefined;
   /** The last push failed before the server could apply it, so its mutations stay editable. */
   #unapplied = false;
@@ -155,8 +157,11 @@ export class SyncEngine {
       if (error instanceof StoreClosedError || this.#store.closed) {
         this.stop();
       } else {
+        const sent = this.#sent;
         const status = this.#unapplied ? 'queued' : 'retrying';
-        await this.#store.commit((state) => requeueInFlight(state, status)).catch(() => undefined);
+        await this.#store
+          .commit((state) => requeueInFlight(state, status, sent))
+          .catch(() => undefined);
         if (isSignedOutError(error)) {
           this.#setStatus({ phase: 'authRequired' });
           return;
@@ -174,13 +179,17 @@ export class SyncEngine {
       // Selecting inside the commit sends the payloads as they are when marked sending.
       await this.#store.commit((state) => {
         batch = selectBatch(state);
-        const ids = batch.map((mutation) => mutation.mutationId);
-        return ids.length === 0 ? state : setMutationState(state, ids, { status: 'sending' });
+        this.#sent = batch.map((mutation) => mutation.mutationId);
+        return batch.length === 0
+          ? state
+          : setMutationState(state, this.#sent, { status: 'sending' });
       });
       if (batch.length === 0) return;
       const results = await this.#send(batch);
       const now = new Date().toISOString();
-      await this.#store.commit((state) => reducePush(state, results, now));
+      const sent = this.#sent;
+      await this.#store.commit((state) => reducePush(state, results, now, sent));
+      this.#sent = [];
     }
   }
 

@@ -133,14 +133,17 @@ export function setMutationState(
 
 /**
  * Settles mutations left `sending`. By default the push may have reached the server, so they are
- * frozen for a replay (BR-18); `queued` is for a push known to have changed nothing.
+ * frozen for a replay (BR-18); `queued` is for a push known to have changed nothing. `only` limits
+ * this to one flush's batch, so another tab's push in flight is left alone.
  */
 export function requeueInFlight(
   state: LocalState,
   status: 'queued' | 'retrying' = 'retrying',
+  only?: readonly string[],
 ): LocalState {
   const sending = [...state.mutations.values()]
     .filter((mutation) => mutation.state.status === 'sending')
+    .filter((mutation) => !only || only.includes(mutation.mutationId))
     .map((mutation) => mutation.mutationId);
   return sending.length === 0 ? state : setMutationState(state, sending, { status });
 }
