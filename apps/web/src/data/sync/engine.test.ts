@@ -76,8 +76,12 @@ describe('SyncEngine', () => {
 
     const commit = local.commit.bind(local);
     let edit: Promise<void> | undefined;
-    vi.spyOn(local, 'commit').mockImplementation((transition) => {
-      if (!edit && transition !== requeueInFlight) {
+    let intercepted = 0;
+    const spy = vi.spyOn(local, 'commit').mockImplementation((transition) => {
+      intercepted += 1;
+      if (transition !== requeueInFlight) {
+        // The edit commits through local.commit too; restore first so it cannot re-enter here.
+        spy.mockRestore();
         edit = updateTransaction(local, id, { ...draft, description: 'W2' });
       }
       return commit(transition);
@@ -91,6 +95,8 @@ describe('SyncEngine', () => {
     const record = local.state.transactions.get(id);
     const shown = record?.local ?? record?.server;
     expect(shown && 'description' in shown ? shown.description : null).toBe('W2');
+    // The edit's own commit must not re-enter the spy (it once recursed until the stack overflowed).
+    expect(intercepted).toBe(2);
   });
 
   it('retries a refused batch one mutation at a time so only the invalid one fails', async () => {
