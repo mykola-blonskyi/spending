@@ -9,6 +9,7 @@ export {
 export {
   currencyExponent,
   formatMoney,
+  MAX_AMOUNT_MINOR,
   minorToDecimalString,
   parseAmount,
   type MoneyFormatOptions,

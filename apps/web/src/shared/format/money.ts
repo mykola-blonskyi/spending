@@ -47,6 +47,9 @@ export function formatMoney(
 
 const AMOUNT = /^(\d+)(?:[.,](\d*))?$/;
 
+/** BR-13: the largest amount the server accepts, in minor units. */
+export const MAX_AMOUNT_MINOR = 1_000_000_000_000;
+
 /** Parses what the user typed ("12", "12.5", "12,50") into positive minor units, or null. */
 export function parseAmount(text: string, exponent: number): number | null {
   const match = AMOUNT.exec(text.trim().replace(/\s/g, ''));
@@ -54,5 +57,5 @@ export function parseAmount(text: string, exponent: number): number | null {
   const [, whole = '', fraction = ''] = match;
   if (fraction.length > exponent) return null;
   const minor = Number(whole + fraction.padEnd(exponent, '0'));
-  return Number.isSafeInteger(minor) && minor > 0 ? minor : null;
+  return minor > 0 && minor <= MAX_AMOUNT_MINOR ? minor : null;
 }

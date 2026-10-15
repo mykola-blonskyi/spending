@@ -140,6 +140,11 @@ describe('parseAmount', () => {
     expect(parseAmount(text, 2)).toBeNull();
   });
 
+  it('accepts at most 10^12 minor units (BR-13)', () => {
+    expect(parseAmount('10000000000.00', 2)).toBe(1_000_000_000_000);
+    expect(parseAmount('10000000000.01', 2)).toBeNull();
+  });
+
   it('round-trips through the editable text', () => {
     expect(parseAmount(minorToDecimalString(1250, 2), 2)).toBe(1250);
     expect(minorToDecimalString(5, 2)).toBe('0.05');

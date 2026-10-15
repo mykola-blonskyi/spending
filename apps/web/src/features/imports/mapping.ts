@@ -4,6 +4,7 @@
  * (BR-26), so every rejection is reported in one place with its line number.
  */
 import type { ImportRow } from '@data/imports';
+import { MAX_AMOUNT_MINOR } from '@shared/format';
 
 export const DATE_FORMATS = ['dmy', 'ymd', 'mdy'] as const;
 export type DateFormat = (typeof DATE_FORMATS)[number];
@@ -180,7 +181,7 @@ export function parseAmountToMinor(
   const fraction = match[4] ?? '';
   if (fraction.length > exponent) return null;
   const minor = BigInt(integer + fraction.padEnd(exponent, '0'));
-  if (minor > BigInt(Number.MAX_SAFE_INTEGER)) return null;
+  if (minor > BigInt(MAX_AMOUNT_MINOR)) return null;
   return Number(match[1] === '-' ? -minor : minor);
 }
 
