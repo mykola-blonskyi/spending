@@ -1,8 +1,12 @@
 name: Deploy
 
-# Manual only: Actions → Deploy → Run workflow on main. The dispatch is the release gate.
+# Runs by itself once CI passes on a push to main, and by hand: Actions → Deploy → Run workflow.
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
@@ -13,9 +17,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # A manual dispatch verifies its commit here; an automatic run follows a CI run that already did.
   verify:
     name: CI
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     uses: ./.github/workflows/ci.yml
     with:
       ref: ${{ github.sha }}
@@ -23,7 +28,13 @@ jobs:
   deploy:
     name: Deploy to production
     needs: verify
-    if: github.ref == 'refs/heads/main'
+    if: >-
+      !cancelled() && (
+        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+          && needs.verify.result == 'success') ||
+        (github.event_name == 'workflow_run' && github.event.workflow_run.event == 'push'
+          && github.event.workflow_run.conclusion == 'success')
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 40
     # Restricted to main in Settings → Environments. The repository is public, so required
@@ -31,28 +42,39 @@ jobs:
     environment:
       name: production
       url: ${{ vars.APP_URL }}
+    env:
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.SHA }}
           persist-credentials: false
+      # Coolify builds the head of main, so only that commit may be deployed. An automatic run
+      # for an older commit stands down: the newer commit's CI starts its own deploy.
       - name: Confirm main still points at the verified commit
+        id: head
         env:
           REPOSITORY: ${{ github.repository }}
-          VERIFIED_SHA: ${{ github.sha }}
+          AUTOMATIC: ${{ github.event_name == 'workflow_run' }}
         run: |
           head=$(git ls-remote "https://github.com/$REPOSITORY" refs/heads/main | cut -f1)
-          if [ "$head" != "$VERIFIED_SHA" ]; then
-            echo "main moved since dispatch ($VERIFIED_SHA verified, $head now); re-run on the new head." >&2
-            exit 1
+          if [ "$head" = "$SHA" ]; then exit 0; fi
+          if [ "$AUTOMATIC" = true ]; then
+            echo "main moved on to $head; its own run deploys it."
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          echo "main moved since dispatch ($SHA verified, $head now); re-run on the new head." >&2
+          exit 1
       - name: Deploy via Coolify
+        if: steps.head.outputs.stale != 'true'
         env:
           COOLIFY_DEPLOY_WEBHOOK_URL: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK_URL }}
           COOLIFY_DEPLOY_TOKEN: ${{ secrets.COOLIFY_DEPLOY_TOKEN }}
         run: sh scripts/coolify-deploy.sh
       - name: Check health and security headers
+        if: steps.head.outputs.stale != 'true'
         env:
           APP_URL: ${{ vars.APP_URL }}
-          EXPECTED_VERSION: ${{ github.sha }}
+          EXPECTED_VERSION: ${{ env.SHA }}
         run: sh scripts/check-deploy.sh

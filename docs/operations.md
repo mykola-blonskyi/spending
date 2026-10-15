@@ -216,7 +216,8 @@ docker compose --env-file deploy/smoke.env -f docker-compose.yml \
 
 6. **Coolify resource.** New resource → Docker Compose → this repository, branch `main`,
    compose file `docker-compose.yml`. Then:
-   - Turn auto-deploy on push off. Only the Deploy workflow deploys.
+   - Turn Coolify's Auto Deploy off. The Deploy workflow deploys automatically after CI passes;
+     Coolify's own auto-deploy would skip that gate and deploy every merge twice.
    - Turn "Connect to Predefined Network" on.
    - Domain `https://spending.blonskyi.dev` on the `web` service, port 8080. No other service
      gets a domain.
@@ -233,24 +234,29 @@ docker compose --env-file deploy/smoke.env -f docker-compose.yml \
 8. **GitHub.** Settings → Environments → `production`, deployment branches limited to `main`.
    In that environment add secrets `COOLIFY_DEPLOY_WEBHOOK_URL` and `COOLIFY_DEPLOY_TOKEN`, and
    variable `APP_URL=https://spending.blonskyi.dev`. Required reviewers are free on a public
-   repository but optional; the manual dispatch is already the gate.
+   repository but optional; green CI on `main` is already the gate.
 
 9. Deploy once (next section) and sign in.
 
 ## Deploying
 
-Actions → Deploy → Run workflow, branch `main`. The workflow re-runs CI for that commit, triggers
-Coolify, waits for the deployment to finish (`scripts/coolify-deploy.sh`), then checks
-`/api/health/ready` and the security headers through the public URL
-(`scripts/check-deploy.sh`). Deploys are serialized; a second dispatch waits for the first.
+Automatic: every merge to `main` deploys once CI passes on it. The Deploy workflow starts from
+the finished CI run (`workflow_run`), triggers Coolify for that exact commit, waits for the
+deployment to finish (`scripts/coolify-deploy.sh`), then checks `/api/health/ready` and the
+security headers through the public URL (`scripts/check-deploy.sh`). A red CI run deploys
+nothing. When several merges land close together, the runs for older commits stand down (main
+has moved) and only the newest commit deploys. Deploys are serialized.
+
+By hand (redeploy, or after fixing a Coolify setting): Actions → Deploy → Run workflow, branch
+`main`. A manual run re-runs CI for that commit first.
 
 Coolify builds the head of `main`, not a given SHA: its deploy API takes only `uuid`, `tag` and
 `force`, and pinning a commit would need a token with write access to the resource. The workflow
-therefore fails right before the trigger if `main` has moved since dispatch ("re-run on the new
-head"). A push landing in the seconds between that check and Coolify's checkout would deploy
+therefore stops right before the trigger if `main` has moved since that commit: an automatic
+run stands down, a manual one fails ("re-run on the new head"). A push landing in the seconds between that check and Coolify's checkout would deploy
 an unverified commit; the post-deploy check then waits until `/api/health` reports the dispatched
-SHA as `version` and fails on a mismatch, so the window is detected, not prevented. Keep `main`
-quiet (squash-merge nothing) while a deploy runs, and roll back with a revert if it fails.
+SHA as `version` and fails on a mismatch, so the window is detected, not prevented; the next
+commit's run then deploys it properly. Roll back with a revert, which deploys like any merge.
 
 Cloudflare bot protection may challenge requests from GitHub runners and fail the post-deploy
 check. Add a WAF custom rule: Security → WAF → Custom rules, expression
@@ -259,8 +265,8 @@ action Skip (all remaining custom rules, and Bot Fight Mode / Super Bot Fight Mo
 
 ## Rollback
 
-- **Code.** Revert the commit on `main` and dispatch Deploy. This re-runs CI, so it is the only
-  documented path. (Redeploying an old deployment from the Coolify UI skips the CI gate; keep it
+- **Code.** Revert the commit on `main`; the revert deploys automatically once CI passes, so it is
+  the only documented path. (Redeploying an old deployment from the Coolify UI skips the CI gate; keep it
   for emergencies.)
 - **Schema.** Migrations are forward-only. Every migration must be backward-compatible with the
   previous release (expand, deploy, then contract in a later release), so rolling the code back
