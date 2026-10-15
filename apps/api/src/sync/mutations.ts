@@ -3,6 +3,7 @@ import type { ErrorCode } from '../common/errors';
 import { MEMBER_ROLES, WORKSPACE_KINDS } from '../workspaces/family';
 import {
   accountViewSchema,
+  amountMinorSchema,
   calendarDateSchema,
   categoryViewSchema,
   currencySchema,
@@ -17,7 +18,7 @@ export const transactionInputSchema = z.strictObject({
   id: z.uuid(),
   workspaceId: z.uuid(),
   kind: z.enum(ENTRY_KINDS),
-  amountMinor: z.int().positive(),
+  amountMinor: amountMinorSchema,
   currency: currencySchema,
   occurredOn: calendarDateSchema,
   accountId: z.uuid().nullable(),

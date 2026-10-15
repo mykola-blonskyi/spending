@@ -64,6 +64,11 @@ export const es = {
       conflictShort: '{count, plural, one {# conflicto} other {# conflictos}}',
       conflictDescription:
         'Este registro se modificó en otro dispositivo. Elige qué versión quieres conservar.',
+      retrying: 'Reintentando…',
+      authRequired: 'Inicia sesión para sincronizar',
+      failedShort: '{count, plural, one {# sin enviar} other {# sin enviar}}',
+      offlineShort:
+        '{count, plural, =0 {Sin conexión} one {Sin conexión, # pendiente} other {Sin conexión, # pendientes}}',
     },
     approval: {
       title: 'Pendiente de aprobación',
@@ -97,12 +102,23 @@ export const es = {
     errors: {
       login_failed: 'No se ha completado el inicio de sesión. Vuelve a intentarlo.',
       login_expired: 'El inicio de sesión ha tardado demasiado y ha caducado. Empieza de nuevo.',
+      INVALID_ACCOUNT: 'Esta cuenta está archivada o no está disponible aquí. Elige otra.',
+      INVALID_CATEGORY: 'Esta categoría está archivada o no encaja con este tipo. Elige otra.',
+      REVIEW_REQUIRED:
+        'Este registro espera revisión en una importación y aún no se puede cambiar.',
+      MUTATION_ID_REUSED: 'No hemos podido asociar este cambio a tu cuenta. Vuelve a hacerlo.',
     },
     pendingHint: {
       title: '¿Sigues sin poder entrar?',
       description:
         'Si inicias sesión pero siempre vuelves aquí, puede que el propietario aún no haya aprobado tu cuenta o no te haya dado acceso a Spending. Pídeselo y vuelve a intentarlo.',
     },
+  },
+  signOut: {
+    pendingTitle: '¿Cerrar sesión con cambios sin sincronizar?',
+    pendingDescription:
+      'Algunos cambios de este dispositivo aún no han llegado al servidor. Si cierras sesión, se borrarán de este dispositivo.',
+    pendingConfirm: 'Cerrar sesión de todos modos',
   },
   userMenu: {
     label: 'Cuenta: {name}',
@@ -125,12 +141,31 @@ export const es = {
       description: 'Todos tus gastos e ingresos, los más recientes primero.',
       emptyTitle: 'Aún no hay movimientos',
       emptyDescription: 'Añade un gasto o importa un extracto bancario para empezar.',
+      searchLabel: 'Buscar movimientos',
+      searchPlaceholder: 'Busca en descripciones y notas',
+      kindFilter: 'Tipo',
+      allKinds: 'Todos',
+      noMatchesTitle: 'No hay movimientos que coincidan',
+      noMatchesDescription: 'Prueba con otra búsqueda u otro tipo.',
+      firstSync: 'Trayendo tu historial a este dispositivo…',
+      firstSyncLoaded: '{count, plural, one {# registro por ahora} other {# registros por ahora}}',
+      totalSpent: 'Gastado',
+      totalReceived: 'Recibido',
+      uncategorized: 'Sin categoría',
+      pending: 'Pendiente de sincronizar',
+      failed: 'Sin sincronizar: {reason}',
+      conflict: 'Necesita revisión',
     },
     addTransaction: {
       title: 'Añadir movimiento',
       description: 'Registra un gasto o un ingreso.',
-      emptyTitle: 'Muy pronto: entrada rápida',
-      emptyDescription: 'Pronto podrás añadir un movimiento aquí con unos pocos toques.',
+    },
+    editTransaction: {
+      title: 'Editar movimiento',
+      description: 'Los cambios se guardan en este dispositivo y se sincronizan solos.',
+      notFoundTitle: 'Movimiento no encontrado',
+      notFoundDescription:
+        'Puede que se haya eliminado o que aún no haya llegado a este dispositivo.',
     },
     budgets: {
       title: 'Presupuestos',
@@ -181,6 +216,27 @@ export const es = {
       emptyDescription:
         'Los cambios que hagas sin conexión esperarán aquí hasta llegar al servidor.',
     },
+  },
+  transactionForm: {
+    kind: 'Tipo',
+    expense: 'Gasto',
+    income: 'Ingreso',
+    amount: 'Importe',
+    amountInvalid: 'Introduce un importe mayor que cero, por ejemplo 12.50.',
+    currency: 'Divisa',
+    date: 'Fecha',
+    account: 'Cuenta',
+    noAccount: 'Sin cuenta',
+    category: 'Categoría',
+    noCategory: 'Sin categoría',
+    description: 'Descripción',
+    descriptionPlaceholder: '¿En qué fue?',
+    save: 'Guardar',
+    saveFailed: 'Este dispositivo no ha podido guardar el cambio. Inténtalo de nuevo.',
+    delete: 'Eliminar',
+    deleteTitle: '¿Eliminar este movimiento?',
+    deleteDescription: 'Desaparece ya de tu historial y del servidor en la próxima sincronización.',
+    notReady: 'Preparando tus cuentas y categorías…',
   },
   settings: {
     appearance: 'Apariencia',

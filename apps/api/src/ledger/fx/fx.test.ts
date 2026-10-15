@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { type CurrencyCode, parseCurrency } from '../../common/money';
 import { convert, rateWindow, UNCONVERTED } from './conversion';
+import type { Db, Tx } from '../../database/database.module';
 import { type FxRate, parseEcbXml } from './ecb';
+import { FxService } from './fx.service';
 import { type FxFeed, fetchFeeds, type FxRateSource, readCapped } from './fx-source';
 
 const c = (code: string) => parseCurrency(code) as CurrencyCode;
@@ -165,5 +167,16 @@ describe('convert', () => {
     expect(convert(Number.MAX_SAFE_INTEGER, c('JPY'), { ...quote, ratePerEur: '0.0001' })).toEqual(
       UNCONVERTED,
     );
+  });
+});
+
+describe('FxService.conversion', () => {
+  it('converts EUR without reading rates', async () => {
+    const noDb = new Proxy({}, { get: () => expect.fail('queried the database') });
+    const fx = new FxService(noDb as Db, {} as FxRateSource);
+    expect(await fx.conversion(noDb as Tx, 1250, c('EUR'), '2026-10-14')).toEqual({
+      ...UNCONVERTED,
+      baseAmountMinor: 1250,
+    });
   });
 });

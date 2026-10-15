@@ -18,6 +18,9 @@ export const currencySchema = z
   .string()
   .refine((value) => parseCurrency(value) !== null, 'unknown ISO 4217 currency');
 
+/** BR-13: a ceiling far below 2^53, so sums and conversions stay safe integers. */
+export const amountMinorSchema = z.int().positive().max(1_000_000_000_000);
+
 export const calendarDateSchema = z
   .string()
   .refine(isCalendarDate, 'must be a YYYY-MM-DD calendar date')

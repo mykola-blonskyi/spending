@@ -177,3 +177,114 @@ export function as(
 ): Promise<Response> {
   return api(t, path, { ...request, cookie: session.cookie, csrf: session.csrf });
 }
+
+async function body<T>(response: Response, status: number): Promise<T> {
+  if (response.status !== status) {
+    throw new Error(`expected ${status}, got ${response.status}: ${await response.text()}`);
+  }
+  return (await response.json()) as T;
+}
+
+export type Workspaces = { personal: string; family: string | null };
+
+export async function workspacesOf(t: TestApp, session: Session): Promise<Workspaces> {
+  const { workspaces } = await body<{ workspaces: { id: string; kind: string }[] }>(
+    await as(t, session, '/v1/workspaces'),
+    200,
+  );
+  return {
+    personal: workspaces.find((w) => w.kind === 'personal')!.id,
+    family: workspaces.find((w) => w.kind === 'family')?.id ?? null,
+  };
+}
+
+/** Creates a family owned by `owner` and has every one of `members` join it. Returns its id. */
+export async function createFamily(
+  t: TestApp,
+  owner: Session,
+  ...members: Session[]
+): Promise<string> {
+  const { id } = await body<{ id: string }>(
+    await as(t, owner, '/v1/family', { method: 'POST', body: { name: 'Home' } }),
+    201,
+  );
+  for (const member of members) {
+    const { url } = await body<{ url: string }>(
+      await as(t, owner, '/v1/family/invitations', { method: 'POST', body: {} }),
+      201,
+    );
+    const accepted = await as(t, member, `/v1/invitations/${url.split('/invite/')[1]}/accept`, {
+      method: 'POST',
+    });
+    if (!accepted.ok) throw new Error(`accept returned ${accepted.status}`);
+  }
+  return id;
+}
+
+/** Category ids of a workspace by system key, for the seeded defaults. */
+export async function categoriesOf(
+  t: TestApp,
+  session: Session,
+  workspaceId: string,
+): Promise<Record<string, string>> {
+  const { categories } = await body<{ categories: { id: string; systemKey: string | null }[] }>(
+    await as(t, session, `/v1/categories?workspaceId=${workspaceId}`),
+    200,
+  );
+  return Object.fromEntries(categories.map((c) => [c.systemKey ?? c.id, c.id]));
+}
+
+export type PushedRow = { id: string; version: number } & Record<string, unknown>;
+
+/** Creates transactions through sync push and fails unless every one is applied. */
+export async function pushNew(
+  t: TestApp,
+  session: Session,
+  rows: (Record<string, unknown> & { workspaceId: string })[],
+): Promise<PushedRow[]> {
+  const mutations = rows.map((transaction) => ({
+    mutationId: crypto.randomUUID(),
+    type: 'transaction.upsert',
+    baseVersion: null,
+    transaction: {
+      id: crypto.randomUUID(),
+      kind: 'expense',
+      amountMinor: 1000,
+      currency: 'EUR',
+      occurredOn: '2026-10-01',
+      accountId: null,
+      categoryId: null,
+      description: '',
+      note: '',
+      ...transaction,
+    },
+  }));
+  const { results } = await body<{ results: { status: string; transaction: PushedRow }[] }>(
+    await as(t, session, '/v1/sync/push', { method: 'POST', body: { mutations } }),
+    200,
+  );
+  const failed = results.filter((r) => r.status !== 'applied');
+  if (failed.length > 0) throw new Error(`push not applied: ${JSON.stringify(failed)}`);
+  return results.map((r) => r.transaction);
+}
+
+/** Tombstones a row through sync push. */
+export async function pushDelete(t: TestApp, session: Session, row: PushedRow): Promise<void> {
+  const { results } = await body<{ results: { status: string }[] }>(
+    await as(t, session, '/v1/sync/push', {
+      method: 'POST',
+      body: {
+        mutations: [
+          {
+            mutationId: crypto.randomUUID(),
+            type: 'transaction.delete',
+            transactionId: row.id,
+            baseVersion: row.version,
+          },
+        ],
+      },
+    }),
+    200,
+  );
+  if (results[0]?.status !== 'applied') throw new Error('delete not applied');
+}

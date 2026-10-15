@@ -110,7 +110,7 @@ export interface paths {
         get: operations["MeController_get"];
         put?: never;
         post?: never;
-        delete: operations["DataRightsController_remove"];
+        delete?: never;
         options?: never;
         head?: never;
         patch: operations["MeController_update"];
@@ -420,14 +420,142 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/me/export": {
+    "/api/v1/imports": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["DataRightsController_export"];
+        get: operations["ImportsController_list"];
+        put?: never;
+        post: operations["ImportsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ImportsController_review"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/review/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ImportsController_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{id}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ImportsController_undo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/budgets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["BudgetsController_list"];
+        put: operations["BudgetsController_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/budgets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["BudgetsController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recurring-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RecurringController_list"];
+        put?: never;
+        post: operations["RecurringController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recurring-rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["RecurringController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["RecurringController_update"];
+        trace?: never;
+    };
+    "/api/v1/analytics/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AnalyticsController_summary"];
         put?: never;
         post?: never;
         delete?: never;
@@ -942,187 +1070,279 @@ export interface components {
             resolvedAt: string;
             transaction: components["schemas"]["TransactionView_Output"] | components["schemas"]["Tombstone_Output"];
         };
-        AvatarUrl: string | null;
-        ArchivedAt: string | null;
-        SystemKey: string | null;
-        TransactionView: {
+        ImportDto: {
+            /** Format: uuid */
+            accountId: string;
+            fileName: string;
+            mapping: {
+                [key: string]: unknown;
+            };
+            rows: {
+                line: number;
+                occurredOn: string;
+                amountMinor: number;
+                currency?: string;
+                description: string;
+                externalId?: string;
+            }[];
+        };
+        ImportBatchView_Output: {
+            /** Format: uuid */
+            id: string;
+            accountId: string | null;
+            fileName: string;
+            rowCount: number;
+            importedCount: number;
+            duplicateCount: number;
+            rejectedCount: number;
+            /** Format: date-time */
+            createdAt: string;
+            undoneAt: string | null;
+        };
+        ImportResultDto_Output: {
+            batch: components["schemas"]["ImportBatchView_Output"];
+            imported: {
+                count: number;
+                transactionIds: string[];
+            };
+            duplicates: number;
+            rejected: {
+                line: number;
+                /** @enum {string} */
+                reason: "INVALID_DATE" | "INVALID_AMOUNT" | "INVALID_CURRENCY" | "DESCRIPTION_TOO_LONG" | "EXTERNAL_ID_TOO_LONG" | "DUPLICATE_IN_FILE_EXTERNAL_ID";
+            }[];
+        };
+        BatchListDto_Output: {
+            batches: components["schemas"]["ImportBatchView_Output"][];
+        };
+        ReviewListDto_Output: {
+            items: {
+                transaction: components["schemas"]["TransactionView_Output"];
+                familyCategoryId: string | null;
+            }[];
+        };
+        ConfirmDto: {
+            items: {
+                /** Format: uuid */
+                transactionId: string;
+                /** @enum {string} */
+                scope: "personal" | "family";
+                categoryId: string | null;
+            }[];
+        };
+        ConfirmResultDto_Output: {
+            transactions: components["schemas"]["TransactionView_Output"][];
+        };
+        UndoResultDto_Output: {
+            batch: components["schemas"]["ImportBatchView_Output"];
+            deleted: number;
+            kept: number;
+        };
+        BudgetListDto_Output: {
+            budgets: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                workspaceId: string;
+                /** @enum {string} */
+                scope: "personal" | "family";
+                /** Format: uuid */
+                categoryId: string;
+                amountMinor: number;
+                month: string;
+                spentMinor: number;
+                unconverted: {
+                    currency: string;
+                    amountMinor: number;
+                }[];
+                /** @enum {string} */
+                status: "ok" | "near" | "over";
+            }[];
+        };
+        PutBudgetDto: {
+            /** Format: uuid */
+            workspaceId: string;
+            /** Format: uuid */
+            categoryId: string;
+            amountMinor: number;
+        };
+        BudgetDto_Output: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
             workspaceId: string;
             /** @enum {string} */
             scope: "personal" | "family";
-            /** @enum {string} */
-            kind: "income" | "expense";
+            /** Format: uuid */
+            categoryId: string;
             amountMinor: number;
-            currency: string;
-            baseAmountMinor: number | null;
-            fx: {
-                rate: string;
-                rateDate: string;
-                source: string;
-            } | null;
-            occurredOn: string;
-            accountId: string | null;
-            categoryId: string | null;
-            description: string;
-            note: string;
+            month: string;
+            spentMinor: number;
+            unconverted: {
+                currency: string;
+                amountMinor: number;
+            }[];
             /** @enum {string} */
-            source: "manual" | "import" | "recurring";
-            /** @enum {string} */
-            reviewStatus: "confirmed" | "pending_review";
-            importBatchId: string | null;
-            author: {
-                userId: string | null;
-                displayName: string | null;
-            };
-            version: number;
-            revision: number;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
+            status: "ok" | "near" | "over";
         };
-        DataExportDto: {
-            /** Format: date-time */
-            exportedAt: string;
-            user: {
-                /** Format: uuid */
-                id: string;
-                email: string;
-                displayName: string;
-                avatarUrl: components["schemas"]["AvatarUrl"];
-                /** @enum {string} */
-                locale: "en" | "uk" | "ru" | "es";
-                /** @enum {string} */
-                theme: "light" | "dark" | "system";
-                timezone: string;
-            };
-            workspaces: {
-                /** Format: uuid */
-                id: string;
-                /** @enum {string} */
-                kind: "personal" | "family";
-                name: string;
-                /** @enum {string} */
-                role: "owner" | "member";
-                members: {
-                    /** Format: uuid */
-                    userId: string;
-                    displayName: string;
-                    avatarUrl: string | null;
-                    /** @enum {string} */
-                    role: "owner" | "member";
-                    /** Format: date-time */
-                    joinedAt: string;
-                }[];
-            }[];
-            accounts: {
+        NullableId_Output: string | null;
+        NullableDate_Output: string | null;
+        NullableTimestamp_Output: string | null;
+        RuleListDto_Output: {
+            rules: {
                 /** Format: uuid */
                 id: string;
                 /** Format: uuid */
                 workspaceId: string;
-                name: string;
                 /** @enum {string} */
-                kind: "cash" | "bank" | "card" | "savings" | "other";
-                currency: string;
-                archivedAt: components["schemas"]["ArchivedAt"];
-                revision: number;
-                /** Format: date-time */
-                createdAt: string;
-                /** Format: date-time */
-                updatedAt: string;
-            }[];
-            categories: {
-                /** Format: uuid */
-                id: string;
-                /** Format: uuid */
-                workspaceId: string;
-                name: string;
-                /** @enum {string} */
-                kind: "income" | "expense";
-                color: string;
-                icon: string;
-                systemKey: components["schemas"]["SystemKey"];
-                archivedAt: components["schemas"]["ArchivedAt"];
-                revision: number;
-                /** Format: date-time */
-                createdAt: string;
-                /** Format: date-time */
-                updatedAt: string;
-            }[];
-            transactions: components["schemas"]["TransactionView"][];
-            budgets: {
-                /** Format: uuid */
-                id: string;
-                /** Format: uuid */
-                workspaceId: string;
-                /** Format: uuid */
-                categoryId: string;
-                amountMinor: number;
-                /** Format: date-time */
-                createdAt: string;
-                /** Format: date-time */
-                updatedAt: string;
-            }[];
-            recurringRules: {
-                /** Format: uuid */
-                id: string;
-                /** Format: uuid */
-                workspaceId: string;
-                createdBy: string | null;
+                scope: "personal" | "family";
+                createdBy: components["schemas"]["NullableId_Output"];
                 /** @enum {string} */
                 kind: "income" | "expense";
                 amountMinor: number;
                 currency: string;
-                accountId: string | null;
-                categoryId: string | null;
+                accountId: components["schemas"]["NullableId_Output"];
+                categoryId: components["schemas"]["NullableId_Output"];
                 description: string;
                 /** @enum {string} */
                 frequency: "daily" | "weekly" | "monthly" | "yearly";
                 interval: number;
                 startsOn: string;
-                endsOn: string | null;
+                endsOn: components["schemas"]["NullableDate_Output"];
                 timezone: string;
-                nextOccurrence: string | null;
-                pausedAt: string | null;
+                nextOccurrence: components["schemas"]["NullableDate_Output"];
+                pausedAt: components["schemas"]["NullableTimestamp_Output"];
                 /** Format: date-time */
                 createdAt: string;
-                /** Format: date-time */
-                updatedAt: string;
-            }[];
-            importBatches: {
-                /** Format: uuid */
-                id: string;
-                /** Format: uuid */
-                workspaceId: string;
-                accountId: string | null;
-                fileName: string;
-                mapping: unknown;
-                rowCount: number;
-                importedCount: number;
-                duplicateCount: number;
-                rejectedCount: number;
-                rejected: {
-                    row: number;
-                    reason: string;
-                }[];
-                /** Format: date-time */
-                createdAt: string;
-                undoneAt: string | null;
-            }[];
-            categoryRules: {
-                /** Format: uuid */
-                workspaceId: string;
-                merchantKey: string;
-                /** Format: uuid */
-                categoryId: string;
                 /** Format: date-time */
                 updatedAt: string;
             }[];
         };
-        DeleteUserDto: {
-            confirmation: string;
+        EndsOn: string | null;
+        CreateRuleDto: {
+            /** Format: uuid */
+            workspaceId: string;
+            /** @enum {string} */
+            kind: "income" | "expense";
+            amountMinor: number;
+            currency: string;
+            /** @default null */
+            accountId: string | null;
+            /** @default null */
+            categoryId: string | null;
+            /** @default  */
+            description: string;
+            /** @enum {string} */
+            frequency: "daily" | "weekly" | "monthly" | "yearly";
+            /** @default 1 */
+            interval: number;
+            startsOn: string;
+            /** @default null */
+            endsOn: components["schemas"]["EndsOn"];
+            timezone?: string;
+        };
+        RuleDto_Output: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** @enum {string} */
+            scope: "personal" | "family";
+            createdBy: components["schemas"]["NullableId_Output"];
+            /** @enum {string} */
+            kind: "income" | "expense";
+            amountMinor: number;
+            currency: string;
+            accountId: components["schemas"]["NullableId_Output"];
+            categoryId: components["schemas"]["NullableId_Output"];
+            description: string;
+            /** @enum {string} */
+            frequency: "daily" | "weekly" | "monthly" | "yearly";
+            interval: number;
+            startsOn: string;
+            endsOn: components["schemas"]["NullableDate_Output"];
+            timezone: string;
+            nextOccurrence: components["schemas"]["NullableDate_Output"];
+            pausedAt: components["schemas"]["NullableTimestamp_Output"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UpdateRuleDto: {
+            /** @enum {string} */
+            kind?: "income" | "expense";
+            amountMinor?: number;
+            currency?: string;
+            accountId?: string | null;
+            categoryId?: string | null;
+            description?: string;
+            /** @enum {string} */
+            frequency?: "daily" | "weekly" | "monthly" | "yearly";
+            interval?: number;
+            startsOn?: string;
+            endsOn?: components["schemas"]["EndsOn"];
+            timezone?: string;
+            paused?: boolean;
+        };
+        SummaryDto_Output: {
+            period: {
+                from: string;
+                to: string;
+            };
+            /** @enum {string} */
+            granularity: "day" | "week" | "month";
+            totals: {
+                incomeMinor: number;
+                expenseMinor: number;
+                balanceMinor: number;
+            };
+            unconverted: {
+                currency: string;
+                incomeMinor: number;
+                expenseMinor: number;
+            }[];
+            byCategory: {
+                categoryId: string | null;
+                name: string | null;
+                systemKey: string | null;
+                /** @enum {string} */
+                kind: "income" | "expense";
+                color: string | null;
+                amountMinor: number;
+                share: number;
+            }[];
+            series: {
+                bucket: string;
+                incomeMinor: number;
+                expenseMinor: number;
+            }[];
+            previous?: {
+                period: {
+                    from: string;
+                    to: string;
+                };
+                totals: {
+                    incomeMinor: number;
+                    expenseMinor: number;
+                    balanceMinor: number;
+                };
+                byCategory: {
+                    categoryId: string | null;
+                    name: string | null;
+                    systemKey: string | null;
+                    /** @enum {string} */
+                    kind: "income" | "expense";
+                    color: string | null;
+                    amountMinor: number;
+                    share: number;
+                }[];
+                deltas: {
+                    incomeMinor: number;
+                    expenseMinor: number;
+                    balanceMinor: number;
+                };
+            };
         };
     };
     responses: never;
@@ -1263,27 +1483,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ProfileDto_Output"];
                 };
-            };
-        };
-    };
-    DataRightsController_remove: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteUserDto"];
-            };
-        };
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
@@ -1822,10 +2021,114 @@ export interface operations {
             };
         };
     };
-    DataRightsController_export: {
+    ImportsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchListDto_Output"];
+                };
+            };
+        };
+    };
+    ImportsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResultDto_Output"];
+                };
+            };
+        };
+    };
+    ImportsController_review: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewListDto_Output"];
+                };
+            };
+        };
+    };
+    ImportsController_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmResultDto_Output"];
+                };
+            };
+        };
+    };
+    ImportsController_undo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UndoResultDto_Output"];
+                };
+            };
+        };
+    };
+    BudgetsController_list: {
         parameters: {
             query?: {
-                format?: string;
+                workspaceId?: string;
+                month?: string;
             };
             header?: never;
             path?: never;
@@ -1833,14 +2136,160 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Everything the caller can see (JSON) or their confirmed transactions (CSV) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DataExportDto"];
-                    "text/csv": string;
+                    "application/json": components["schemas"]["BudgetListDto_Output"];
+                };
+            };
+        };
+    };
+    BudgetsController_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutBudgetDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetDto_Output"];
+                };
+            };
+        };
+    };
+    BudgetsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RecurringController_list: {
+        parameters: {
+            query?: {
+                workspaceId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleListDto_Output"];
+                };
+            };
+        };
+    };
+    RecurringController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRuleDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleDto_Output"];
+                };
+            };
+        };
+    };
+    RecurringController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RecurringController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRuleDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleDto_Output"];
+                };
+            };
+        };
+    };
+    AnalyticsController_summary: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                scope?: string;
+                compare?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummaryDto_Output"];
                 };
             };
         };

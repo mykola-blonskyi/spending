@@ -8,6 +8,7 @@ import {
   pushBodySchema,
   sameIntent,
   type TransactionInput,
+  transactionInputSchema,
   type UpsertFacts,
 } from './mutations';
 
@@ -314,5 +315,14 @@ describe('pushBodySchema', () => {
     ['too many mutations', Array.from({ length: 201 }, () => upsert)],
   ])('rejects %s', (_name, mutations) => {
     expect(pushBodySchema.safeParse({ mutations }).success).toBe(false);
+  });
+});
+
+describe('transactionInputSchema', () => {
+  it('caps amountMinor at 1e12 (BR-13)', () => {
+    expect(transactionInputSchema.safeParse({ ...input, amountMinor: 1e12 }).success).toBe(true);
+    expect(transactionInputSchema.safeParse({ ...input, amountMinor: 1e12 + 1 }).success).toBe(
+      false,
+    );
   });
 });

@@ -48,6 +48,7 @@ export function UserMenu() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      {signOut.dialog}
     </>
   );
 }
