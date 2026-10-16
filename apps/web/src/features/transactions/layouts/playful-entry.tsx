@@ -85,7 +85,7 @@ export function PlayfulEntryView({ form }: { form: EntryForm }) {
             form={form}
             labelClassName="font-bold"
             className="grid-cols-3 gap-2.5"
-            itemClassName="relative h-24 flex-col justify-center gap-2 rounded-2xl text-[13px] font-semibold hover:bg-card data-[state=on]:border-transparent data-[state=on]:bg-card data-[state=on]:ring-[3px] data-[state=on]:ring-primary"
+            itemClassName="relative h-24 flex-col justify-start gap-2 pt-3 rounded-2xl text-[13px] font-semibold hover:bg-card data-[state=on]:border-transparent data-[state=on]:bg-card data-[state=on]:ring-[3px] data-[state=on]:ring-primary"
             renderCategory={(category) => (
               <>
                 <CategoryBadge
