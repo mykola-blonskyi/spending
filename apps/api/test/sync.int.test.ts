@@ -249,6 +249,18 @@ describe('sync', () => {
     }
   });
 
+  it('answers part of a push that runs past its time budget, leaving the rest for the client', async () => {
+    const mutations = [draft(annPersonal), draft(annPersonal), draft(annPersonal)].map((tx) =>
+      upsert(tx),
+    );
+    const sync = t.app.get(SyncService);
+    const first = await sync.push(ann.userId, mutations as never, undefined, 0);
+    expect(first.map((r) => r.mutationId)).toEqual([mutations[0]!.mutationId]);
+    const rest = await push(ann, ...mutations);
+    expect(rest.map((r) => r.status)).toEqual(['applied', 'applied', 'applied']);
+    expect(await t.db.select().from(transactions)).toHaveLength(3);
+  });
+
   it('keeps every mutation of a batch independent', async () => {
     const ok = draft(annPersonal);
     const results = await push(ann, upsert(draft(bobPersonal)), upsert(ok));

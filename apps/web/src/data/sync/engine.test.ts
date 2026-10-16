@@ -289,6 +289,27 @@ describe('SyncEngine', () => {
     ]);
   });
 
+  it('sends the rest of a partly answered batch at once, without a retry wait', async () => {
+    store = await LocalStore.open('ann');
+    const local = store;
+    for (const description of ['a', 'b', 'c']) {
+      await recordTransaction(local, { ...draft, description });
+    }
+    const server = fakeServer();
+    const partial: SyncTransport = {
+      ...server.transport,
+      push: async (mutations, onSent) =>
+        (await server.transport.push(mutations, onSent)).slice(0, 1),
+    };
+    const engine = new SyncEngine(local, partial);
+
+    await engine.flush();
+    engine.stop();
+
+    expect(server.pushes.map(described)).toEqual([['a', 'b', 'c'], ['b', 'c'], ['c']]);
+    expect(local.state.mutations.size).toBe(0);
+  });
+
   it('leaves another tab’s push in flight alone when it starts a flush', async () => {
     store = await LocalStore.open('ann');
     const local = store;
