@@ -212,7 +212,8 @@ export const es = {
       title: 'Importaciones',
       description: 'Trae movimientos desde un extracto bancario.',
       emptyTitle: 'Aún no hay importaciones',
-      emptyDescription: 'Sube un archivo CSV de tu banco para añadir muchos movimientos a la vez.',
+      emptyDescription:
+        'Sube un extracto CSV o XLSX de tu banco para añadir muchos movimientos a la vez.',
     },
     family: {
       title: 'Familia',
@@ -504,7 +505,7 @@ export const es = {
     start: 'Importar extracto',
     offline: 'Para importar hace falta conexión. Tus importaciones anteriores están abajo.',
     newTitle: 'Importar un extracto',
-    newDescription: 'Sube un CSV de tu banco, revisa cómo se leen sus columnas e impórtalo.',
+    newDescription: 'Sube un CSV o XLSX de tu banco, revisa cómo se leen sus columnas e impórtalo.',
     account: 'Cuenta',
     accountHint:
       'Los movimientos van a esta cuenta y usan su moneda salvo que el archivo indique otra.',
@@ -512,15 +513,19 @@ export const es = {
     noAccountsAction: 'Abrir cuentas',
     noAccountsDescription: 'Un extracto se importa en una de tus cuentas personales.',
     file: 'Archivo del extracto',
-    fileHint: 'Una exportación CSV de hasta 2 MiB y 5.000 filas.',
+    fileHint: 'Un CSV de hasta 2 MiB o un XLSX de hasta 5 MiB, con hasta 5.000 filas.',
     chooseFile: 'Elegir archivo',
     noFile: 'Ningún archivo seleccionado',
     fileTooLarge:
-      'Este archivo supera los 2 MiB. Exporta un periodo más corto e inténtalo de nuevo.',
+      'Este archivo supera los {size} MiB. Exporta un periodo más corto e inténtalo de nuevo.',
     tooManyRows:
       'Este archivo tiene más de 5.000 filas. Exporta un periodo más corto e inténtalo de nuevo.',
     emptyFile: 'No se encontró ninguna tabla de movimientos en este archivo.',
     readFailed: 'No se pudo leer este archivo.',
+    legacyXls:
+      'Es un archivo antiguo de Excel (.xls). Guárdalo como .xlsx o CSV en una hoja de cálculo y súbelo.',
+    unsupported: 'Este tipo de archivo no se puede leer. Sube un extracto CSV o XLSX.',
+    detectedWorkbook: 'Leído como libro de Excel: {count, plural, one {# fila} other {# filas}}.',
     detected: 'Leído como {encoding}, {delimiter}: {count, plural, one {# fila} other {# filas}}.',
     delimiters: {
       semicolon: 'separado por punto y coma',
@@ -528,7 +533,13 @@ export const es = {
       tab: 'separado por tabuladores',
     },
     bank: 'Banco',
-    presets: { bbva: 'BBVA', santander: 'Santander', custom: 'Otro' },
+    presets: {
+      bbva: 'BBVA',
+      santander: 'Santander',
+      monobank: 'monobank',
+      privatbank: 'PrivatBank',
+      custom: 'Otro',
+    },
     columns: 'Columnas',
     column: {
       date: 'Fecha',
@@ -538,6 +549,8 @@ export const es = {
       credit: 'Abono (entrada)',
       externalId: 'Referencia',
       currency: 'Moneda',
+      card: 'Tarjeta',
+      balance: 'Saldo',
     },
     notMapped: 'No está en este archivo',
     amountLayout: 'Columnas del importe',
@@ -554,6 +567,22 @@ export const es = {
     problemRows:
       '{count, plural, one {# fila no se puede leer y será rechazada} other {# filas no se pueden leer y serán rechazadas}}',
     incomplete: 'Elige las columnas de fecha, concepto e importe para continuar.',
+    skippedRows:
+      '{count, plural, one {# fila sin importe se omite} other {# filas sin importe se omiten}}',
+    balanceRows:
+      '{count, plural, one {# fila no cuadra con el saldo} other {# filas no cuadran con el saldo}}',
+    checks: 'Filas para revisar',
+    checksHint:
+      'Las filas omitidas no se importan. Un saldo que no cuadra es solo un aviso; la fila se importa.',
+    note: 'Nota',
+    skippedNote: 'Sin importe en la moneda de la tarjeta',
+    balanceNote: 'El saldo no sigue de la fila anterior',
+    card: 'Tarjeta que importar',
+    cardHint:
+      'Este archivo incluye varias tarjetas. Impórtalas de una en una, cada una en su cuenta.',
+    noCard: 'Sin tarjeta',
+    cardRows: '{currency}, {count, plural, one {# fila} other {# filas}}',
+    cardImported: 'importada',
     submit: 'Importar {count, plural, one {# fila} other {# filas}}',
     importing: 'Importando…',
     summary: {
@@ -582,6 +611,7 @@ export const es = {
       pullStalled:
         'Los movimientos importados aparecerán aquí cuando este dispositivo vuelva a sincronizar.',
       importAnother: 'Importar otro',
+      importNextCard: 'Importar la tarjeta {card}',
       openHistory: 'Abrir el historial',
     },
     reasons: {

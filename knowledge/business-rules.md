@@ -146,7 +146,7 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
 
 - **BR-25.** Bank data is read-only. The product never asks for or stores online-banking
   credentials and never initiates payments.
-- **BR-26.** The CSV upload limit is 2 MiB and 5000 rows. The client shows a preview and column
+- **BR-26.** The upload limit is 2 MiB for CSV, 5 MiB for XLSX, and 5000 rows. The client shows a preview and column
   mapping before anything is written. The server re-validates every row and reports rejected rows
   with a reason code.
 - **BR-27.** The dedupe key is the provider transaction ID when mapped. Otherwise it is
@@ -176,6 +176,18 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   workspace. Only the importer can undo; repeating an undo changes nothing. Undo reports the deleted
   and kept counts as they are when it runs, so a manual deletion made in between can change what
   a repeat reports.
+- **BR-36.** A statement is read in the browser; only the mapped cells of transaction rows are
+  sent, never the metadata above the header (name, date of birth, tax id, passport, address,
+  IBAN) or card numbers. The format is told by the file's bytes: CSV text or an XLSX workbook
+  (monobank's `.xls` is one); a legacy binary `.xls` is refused with a message. The amount is the
+  card or account currency amount; operation-currency amount, rate, commission and cashback are
+  ignored. The date is the transaction date by default; a time after it is dropped and the printed
+  day kept. A file with several cards (PrivatBank) is imported one card at a time, and the same
+  file can then be imported for the next card. A row with no amount is skipped and listed, not
+  sent. When a balance column is mapped, a row whose balance is not the previous row's balance
+  plus its amount is a warning, not a rejection. Known bank layouts are recognized by their
+  header row; otherwise the last mapping used for the same header row is remembered on the
+  device.
 
 ## Data rights
 

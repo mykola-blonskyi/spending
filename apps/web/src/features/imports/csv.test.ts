@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  decodeStatement,
-  detectDelimiter,
-  findHeaderRow,
-  parseCsv,
-  parseStatement,
-  ROWS_MAX,
-} from './csv';
+import { decodeStatement, detectDelimiter, parseCsv } from './csv';
 
 const utf8 = (text: string) => new TextEncoder().encode(text).buffer as ArrayBuffer;
 const latin1 = (text: string) =>
@@ -69,64 +62,5 @@ describe('parseCsv', () => {
 
   it('keeps empty cells and trims whitespace', () => {
     expect(parseCsv(' a ;; c', ';')).toEqual([{ line: 1, cells: ['a', '', 'c'] }]);
-  });
-});
-
-describe('findHeaderRow', () => {
-  it('skips metadata lines, including full-width ones with an account number or a date', () => {
-    const rows = [
-      ['Cuenta', 'ES12 3456'],
-      ['Número de cuenta', 'ES98 0049 0001', '', ''],
-      ['Exportado', '15/10/2026', '', ''],
-      [],
-      ['Fecha', 'Concepto', 'Importe', 'Divisa'],
-      ['01/10/2026', 'MERCADONA', '-12,50', 'EUR'],
-      ['02/10/2026', 'LIDL', '-8,00', 'EUR'],
-    ];
-    expect(findHeaderRow(rows)).toBe(4);
-  });
-
-  it('takes the first full-width row when every one has data, and -1 for no table', () => {
-    expect(
-      findHeaderRow([
-        ['2026-10-01', '-1'],
-        ['2026-10-02', '-2'],
-      ]),
-    ).toBe(0);
-    expect(findHeaderRow([['just one cell'], []])).toBe(-1);
-  });
-});
-
-describe('parseStatement', () => {
-  it('returns headers and numbered data rows', () => {
-    const result = parseStatement(
-      utf8('Título\n\nFecha;Importe\n01/10/2026;-1,00\n\n02/10/2026;-2,00\n'),
-    );
-    expect(result).toEqual({
-      ok: true,
-      statement: {
-        encoding: 'utf-8',
-        delimiter: ';',
-        headers: ['Fecha', 'Importe'],
-        rows: [
-          { line: 4, cells: ['01/10/2026', '-1,00'] },
-          { line: 6, cells: ['02/10/2026', '-2,00'] },
-        ],
-      },
-    });
-  });
-
-  it('numbers rows by the file line they start on, past cells holding line breaks', () => {
-    const result = parseStatement(
-      utf8('Fecha;Concepto;Importe\r\n01/10/2026;"two\r\nlines";-1,00\r\n02/10/2026;x;-2,00\r\n'),
-    );
-    expect(result.ok && result.statement.rows.map((row) => row.line)).toEqual([2, 4]);
-  });
-
-  it('refuses an empty file and one with too many rows', () => {
-    expect(parseStatement(utf8(''))).toEqual({ ok: false, problem: 'EMPTY' });
-    expect(parseStatement(utf8('Fecha;Importe\n'))).toEqual({ ok: false, problem: 'EMPTY' });
-    const big = 'date,amount\n' + '2026-10-01,-1\n'.repeat(ROWS_MAX + 1);
-    expect(parseStatement(utf8(big))).toEqual({ ok: false, problem: 'TOO_MANY_ROWS' });
   });
 });

@@ -284,3 +284,27 @@ integration test replays pruned creates, updates and deletes to prove it.
 **Consequences.** A device that stays unanswered for over 180 days may see a conflict for its own
 already-applied change, instead of the stored outcome. A rejected outcome is decided again and can
 now succeed if what made it fail was fixed.
+
+## ADR-014: Read XLSX statements in the browser with an in-house reader
+
+Date: 2026-10-17
+
+**Context.** Santander, monobank and PrivatBank export statements as XLSX (monobank names its file
+`.xls`). The header block carries the holder's name, date of birth, tax id, passport, address,
+card numbers and IBAN. ADR-005 made the CSV import the bank-data path and parses it in the
+browser.
+
+**Decision.** Parse XLSX in the browser too, with a small reader on `DecompressionStream` and
+`DOMParser` (first sheet, shared and inline strings, numbers, date serials), and turn it into the
+same cell table the CSV path makes. The format is detected from the bytes, not the extension.
+Legacy binary `.xls` is refused with a message. Known banks are recognized by their header row.
+
+**Alternatives.**
+
+- SheetJS or ExcelJS: hundreds of kilobytes for features a statement never uses, and a dependency
+  to track for parser security fixes.
+- Server-side parsing: the metadata block would leave the device (BR-36).
+
+**Consequences.** No new dependency. The reader takes formula cells by their cached value and
+skips ZIP64, CRC checks and every sheet but the first; a part over 64 MiB or a sheet over 100
+columns is refused. PDF statements will reuse the same cell table and mapping step.
