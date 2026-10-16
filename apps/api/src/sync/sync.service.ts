@@ -138,8 +138,8 @@ export class SyncService {
   }
 
   /**
-   * BR-18. Replaying a pruned mutation is decided again on the row, which only ever answers
-   * unchanged or conflict for a change already made, so old outcomes need not be kept.
+   * BR-18. A replay of a pruned mutation is decided again on the row, which never duplicates it
+   * or overwrites a newer change (BR-19), so old outcomes need not be kept.
    */
   async pruneMutations(): Promise<number> {
     const pruned = await this.db

@@ -34,8 +34,7 @@ export const SYNCED_HOLD_MS = 600;
  * but never hides a pending change or a problem.
  */
 export function smoothingDelay(next: SyncStatus, shown: SyncStatus, shownForMs: number): number {
-  if (next.state === shown.state) return 0;
-  if (next.state !== 'syncing') return 0;
+  if (next.state !== 'syncing' || shown.state === 'syncing') return 0;
   const hold = shown.state === 'synced' ? Math.max(0, SYNCED_HOLD_MS - shownForMs) : 0;
   return Math.max(SYNCING_DELAY_MS, hold);
 }
