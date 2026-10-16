@@ -35,8 +35,11 @@ link. Each entry is then marked as personal or family:
 - A dashboard with income, expenses and balance, trends, a category breakdown, budget progress
   and a comparison with the previous period.
 
-**Bank statements.** You download a CSV statement from your bank (for example BBVA or
-Santander) and import it. You see a preview and choose which column is which. Rows already
+**Bank statements.** You download a statement from your bank as CSV or XLSX (PDF soon) and
+import it. Santander, BBVA, monobank and PrivatBank layouts are recognized; for other banks you
+choose which column is which once, and the app remembers it on this device. You see a preview
+first. A file with several cards is imported one card at a time. The statement is read on your
+device: your name, tax id, IBAN and card numbers in its header are never uploaded. Rows already
 imported are skipped, but two real identical purchases on the same day are both kept.
 Categories are suggested and the app learns from your corrections. An import can be undone.
 

@@ -130,9 +130,13 @@ const GENERIC: Preset['headers'] = {
   balance: ['balance', 'saldo', 'залишок', 'остаток'],
 };
 
-/** Lowercase, single spaces, and no trailing card currency: "Commission, (UAH)" is "commission". */
+/**
+ * Composed letters, lowercase, single spaces, and no trailing card currency: "Commission, (UAH)"
+ * is "commission". monobank's Ukrainian XLSX writes "ї" as "і" plus a combining diaeresis.
+ */
 const normalizeHeader = (header: string) =>
   header
+    .normalize('NFC')
     .trim()
     .toLowerCase()
     .replace(/\s+/g, ' ')
@@ -245,6 +249,8 @@ export function parseDate(text: string, format: DateFormat): string | null {
   return `${pad(year, 4)}-${pad(month, 2)}-${pad(day, 2)}`;
 }
 
+const KNOWN_CURRENCIES = new Set(Intl.supportedValuesOf('currency'));
+
 const markers = new Map<string, string[]>();
 /** "EUR", "€": what may stand before or after an amount in this currency. */
 function currencyMarkers(currency: string): string[] {
@@ -316,8 +322,6 @@ const cellAt = (cells: readonly string[], index: number | null) => {
   const cell = index === null ? '' : (cells[index] ?? '');
   return cell === '—' ? '' : cell;
 };
-
-const KNOWN_CURRENCIES = new Set(Intl.supportedValuesOf('currency'));
 
 /** Digits of a currency cell ('' is the account's), or null for a code the server would refuse. */
 export function exponentFor(currency: string, fallback: number): number | null {
