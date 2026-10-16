@@ -4832,6 +4832,14 @@
                 },
                 "externalId": {
                   "type": "string"
+                },
+                "bankCategory": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "mcc": {
+                  "type": "string",
+                  "pattern": "^\\d{4}$"
                 }
               },
               "required": [

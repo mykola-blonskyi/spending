@@ -122,6 +122,8 @@ describe('normalizeRow', () => {
       currency: 4,
       card: null,
       balance: null,
+      bankCategory: null,
+      mcc: null,
     },
     amountLayout: 'signed',
     dateFormat: 'dmy',

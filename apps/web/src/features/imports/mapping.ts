@@ -271,7 +271,14 @@ function currencyMarkers(currency: string): string[] {
       new Intl.NumberFormat('en', { style: 'currency', currency, currencyDisplay: display })
         .formatToParts(1)
         .find((part) => part.type === 'currency')!.value;
-    found = [...new Set([currency, symbol('symbol'), symbol('narrowSymbol'), ...LOCAL_MARKERS[currency] ?? []])];
+    found = [
+      ...new Set([
+        currency,
+        symbol('symbol'),
+        symbol('narrowSymbol'),
+        ...(LOCAL_MARKERS[currency] ?? []),
+      ]),
+    ];
     markers.set(currency, found);
   }
   return found;

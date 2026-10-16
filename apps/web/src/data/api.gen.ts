@@ -1328,6 +1328,8 @@ export interface components {
                 currency?: string;
                 description: string;
                 externalId?: string;
+                bankCategory?: string;
+                mcc?: string;
             }[];
         };
         ImportBatchView_Output: {

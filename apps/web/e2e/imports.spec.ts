@@ -383,11 +383,7 @@ test('a PrivatBank file with two cards imports one card, then the next', async (
   ]);
 });
 
-test('the bank category suggests a default category and is not stored', async ({
-  page,
-  signInAs,
-  db,
-}) => {
+test('the bank category suggests a default category', async ({ page, signInAs, db }) => {
   await signInAs('ann');
   await createAccount(page, 'Privat UAH', 'UAH');
   await page.goto('/imports/new');
