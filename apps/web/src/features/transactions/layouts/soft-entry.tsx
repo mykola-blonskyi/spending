@@ -58,7 +58,7 @@ export function SoftEntryView({ form }: { form: EntryForm }) {
           >
             <AmountInput
               form={form}
-              className="w-full items-center"
+              className="w-full items-center text-center"
               labelClassName="text-[15px] font-normal text-muted-foreground"
               inputClassName="h-auto border-transparent bg-transparent px-0 text-center text-[64px] leading-none font-semibold tracking-tight shadow-none md:text-[64px] dark:bg-transparent"
             />
