@@ -20,7 +20,7 @@ export function SplitDashboard() {
   const t = useTranslations('pages.dashboard');
   const dashboard = useDashboard();
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-4">
       <PageHeader title={t('title')} />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <PeriodControls dashboard={dashboard} />

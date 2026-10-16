@@ -24,7 +24,7 @@ export function PeriodControls({
   const toId = useId();
 
   return (
-    <div className={cn('flex flex-col gap-3', className)}>
+    <div className={cn('flex w-full flex-col gap-3 @xl/main:w-auto', className)}>
       <ToggleGroup
         type="single"
         variant="outline"
