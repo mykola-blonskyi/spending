@@ -93,7 +93,7 @@ export function PlayfulShell({
       <main
         id={MAIN_ID}
         tabIndex={-1}
-        className="mx-auto w-full max-w-5xl px-4 pt-6 pb-[calc(8rem+env(safe-area-inset-bottom))] outline-none sm:px-6 lg:px-10 lg:pt-10 lg:pb-16"
+        className="@container/main mx-auto w-full max-w-5xl px-4 pt-6 pb-[calc(8rem+env(safe-area-inset-bottom))] outline-none sm:px-6 lg:px-10 lg:pt-10 lg:pb-16"
       >
         {children}
       </main>

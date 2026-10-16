@@ -85,12 +85,12 @@ export function JournalShell({
         <header className="sticky top-0 z-30 bg-background/90 pt-[env(safe-area-inset-top)] backdrop-blur-md">
           <div className="flex h-14 items-center justify-between gap-3 px-4 lg:hidden">
             {brand}
-            <div className="flex items-center gap-1">
+            <div className="flex min-w-0 items-center gap-1">
               <NavLink
                 to={primaryAction.to}
                 aria-label={primaryAction.label}
                 className={cn(
-                  'flex size-11 items-center justify-center rounded-full text-primary transition-colors duration-150 hover:bg-accent',
+                  'flex size-10 shrink-0 items-center justify-center rounded-full text-primary transition-colors duration-150 hover:bg-accent',
                   focusRing,
                 )}
               >
@@ -123,7 +123,7 @@ export function JournalShell({
         <main
           id={MAIN_ID}
           tabIndex={-1}
-          className="mx-auto w-full max-w-[640px] flex-1 px-4 pt-6 pb-20 outline-none lg:px-0 lg:pt-10 [&_h1]:font-serif [&_h1]:tracking-[-0.005em]"
+          className="@container/main mx-auto w-full max-w-[640px] flex-1 px-4 pt-6 pb-20 outline-none lg:px-0 lg:pt-10 [&_h1]:font-serif [&_h1]:tracking-[-0.005em]"
         >
           {children}
         </main>

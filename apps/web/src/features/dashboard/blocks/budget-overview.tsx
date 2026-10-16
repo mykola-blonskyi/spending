@@ -25,7 +25,7 @@ export function BudgetOverview({
       {budgets.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('empty')}</p>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2">
+        <ul className="grid gap-3 @xl/main:grid-cols-2">
           {budgets.map((budget) => (
             <li key={budget.id} className={cn('flex flex-col gap-2', itemClassName)}>
               <BudgetProgress budget={budget} />

@@ -32,7 +32,7 @@ export function TimezoneSelect({
 
   return (
     <Select value={value} onValueChange={onValueChange} open={open} onOpenChange={setOpen}>
-      <SelectTrigger id={id} className="w-full sm:w-72">
+      <SelectTrigger id={id} className="w-full @xl/main:w-72">
         <SelectValue />
       </SelectTrigger>
       <SelectContent align="end" className="max-h-80">

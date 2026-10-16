@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { NavLink, useLocation } from 'react-router';
+import { matchPath, NavLink, useLocation } from 'react-router';
 import { cn } from '@shared/lib/utils';
 import { focusRing, MAIN_ID, type ShellProps, splitNav } from './nav';
 import { MobileTabBar, SkipLink } from './shell-primitives';
@@ -25,8 +25,9 @@ export function CardsShell({
   children,
 }: ShellProps) {
   const { primary, secondary } = splitNav(navItems);
-  // The entry sheet fills the column; the floating add pill would sit on its keypad.
-  const onEntry = useLocation().pathname === primaryAction.to;
+  // The add and edit sheets fill the column; the floating add pill would sit on their keypad.
+  const entryRoute = primaryAction.to.replace(/[^/]+$/, ':id');
+  const onEntry = matchPath(entryRoute, useLocation().pathname) !== null;
 
   return (
     <div className="min-h-dvh bg-muted">
@@ -42,24 +43,25 @@ export function CardsShell({
         <main
           id={MAIN_ID}
           tabIndex={-1}
-          className="flex-1 px-4 pt-4 pb-[calc(9rem+env(safe-area-inset-bottom))] outline-none"
+          className="@container/main flex-1 px-4 pt-4 pb-[calc(9rem+env(safe-area-inset-bottom))] outline-none"
         >
           {children}
         </main>
       </div>
 
       <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2">
-        <NavLink
-          to={primaryAction.to}
-          className={cn(
-            onEntry && 'hidden',
-            'absolute right-4 bottom-[calc(100%+12px)] flex h-14 items-center gap-2 rounded-2xl bg-primary pr-5 pl-4 text-[15px] font-semibold whitespace-nowrap text-primary-foreground shadow-[0_10px_24px_-10px_var(--primary)] transition-transform duration-150 ease-out active:scale-[0.96] dark:ring-1 dark:ring-foreground/15',
-            focusRing,
-          )}
-        >
-          <primaryAction.icon aria-hidden className="size-5" strokeWidth={2.4} />
-          {primaryAction.label}
-        </NavLink>
+        {!onEntry && (
+          <NavLink
+            to={primaryAction.to}
+            className={cn(
+              'absolute right-4 bottom-[calc(100%+12px)] flex h-14 items-center gap-2 rounded-2xl bg-primary pr-5 pl-4 text-[15px] font-semibold whitespace-nowrap text-primary-foreground shadow-[0_10px_24px_-10px_var(--primary)] transition-transform duration-150 ease-out active:scale-[0.96] dark:ring-1 dark:ring-foreground/15',
+              focusRing,
+            )}
+          >
+            <primaryAction.icon aria-hidden className="size-5" strokeWidth={2.4} />
+            {primaryAction.label}
+          </NavLink>
+        )}
         <MobileTabBar
           primary={primary}
           secondary={secondary}

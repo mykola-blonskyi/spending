@@ -34,8 +34,11 @@ test('cards layout: add, edit and delete an entry with the keypad on a phone', a
   await page.setViewportSize({ width: 390, height: 844 });
   await signInAs('ann');
   await chooseLayout(page, 'cards');
+  const addPill = page.getByRole('link', { name: 'Add transaction', exact: true });
 
   await page.goto('/transactions/new');
+  await expect(page.getByLabel('Amount')).toBeVisible();
+  await expect(addPill).toBeHidden();
   const amount = page.getByLabel('Amount');
   await press(page, ['1', '2', '.', '3', '4']);
   await expect(amount).toHaveValue('12.34');
@@ -46,9 +49,11 @@ test('cards layout: add, edit and delete an entry with the keypad on a phone', a
 
   await expect(page).toHaveURL('/transactions');
   await expect(row(page, /Coffee beans/)).toContainText('-€12.34');
+  await expect(addPill).toBeVisible();
 
   await row(page, /Coffee beans/).click();
   await expect(page.getByLabel('Amount')).toHaveValue('12.34');
+  await expect(addPill).toBeHidden();
   await press(page, ['<', '<', '<', '<', '<']);
   await expect(amount).toHaveValue('');
   await press(page, ['2', '0']);

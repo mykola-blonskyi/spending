@@ -54,7 +54,8 @@ function SettingRow({
     <div
       className={cn(
         'flex flex-col gap-3 p-5',
-        !stacked && 'sm:flex-row sm:items-center sm:justify-between sm:gap-6',
+        !stacked &&
+          '@xl/main:flex-row @xl/main:items-center @xl/main:justify-between @xl/main:gap-6',
       )}
     >
       <div className="flex flex-col gap-1">
@@ -107,7 +108,7 @@ export function SettingsPage() {
               type="single"
               variant="outline"
               aria-labelledby={themeLabelId}
-              className="w-full sm:w-auto"
+              className="w-full @xl/main:w-auto"
               value={profile.theme}
               onValueChange={(theme) => isThemePreference(theme) && updateProfile.mutate({ theme })}
             >
@@ -117,7 +118,7 @@ export function SettingsPage() {
                   <ToggleGroupItem
                     key={option}
                     value={option}
-                    className="flex-1 gap-1.5 px-3 sm:flex-none"
+                    className="flex-1 gap-1.5 px-3 @xl/main:flex-none"
                   >
                     <Icon aria-hidden />
                     {t(`settings.theme.${option}`)}
@@ -167,7 +168,7 @@ export function SettingsPage() {
               type="single"
               spacing={2}
               aria-labelledby={layoutLabelId}
-              className="grid w-full grid-cols-2 sm:grid-cols-4"
+              className="grid w-full grid-cols-2 @xl/main:grid-cols-4"
               value={profile.layout}
               onValueChange={(layout) => isLayout(layout) && updateProfile.mutate({ layout })}
             >
@@ -196,7 +197,7 @@ export function SettingsPage() {
       <section className="flex flex-col gap-3">
         <h2 className="px-1 text-sm font-medium text-muted-foreground">{t('settings.account')}</h2>
         <Card className="gap-0 py-0">
-          <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 p-5 @xl/main:flex-row @xl/main:items-center @xl/main:justify-between">
             <div className="flex min-w-0 items-center gap-3">
               <UserAvatar user={profile} className="size-10" />
               <div className="flex min-w-0 flex-col">

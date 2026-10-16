@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures';
+import { apiCall, expect, test } from './fixtures';
 import { E2E_USERS } from './support/env';
 import { createAccount, seedEntries } from './support/seed';
 
@@ -15,6 +15,9 @@ const LAYOUTS = {
 
 const OUT = process.env.SHOTS_DIR;
 const only = (process.env.SHOT_LAYOUTS ?? Object.keys(LAYOUTS)).toString().split(',');
+// SHOT_LOCALE=uk (or ru, es) shoots the screens in that language; settings are driven in English.
+const locale = process.env.SHOT_LOCALE;
+const suffix = locale ? `-${locale}` : '';
 const day = (offset: number) =>
   new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
 
@@ -60,15 +63,26 @@ test('screenshots', async ({ page, signInAs, db }) => {
     ['edit-chf', `/transactions/${chf.id}`],
     ['accounts', '/accounts'],
     ['categories', '/categories'],
+    ['imports', '/imports'],
+    ['import-new', '/imports/new'],
+    ['budgets', '/budgets'],
+    ['recurring', '/recurring'],
+    ['family', '/family'],
+    ['sync', '/sync'],
+    ['settings', '/settings'],
   ] as const;
+  const speak = (language: string) => apiCall(page, 'PATCH', '/api/v1/me', { locale: language });
   for (const layout of only as (keyof typeof LAYOUTS)[]) {
+    if (locale) await speak('en');
     await page.goto('/settings');
     await page.getByRole('radio', { name: LAYOUTS[layout] }).click();
     await expect(page.locator('[data-layout]')).toHaveAttribute('data-layout', layout);
     for (const scheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme: scheme });
+      if (locale) await speak('en');
       await page.goto('/settings');
       await page.getByRole('radio', { name: scheme === 'dark' ? 'Dark' : 'Light' }).click();
+      if (locale) await speak(locale);
       for (const [width, height, device] of [
         [390, 844, 'mobile'],
         [1440, 900, 'desktop'],
@@ -78,7 +92,7 @@ test('screenshots', async ({ page, signInAs, db }) => {
           await page.goto(path);
           await page.waitForTimeout(400);
           await page.screenshot({
-            path: `${OUT}/${layout}-${name}-${device}-${scheme}.png`,
+            path: `${OUT}/${layout}-${name}-${device}-${scheme}${suffix}.png`,
             fullPage: name !== 'history',
           });
         }
