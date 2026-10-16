@@ -93,10 +93,11 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
           : 'loading';
 
   const today = todayIn(profile.timezone);
+  const separator = decimalSeparator(locale);
   const initial = useMemo<FormValues>(
     () =>
       stored.entry
-        ? valuesFromDraft(stored.entry)
+        ? valuesFromDraft(stored.entry, separator)
         : {
             kind: 'expense',
             amount: '',
@@ -107,7 +108,7 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
             description: '',
             note: '',
           },
-    [stored.entry, today],
+    [stored.entry, today, separator],
   );
   // Keyed by entry so a pane that switches entries never shows the previous one's edits. The
   // server version on screen when editing starts is the save's base, so a row pulled meanwhile
@@ -167,7 +168,6 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
     ]),
   ].sort();
 
-  const separator = decimalSeparator(locale);
   // The stored conversion describes the stored amount and date (BR-14); an edit has none until saved.
   const conversion =
     stored.entry &&

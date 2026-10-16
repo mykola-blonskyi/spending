@@ -6,6 +6,7 @@ import {
   type KeypadKey,
   pressKey,
   validate,
+  valuesFromDraft,
 } from './form-model';
 
 const values: FormValues = {
@@ -93,5 +94,17 @@ describe('decimalSeparator', () => {
     ['es', ','],
   ])('is the %s mark', (locale, mark) => {
     expect(decimalSeparator(locale)).toBe(mark);
+  });
+});
+
+describe('valuesFromDraft', () => {
+  const draft = { ...values, amountMinor: 1250, workspaceId: 'ws-1' };
+
+  it.each([
+    ['.', '12.50'],
+    [',', '12,50'],
+  ])('writes the stored amount with the %s mark', (mark, amount) => {
+    expect(valuesFromDraft(draft, mark).amount).toBe(amount);
+    expect(parseAmount(amount, 2)).toBe(1250);
   });
 });

@@ -47,10 +47,14 @@ export function validate(
   };
 }
 
-export function valuesFromDraft(draft: TransactionDraft): FormValues {
+/** The stored entry as form values, its amount written with the locale's `separator`. */
+export function valuesFromDraft(draft: TransactionDraft, separator: string): FormValues {
   return {
     kind: draft.kind,
-    amount: minorToDecimalString(draft.amountMinor, currencyExponent(draft.currency)),
+    amount: minorToDecimalString(draft.amountMinor, currencyExponent(draft.currency)).replace(
+      '.',
+      separator,
+    ),
     currency: draft.currency,
     occurredOn: draft.occurredOn,
     accountId: draft.accountId,
