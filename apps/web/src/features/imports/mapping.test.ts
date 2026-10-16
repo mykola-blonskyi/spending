@@ -251,6 +251,14 @@ describe('XLSX bank presets', () => {
     expect(detectPreset(PRIVAT)).toBe('privatbank');
   });
 
+  it('matches headers written with decomposed letters, as monobank’s Ukrainian XLSX has them', () => {
+    const decomposed = MONO_UK.map((header) => header.normalize('NFD'));
+    expect(presetMapping('monobank', decomposed).columns).toMatchObject({
+      date: 0,
+      description: 1,
+    });
+  });
+
   it('takes the transaction date, not the value date', () => {
     expect(presetMapping('santander', SANTANDER_XLSX)).toMatchObject({
       columns: { date: 0, description: 2, amount: 3, balance: 4, currency: 5 },
