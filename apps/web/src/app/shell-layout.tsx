@@ -18,6 +18,10 @@ export function ShellLayout() {
   useApplyProfilePreferences();
   const { layout } = useProfile();
   const Shell = LAYOUTS[layout].shell;
+  // Journal's header shares its row with the add button (and the nav on desktop); the card stack
+  // is a phone-width column at every screen size.
+  const crowdedHeader = layout === 'journal';
+  const narrowHeader = crowdedHeader || layout === 'cards';
   const navItems: NavItem[] = DESTINATIONS.map((destination) => ({
     to: destination.path,
     label: t(`nav.${destination.nav}`),
@@ -41,14 +45,14 @@ export function ShellLayout() {
         navItems={navItems}
         primaryAction={{ to: ADD_TRANSACTION_PATH, label: t('nav.addTransaction'), icon: Plus }}
         status={
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Link
               to="/sync"
-              className="rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60"
+              className="min-w-0 rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60"
             >
-              {syncStatus && <SyncStatusBadge status={syncStatus} />}
+              {syncStatus && <SyncStatusBadge status={syncStatus} compact={crowdedHeader} />}
             </Link>
-            <UserMenu />
+            <UserMenu showName={!narrowHeader} />
           </div>
         }
         banner={online ? undefined : <OfflineBanner />}
