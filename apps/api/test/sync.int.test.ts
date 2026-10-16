@@ -8,6 +8,7 @@ import {
   transactions,
   users,
 } from '../src/database/schema';
+import { SyncService } from '../src/sync/sync.service';
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
 import {
   as,
@@ -182,6 +183,30 @@ describe('sync', () => {
 
     const [stolen] = await push(bob, mutation);
     expect(stolen).toMatchObject({ status: 'rejected', code: 'MUTATION_ID_REUSED' });
+  });
+
+  it('prunes old mutation outcomes, after which a replay neither duplicates nor overwrites', async () => {
+    const tx = draft(annPersonal);
+    const created = upsert(tx);
+    const edited = upsert({ ...tx, note: 'mine' }, 1);
+    const gone = draft(annPersonal);
+    const goneCreated = upsert(gone);
+    await push(ann, created, edited, goneCreated);
+    const removed = { ...remove(gone.id, 1) };
+    await push(ann, removed);
+    await push(ann, upsert({ ...tx, note: 'other device' }, 2));
+    await t.db.execute(sql`update sync_mutations set created_at = now() - interval '181 days'`);
+    const fresh = upsert(draft(annPersonal));
+    await push(ann, fresh);
+
+    expect(await t.app.get(SyncService).pruneMutations()).toBe(5);
+    expect((await t.db.select().from(syncMutations)).map((m) => m.id)).toEqual([fresh.mutationId]);
+
+    const replays = await push(ann, created, edited, goneCreated, removed);
+    expect(replays.map((r) => r.status)).toEqual(['conflict', 'conflict', 'conflict', 'applied']);
+    expect(await t.db.select().from(transactions)).toHaveLength(3);
+    expect(await serverRow(tx.id)).toMatchObject({ note: 'other device', version: 3 });
+    expect((await serverRow(gone.id)).deletedAt).not.toBeNull();
   });
 
   it('keeps every mutation of a batch independent', async () => {
