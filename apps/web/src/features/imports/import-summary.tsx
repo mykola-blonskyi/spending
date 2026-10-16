@@ -212,11 +212,14 @@ export function ImportSummary({
   result,
   accountName,
   waitsForReview,
+  nextCard,
   onImportAnother,
 }: {
   result: ImportResult;
   accountName: string;
   waitsForReview: boolean;
+  /** Another card of the same file still to import (BR-36). */
+  nextCard?: { label: string; onClick: () => void };
   onImportAnother: () => void;
 }) {
   const t = useTranslations('imports');
@@ -285,6 +288,11 @@ export function ImportSummary({
         ))}
 
       <div className="flex flex-wrap gap-3">
+        {nextCard && (
+          <Button onClick={nextCard.onClick}>
+            {t('summary.importNextCard', { card: nextCard.label })}
+          </Button>
+        )}
         <Button variant="outline" onClick={onImportAnother}>
           {t('summary.importAnother')}
         </Button>

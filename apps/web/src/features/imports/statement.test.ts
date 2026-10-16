@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { findHeaderRow, MAX_BYTES, parseStatement, ROWS_MAX } from './statement';
 
-const file = (bytes: Uint8Array | string) => new Blob([bytes]);
+const file = (bytes: Uint8Array<ArrayBuffer> | string) => new Blob([bytes]);
 const fixture = (name: string) => file(new Uint8Array(readFileSync(`e2e/fixtures/${name}`)));
 
 describe('findHeaderRow', () => {
