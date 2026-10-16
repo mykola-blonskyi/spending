@@ -228,17 +228,19 @@ describe('ledger', () => {
     });
 
     it('creates and edits categories', async () => {
-      const taken = await as(t, ann, '/v1/categories', {
-        method: 'POST',
-        body: {
-          workspaceId: family,
-          name: 'Groceries',
-          kind: 'expense',
-          color: '#00ff00',
-          icon: 'apple',
-        },
-      });
-      expect(taken.status).toBe(409);
+      const market = {
+        workspaceId: family,
+        name: 'Market',
+        kind: 'expense',
+        color: '#00ff00',
+        icon: 'apple',
+      };
+      expect((await as(t, ann, '/v1/categories', { method: 'POST', body: market })).status).toBe(
+        201,
+      );
+      expect((await as(t, bob, '/v1/categories', { method: 'POST', body: market })).status).toBe(
+        409,
+      );
       const created = await json<{ id: string; color: string; systemKey: null }>(
         await as(t, bob, '/v1/categories', {
           method: 'POST',
@@ -271,6 +273,46 @@ describe('ledger', () => {
         icon: 'store',
         archivedAt: expect.any(String),
       });
+    });
+
+    it('stores a default category name only once the user sets one', async () => {
+      type Row = { id: string; name: string | null; systemKey: string | null };
+      const { categories } = await json<{ categories: Row[] }>(
+        await as(t, ann, `/v1/categories?workspaceId=${annPersonal}`),
+        200,
+      );
+      expect(categories.filter((c) => c.systemKey !== null).map((c) => c.name)).toEqual(
+        Array<null>(20).fill(null),
+      );
+      const groceries = categories.find((c) => c.systemKey === 'groceries')!;
+      const path = `/v1/categories/${groceries.id}`;
+      const renamed = await json<Row>(
+        await as(t, ann, path, { method: 'PATCH', body: { name: 'Food' } }),
+        200,
+      );
+      expect(renamed).toMatchObject({ name: 'Food', systemKey: 'groceries' });
+      const reset = await json<Row>(
+        await as(t, ann, path, { method: 'PATCH', body: { name: null } }),
+        200,
+      );
+      expect(reset).toMatchObject({ name: null, systemKey: 'groceries' });
+      const custom = await json<Row>(
+        await as(t, ann, '/v1/categories', {
+          method: 'POST',
+          body: {
+            workspaceId: annPersonal,
+            name: 'Pets',
+            kind: 'expense',
+            color: '#00ff00',
+            icon: 'paw-print',
+          },
+        }),
+        201,
+      );
+      expect(
+        (await as(t, ann, `/v1/categories/${custom.id}`, { method: 'PATCH', body: { name: null } }))
+          .status,
+      ).toBe(400);
     });
   });
 

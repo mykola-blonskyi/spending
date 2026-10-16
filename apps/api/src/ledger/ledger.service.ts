@@ -182,6 +182,9 @@ export class LedgerService {
         .where(eq(categories.id, id));
       if (!current) throw new ApiError('NOT_FOUND');
       await this.policy.requireMember(actorId, current.workspaceId, tx);
+      if (patch.name === null && current.systemKey === null) {
+        throw new ApiError('VALIDATION_FAILED', 'only a default category can drop its name');
+      }
       const { archived, ...fields } = changes(current, patch);
       if (Object.keys(fields).length === 0 && archived === undefined) {
         return toView(current);

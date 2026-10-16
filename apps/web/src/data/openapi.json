@@ -1697,6 +1697,12 @@
         },
         "additionalProperties": false
       },
+      "StoredName_Output": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
       "WorkspaceListDto_Output": {
         "type": "object",
         "properties": {
@@ -1718,7 +1724,7 @@
                   ]
                 },
                 "name": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/StoredName_Output"
                 },
                 "role": {
                   "type": "string",
@@ -1816,7 +1822,7 @@
             ]
           },
           "name": {
-            "type": "string"
+            "$ref": "#/components/schemas/StoredName_Output"
           },
           "role": {
             "type": "string",
@@ -2400,7 +2406,7 @@
                   "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                 },
                 "name": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/StoredName_Output"
                 },
                 "kind": {
                   "type": "string",
@@ -2511,7 +2517,7 @@
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
           "name": {
-            "type": "string"
+            "$ref": "#/components/schemas/StoredName_Output"
           },
           "kind": {
             "type": "string",
@@ -2567,9 +2573,16 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 60
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "color": {
             "type": "string",
@@ -3145,7 +3158,7 @@
                   ]
                 },
                 "name": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/StoredName_Output"
                 },
                 "role": {
                   "type": "string",
@@ -3244,7 +3257,7 @@
                   "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                 },
                 "name": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/StoredName_Output"
                 },
                 "kind": {
                   "type": "string",
@@ -3782,6 +3795,12 @@
           "null"
         ]
       },
+      "StoredName": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
       "ArchivedAt": {
         "anyOf": [
           {
@@ -4104,7 +4123,7 @@
                   ]
                 },
                 "name": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/StoredName"
                 },
                 "role": {
                   "type": "string",
@@ -4243,7 +4262,7 @@
                   "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                 },
                 "name": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/StoredName"
                 },
                 "kind": {
                   "type": "string",

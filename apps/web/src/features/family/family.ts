@@ -6,8 +6,18 @@ import { isSignedOutError } from '@data/session';
 import { useSyncNow } from '@data/sync';
 import { useTranslations } from '@i18n/index';
 
-export const findFamily = (workspaces: readonly WorkspaceView[]): WorkspaceView | null =>
-  workspaces.find((workspace) => workspace.kind === 'family') ?? null;
+export type Family = WorkspaceView & { name: string };
+
+/** Only the personal workspace goes unnamed (ADR-012); a family always has a name. */
+export const asFamily = (workspace: WorkspaceView): Family => ({
+  ...workspace,
+  name: workspace.name ?? '',
+});
+
+export const findFamily = (workspaces: readonly WorkspaceView[]): Family | null => {
+  const family = workspaces.find((workspace) => workspace.kind === 'family');
+  return family ? asFamily(family) : null;
+};
 
 /** The family the signed-in user belongs to; `data` is null without one. */
 export function useFamily(enabled = true) {

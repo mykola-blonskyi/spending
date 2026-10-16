@@ -3,13 +3,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import type { ImportResult } from '@data/imports';
 import {
-  type Category,
   type TransactionEntry,
-  useCategories,
   useLocalTransactions,
   useSyncStatus,
   useUpdateTransaction,
 } from '@data/sync';
+import { type CategoryView, useCategoryViews } from '@features/ledger';
 import { useTranslations } from '@i18n/index';
 import { LoadingState, MoneyText } from '@shared/components';
 import { formatDate } from '@shared/format';
@@ -50,7 +49,7 @@ function ImportedEntries({ ids }: { ids: readonly string[] }) {
   const { locale } = useSharedLocale();
   const all = useLocalTransactions(ALL);
   const sync = useSyncStatus();
-  const categories = useCategories();
+  const categories = useCategoryViews();
   const update = useUpdateTransaction();
   const [uncategorizedOnly, setUncategorizedOnly] = useState(false);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
@@ -63,7 +62,7 @@ function ImportedEntries({ ids }: { ids: readonly string[] }) {
   const shown = uncategorizedOnly ? entries.filter((e) => e.categoryId === null) : entries;
   const workspaceId = entries[0]?.workspaceId;
   const options = useMemo(
-    () => categories.items.filter((c) => c.workspaceId === workspaceId && !c.archivedAt),
+    () => categories.items.filter((c) => c.workspaceId === workspaceId && !c.archived),
     [categories.items, workspaceId],
   );
   const byId = useMemo(() => new Map(options.map((c) => [c.id, c])), [options]);
@@ -91,7 +90,7 @@ function ImportedEntries({ ids }: { ids: readonly string[] }) {
     }
     setSelected(new Set());
   };
-  const optionsFor = (entry: TransactionEntry, extra: Category | undefined) =>
+  const optionsFor = (entry: TransactionEntry, extra: CategoryView | undefined) =>
     options.filter((c) => c.kind === entry.kind || c.id === extra?.id);
 
   if (entries.length < ids.length) {

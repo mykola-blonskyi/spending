@@ -2,14 +2,14 @@ import type { LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { type Category, useCategories } from '@data/sync';
 import { type Messages, useTranslations } from '@i18n/index';
-import { en } from '@i18n/messages/en';
+import { useSharedLocale } from '@shared/lib/locale-context';
 import { categoryIcon } from './category-icons';
 
 export type CategoryView = Readonly<{
   id: string;
   workspaceId: string;
   kind: Category['kind'];
-  /** Localized for a default category whose stored name is still the English default. */
+  /** The user's name, or the localized default for an unnamed default category (ADR-012). */
   name: string;
   color: string;
   Icon: LucideIcon;
@@ -19,35 +19,38 @@ export type CategoryView = Readonly<{
 type DefaultKey = keyof Messages['categoryDefaults'];
 type Translate = (key: DefaultKey) => string;
 
-const isDefaultKey = (key: string): key is DefaultKey => key in en.categoryDefaults;
+/** How a default category is shown while the user has not named it. */
+export function defaultCategoryName(systemKey: string, t: Translate): string {
+  return t(systemKey as DefaultKey);
+}
 
 /** Pure: how a category is shown. `t` translates `categoryDefaults.<systemKey>`. */
 export function categoryView(category: Category, t: Translate): CategoryView {
-  const { systemKey } = category;
-  const localized =
-    systemKey !== null &&
-    isDefaultKey(systemKey) &&
-    category.name === en.categoryDefaults[systemKey];
+  const { name, systemKey } = category;
   return {
     id: category.id,
     workspaceId: category.workspaceId,
     kind: category.kind,
-    name: localized ? t(systemKey) : category.name,
+    name: name ?? (systemKey === null ? '' : defaultCategoryName(systemKey, t)),
     color: category.color,
     Icon: categoryIcon(category.icon),
     archived: category.archivedAt !== null,
   };
 }
 
+/** The one place categories get their display names; every list, picker and label uses it. */
 export function useCategoryViews(): {
   ready: boolean;
   items: readonly CategoryView[];
   byId: ReadonlyMap<string, CategoryView>;
 } {
   const t = useTranslations('categoryDefaults');
+  const { locale } = useSharedLocale();
   const categories = useCategories();
   return useMemo(() => {
-    const items = categories.items.map((category) => categoryView(category, t));
+    const items = categories.items
+      .map((category) => categoryView(category, t))
+      .sort((a, b) => a.name.localeCompare(b.name, locale));
     return { ready: categories.ready, items, byId: new Map(items.map((c) => [c.id, c])) };
-  }, [categories, t]);
+  }, [categories, t, locale]);
 }

@@ -17,7 +17,6 @@ import {
   removeMember,
   revokeInvitation,
   transferOwnership,
-  type WorkspaceView,
 } from '@data/family';
 import { useSession } from '@features/auth';
 import { useProfile } from '@features/profile';
@@ -43,7 +42,7 @@ import {
 import { Input } from '@shared/ui/input';
 import { Label } from '@shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui/select';
-import { useFamily, useFamilyMutation } from './family';
+import { type Family, useFamily, useFamilyMutation } from './family';
 
 const EXPIRY_DAYS = [1, 3, 7, 14, 30] as const;
 const DEFAULT_EXPIRY = 7;
@@ -370,7 +369,7 @@ function Events() {
   );
 }
 
-function LeaveOrDelete({ family }: { family: WorkspaceView }) {
+function LeaveOrDelete({ family }: { family: Family }) {
   const t = useTranslations('family');
   const [confirming, setConfirming] = useState(false);
   const leave = useFamilyMutation(leaveFamily, () => toast.success(t('leave.left')));
@@ -426,7 +425,7 @@ function LeaveOrDelete({ family }: { family: WorkspaceView }) {
   );
 }
 
-function FamilyView({ family }: { family: WorkspaceView }) {
+function FamilyView({ family }: { family: Family }) {
   const t = useTranslations('family');
   const { user } = useSession();
   const owner = family.role === 'owner';

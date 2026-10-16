@@ -18,6 +18,11 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
 - **BR-4.** A transaction's category must belong to the transaction's workspace and match its kind.
   The service layer enforces it, because family deletion (BR-11) moves rows between workspaces. An
   archived category stays allowed only on a row that already uses it.
+- **BR-4a.** The database stores no display text the app translates (ADR-012). A default category
+  has `name = null` and is shown by its `systemKey` in the user's language; renaming stores the
+  user's name and keeps the key, and `PATCH name: null` returns it to the default (`400` on a
+  custom category). The personal workspace is unnamed likewise. Name uniqueness per
+  `(workspaceId, kind)` applies to stored names only.
 - **BR-5.** A user with no session gets `401 AUTH_REQUIRED`. A session whose provider grant was
   revoked is destroyed, and the next request gets `401 SESSION_REVOKED`.
 - **BR-34.** Offline, the app opens on the local data of the user who last signed in on this
@@ -45,7 +50,8 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   owner actions; ids outside the actor's own family get `404 NOT_FOUND`.
 - **BR-11.** Deleting a family requires typing its name. Each family transaction moves to its
   author's personal workspace. Its category is re-linked to the author's personal category with
-  the same name and kind, created if missing. A family account reference becomes null. A
+  the same kind and, for an unnamed default, the same `systemKey`, otherwise the same name;
+  it is created if missing. A family account reference becomes null. A
   transaction whose author has deleted their account is deleted along with the family. Budgets,
   recurring rules and invitations of the family are deleted. Tombstones move too (with a category
   only when the author already has a matching one), and open conflicts of non-authors on moved

@@ -48,7 +48,7 @@ const account = (patch: Partial<Account>): Account => ({
 const category = (patch: Partial<Category>): Category => ({
   id: 'c-1',
   workspaceId: PERSONAL.id,
-  name: 'Groceries',
+  name: null,
   kind: 'expense',
   color: '#16a34a',
   icon: 'shopping-basket',
@@ -75,7 +75,7 @@ beforeEach(() => {
   ];
   local.categories = [
     category({}),
-    category({ id: 'c-2', name: 'Salary', kind: 'income', systemKey: 'salary' }),
+    category({ id: 'c-2', name: null, kind: 'income', systemKey: 'salary' }),
     category({ id: 'c-3', name: 'Pets', systemKey: null, archivedAt: '2026-02-01T00:00:00Z' }),
   ];
 });
@@ -165,12 +165,33 @@ describe('CategoriesPage', () => {
     expect(screen.getByText('Зарплата')).toBeInTheDocument();
   });
 
-  it('shows the stored name when editing a default, with the translation hint', async () => {
+  it('edits a default with its localized name as the placeholder, and renames or resets it', async () => {
     renderPage(<CategoriesPage />, 'uk');
     await userEvent.click(screen.getByRole('button', { name: 'Змінити: Продукти' }));
     const dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByLabelText('Назва')).toHaveValue('Groceries');
+    const name = within(dialog).getByLabelText('Назва');
+    expect(name).toHaveValue('');
+    expect(name).toHaveAttribute('placeholder', 'Продукти');
     expect(within(dialog).getByText(/Стандартні категорії показуються/)).toBeInTheDocument();
+    await userEvent.type(name, 'Їжа');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Зберегти' }));
+    expect(admin.update).toHaveBeenCalledWith('c-1', {
+      name: 'Їжа',
+      color: '#16a34a',
+      icon: 'shopping-basket',
+    });
+
+    local.categories = [category({ name: 'Їжа' })];
+    renderPage(<CategoriesPage />, 'uk');
+    await userEvent.click(screen.getByRole('button', { name: 'Змінити: Їжа' }));
+    const reopened = within(screen.getByRole('dialog')).getByLabelText('Назва');
+    await userEvent.clear(reopened);
+    await userEvent.click(screen.getByRole('button', { name: 'Зберегти' }));
+    expect(admin.update).toHaveBeenLastCalledWith('c-1', {
+      name: null,
+      color: '#16a34a',
+      icon: 'shopping-basket',
+    });
   });
 
   it('creates a category with the chosen color and icon', async () => {

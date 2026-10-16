@@ -65,7 +65,7 @@ export class UsersService {
     }
     const [workspace] = await tx
       .insert(workspaces)
-      .values({ kind: 'personal', name: 'Personal', ownerId: userId })
+      .values({ kind: 'personal', name: null, ownerId: userId })
       .returning({ id: workspaces.id });
     await tx.insert(memberships).values({
       workspaceId: workspace!.id,

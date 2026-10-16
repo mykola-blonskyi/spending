@@ -150,7 +150,7 @@ test('categories can be created, edited, archived and shown in the chosen langua
     .poll(() => db.categories(ann.email))
     .toContainEqual(expect.objectContaining({ name: 'Espresso', archived: true }));
 
-  // A default category follows the language; the stored name is what the rename dialog edits.
+  // A default category follows the language; it has no stored name until the user types one.
   await page.goto('/settings');
   await page.getByRole('combobox', { name: 'Language' }).click();
   await page.getByRole('option', { name: 'Українська' }).click();
@@ -158,5 +158,6 @@ test('categories can be created, edited, archived and shown in the chosen langua
   const ukExpenses = page.getByRole('region', { name: 'Витрати' });
   await expect(ukExpenses.getByRole('listitem').filter({ hasText: 'Продукти' })).toBeVisible();
   await page.getByRole('button', { name: 'Змінити: Продукти' }).click();
-  await expect(dialog(page).locator('input').first()).toHaveValue('Groceries');
+  await expect(dialog(page).locator('input').first()).toHaveValue('');
+  await expect(dialog(page).locator('input').first()).toHaveAttribute('placeholder', 'Продукти');
 });

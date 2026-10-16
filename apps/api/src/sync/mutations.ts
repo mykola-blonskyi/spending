@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { ErrorCode } from '../common/errors';
-import { MEMBER_ROLES, WORKSPACE_KINDS } from '../workspaces/family';
+import { MEMBER_ROLES, storedName, WORKSPACE_KINDS } from '../workspaces/family';
 import {
   accountViewSchema,
   amountMinorSchema,
@@ -291,7 +291,7 @@ export const pullResponseSchema = z.object({
     z.object({
       id: z.uuid(),
       kind: z.enum(WORKSPACE_KINDS),
-      name: z.string(),
+      name: storedName,
       role: z.enum(MEMBER_ROLES),
     }),
   ),

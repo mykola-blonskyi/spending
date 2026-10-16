@@ -23,32 +23,32 @@ test('seeded entries add up on the overview, compared with the month before', as
       kind: 'income',
       amountMinor: 300_000,
       occurredOn: '2026-09-01',
-      category: 'Salary',
+      category: 'salary',
       description: 'Pay',
     },
-    { amountMinor: 5_000, occurredOn: '2026-09-02', category: 'Groceries', description: 'Market' },
+    { amountMinor: 5_000, occurredOn: '2026-09-02', category: 'groceries', description: 'Market' },
     {
       amountMinor: 2_500,
       currency: 'USD',
       occurredOn: '2026-09-05',
-      category: 'Groceries',
+      category: 'groceries',
       description: 'Deli',
     },
     { amountMinor: 90_000, currency: 'ARS', occurredOn: '2026-09-03', description: 'Asado' },
     {
       amountMinor: 3_000,
       occurredOn: '2026-08-15',
-      category: 'Groceries',
+      category: 'groceries',
       description: 'August shop',
     },
   ]);
   const pull = await apiCall<{
     workspaces: { id: string; kind: string }[];
-    categories: { id: string; name: string; workspaceId: string }[];
+    categories: { id: string; systemKey: string | null; workspaceId: string }[];
   }>(page, 'GET', '/api/v1/sync/pull?cursor=0&limit=1000');
   const personal = pull.workspaces.find((w) => w.kind === 'personal')!;
   const groceries = pull.categories.find(
-    (c) => c.name === 'Groceries' && c.workspaceId === personal.id,
+    (c) => c.systemKey === 'groceries' && c.workspaceId === personal.id,
   )!;
   await apiCall(page, 'PUT', '/api/v1/budgets', {
     workspaceId: personal.id,

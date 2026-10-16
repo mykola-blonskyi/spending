@@ -77,7 +77,8 @@ export class E2EDatabase {
       icon: string;
       archived: boolean;
     }>(
-      `select c.name, c.kind, c.color, c.icon, c.archived_at is not null as archived
+      `select coalesce(c.name, c.system_key) as name, c.kind, c.color, c.icon,
+              c.archived_at is not null as archived
          from categories c
          join memberships m on m.workspace_id = c.workspace_id
          join users u on u.id = m.user_id
@@ -136,7 +137,8 @@ export class E2EDatabase {
       deleted: boolean;
     }>(
       `select t.description, t.amount_minor, w.kind as scope, t.review_status,
-              c.name as category, t.version, t.deleted_at is not null as deleted
+              coalesce(c.name, c.system_key) as category, t.version,
+              t.deleted_at is not null as deleted
          from transactions t
          join users u on u.id = t.created_by
          join workspaces w on w.id = t.workspace_id
@@ -150,7 +152,7 @@ export class E2EDatabase {
   /** What the categorizer learned, per merchant key. */
   async categoryRules(email: string) {
     const { rows } = await this.pool.query<{ merchant_key: string; category: string }>(
-      `select r.merchant_key, c.name as category
+      `select r.merchant_key, coalesce(c.name, c.system_key) as category
          from category_rules r
          join categories c on c.id = r.category_id
          join workspaces w on w.id = r.workspace_id

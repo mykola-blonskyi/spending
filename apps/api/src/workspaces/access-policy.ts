@@ -9,7 +9,7 @@ export type Membership = Readonly<{
   workspaceId: string;
   kind: WorkspaceKind;
   role: MemberRole;
-  name: string;
+  name: string | null;
 }>;
 
 const membershipColumns = {

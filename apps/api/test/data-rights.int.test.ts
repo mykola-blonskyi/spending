@@ -373,9 +373,9 @@ describe('data rights', () => {
       const text = new TextDecoder().decode(bytes.slice(3));
       expect(text.split('\r\n')).toEqual([
         'date,kind,amount,currency,eur_amount,fx_rate,fx_rate_date,scope,workspace,account,category,description,note,source,author',
-        `2026-10-01,expense,12345,JPY,76.92,160.5000000000,2026-10-01,personal,Personal,,,"'=HYPERLINK(""http://x.test"")",,manual,Ann`,
-        `2026-10-02,income,1.234,KWD,3.74,0.3300000000,2026-10-01,personal,Personal,"Visa, ""gold""",Salary,'-2,"a,b\n""c""",manual,Ann`,
-        `2026-10-03,expense,0.05,EUR,0.05,,,personal,Personal,,,'@cmd,'\tx,manual,Ann`,
+        `2026-10-01,expense,12345,JPY,76.92,160.5000000000,2026-10-01,personal,,,,"'=HYPERLINK(""http://x.test"")",,manual,Ann`,
+        `2026-10-02,income,1.234,KWD,3.74,0.3300000000,2026-10-01,personal,,"Visa, ""gold""",salary,'-2,"a,b\n""c""",manual,Ann`,
+        `2026-10-03,expense,0.05,EUR,0.05,,,personal,,,,'@cmd,'\tx,manual,Ann`,
         `2026-10-04,expense,1.50,EUR,1.50,,,family,Home,,,'+1,,manual,Ann`,
         '',
       ]);

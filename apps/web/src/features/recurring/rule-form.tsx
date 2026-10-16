@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
-import { useAccounts, useCategories } from '@data/sync';
+import { useAccounts } from '@data/sync';
+import { useCategoryViews } from '@features/ledger';
 import { TimezoneSelect } from '@features/profile';
 import { useTranslations } from '@i18n/index';
 import { COMMON_CURRENCIES } from '@shared/format';
@@ -91,10 +92,10 @@ export function RuleForm({
     setValues((current) => ({ ...current, ...patch }));
 
   const accounts = useAccounts().items.filter((a) => a.workspaceId === workspaceId);
-  const categories = useCategories().items.filter((c) => c.workspaceId === workspaceId);
+  const categories = useCategoryViews().items.filter((c) => c.workspaceId === workspaceId);
   const usableAccounts = accounts.filter((a) => !a.archivedAt || a.id === initial.accountId);
   const usableCategories = categories.filter(
-    (c) => c.kind === values.kind && (!c.archivedAt || c.id === initial.categoryId),
+    (c) => c.kind === values.kind && (!c.archived || c.id === initial.categoryId),
   );
   const currencies = [
     ...new Set([values.currency, ...accounts.map((a) => a.currency), ...COMMON_CURRENCIES]),
