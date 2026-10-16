@@ -67,7 +67,9 @@ function BudgetForm({ mode, onDone }: { mode: BudgetDialogMode; onDone: () => vo
   const personal = workspaces.find((workspace) => workspace.kind === 'personal');
   const family = workspaces.find((workspace) => workspace.kind === 'family');
 
-  const [workspaceId, setWorkspaceId] = useState(editing?.workspaceId ?? personal?.id ?? '');
+  const [chosenWorkspaceId, setWorkspaceId] = useState(editing?.workspaceId ?? null);
+  // Derived, not snapshotted: the dialog may open before the first pull brings the workspaces.
+  const workspaceId = chosenWorkspaceId ?? personal?.id ?? '';
   const choices =
     mode.kind === 'create' ? budgetableCategories(categories, workspaceId, mode.budgets) : [];
   const [chosenId, setChosenId] = useState<string | null>(null);
