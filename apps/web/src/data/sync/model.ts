@@ -52,7 +52,7 @@ export type TransactionRecord = Readonly<{
  */
 export type MutationState =
   | { readonly status: 'queued' }
-  | { readonly status: 'sending' }
+  | { readonly status: 'sending'; readonly since: string }
   | { readonly status: 'retrying' }
   | { readonly status: 'failed'; readonly code: string; readonly message: string };
 

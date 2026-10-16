@@ -30,10 +30,12 @@ export const SYNCED_HOLD_MS = 600;
 
 /**
  * How long the badge waits before showing `next` in place of `shown`, which has been on screen
- * for `shownForMs`. A short sync never flashes "syncing", and "synced" stays long enough to read.
+ * for `shownForMs`. A short sync never flashes "syncing", and "synced" stays long enough to read,
+ * but never hides a pending change or a problem.
  */
 export function smoothingDelay(next: SyncStatus, shown: SyncStatus, shownForMs: number): number {
   if (next.state === shown.state) return 0;
+  if (next.state !== 'syncing') return 0;
   const hold = shown.state === 'synced' ? Math.max(0, SYNCED_HOLD_MS - shownForMs) : 0;
-  return next.state === 'syncing' ? Math.max(SYNCING_DELAY_MS, hold) : hold;
+  return Math.max(SYNCING_DELAY_MS, hold);
 }

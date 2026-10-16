@@ -18,7 +18,7 @@ import {
   queueOrder,
   type WireMutation,
 } from './model';
-import { applyLocalChange, requeueInFlight, SENDING_STALE_MS, setMutationState } from './queue';
+import { applyLocalChange, SENDING_STALE_MS, setMutationState } from './queue';
 import { LocalStore } from './store';
 import { apiTransport, SYNC_TIMEOUT_MS } from './transport';
 import { deleteTransaction, recordTransaction, updateTransaction } from './writes';
@@ -96,7 +96,8 @@ describe('SyncEngine', () => {
     let intercepted = 0;
     const spy = vi.spyOn(local, 'commit').mockImplementation((transition) => {
       intercepted += 1;
-      if (transition !== requeueInFlight) {
+      // The first commit settles leftovers; the second marks the batch sending.
+      if (intercepted === 2) {
         // The edit commits through local.commit too; restore first so it cannot re-enter here.
         spy.mockRestore();
         edit = updateTransaction(local, id, { ...draft, description: 'W2' });
@@ -254,7 +255,9 @@ describe('SyncEngine', () => {
       // Without Web Locks, another tab may send its own batch meanwhile.
       const id = await recordTransaction(local, { ...draft, description: 'theirs' });
       const theirs = mutationsFor(local.state, id).map((mutation) => mutation.mutationId);
-      await local.commit((state) => setMutationState(state, theirs, { status: 'sending' }));
+      await local.commit((state) =>
+        setMutationState(state, theirs, { status: 'sending', since: new Date().toISOString() }),
+      );
       throw new ApiError({ status: 0, code: 'NETWORK', message: 'offline' });
     });
     const engine = new SyncEngine(local, { push, pull: () => Promise.resolve(page()) });

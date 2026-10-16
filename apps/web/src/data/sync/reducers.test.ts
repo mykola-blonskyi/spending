@@ -156,7 +156,7 @@ describe('reducePull', () => {
         ids,
       ),
       ['m-1'],
-      { status: 'sending' },
+      { status: 'sending', since: now },
     );
     const twoPending = applyLocalChange(
       sending,
@@ -271,11 +271,15 @@ describe('reducePush', () => {
   it('freezes what is left of its own batch for a replay, never another tab’s push', () => {
     const state = setMutationState(editLocally(syncedState(serverRow()), {}), ['m-1'], {
       status: 'sending',
+      since: now,
     });
     expect(queueOrder(reducePush(state, [], now, ['m-1']))[0]?.state).toEqual({
       status: 'retrying',
     });
-    expect(queueOrder(reducePush(state, [], now, []))[0]?.state).toEqual({ status: 'sending' });
+    expect(queueOrder(reducePush(state, [], now, []))[0]?.state).toEqual({
+      status: 'sending',
+      since: now,
+    });
   });
 });
 
