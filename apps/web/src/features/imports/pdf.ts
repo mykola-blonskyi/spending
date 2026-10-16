@@ -343,9 +343,10 @@ export async function parsePdfStatement(
   const pdf = unwrapSignedPdf(new Uint8Array(bytes));
   if (!pdf) return { ok: false, problem: 'PDF_UNREADABLE' };
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
-  // Node (unit tests) runs pdf.js without a worker; browsers load ours from our origin (CSP).
+  // Node (unit tests) runs pdf.js without a worker. Browsers load ours from our origin (CSP), built
+  // as a .js asset because nginx's mime.types has no .mjs and nosniff refuses octet-stream.
   if (typeof Worker !== 'undefined' && !pdfjs.GlobalWorkerOptions.workerSrc) {
-    const worker = await import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url');
+    const worker = await import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?worker&url');
     pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
   }
   // WebAssembly only decodes images; text extraction does not need it and the CSP forbids it.
