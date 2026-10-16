@@ -47,10 +47,14 @@ export function validate(
   };
 }
 
-export function valuesFromDraft(draft: TransactionDraft): FormValues {
+/** The stored entry as form values, its amount written with the locale's `separator`. */
+export function valuesFromDraft(draft: TransactionDraft, separator: string): FormValues {
   return {
     kind: draft.kind,
-    amount: minorToDecimalString(draft.amountMinor, currencyExponent(draft.currency)),
+    amount: minorToDecimalString(draft.amountMinor, currencyExponent(draft.currency)).replace(
+      '.',
+      separator,
+    ),
     currency: draft.currency,
     occurredOn: draft.occurredOn,
     accountId: draft.accountId,
@@ -82,12 +86,4 @@ export function pressKey(amount: string, key: KeypadKey, exponent: number): stri
   if (whole === '0') return key;
   // One digit short of the cap's, so every amount the keypad builds is within it (BR-13).
   return whole.length < String(MAX_AMOUNT_MINOR).length - 1 - exponent ? amount + key : amount;
-}
-
-/** The decimal mark this locale writes, for the keypad label and the shown amount. */
-export function decimalSeparator(locale: string): string {
-  return (
-    new Intl.NumberFormat(locale).formatToParts(1.5).find((part) => part.type === 'decimal')
-      ?.value ?? '.'
-  );
 }

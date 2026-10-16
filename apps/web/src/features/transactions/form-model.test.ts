@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseAmount } from '@shared/format';
-import {
-  decimalSeparator,
-  type FormValues,
-  type KeypadKey,
-  pressKey,
-  validate,
-} from './form-model';
+import { type FormValues, type KeypadKey, pressKey, validate, valuesFromDraft } from './form-model';
 
 const values: FormValues = {
   kind: 'expense',
@@ -85,13 +79,14 @@ describe('pressKey', () => {
   });
 });
 
-describe('decimalSeparator', () => {
+describe('valuesFromDraft', () => {
+  const draft = { ...values, amountMinor: 1250, workspaceId: 'ws-1' };
+
   it.each([
-    ['en', '.'],
-    ['uk', ','],
-    ['ru', ','],
-    ['es', ','],
-  ])('is the %s mark', (locale, mark) => {
-    expect(decimalSeparator(locale)).toBe(mark);
+    ['.', '12.50'],
+    [',', '12,50'],
+  ])('writes the stored amount with the %s mark', (mark, amount) => {
+    expect(valuesFromDraft(draft, mark).amount).toBe(amount);
+    expect(parseAmount(amount, 2)).toBe(1250);
   });
 });

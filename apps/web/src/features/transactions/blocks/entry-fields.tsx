@@ -152,7 +152,9 @@ export function CategoryPicker({
   renderCategory = (category) => (
     <>
       <CategoryBadge category={category} className="size-8" />
-      <span className="w-full truncate">{category.name}</span>
+      <span className="line-clamp-2 w-full leading-tight break-words hyphens-auto">
+        {category.name}
+      </span>
     </>
   ),
 }: {
@@ -182,8 +184,9 @@ export function CategoryPicker({
           <ToggleGroupItem
             key={category.id}
             value={category.id}
+            title={category.name}
             className={cn(
-              'group/item h-[4.5rem] w-full flex-col gap-1.5 rounded-xl border bg-card px-1 text-[11px] transition-[background-color,border-color,transform] duration-150 ease-out active:scale-[0.97] data-[state=on]:border-primary data-[state=on]:bg-accent',
+              'group/item h-[4.5rem] w-full flex-col gap-1.5 rounded-xl border bg-card px-1 text-center text-[11px] whitespace-normal transition-[background-color,border-color,transform] duration-150 ease-out active:scale-[0.97] data-[state=on]:border-primary data-[state=on]:bg-accent',
               itemClassName,
             )}
           >

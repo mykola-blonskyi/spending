@@ -137,7 +137,8 @@ function ConversionMeta({
   const t = useTranslations('history');
   const { locale } = useSharedLocale();
   if (conversion.state === 'same') return null;
-  const fx = conversion.state === 'converted' ? fxLabels(conversion.fx, locale) : null;
+  const fx =
+    conversion.state === 'converted' ? fxLabels(conversion.fx, locale, t('sourceEcb')) : null;
   return (
     <>
       <MetaRow label={t('originalAmount')}>
@@ -146,6 +147,8 @@ function ConversionMeta({
       <MetaRow label={t('eurAmount')}>
         {conversion.state === 'converted' ? (
           <MoneyText amountMinor={conversion.baseAmountMinor} currency="EUR" />
+        ) : conversion.state === 'unavailable' ? (
+          <span className="text-muted-foreground">{t('conversionUnavailableHint')}</span>
         ) : (
           <ConversionNote conversion={conversion} className="text-sm" />
         )}
@@ -205,7 +208,11 @@ export function EntryDetail({ id, onBack }: { id: string; onBack?: () => void })
               <ChevronRight aria-hidden className="size-3.5 shrink-0 max-lg:hidden" />
               <span className="shrink-0 max-lg:hidden">{row.dateLabel}</span>
               <ChevronRight aria-hidden className="size-3.5 shrink-0 max-lg:hidden" />
-              <span className="truncate font-medium text-foreground">{row.title}</span>
+              <span
+                className={cn('truncate font-medium text-foreground', !editing && 'max-lg:hidden')}
+              >
+                {row.title}
+              </span>
             </>
           )}
         </div>

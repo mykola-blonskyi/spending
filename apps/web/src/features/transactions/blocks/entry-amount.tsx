@@ -16,7 +16,13 @@ function ConversionPending({ className }: { className?: string }) {
 }
 
 /** Says an entry has no EUR amount yet; the title explains why. */
-export function ConversionUnavailable({ className }: { className?: string }) {
+export function ConversionUnavailable({
+  className,
+  labelClassName,
+}: {
+  className?: string;
+  labelClassName?: string;
+}) {
   const t = useTranslations('history');
   return (
     <span
@@ -27,7 +33,7 @@ export function ConversionUnavailable({ className }: { className?: string }) {
       )}
     >
       <AlertCircle aria-hidden className="size-3.5 shrink-0" />
-      {t('conversionUnavailable')}
+      <span className={labelClassName}>{t('conversionUnavailable')}</span>
     </span>
   );
 }
@@ -50,11 +56,12 @@ export function EntryAmount({
   align?: 'end' | 'start';
   colored?: boolean;
 }) {
+  const t = useTranslations('history');
   const { locale } = useSharedLocale();
   const { conversion } = row;
   const sign = row.kind === 'expense' ? -1 : 1;
   const converted = conversion.state === 'converted';
-  const fx = converted ? fxLabels(conversion.fx, locale) : null;
+  const fx = converted ? fxLabels(conversion.fx, locale, t('sourceEcb')) : null;
   return (
     <span
       className={cn(
@@ -85,7 +92,10 @@ export function EntryAmount({
       )}
       {conversion.state === 'pending' && <ConversionPending className={secondaryClassName} />}
       {conversion.state === 'unavailable' && (
-        <ConversionUnavailable className={secondaryClassName} />
+        <ConversionUnavailable
+          className={secondaryClassName}
+          labelClassName="@max-md/history:sr-only"
+        />
       )}
     </span>
   );
@@ -105,9 +115,9 @@ export function ConversionNote({
   if (conversion.state === 'pending') return <ConversionPending className={className} />;
   if (conversion.state === 'unavailable') {
     return (
-      <p className={cn('flex flex-col gap-0.5 text-xs text-muted-foreground', className)}>
+      <p className={cn('text-xs text-muted-foreground', className)}>
         <ConversionUnavailable />
-        <span>{t('conversionUnavailableHint')}</span>
+        <span className="mt-0.5 block">{t('conversionUnavailableHint')}</span>
       </p>
     );
   }
@@ -115,7 +125,7 @@ export function ConversionNote({
     <p className={cn('text-xs text-muted-foreground tabular', className)}>
       {t('convertedTo', {
         amount: formatMoney(conversion.baseAmountMinor, 'EUR', locale),
-        ...fxLabels(conversion.fx, locale),
+        ...fxLabels(conversion.fx, locale, t('sourceEcb')),
       })}
     </p>
   );

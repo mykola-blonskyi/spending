@@ -62,7 +62,7 @@ export function BentoEntryView({ form }: { form: EntryForm }) {
             <CategoryPicker
               form={form}
               className="grid-cols-3"
-              itemClassName="h-[60px] border-transparent bg-muted/60 text-xs font-medium hover:bg-muted lg:h-[72px]"
+              itemClassName="border-transparent bg-muted/60 text-xs font-medium hover:bg-muted"
             />
           </Tile>
 

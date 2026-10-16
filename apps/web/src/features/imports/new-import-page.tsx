@@ -8,8 +8,7 @@ import { EmptyState, LoadingState, MoneyText, PageHeader } from '@shared/compone
 import { currencyExponent, formatDate } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import { cn } from '@shared/lib/utils';
-import { Button } from '@shared/ui/button';
-import { Input } from '@shared/ui/input';
+import { Button, buttonVariants } from '@shared/ui/button';
 import { Label } from '@shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@shared/ui/toggle-group';
@@ -348,6 +347,7 @@ export function NewImportPage() {
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [problem, setProblem] = useState<FileProblem | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
 
   const personal = workspaces.items.find((w) => w.kind === 'personal');
@@ -396,6 +396,7 @@ export function NewImportPage() {
           onImportAnother={() => {
             setResult(null);
             setLoaded(null);
+            setFileName(null);
           }}
         />
       </div>
@@ -405,6 +406,7 @@ export function NewImportPage() {
   const readFile = async (file: File | undefined) => {
     setLoaded(null);
     setProblem(null);
+    setFileName(file?.name ?? null);
     if (!file) return;
     if (file.size > FILE_MAX_BYTES) return setProblem('TOO_LARGE');
     let bytes: ArrayBuffer;
@@ -448,14 +450,30 @@ export function NewImportPage() {
           </Select>
         </Field>
         <Field id={fileId} label={t('imports.file')} hint={t('imports.fileHint')}>
-          <Input
-            id={fileId}
-            type="file"
-            accept=".csv,.txt,text/csv,text/plain"
-            aria-invalid={problem !== null || undefined}
-            aria-describedby={problem ? `${fileId}-error` : undefined}
-            onChange={(event) => void readFile(event.target.files?.[0])}
-          />
+          <div className="flex min-w-0 items-center gap-3">
+            <input
+              id={fileId}
+              type="file"
+              accept=".csv,.txt,text/csv,text/plain"
+              aria-invalid={problem !== null || undefined}
+              aria-describedby={problem ? `${fileId}-error` : undefined}
+              onChange={(event) => void readFile(event.target.files?.[0])}
+              className="peer sr-only"
+            />
+            <label
+              htmlFor={fileId}
+              aria-hidden
+              className={cn(
+                buttonVariants({ variant: 'outline' }),
+                'shrink-0 cursor-pointer peer-focus-visible:border-ring peer-focus-visible:ring-[3px] peer-focus-visible:ring-ring/50',
+              )}
+            >
+              {t('imports.chooseFile')}
+            </label>
+            <span className="min-w-0 truncate text-sm text-muted-foreground">
+              {fileName ?? t('imports.noFile')}
+            </span>
+          </div>
           {problem && (
             <p id={`${fileId}-error`} role="alert" className="text-sm text-destructive">
               {problemText[problem]}

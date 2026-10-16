@@ -18,10 +18,14 @@ export type RuleFormValues = {
 
 export type RuleFormErrors = Partial<Record<'amount' | 'interval' | 'endsOn', true>>;
 
-export function valuesFromRule(rule: Rule): RuleFormValues {
+/** The stored rule as form values, its amount written with the locale's `separator`. */
+export function valuesFromRule(rule: Rule, separator: string): RuleFormValues {
   return {
     kind: rule.kind,
-    amount: minorToDecimalString(rule.amountMinor, currencyExponent(rule.currency)),
+    amount: minorToDecimalString(rule.amountMinor, currencyExponent(rule.currency)).replace(
+      '.',
+      separator,
+    ),
     currency: rule.currency,
     accountId: rule.accountId,
     categoryId: rule.categoryId,

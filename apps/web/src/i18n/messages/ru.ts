@@ -154,7 +154,7 @@ export const ru = {
       emptyTitle: 'Операций пока нет',
       emptyDescription: 'Добавьте расход или импортируйте банковскую выписку, чтобы начать.',
       searchLabel: 'Поиск операций',
-      searchPlaceholder: 'Искать в описаниях и заметках',
+      searchPlaceholder: 'Описание или заметка',
       kindFilter: 'Тип',
       allKinds: 'Все',
       noMatchesTitle: 'Ничего не найдено',
@@ -312,6 +312,7 @@ export const ru = {
     rate: 'Курс',
     rateDate: 'Дата курса',
     rateSource: 'Источник',
+    sourceEcb: 'ЕЦБ',
     convertedTo: 'Конвертировано в {amount} по курсу {rate} ({source}, {date})',
     originalAmount: 'Исходная сумма',
     eurAmount: 'Сумма в евро',
@@ -493,6 +494,8 @@ export const ru = {
     noAccountsDescription: 'Выписка импортируется на один из ваших личных счетов.',
     file: 'Файл выписки',
     fileHint: 'CSV-экспорт до 2 МиБ и 5 000 строк.',
+    chooseFile: 'Выбрать файл',
+    noFile: 'Файл не выбран',
     fileTooLarge: 'Файл больше 2 МиБ. Экспортируйте более короткий период и попробуйте снова.',
     tooManyRows:
       'В файле больше 5 000 строк. Экспортируйте более короткий период и попробуйте снова.',
@@ -638,7 +641,7 @@ export const ru = {
       expense: 'Расходы',
       balance: 'Баланс',
       change: '{amount} по сравнению с предыдущим периодом',
-      comparedWith: 'Сравнение с {period}',
+      comparedWith: 'Сравнение: {period}',
     },
     trend: {
       title: 'Динамика',
@@ -656,7 +659,7 @@ export const ru = {
       empty: 'За этот период ничего не записано.',
     },
     budgets: {
-      title: 'Бюджеты на {month}',
+      title: 'Бюджеты · {month}',
       empty: 'На этот месяц бюджетов нет.',
       manage: 'Управлять бюджетами',
     },

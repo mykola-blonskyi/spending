@@ -69,12 +69,15 @@ export function conversionOf(
   return { state: 'converted', baseAmountMinor: entry.baseAmountMinor, fx: entry.fx };
 }
 
-/** Rate, rate date and source as people read them: "1.0850", "Oct 14, 2026", "ECB". */
-export function fxLabels(fx: Fx, locale: string) {
+/**
+ * Rate, rate date and source as people read them: "1,0850", "14 жовт. 2026 р.", "ЄЦБ". `ecb` is
+ * the ECB's name in the reader's language; another source shows as sent.
+ */
+export function fxLabels(fx: Fx, locale: string, ecb: string) {
   return {
     rate: formatRate(fx.rate, locale),
     date: formatDate(fx.rateDate, locale),
-    source: fx.source.toUpperCase(),
+    source: fx.source === 'ecb' ? ecb : fx.source.toUpperCase(),
   };
 }
 

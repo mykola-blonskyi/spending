@@ -9,6 +9,7 @@ export {
 export {
   COMMON_CURRENCIES,
   currencyExponent,
+  decimalSeparator,
   formatMoney,
   MAX_AMOUNT_MINOR,
   minorToDecimalString,

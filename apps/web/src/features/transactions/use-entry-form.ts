@@ -15,10 +15,9 @@ import type { Scope } from '@features/family';
 import { useCategoryViews } from '@features/ledger';
 import { useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
-import { COMMON_CURRENCIES, currencyExponent, todayIn } from '@shared/format';
+import { COMMON_CURRENCIES, currencyExponent, decimalSeparator, todayIn } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import {
-  decimalSeparator,
   type EntryKind,
   type FormValues,
   type KeypadKey,
@@ -93,10 +92,11 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
           : 'loading';
 
   const today = todayIn(profile.timezone);
+  const separator = decimalSeparator(locale);
   const initial = useMemo<FormValues>(
     () =>
       stored.entry
-        ? valuesFromDraft(stored.entry)
+        ? valuesFromDraft(stored.entry, separator)
         : {
             kind: 'expense',
             amount: '',
@@ -107,7 +107,7 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
             description: '',
             note: '',
           },
-    [stored.entry, today],
+    [stored.entry, today, separator],
   );
   // Keyed by entry so a pane that switches entries never shows the previous one's edits. The
   // server version on screen when editing starts is the save's base, so a row pulled meanwhile
@@ -167,7 +167,6 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
     ]),
   ].sort();
 
-  const separator = decimalSeparator(locale);
   // The stored conversion describes the stored amount and date (BR-14); an edit has none until saved.
   const conversion =
     stored.entry &&
