@@ -1,5 +1,5 @@
 import { Plus, Tag } from 'lucide-react';
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { type Category, useCategories, useLocalDataStatus, useWorkspaces } from '@data/sync';
 import { useTranslations } from '@i18n/index';
 import {
@@ -9,7 +9,9 @@ import {
   LoadingState,
   PageHeader,
 } from '@shared/components';
+import { useSharedLocale } from '@shared/lib/locale-context';
 import { useOnlineStatus } from '@shared/lib/network';
+import { cn } from '@shared/lib/utils';
 import { Button } from '@shared/ui/button';
 import {
   Dialog,
@@ -23,7 +25,12 @@ import { Input } from '@shared/ui/input';
 import { Label } from '@shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui/select';
 import { CATEGORY_ICON_NAMES, categoryIcon } from './category-icons';
-import { type CategoryView, defaultCategoryName, useCategoryViews } from './category-view';
+import {
+  type CategoryView,
+  defaultCategoryName,
+  findDuplicateCategory,
+  useCategoryViews,
+} from './category-view';
 import { ArchivedGroup, Field, RowActions } from './ledger-parts';
 import { useCategoriesAdmin } from './use-ledger-mutations';
 
@@ -115,19 +122,24 @@ function RadioGrid<T extends string>({
 }
 
 type Dialog = { category: Category } | 'new' | null;
+type NameError = 'invalid' | { duplicate: string } | null;
 
 function CategoryDialog({
   category,
   workspaceId,
   onClose,
+  onShowExisting,
 }: {
   category: Category | null;
   workspaceId: string;
   onClose: () => void;
+  onShowExisting: (id: string) => void;
 }) {
   const t = useTranslations('ledger');
   const actions = useTranslations('actions');
   const admin = useCategoriesAdmin();
+  const views = useCategoryViews();
+  const { locale } = useSharedLocale();
   const base = useId();
   const defaults = useTranslations('categoryDefaults');
   const defaultName = category?.systemKey
@@ -137,14 +149,27 @@ function CategoryDialog({
   const [kind, setKind] = useState<Kind>(category?.kind ?? 'expense');
   const [color, setColor] = useState(category?.color ?? SWATCHES[0] ?? '#16a34a');
   const [icon, setIcon] = useState(category?.icon ?? CATEGORY_ICON_NAMES[0] ?? 'tag');
-  const [nameError, setNameError] = useState(false);
+  const [nameError, setNameError] = useState<NameError>(null);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     const trimmed = name.trim();
-    const invalid = (trimmed.length < 1 && defaultName === null) || trimmed.length > 60;
-    setNameError(invalid);
-    if (invalid) return;
+    if ((trimmed.length < 1 && defaultName === null) || trimmed.length > 60) {
+      setNameError('invalid');
+      return;
+    }
+    const existing = findDuplicateCategory(
+      views.items,
+      {
+        name: trimmed || (defaultName ?? ''),
+        workspaceId: category?.workspaceId ?? workspaceId,
+        kind: category?.kind ?? kind,
+        exceptId: category?.id,
+      },
+      locale,
+    );
+    setNameError(existing ? { duplicate: existing.id } : null);
+    if (existing) return;
     const saved = category
       ? await admin.update(category.id, { name: trimmed || null, color, icon })
       : await admin.create({ workspaceId, name: trimmed, kind, color, icon });
@@ -164,7 +189,13 @@ function CategoryDialog({
           <Field
             id={`${base}-name`}
             label={t('name')}
-            error={nameError ? t('nameInvalid') : undefined}
+            error={
+              nameError === 'invalid'
+                ? t('nameInvalid')
+                : nameError
+                  ? t('categories.duplicate')
+                  : undefined
+            }
             {...(category?.systemKey && { hint: t('categories.defaultHint') })}
           >
             <Input
@@ -173,7 +204,7 @@ function CategoryDialog({
               placeholder={defaultName ?? undefined}
               maxLength={60}
               autoComplete="off"
-              aria-invalid={nameError || undefined}
+              aria-invalid={nameError !== null || undefined}
               aria-describedby={
                 nameError
                   ? `${base}-name-error`
@@ -184,6 +215,20 @@ function CategoryDialog({
               onChange={(event) => setName(event.target.value)}
             />
           </Field>
+          {nameError !== null && nameError !== 'invalid' && (
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              className="-mt-3 h-auto self-start p-0"
+              onClick={() => {
+                onClose();
+                onShowExisting(nameError.duplicate);
+              }}
+            >
+              {t('categories.showExisting')}
+            </Button>
+          )}
           {!category && (
             <Field id={`${base}-kind`} label={t('categories.kind')}>
               <Select value={kind} onValueChange={(value) => setKind(value as Kind)}>
@@ -260,6 +305,7 @@ function CategoryRow({
   view,
   scope,
   disabled,
+  highlighted,
   onEdit,
   onArchive,
   onRestore,
@@ -267,12 +313,24 @@ function CategoryRow({
   view: CategoryView;
   scope: string | null;
   disabled: boolean;
+  highlighted: boolean;
   onEdit: () => void;
   onArchive: () => void;
   onRestore: () => void;
 }) {
+  const item = useRef<HTMLLIElement>(null);
+  useEffect(() => {
+    if (highlighted) item.current?.scrollIntoView?.({ block: 'center' });
+  }, [highlighted]);
   return (
-    <li className="flex min-h-16 items-center gap-3 border-b py-2 last:border-b-0">
+    <li
+      ref={item}
+      data-highlighted={highlighted || undefined}
+      className={cn(
+        'flex min-h-16 items-center gap-3 border-b py-2 transition-[background-color,box-shadow] duration-300 ease-out last:border-b-0',
+        highlighted && 'rounded-lg bg-primary/5 ring-2 ring-primary/60',
+      )}
+    >
       <Swatch color={view.color} icon={view.Icon} />
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <span className="truncate font-medium">{view.name}</span>
@@ -302,6 +360,12 @@ export function CategoriesPage() {
   const admin = useCategoriesAdmin();
   const [dialog, setDialog] = useState<Dialog>(null);
   const [toArchive, setToArchive] = useState<CategoryView | null>(null);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  useEffect(() => {
+    if (highlightedId === null) return;
+    const timer = setTimeout(() => setHighlightedId(null), 2500);
+    return () => clearTimeout(timer);
+  }, [highlightedId]);
 
   const stored = useMemo(() => new Map(categories.items.map((c) => [c.id, c])), [categories.items]);
   const personalId = workspaces.items.find((w) => w.kind === 'personal')?.id;
@@ -323,6 +387,7 @@ export function CategoriesPage() {
       view={view}
       scope={familyIds.has(view.workspaceId) ? t('family') : null}
       disabled={blocked || admin.isPending}
+      highlighted={view.id === highlightedId}
       onEdit={() => {
         const category = stored.get(view.id);
         if (category) setDialog({ category });
@@ -368,7 +433,10 @@ export function CategoriesPage() {
     body = (
       <div className="flex flex-col gap-8">
         {KINDS.map(section)}
-        <ArchivedGroup count={archived.length}>
+        <ArchivedGroup
+          count={archived.length}
+          forceOpen={archived.some((v) => v.id === highlightedId)}
+        >
           <ul className="rounded-xl border bg-card px-4">{archived.map(row)}</ul>
         </ArchivedGroup>
       </div>
@@ -393,6 +461,7 @@ export function CategoriesPage() {
           category={dialog === 'new' ? null : dialog.category}
           workspaceId={personalId}
           onClose={() => setDialog(null)}
+          onShowExisting={setHighlightedId}
         />
       )}
       <ConfirmDialog

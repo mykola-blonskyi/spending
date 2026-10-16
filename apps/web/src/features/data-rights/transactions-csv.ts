@@ -1,5 +1,5 @@
-import { BASE_CURRENCY, currencyExponent, formatMinor } from '../common/money';
-import type { DataExport } from './export-sections';
+import type { DataExport } from '@data/data-rights';
+import { currencyExponent, minorToDecimalString } from '@shared/format';
 
 /** Leading characters a spreadsheet may evaluate as a formula. */
 const FORMULA_START = /^[=+\-@\t\r]/;
@@ -16,14 +16,14 @@ export function csvCell(value: string): string {
 
 export const csvRow = (cells: readonly string[]): string => `${cells.map(csvCell).join(',')}\r\n`;
 
-const HEADER = [
+const COLUMNS = [
   'date',
   'kind',
   'amount',
   'currency',
-  'eur_amount',
-  'fx_rate',
-  'fx_rate_date',
+  'eurAmount',
+  'fxRate',
+  'fxRateDate',
   'scope',
   'workspace',
   'account',
@@ -33,38 +33,34 @@ const HEADER = [
   'source',
   'author',
 ] as const;
+export type CsvColumn = (typeof COLUMNS)[number];
 
-const FORMER_MEMBER = {
-  en: 'former member',
-  uk: 'колишній учасник',
-  ru: 'бывший участник',
-  es: 'antiguo miembro',
-} as const;
+type Names = {
+  header: (column: CsvColumn) => string;
+  category: (category: DataExport['categories'][number]) => string;
+  formerMember: string;
+};
 
 /**
  * The confirmed transactions of an export as CSV (BR-31), one row each, oldest first. Amounts are
  * unsigned major units ("kind" carries the sign, BR-13). Names resolve through the export's own
- * sections, so an account the actor cannot see stays empty (BR-3). A former member's rows read
- * "former member" in the actor's locale.
+ * sections, so an account the actor cannot see stays empty (BR-3).
  */
-export function transactionsCsv(document: DataExport): string {
-  const names = (rows: readonly { id: string; name: string | null; systemKey?: string | null }[]) =>
-    new Map(rows.map((row) => [row.id, row.name ?? row.systemKey ?? '']));
-  const workspaces = names(document.workspaces);
-  const accounts = names(document.accounts);
-  const categories = names(document.categories);
-  const formerMember = FORMER_MEMBER[document.user.locale];
-  const eurExponent = currencyExponent(BASE_CURRENCY);
-  const lines = [csvRow(HEADER)];
+export function transactionsCsv(document: DataExport, names: Names): string {
+  const workspaces = new Map(document.workspaces.map((w) => [w.id, w.name ?? '']));
+  const accounts = new Map(document.accounts.map((a) => [a.id, a.name]));
+  const categories = new Map(document.categories.map((c) => [c.id, names.category(c)]));
+  const eurExponent = currencyExponent('EUR');
+  const lines = [csvRow(COLUMNS.map(names.header))];
   for (const t of document.transactions) {
     if (t.reviewStatus !== 'confirmed') continue;
     lines.push(
       csvRow([
         t.occurredOn,
         t.kind,
-        formatMinor(t.amountMinor, currencyExponent(t.currency)),
+        minorToDecimalString(t.amountMinor, currencyExponent(t.currency)),
         t.currency,
-        t.baseAmountMinor === null ? '' : formatMinor(t.baseAmountMinor, eurExponent),
+        t.baseAmountMinor === null ? '' : minorToDecimalString(t.baseAmountMinor, eurExponent),
         t.fx?.rate ?? '',
         t.fx?.rateDate ?? '',
         t.scope,
@@ -74,7 +70,7 @@ export function transactionsCsv(document: DataExport): string {
         t.description,
         t.note,
         t.source,
-        t.author.userId === null ? formerMember : (t.author.displayName ?? ''),
+        t.author.userId === null ? names.formerMember : (t.author.displayName ?? ''),
       ]),
     );
   }

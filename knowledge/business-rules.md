@@ -180,8 +180,10 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   members and role, accounts, categories, live transactions (confirmed, plus pending-review rows of
   the actor's personal workspace; no tombstones), budgets, recurring rules, the actor's own import
   batches and category rules, and the actor's open sync conflicts with their unsaved version. A
-  family row or rule using another member's personal account shows `accountId: null` (BR-3). CSV holds confirmed transactions only, amounts in unsigned major units
-  with "." as decimal separator; cells a spreadsheet would run as formulas get a leading `'`.
+  family row or rule using another member's personal account shows `accountId: null` (BR-3). The
+  CSV is built on the device from the JSON export: confirmed transactions only, headers and
+  category/account names in the chosen language, amounts in unsigned major units with "." as
+  decimal separator; cells a spreadsheet would run as formulas get a leading `'`.
 - **BR-32.** Deleting an account requires typing `DELETE MY DATA` (`400 CONFIRMATION_MISMATCH`
   otherwise). An owner of a family with other members must transfer ownership or delete the
   family first (`409 FAMILY_OWNER_MUST_TRANSFER`); a sole owner's family is deleted as in BR-11.

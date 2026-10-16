@@ -2302,23 +2302,20 @@ export interface operations {
     };
     DataRightsController_export: {
         parameters: {
-            query?: {
-                format?: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Everything the caller can see (JSON) or their confirmed transactions (CSV) */
+            /** @description Everything the caller can see */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["DataExportDto"];
-                    "text/csv": string;
                 };
             };
         };

@@ -90,16 +90,3 @@ export function convertToEurMinor(
     throw new RangeError('Converted amount overflows');
   return Number(converted);
 }
-
-/**
- * Renders minor units as a plain decimal string with "." (JPY 1234 → "1234", KWD 5 → "0.005",
- * EUR -150 → "-1.50"). String arithmetic only, so no amount ever passes through a float.
- */
-export function formatMinor(amountMinor: number, exponent: number): string {
-  if (!Number.isSafeInteger(amountMinor)) throw new RangeError('Amount must be a safe integer');
-  const sign = amountMinor < 0 ? '-' : '';
-  const digits = Math.abs(amountMinor).toString();
-  if (exponent === 0) return sign + digits;
-  const padded = digits.padStart(exponent + 1, '0');
-  return `${sign}${padded.slice(0, -exponent)}.${padded.slice(-exponent)}`;
-}

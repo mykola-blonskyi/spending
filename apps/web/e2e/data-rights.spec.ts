@@ -54,9 +54,7 @@ test('exports everything as JSON and the transactions as CSV', async ({ page, si
   const csv = await csvDownload;
   expect(csv.suggestedFilename()).toBe('spending-transactions.csv');
   const text = await readFile((await csv.path())!, 'utf8');
-  expect(text.startsWith('﻿Date,Type,Amount,Currency,EUR amount,FX rate,FX rate date,')).toBe(
-    true,
-  );
+  expect(text.startsWith('﻿Date,Type,Amount,Currency,EUR amount,FX rate,FX rate date,')).toBe(true);
   expect(text).toContain('Coffee beans');
 });
 

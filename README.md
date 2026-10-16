@@ -55,8 +55,8 @@ automatic bank connection, because no free and legal option exists for this use 
 - If the same entry was changed on two devices while offline, both versions are kept. You
   choose which one is right, and totals count the entry only once until you decide.
 
-**Your data is yours.** You can export everything you can see as JSON, and your entries as
-CSV. You can delete your account.
+**Your data is yours.** You can export everything you can see as JSON, and your entries as a
+CSV in your language. You can delete your account.
 
 **Languages and look.**
 

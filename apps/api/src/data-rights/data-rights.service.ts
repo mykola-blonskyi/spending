@@ -6,14 +6,8 @@ import { DB, type Db, ledgerTransaction } from '../database/database.module';
 import { users, workspaces } from '../database/schema';
 import { AccessPolicy } from '../workspaces/access-policy';
 import { FamilyService } from '../workspaces/family.service';
-import { transactionsCsv } from './csv';
-import { DELETE_CONFIRMATION, type ExportFormat } from './data-rights';
+import { DELETE_CONFIRMATION } from './data-rights';
 import { type DataExport, readExport } from './export-sections';
-
-export type ExportFile = Readonly<{ body: string; contentType: string; fileName: string }>;
-
-// A UTF-8 byte order mark, so spreadsheet apps read non-Latin descriptions correctly.
-const BOM = '﻿';
 
 @Injectable()
 export class DataRightsService {
@@ -44,18 +38,6 @@ export class DataRightsService {
       },
       { isolationLevel: 'repeatable read', accessMode: 'read only' },
     );
-  }
-
-  async exportFile(actorId: string, format: ExportFormat): Promise<ExportFile> {
-    const document = await this.exportData(actorId);
-    const fileName = `spending-export-${document.exportedAt.slice(0, 10)}.${format}`;
-    return format === 'csv'
-      ? { body: BOM + transactionsCsv(document), contentType: 'text/csv; charset=utf-8', fileName }
-      : {
-          body: JSON.stringify(document, null, 2),
-          contentType: 'application/json; charset=utf-8',
-          fileName,
-        };
   }
 
   /**

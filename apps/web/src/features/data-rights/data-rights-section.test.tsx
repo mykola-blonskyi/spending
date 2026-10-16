@@ -101,9 +101,13 @@ describe('DataRightsSection', () => {
     expect(fetchExport).toHaveBeenCalledTimes(1);
     const blobs = vi.mocked(URL.createObjectURL).mock.calls.map(([blob]) => blob as Blob);
     expect(blobs[1]!.type).toBe('text/csv;charset=utf-8');
-    const csv = await blobs[1]!.text();
-    expect(csv.startsWith('﻿Date,Type,Amount,Currency,EUR amount,')).toBe(true);
-    expect(csv).toContain('2026-10-01,expense,1.50,EUR,1.50,,,personal,,,Groceries,Bread,,manual,Ann');
+    const bytes = new Uint8Array(await blobs[1]!.arrayBuffer());
+    expect([...bytes.slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
+    const csv = new TextDecoder().decode(bytes.slice(3));
+    expect(csv).toMatch(/^Date,Type,Amount,Currency,EUR amount,/);
+    expect(csv).toContain(
+      '2026-10-01,expense,1.50,EUR,1.50,,,personal,,,Groceries,Bread,,manual,Ann',
+    );
   });
 
   it('explains the consequences and keeps deletion locked until the phrase is typed', async () => {

@@ -4,7 +4,6 @@ import {
   budgets,
   categories,
   categoryRules,
-  fxRates,
   importBatches,
   memberships,
   recurringRules,
@@ -145,8 +144,7 @@ describe('data rights', () => {
     return results.map((r) => r.transaction);
   }
 
-  const exportOf = (s: Session, format?: string) =>
-    as(t, s, `/v1/me/export${format ? `?format=${format}` : ''}`);
+  const exportOf = (s: Session) => as(t, s, '/v1/me/export');
   const exportJson = async (s: Session) => json<Export>(await exportOf(s), 200);
   const deleteMe = (s: Session, confirmation = 'DELETE MY DATA') =>
     as(t, s, '/v1/me', { method: 'DELETE', body: { confirmation } });
@@ -324,65 +322,6 @@ describe('data rights', () => {
         },
       ]);
       expect((await exportJson(bob)).conflicts.map((c) => c.id)).not.toContain(open!.id);
-    });
-
-    it('writes confirmed transactions as RFC 4180 CSV with exact amounts, safe from formulas', async () => {
-      await t.db.insert(fxRates).values([
-        { date: '2026-10-01', currency: 'JPY', ratePerEur: '160.5', source: 'ecb' },
-        { date: '2026-10-01', currency: 'KWD', ratePerEur: '0.33', source: 'ecb' },
-      ]);
-      const card = await account(ann, annPersonal, 'Visa, "gold"');
-      await push(
-        ann,
-        { currency: 'JPY', amountMinor: 12345, description: '=HYPERLINK("http://x.test")' },
-        {
-          currency: 'KWD',
-          amountMinor: 1234,
-          kind: 'income',
-          description: '-2',
-          note: 'a,b\n"c"',
-          accountId: card,
-          categoryId: await categoryOf(annPersonal, 'salary'),
-          occurredOn: '2026-10-02',
-        },
-        { amountMinor: 5, description: '@cmd', note: '\tx', occurredOn: '2026-10-03' },
-        { amountMinor: 150, description: '+1', workspaceId: family, occurredOn: '2026-10-04' },
-      );
-      await t.db.insert(transactions).values({
-        id: crypto.randomUUID(),
-        workspaceId: annPersonal,
-        createdBy: ann.userId,
-        kind: 'expense',
-        amountMinor: 999,
-        currency: 'EUR',
-        baseAmountMinor: 999,
-        occurredOn: '2026-10-05',
-        description: 'pending',
-        reviewStatus: 'pending_review',
-      });
-
-      const response = await exportOf(ann, 'csv');
-      expect(response.status).toBe(200);
-      expect(response.headers.get('content-type')).toBe('text/csv; charset=utf-8');
-      expect(response.headers.get('content-disposition')).toMatch(
-        /^attachment; filename="spending-export-\d{4}-\d{2}-\d{2}\.csv"$/,
-      );
-      expect(response.headers.get('cache-control')).toBe('no-store');
-      const bytes = new Uint8Array(await response.arrayBuffer());
-      expect([...bytes.slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
-      const text = new TextDecoder().decode(bytes.slice(3));
-      expect(text.split('\r\n')).toEqual([
-        'date,kind,amount,currency,eur_amount,fx_rate,fx_rate_date,scope,workspace,account,category,description,note,source,author',
-        `2026-10-01,expense,12345,JPY,76.92,160.5000000000,2026-10-01,personal,,,,"'=HYPERLINK(""http://x.test"")",,manual,Ann`,
-        `2026-10-02,income,1.234,KWD,3.74,0.3300000000,2026-10-01,personal,,"Visa, ""gold""",salary,'-2,"a,b\n""c""",manual,Ann`,
-        `2026-10-03,expense,0.05,EUR,0.05,,,personal,,,,'@cmd,'\tx,manual,Ann`,
-        `2026-10-04,expense,1.50,EUR,1.50,,,family,Home,,,'+1,,manual,Ann`,
-        '',
-      ]);
-    });
-
-    it('rejects an unknown format', async () => {
-      expect(await errorCode(await exportOf(ann, 'xml'))).toBe('VALIDATION_FAILED');
     });
   });
 

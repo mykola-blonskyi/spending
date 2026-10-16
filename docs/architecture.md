@@ -37,7 +37,7 @@ deploy/      Docker images, nginx config, backup script
 | `common`      | config, actor context, error codes, rate limits, HTTP middleware        |
 | `auth`        | OIDC login/logout, sessions, grant re-check, session and CSRF guards    |
 | `users`       | profile and preferences                                                 |
-| `data-rights` | JSON/CSV export, account deletion                                       |
+| `data-rights` | JSON export (CSV built in the web client), account deletion             |
 | `workspaces`  | personal/family workspaces, memberships, invitations, the access policy |
 | `ledger`      | accounts, categories, transaction reads and writes, FX conversion       |
 | `sync`        | push (idempotent mutations), pull (revision cursor), conflicts          |

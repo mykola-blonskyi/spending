@@ -38,6 +38,26 @@ export function categoryView(category: Category, t: Translate): CategoryView {
   };
 }
 
+/**
+ * The category of the same workspace and kind whose displayed name reads the same as `name`
+ * (trimmed, case-insensitive, accents kept), archived ones included (BR-4a).
+ */
+export function findDuplicateCategory(
+  views: readonly CategoryView[],
+  target: { name: string; workspaceId: string; kind: Category['kind']; exceptId?: string },
+  locale: string,
+): CategoryView | undefined {
+  const collator = new Intl.Collator(locale, { sensitivity: 'accent' });
+  const name = target.name.trim();
+  return views.find(
+    (view) =>
+      view.id !== target.exceptId &&
+      view.workspaceId === target.workspaceId &&
+      view.kind === target.kind &&
+      collator.compare(view.name.trim(), name) === 0,
+  );
+}
+
 /** The one place categories get their display names; every list, picker and label uses it. */
 export function useCategoryViews(): {
   ready: boolean;

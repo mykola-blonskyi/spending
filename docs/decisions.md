@@ -256,6 +256,7 @@ Migration `0010` nulls the seeded English names (a renamed category keeps its na
 English catalog (breaks on rename to an English word, and silently stores display text).
 
 **Consequences.** The API, exports and E2E helpers return `name: null` for defaults, with
-`systemKey` as the stable identifier; the CSV export writes the key for an unnamed category.
+`systemKey` as the stable identifier; the CSV export, built in the web client from the display
+names, writes the localized default name for an unnamed category.
 Name uniqueness per `(workspaceId, kind)` covers stored names only, so a custom category may
 carry the same words as a default's localized name.

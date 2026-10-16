@@ -1,4 +1,5 @@
 import { Archive, ChevronRight, Pencil, Undo2 } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import { useTranslations } from '@i18n/index';
 import { cn } from '@shared/lib/utils';
 import { Button } from '@shared/ui/button';
@@ -94,11 +95,24 @@ export function RowActions({
 }
 
 /** Archived rows stay reachable (to restore them) but out of the way until asked for. */
-export function ArchivedGroup({ count, children }: { count: number; children: React.ReactNode }) {
+export function ArchivedGroup({
+  count,
+  forceOpen = false,
+  children,
+}: {
+  count: number;
+  /** Opens the group (and leaves it open) when a row inside it is being revealed. */
+  forceOpen?: boolean;
+  children: React.ReactNode;
+}) {
   const t = useTranslations('ledger');
+  const details = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (forceOpen && details.current) details.current.open = true;
+  }, [forceOpen]);
   if (count === 0) return null;
   return (
-    <details className="group/archived opacity-80">
+    <details ref={details} className="group/archived opacity-80">
       <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1.5 rounded-md text-sm font-medium text-muted-foreground outline-none select-none focus-visible:ring-[3px] focus-visible:ring-ring/60 [&::-webkit-details-marker]:hidden">
         <ChevronRight
           aria-hidden
