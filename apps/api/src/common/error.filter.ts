@@ -10,6 +10,7 @@ import type { Response } from 'express';
 import { ZodSerializationException, ZodValidationException } from 'nestjs-zod';
 import { DrizzleQueryError } from 'drizzle-orm';
 import { ZodError } from 'zod';
+import { isTimeout } from '../database/database.module';
 import { ApiError, type ErrorBody, type ErrorCode } from './errors';
 
 const STATUS_CODES: Partial<Record<number, ErrorCode>> = {
@@ -57,6 +58,14 @@ export class ErrorFilter implements ExceptionFilter {
       return [
         HttpStatus.INTERNAL_SERVER_ERROR,
         { error: { code: 'INTERNAL', message: 'Internal error' } },
+      ];
+    }
+    if (isTimeout(exception)) {
+      // The write did not commit; the client retries it idempotently (BR-18).
+      this.logger.warn(describeUnexpected(exception));
+      return [
+        HttpStatus.SERVICE_UNAVAILABLE,
+        { error: { code: 'UNAVAILABLE', message: 'Database busy, retry' } },
       ];
     }
     const status =

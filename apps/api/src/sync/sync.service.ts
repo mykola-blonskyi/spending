@@ -8,6 +8,7 @@ import {
   accounts,
   categories,
   syncConflicts,
+  syncEpoch,
   syncMutations,
   syncTombstones,
   transactions,
@@ -174,6 +175,7 @@ export class SyncService {
       )
       .orderBy(asc(syncTombstones.revision))
       .limit(limit + 1);
+    const [dataset] = await tx.select({ epoch: syncEpoch.epoch }).from(syncEpoch);
     const window = pullWindow(cursor, limit, [
       accountRows.map((r) => r.revision),
       categoryRows.map((r) => r.revision),
@@ -183,6 +185,7 @@ export class SyncService {
     const upTo = <T extends { revision: number }>(rows: T[]) =>
       rows.filter((r) => r.revision <= window.cutoff);
     return {
+      epoch: dataset!.epoch,
       workspaces: list.map((m) => ({
         id: m.workspaceId,
         kind: m.kind,

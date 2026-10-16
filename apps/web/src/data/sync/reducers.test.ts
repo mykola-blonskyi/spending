@@ -180,6 +180,33 @@ describe('reducePull', () => {
     expect(outcome.state.meta.cursor).toBe(0);
   });
 
+  it('adopts the first epoch it sees without starting over', () => {
+    const outcome = reducePull(emptyLocalState(), page({ cursor: 25 }), now);
+    expect(outcome.hasMore).toBe(false);
+    expect(outcome.state.meta).toMatchObject({ cursor: 25, epoch: 'epoch-1' });
+  });
+
+  it('drops server state but keeps unsent changes when the epoch changes (BR-35)', () => {
+    const synced: LocalState = {
+      ...syncedState(serverRow({ id: 'edited' }), serverRow({ id: 'ghost' })),
+      accounts: new Map([['acc-1', { id: 'acc-1' } as never]]),
+      categories: new Map([['cat-1', { id: 'cat-1' } as never]]),
+    };
+    const pending = editLocally(synced, { id: 'edited', amountMinor: 7 });
+    const outcome = reducePull(
+      pending,
+      page({ epoch: 'epoch-2', transactions: [serverRow({ id: 'late' })], cursor: 40 }),
+      now,
+    );
+    expect(outcome.hasMore).toBe(true);
+    expect(outcome.state.meta).toMatchObject({ cursor: 0, epoch: 'epoch-2' });
+    expect([...outcome.state.transactions.keys()]).toEqual(['edited']);
+    expect(localEntries(outcome.state)).toMatchObject([{ id: 'edited', amountMinor: 7 }]);
+    expect(outcome.state.accounts.size).toBe(0);
+    expect(outcome.state.categories.size).toBe(0);
+    expect(outcome.state.mutations).toEqual(pending.mutations);
+  });
+
   it('hides pending-review rows from history (BR-21)', () => {
     const { state } = reducePull(
       emptyLocalState(),

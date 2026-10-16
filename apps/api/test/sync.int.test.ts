@@ -1,4 +1,7 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { eq, sql } from 'drizzle-orm';
+import { Client } from 'pg';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
   accounts,
@@ -8,6 +11,7 @@ import {
   transactions,
   users,
 } from '../src/database/schema';
+import { testDatabaseUrl } from './env';
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
 import {
   as,
@@ -31,6 +35,7 @@ type Result = {
   code?: string;
 };
 type Pull = {
+  epoch: string;
   workspaces: { id: string; kind: string }[];
   accounts: { id: string; workspaceId: string }[];
   categories: { id: string; workspaceId: string }[];
@@ -546,6 +551,40 @@ describe('sync', () => {
     expect((await pull(ann, full.cursor)).transactions).toEqual([]);
     expect((await pull(ann, full.cursor)).cursor).toBe(full.cursor);
   });
+
+  it('after a restore, gives devices a new epoch and revisions past their cursor', async () => {
+    await push(ann, upsert(draft(annPersonal)));
+    const before = await pull(ann);
+    expect(before.epoch).toMatch(/^[0-9a-f-]{36}$/);
+    // What pg_restore leaves behind: the sequence as of the dump, behind every device's cursor.
+    await t.db.execute(sql`select setval('ledger_revision', 1)`);
+    const script = readFileSync(resolve(__dirname, '../../../deploy/after-restore.sql'), 'utf8');
+    await t.db.execute(sql.raw(script));
+
+    const [later] = await push(ann, upsert(draft(annPersonal)));
+    const after = await pull(ann, before.cursor);
+    expect(after.epoch).not.toBe(before.epoch);
+    expect(after.transactions.map((row) => row.id)).toEqual([later!.transaction!.id]);
+  });
+
+  it('answers a write stuck behind the ledger lock with a retryable 503', async () => {
+    const holder = new Client({ connectionString: testDatabaseUrl });
+    await holder.connect();
+    try {
+      await holder.query('begin');
+      await holder.query('select pg_advisory_xact_lock(7302001)');
+      const response = await as(t, ann, '/v1/sync/push', {
+        method: 'POST',
+        body: { mutations: [upsert(draft(annPersonal))] },
+      });
+      expect(response.status).toBe(503);
+      expect(await response.json()).toMatchObject({ error: { code: 'UNAVAILABLE' } });
+    } finally {
+      await holder.query('rollback');
+      await holder.end();
+    }
+    expect(await t.db.select().from(transactions)).toEqual([]);
+  }, 30_000);
 
   it('validates push bodies and pull cursors', async () => {
     const bad = await as(t, ann, '/v1/sync/push', { method: 'POST', body: { mutations: [] } });
