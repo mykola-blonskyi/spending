@@ -247,6 +247,9 @@ export const categories = pgTable(
   },
   (t) => [
     uniqueIndex('categories_name_uq').on(t.workspaceId, t.kind, t.name),
+    uniqueIndex('categories_system_key_uq')
+      .on(t.workspaceId, t.systemKey)
+      .where(sql`${t.systemKey} is not null`),
     index('categories_revision_idx').on(t.revision),
   ],
 );

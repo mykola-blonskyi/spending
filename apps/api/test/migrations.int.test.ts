@@ -68,4 +68,18 @@ describe('migrations', () => {
       )[0]!.name,
     ).toBeNull();
   });
+
+  it('0009 refuses a workspace with two categories under one system key', async () => {
+    const { personal } = await workspacesOf(t, ann);
+    await t.db.execute(sql`drop index if exists categories_system_key_uq`);
+    await t.db.insert(categories).values({
+      workspaceId: personal,
+      name: 'Food',
+      kind: 'expense',
+      color: '#000000',
+      icon: 'apple',
+      systemKey: 'groceries',
+    });
+    await expect(replay(t, '0009_stored_names_nullable.sql')).rejects.toThrow(/share a system_key/);
+  });
 });

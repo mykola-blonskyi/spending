@@ -1,5 +1,5 @@
 {
-  "id": "e59c8664-65cf-4ea1-8e5a-16cf8dd73c79",
+  "id": "b68ec1c9-da90-41f1-bb46-e9eb54a8830f",
   "prevId": "9d379567-18da-4d33-aa67-48197bad23d9",
   "version": "7",
   "dialect": "postgresql",
@@ -359,6 +359,28 @@
             }
           ],
           "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "categories_system_key_uq": {
+          "name": "categories_system_key_uq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "system_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"categories\".\"system_key\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}

@@ -1,5 +1,18 @@
 ALTER TABLE "categories" ALTER COLUMN "name" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "workspaces" ALTER COLUMN "name" DROP NOT NULL;--> statement-breakpoint
+DO $$
+DECLARE duplicates text;
+BEGIN
+  SELECT string_agg(workspace_id || ':' || system_key, ', ')
+    INTO duplicates
+    FROM (SELECT workspace_id, system_key FROM categories
+           WHERE system_key IS NOT NULL
+           GROUP BY workspace_id, system_key HAVING count(*) > 1) d;
+  IF duplicates IS NOT NULL THEN
+    RAISE EXCEPTION 'categories share a system_key within a workspace (%); resolve before migrating', duplicates;
+  END IF;
+END $$;--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "categories_system_key_uq" ON "categories" USING btree ("workspace_id","system_key") WHERE "categories"."system_key" is not null;--> statement-breakpoint
 UPDATE "categories" c SET "name" = NULL
 FROM (VALUES
   ('groceries', 'Groceries'), ('dining', 'Dining'), ('transport', 'Transport'),

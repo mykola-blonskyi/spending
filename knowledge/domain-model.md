@@ -70,7 +70,8 @@ Where money sits: a card, a bank account, cash.
 ## Category
 
 - `id`, `workspaceId`, `name` (nullable), `kind` (`income|expense`), `color`, `icon`, `archivedAt`.
-- `systemKey` (nullable). Default categories carry a stable key such as `groceries` and no stored
+- `systemKey` (nullable, unique per workspace). Default categories carry a stable key such as
+  `groceries` and no stored
   name: the web shows `name ?? t(categoryDefaults.<systemKey>)` from one module
   (`features/ledger/category-view.ts`). Renaming stores the user's name and keeps the key, which
   the import categorizer relies on; clearing the name returns to the default (BR-4a, ADR-012). Every new workspace, personal or family, is
