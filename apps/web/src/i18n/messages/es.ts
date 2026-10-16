@@ -36,7 +36,7 @@ export const es = {
     search: 'Buscar',
     filter: 'Filtrar',
     undo: 'Deshacer',
-    done: 'Hecho',
+    done: 'Listo',
     signOut: 'Cerrar sesión',
     goHome: 'Ir al resumen',
   },
@@ -63,7 +63,7 @@ export const es = {
       conflict: '{count, plural, one {# conflicto por revisar} other {# conflictos por revisar}}',
       conflictShort: '{count, plural, one {# conflicto} other {# conflictos}}',
       conflictDescription:
-        'Este registro se modificó en otro dispositivo. Elige qué versión quieres conservar.',
+        'Este movimiento se modificó en otro dispositivo. Elige qué versión quieres conservar.',
       retrying: 'Reintentando…',
       authRequired: 'Inicia sesión para sincronizar',
       failedShort: '{count, plural, one {# sin enviar} other {# sin enviar}}',
@@ -126,11 +126,11 @@ export const es = {
   invite: {
     title: '¿Unirte a {family}?',
     description:
-      '{owner} te invita a compartir los gastos familiares. Las entradas personales siguen siendo privadas.',
+      '{owner} te invita a compartir los gastos familiares. Los movimientos personales siguen siendo privados.',
     validUntil: 'Este enlace funciona hasta el {date}.',
     accept: 'Unirme a {family}',
     notNow: 'Ahora no',
-    joined: 'Bienvenido a {family}',
+    joined: 'Te damos la bienvenida a {family}',
     invalidTitle: 'Esta invitación ya no es válida',
     invalidDescription:
       'El enlace puede haber caducado, haberse usado ya o haberse revocado. Pide al propietario de la familia uno nuevo.',
@@ -156,7 +156,8 @@ export const es = {
       noMatchesTitle: 'No hay movimientos que coincidan',
       noMatchesDescription: 'Prueba otra búsqueda o quita algunos filtros.',
       firstSync: 'Trayendo tu historial a este dispositivo…',
-      firstSyncLoaded: '{count, plural, one {# registro por ahora} other {# registros por ahora}}',
+      firstSyncLoaded:
+        '{count, plural, one {# movimiento por ahora} other {# movimientos por ahora}}',
       totalSpent: 'Gastado',
       totalReceived: 'Recibido',
       uncategorized: 'Sin categoría',
@@ -184,14 +185,14 @@ export const es = {
     },
     recurring: {
       title: 'Pagos recurrentes',
-      description: 'Suscripciones, alquiler y otros pagos periódicos.',
+      description: 'Suscripciones, alquiler y otros pagos recurrentes.',
       emptyTitle: 'No hay pagos recurrentes',
       emptyDescription:
-        'Añade un pago periódico y se registrará automáticamente según lo previsto.',
+        'Añade un pago recurrente y se registrará automáticamente según lo previsto.',
       newTitle: 'Nueva regla recurrente',
       newDescription: 'Se registrará automáticamente en cada fecha prevista.',
       editTitle: 'Editar regla',
-      editDescription: 'Los cambios solo afectan a los registros futuros.',
+      editDescription: 'Los cambios solo afectan a los movimientos futuros.',
       notFoundTitle: 'Regla no encontrada',
       notFoundDescription: 'Puede que se haya eliminado.',
     },
@@ -199,7 +200,7 @@ export const es = {
       title: 'Cuentas',
       description: 'Efectivo, tarjetas y cuentas bancarias.',
       emptyTitle: 'Aún no hay cuentas',
-      emptyDescription: 'Añade una cuenta para seguir tus saldos en cualquier divisa.',
+      emptyDescription: 'Añade una cuenta para seguir tus saldos en cualquier moneda.',
     },
     categories: {
       title: 'Categorías',
@@ -235,19 +236,20 @@ export const es = {
     income: 'Ingreso',
     amount: 'Importe',
     amountInvalid: 'Introduce un importe mayor que cero, por ejemplo 12.50.',
-    currency: 'Divisa',
+    currency: 'Moneda',
     date: 'Fecha',
     account: 'Cuenta',
     noAccount: 'Sin cuenta',
     category: 'Categoría',
     noCategory: 'Sin categoría',
     description: 'Descripción',
-    descriptionPlaceholder: '¿En qué fue?',
+    descriptionPlaceholder: '¿Para qué fue?',
     save: 'Guardar',
     saveFailed: 'Este dispositivo no ha podido guardar el cambio. Inténtalo de nuevo.',
     delete: 'Eliminar',
     deleteTitle: '¿Eliminar este movimiento?',
-    deleteDescription: 'Desaparece ya de tu historial y del servidor en la próxima sincronización.',
+    deleteDescription:
+      'Desaparece de tu historial ahora y del servidor en la próxima sincronización.',
     discard: 'Descartar cambio',
     discardTitle: '¿Descartar este cambio?',
     discardDescription:
@@ -307,7 +309,7 @@ export const es = {
       'El BCE aún no ha publicado el tipo de cambio de esta fecha. El importe en euros aparecerá cuando lo haga.',
     notConverted: 'Sin convertir',
     rate: 'Tipo de cambio',
-    rateDate: 'Fecha del tipo',
+    rateDate: 'Fecha del tipo de cambio',
     rateSource: 'Fuente',
     sourceEcb: 'BCE',
     convertedTo: 'Convertido a {amount} al tipo {rate} ({source}, {date})',
@@ -374,7 +376,7 @@ export const es = {
       currencyLocked: 'La moneda no se puede cambiar una vez creada la cuenta.',
       archiveTitle: '¿Archivar «{name}»?',
       archiveDescription:
-        'Dejará de aparecer al crear transacciones nuevas. Las anteriores la conservan y puedes restaurarla cuando quieras.',
+        'Dejará de aparecer al crear movimientos nuevos. Los anteriores la conservan y puedes restaurarla cuando quieras.',
       archiveConfirm: 'Archivar',
       kinds: {
         cash: 'Efectivo',
@@ -400,7 +402,7 @@ export const es = {
       icon: 'Icono',
       archiveTitle: '¿Archivar «{name}»?',
       archiveDescription:
-        'Dejará de aparecer al crear transacciones nuevas. Las anteriores la conservan y puedes restaurarla cuando quieras.',
+        'Dejará de aparecer al crear movimientos nuevos. Los anteriores la conservan y puedes restaurarla cuando quieras.',
       sectionEmpty: 'Todavía no hay nada en esta sección.',
     },
   },
@@ -440,7 +442,7 @@ export const es = {
     },
     timezone: {
       label: 'Zona horaria',
-      description: 'Se usa en fechas, presupuestos y pagos periódicos.',
+      description: 'Se usa en fechas, presupuestos y pagos recurrentes.',
       suggested: 'Este dispositivo',
       all: 'Todas las zonas horarias',
     },
@@ -462,8 +464,8 @@ export const es = {
         consequences: {
           personal: 'Tus datos personales se eliminan de forma permanente.',
           family:
-            'Los movimientos familiares que escribiste se quedan para los demás y aparecen como "Antiguo miembro".',
-          sessions: 'Se cierra tu sesión en todas partes y tus sesiones terminan.',
+            'Los movimientos familiares que registraste se quedan para los demás con el autor «Antiguo miembro».',
+          sessions: 'Se cierran todas tus sesiones en todos los dispositivos.',
           local:
             'Los datos de este dispositivo se borran. Al volver a entrar empezarás con un espacio personal nuevo y vacío.',
         },
@@ -474,7 +476,7 @@ export const es = {
         action: 'Eliminar mi cuenta',
         confirmTitle: '¿Eliminar tu cuenta?',
         confirmDescription:
-          'Esto elimina de forma permanente tus datos personales y cierra tu sesión. Los movimientos familiares que escribiste quedan como "Antiguo miembro".',
+          'Esto elimina de forma permanente tus datos personales y cierra tu sesión. Los movimientos familiares que registraste se quedan con el autor «Antiguo miembro».',
         confirm: 'Eliminar cuenta',
       },
     },
@@ -594,7 +596,7 @@ export const es = {
       open: 'Revisar',
       emptyTitle: 'Nada que revisar',
       emptyDescription: 'Las filas importadas esperan aquí hasta que las confirmes.',
-      scope: 'Ámbito',
+      scope: 'Destino',
       personal: 'Personal',
       family: 'Familia',
       category: 'Categoría',
@@ -602,7 +604,7 @@ export const es = {
       selectAll: 'Seleccionar todas las filas',
       selectRow: 'Seleccionar {description}',
       selected: '{count, plural, one {# seleccionada} other {# seleccionadas}}',
-      bulkScope: 'Ámbito para la selección',
+      bulkScope: 'Destino de la selección',
       bulkCategory: 'Categoría para la selección',
       apply: 'Aplicar',
       confirm: 'Publicar {count, plural, one {# fila} other {# filas}}',
@@ -687,7 +689,7 @@ export const es = {
     edit: 'Cambiar límite',
     delete: 'Eliminar presupuesto',
     deleteTitle: '¿Eliminar este presupuesto?',
-    deleteDescription: 'Solo se elimina el límite. Tus transacciones se quedan.',
+    deleteDescription: 'Solo se elimina el límite. Tus movimientos se quedan.',
     offlineTitle: 'Los presupuestos necesitan conexión',
     offlineDescription: 'El progreso se calcula en el servidor. Vuelve a conectarte para verlo.',
   },
@@ -722,9 +724,9 @@ export const es = {
     edit: 'Editar',
     delete: 'Eliminar',
     deleteTitle: '¿Eliminar esta regla?',
-    deleteDescription: 'Los registros que ya creó se quedan en tu historial.',
+    deleteDescription: 'Los movimientos que ya creó se quedan en tu historial.',
     editNote:
-      'Los cambios solo afectan a los registros futuros. Los ya registrados se quedan como están.',
+      'Los cambios solo afectan a los movimientos futuros. Los ya registrados se quedan como están.',
     offlineTitle: 'Los pagos recurrentes necesitan conexión',
     offlineDescription:
       'Las reglas se guardan en el servidor, así que funcionan aunque este dispositivo esté apagado.',
@@ -761,7 +763,7 @@ export const es = {
     create: {
       title: 'Crear un espacio familiar',
       description:
-        'Los gastos compartidos viven en la familia. Tus entradas personales siguen siendo tuyas, y cada entrada nueva pregunta a cuál pertenece.',
+        'Los gastos compartidos se llevan en la familia. Tus movimientos personales siguen siendo tuyos y, en cada movimiento nuevo, eliges adónde va.',
       nameLabel: 'Nombre de la familia',
       namePlaceholder: 'Los García',
       submit: 'Crear familia',
@@ -779,7 +781,7 @@ export const es = {
       remove: 'Quitar',
       removeTitle: '¿Quitar a {name} de la familia?',
       removeDescription:
-        'Las entradas familiares que registró {name} se quedan en la familia. Sus datos personales nunca se compartieron.',
+        'Los movimientos familiares que registró {name} se quedan en la familia. Sus datos personales nunca se compartieron.',
       removed: 'Se quitó a {name}',
       makeOwner: 'Hacer propietario',
       transferTitle: '¿Hacer propietario a {name}?',
@@ -816,22 +818,22 @@ export const es = {
     leave: {
       title: 'Salir de la familia',
       description:
-        'Tus entradas personales se quedan contigo. Las entradas familiares que registraste se quedan en la familia.',
+        'Tus movimientos personales se quedan contigo. Los movimientos familiares que registraste se quedan en la familia.',
       ownerNote:
         'Como propietario no puedes salir. Haz propietario a otro miembro primero, o elimina la familia.',
       action: 'Salir de la familia',
       confirmTitle: '¿Salir de {family}?',
       confirmDescription:
-        'Pierdes el acceso a las entradas familiares de inmediato. Puedes volver a unirte con una invitación nueva.',
+        'Pierdes el acceso a los movimientos familiares de inmediato. Puedes volver a unirte con una invitación nueva.',
       left: 'Has salido de la familia',
     },
     delete: {
       title: 'Eliminar la familia',
       description:
-        'Cada entrada familiar vuelve al espacio personal del miembro que la registró, con su categoría recreada allí. Las cuentas, categorías, presupuestos y pagos recurrentes de la familia se eliminan.',
+        'Cada movimiento familiar vuelve al espacio personal del miembro que lo registró, con su categoría recreada allí. Las cuentas, categorías, presupuestos y pagos recurrentes de la familia se eliminan.',
       action: 'Eliminar familia',
       confirmTitle: '¿Eliminar {family}?',
-      confirmDescription: 'Las entradas vuelven a sus autores. Esto no se puede deshacer.',
+      confirmDescription: 'Los movimientos vuelven a sus autores. Esto no se puede deshacer.',
       deleted: 'Familia eliminada',
     },
     dangerZone: 'Salir o eliminar',
@@ -881,7 +883,8 @@ export const es = {
       'Sin conexión con el servidor. Comprueba tu conexión a internet y vuelve a intentarlo.',
     INVALID_ACCOUNT: 'Esta cuenta está archivada o no está disponible aquí. Elige otra.',
     INVALID_CATEGORY: 'Esta categoría está archivada o no encaja con este tipo. Elige otra.',
-    REVIEW_REQUIRED: 'Este registro espera revisión en una importación y aún no se puede cambiar.',
+    REVIEW_REQUIRED:
+      'Este movimiento espera revisión en una importación y aún no se puede cambiar.',
     MUTATION_ID_REUSED: 'No hemos podido asociar este cambio a tu cuenta. Vuelve a hacerlo.',
     NO_ACCESS: 'Ya no eres miembro de esta familia, así que este cambio no se puede guardar.',
   },
