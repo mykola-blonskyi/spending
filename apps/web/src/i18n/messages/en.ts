@@ -477,6 +477,8 @@ export const en = {
     noAccountsDescription: 'A statement is imported into one of your personal accounts.',
     file: 'Statement file',
     fileHint: 'A CSV export of up to 2 MiB and 5,000 rows.',
+    chooseFile: 'Choose file',
+    noFile: 'No file chosen',
     fileTooLarge: 'This file is larger than 2 MiB. Export a shorter period and try again.',
     tooManyRows: 'This file has more than 5,000 rows. Export a shorter period and try again.',
     emptyFile: 'No table of transactions was found in this file.',

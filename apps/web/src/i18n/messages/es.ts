@@ -491,6 +491,8 @@ export const es = {
     noAccountsDescription: 'Un extracto se importa en una de tus cuentas personales.',
     file: 'Archivo del extracto',
     fileHint: 'Una exportación CSV de hasta 2 MiB y 5.000 filas.',
+    chooseFile: 'Elegir archivo',
+    noFile: 'Ningún archivo seleccionado',
     fileTooLarge:
       'Este archivo supera los 2 MiB. Exporta un periodo más corto e inténtalo de nuevo.',
     tooManyRows:
