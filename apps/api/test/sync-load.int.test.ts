@@ -1,5 +1,5 @@
-// Opt-in load test of concurrent pushes against a slowed database (LOAD_TEST=1). Scaled: client
-// timeout and backoff are the app's (30 s, 1 s to 5 min) times LOAD_CLIENT_TIMEOUT / 30 s.
+// Opt-in load test of concurrent pushes against a slowed database (LOAD_TEST=1). Devices behave
+// like the web engine: a partial answer is followed at once by the rest, a failure backs off.
 import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { SyncService } from '../src/sync/sync.service';
@@ -16,8 +16,8 @@ import {
   type TestApp,
 } from './harness';
 
-const SLOW_MS = Number(process.env.LOAD_SLOW_MS ?? 20);
-const CLIENT_TIMEOUT = Number(process.env.LOAD_CLIENT_TIMEOUT ?? 5000);
+const SLOW_MS = Number(process.env.LOAD_SLOW_MS ?? 50);
+const CLIENT_TIMEOUT = Number(process.env.LOAD_CLIENT_TIMEOUT ?? 30_000);
 const DEVICES = Number(process.env.LOAD_DEVICES ?? 6);
 const BATCH = 200;
 const person = (name: string) => ({ sub: `sub-${name}`, email: `${name}@example.test`, name });
@@ -71,7 +71,7 @@ const mutation = (workspaceId: string) => ({
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 it.skipIf(!process.env.LOAD_TEST)(
-  'drains concurrent full batches from timing-out devices',
+  'drains concurrent full batches without client timeouts',
   { timeout: 1_800_000 },
   async () => {
     const [ann, bob, cat] = await Promise.all(people.map((p) => loginAs(t, p.sub)));
@@ -93,7 +93,7 @@ it.skipIf(!process.env.LOAD_TEST)(
     let done = 0;
     const device = async (d: number) => {
       const s = d % 2 === 0 ? ann! : bob!;
-      const batch = Array.from({ length: BATCH }, () => mutation(spaces[d % 2]!));
+      let batch = Array.from({ length: BATCH }, () => mutation(spaces[d % 2]!));
       for (let attempt = 1; ; attempt += 1) {
         const started = Date.now();
         try {
@@ -109,8 +109,13 @@ it.skipIf(!process.env.LOAD_TEST)(
             signal: AbortSignal.timeout(CLIENT_TIMEOUT),
           });
           if (r.status !== 200) throw new Error(`status ${r.status} ${await r.text()}`);
-          await r.json();
-          say(`${at()}s device ${d} ok attempt ${attempt} in ${Date.now() - started}ms`);
+          const { results } = (await r.json()) as { results: { mutationId: string }[] };
+          const answered = new Set(results.map((result) => result.mutationId));
+          batch = batch.filter((m) => !answered.has(m.mutationId));
+          say(
+            `${at()}s device ${d} attempt ${attempt} answered ${answered.size} in ${Date.now() - started}ms`,
+          );
+          if (batch.length > 0) continue;
           done += 1;
           return attempt;
         } catch (e) {
@@ -144,6 +149,6 @@ it.skipIf(!process.env.LOAD_TEST)(
     say(
       `SUMMARY slow=${SLOW_MS}ms timeout=${CLIENT_TIMEOUT} devices=${DEVICES} attempts=${attempts.join(',')} clientsDone=${clientsDone}s drained=${at()}s processed=${processed} needed=${DEVICES * BATCH}`,
     );
-    expect(processed).toBeGreaterThanOrEqual(DEVICES * BATCH);
+    expect(log.filter((line) => line.includes('failed'))).toEqual([]);
   },
 );

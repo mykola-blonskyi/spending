@@ -49,6 +49,9 @@ import {
 
 const MUTATION_RETENTION_DAYS = 180;
 
+/** A third of the web client's 30 s push timeout. */
+const PUSH_BUDGET_MS = 10_000;
+
 /** What `sync_mutations.result` keeps; replays rebuild the row view fresh (BR-18). */
 type Outcome =
   | { status: 'applied'; transactionId: string }
@@ -94,18 +97,21 @@ export class SyncService {
   ) {}
 
   /**
-   * Each mutation commits on its own, so one rejection never blocks the rest (ADR-006). Once the
-   * client has gone (`gone`), the rest is left for its retry: finishing a batch nobody waits for
-   * only delays the retry queued behind the ledger lock.
+   * Each mutation commits on its own, so one rejection never blocks the rest (ADR-006). A push
+   * answers only the mutations it reached once the client has gone (`gone`) or `budgetMs` has
+   * passed; the client sends the rest again at once. Finishing a batch nobody waits for, or one
+   * that outlasts the client's timeout, only queues more work behind the ledger lock.
    */
   async push(
     actorId: string,
     mutations: readonly Mutation[],
     gone?: AbortSignal,
+    budgetMs = PUSH_BUDGET_MS,
   ): Promise<PushResult[]> {
+    const started = Date.now();
     const results: PushResult[] = [];
     for (const mutation of mutations) {
-      if (gone?.aborted) break;
+      if (gone?.aborted || (results.length > 0 && Date.now() - started > budgetMs)) break;
       results.push(
         await ledgerTransaction(this.db, async (tx) => {
           const [stored] = await tx
