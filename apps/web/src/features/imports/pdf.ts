@@ -4,16 +4,11 @@
  * `parsePdfStatement` is pure geometry over positioned text items.
  */
 
-import { ROWS_MAX } from './csv';
+import type { Row } from './statement';
 
-export const PDF_MAX_BYTES = 10 * 1024 * 1024;
 export const PDF_MAX_PAGES = 100;
 
-export type PdfProblem =
-  'EMPTY' | 'TOO_MANY_ROWS' | 'PDF_UNREADABLE' | 'PDF_NO_TEXT' | 'PDF_TOO_MANY_PAGES';
-
-type Row = { line: number; cells: string[] };
-export type PdfStatement = { headers: string[]; rows: Row[] };
+export type PdfProblem = 'UNREADABLE' | 'PDF_NO_TEXT' | 'PDF_TOO_MANY_PAGES';
 
 /** A text item in PDF user space: x/y is the baseline start, y grows upwards. */
 type TextItem = { str: string; x: number; y: number; w: number; h: number };
@@ -314,14 +309,14 @@ function tableRows(table: Table): { headers: string[]; rows: string[][] } {
 }
 
 /**
- * The statement table from each page's text items, or null when no header with a date row
- * below it is found. A later table with every column of the first joins it by label (UkrSib's
- * card operations add an authorization code); one without (UkrSib's pending holds, no
- * settlement date) is left out.
+ * The statement table from each page's text items: the header row, then one row per
+ * transaction; empty when no header with a date row below it is found. A later table with
+ * every column of the first joins it by label (UkrSib's card operations add an authorization
+ * code); one without (UkrSib's pending holds, no settlement date) is left out.
  */
-function buildPdfTable(pages: readonly (readonly TextItem[])[]): PdfStatement | null {
+function buildPdfTable(pages: readonly (readonly TextItem[])[]): Row[] {
   const [main, ...rest] = splitTables(pages.map((items, page) => toLines(items, page)));
-  if (!main) return null;
+  if (!main) return [];
   const tables = [
     main,
     ...rest.filter((table) => main.labels.every((label) => table.labels.includes(label))),
@@ -331,17 +326,15 @@ function buildPdfTable(pages: readonly (readonly TextItem[])[]): PdfStatement | 
   const rows = parts.flatMap((part) =>
     part.rows.map((cells) => headers.map((header) => cells[part.headers.indexOf(header)] ?? '')),
   );
-  return rows.length > 0
-    ? { headers, rows: rows.map((cells, index) => ({ line: index + 1, cells })) }
-    : null;
+  if (rows.length === 0) return [];
+  // `line` numbers transactions in file order; the header is line 0.
+  return [headers, ...rows].map((cells, line) => ({ line, cells }));
 }
 
-/** Everything the mapping step needs from a PDF, or why the file cannot be used. */
-export async function parsePdfStatement(
-  bytes: ArrayBuffer,
-): Promise<{ ok: true; statement: PdfStatement } | { ok: false; problem: PdfProblem }> {
-  const pdf = unwrapSignedPdf(new Uint8Array(bytes));
-  if (!pdf) return { ok: false, problem: 'PDF_UNREADABLE' };
+/** The PDF's table as rows, header first, or why it cannot be read. */
+export async function readPdf(bytes: Uint8Array): Promise<Row[] | { problem: PdfProblem }> {
+  const pdf = unwrapSignedPdf(bytes);
+  if (!pdf) return { problem: 'UNREADABLE' };
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   // Node (unit tests) runs pdf.js without a worker. Browsers load ours from our origin (CSP), built
   // as a .js asset because nginx's mime.types has no .mjs and nosniff refuses octet-stream.
@@ -353,7 +346,7 @@ export async function parsePdfStatement(
   const task = pdfjs.getDocument({ data: pdf.slice(), useWasm: false, verbosity: 0 });
   try {
     const document = await task.promise;
-    if (document.numPages > PDF_MAX_PAGES) return { ok: false, problem: 'PDF_TOO_MANY_PAGES' };
+    if (document.numPages > PDF_MAX_PAGES) return { problem: 'PDF_TOO_MANY_PAGES' };
     const pages: TextItem[][] = [];
     for (let number = 1; number <= document.numPages; number += 1) {
       const content = await (await document.getPage(number)).getTextContent();
@@ -373,13 +366,10 @@ export async function parsePdfStatement(
         ),
       );
     }
-    if (pages.every((items) => items.length === 0)) return { ok: false, problem: 'PDF_NO_TEXT' };
-    const statement = buildPdfTable(pages);
-    if (!statement) return { ok: false, problem: 'EMPTY' };
-    if (statement.rows.length > ROWS_MAX) return { ok: false, problem: 'TOO_MANY_ROWS' };
-    return { ok: true, statement };
+    if (pages.every((items) => items.length === 0)) return { problem: 'PDF_NO_TEXT' };
+    return buildPdfTable(pages);
   } catch {
-    return { ok: false, problem: 'PDF_UNREADABLE' };
+    return { problem: 'UNREADABLE' };
   } finally {
     await task.destroy();
   }

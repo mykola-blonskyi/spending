@@ -1,17 +1,17 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { pdf, signed } from '../../../e2e/fixtures/pdf-fixtures';
-import { PDF_MAX_PAGES, parsePdfStatement, unwrapSignedPdf } from './pdf';
+import { PDF_MAX_PAGES, readPdf, unwrapSignedPdf } from './pdf';
 
-const buffer = (bytes: Uint8Array) => new Uint8Array(bytes).buffer;
-const fixture = (name: string) => buffer(readFileSync(`e2e/fixtures/${name}`));
+const fixture = (name: string) => new Uint8Array(readFileSync(`e2e/fixtures/${name}`));
 const parse = async (name: string) => {
-  const result = await parsePdfStatement(fixture(name));
-  if (!result.ok) throw new Error(result.problem);
-  return { headers: result.statement.headers, rows: result.statement.rows.map((row) => row.cells) };
+  const result = await readPdf(fixture(name));
+  if ('problem' in result) throw new Error(result.problem);
+  const [header, ...rows] = result.map((row) => row.cells);
+  return { headers: header, rows };
 };
 
-describe('parsePdfStatement', () => {
+describe('readPdf', () => {
   it('reads Santander: right-aligned amounts, wrapped descriptions, value dates, two pages', async () => {
     expect(await parse('santander.pdf')).toEqual({
       headers: ['Transaction date', 'Transaction', 'Amount', 'Balance', 'Value date'],
@@ -203,34 +203,24 @@ describe('parsePdfStatement', () => {
     });
   });
 
-  it('numbers rows in order for the preview', async () => {
-    const result = await parsePdfStatement(fixture('santander.pdf'));
-    expect(result.ok && result.statement.rows.map((row) => row.line)).toEqual([1, 2, 3, 4, 5]);
+  it('numbers the header 0 and transactions from 1 in file order', async () => {
+    const result = await readPdf(fixture('santander.pdf'));
+    expect('problem' in result || result.map((row) => row.line)).toEqual([0, 1, 2, 3, 4, 5]);
   });
 
   it('names the problem for a scan, a broken file and too many pages', async () => {
-    expect(await parsePdfStatement(fixture('scanned.pdf'))).toEqual({
-      ok: false,
-      problem: 'PDF_NO_TEXT',
+    expect(await readPdf(fixture('scanned.pdf'))).toEqual({ problem: 'PDF_NO_TEXT' });
+    expect(await readPdf(new TextEncoder().encode('%PDF-1.4 broken'))).toEqual({
+      problem: 'UNREADABLE',
     });
-    expect(await parsePdfStatement(buffer(new TextEncoder().encode('%PDF-1.4 broken')))).toEqual({
-      ok: false,
-      problem: 'PDF_UNREADABLE',
-    });
-    expect(await parsePdfStatement(buffer(Uint8Array.of(0x50, 0x4b, 3, 4)))).toEqual({
-      ok: false,
-      problem: 'PDF_UNREADABLE',
-    });
+    expect(await readPdf(Uint8Array.of(0x50, 0x4b, 3, 4))).toEqual({ problem: 'UNREADABLE' });
     const pages = Array.from({ length: PDF_MAX_PAGES + 1 }, () => []);
-    expect(await parsePdfStatement(buffer(pdf(pages)))).toEqual({
-      ok: false,
-      problem: 'PDF_TOO_MANY_PAGES',
-    });
+    expect(await readPdf(pdf(pages))).toEqual({ problem: 'PDF_TOO_MANY_PAGES' });
   });
 
-  it('reports a text PDF without a statement table as empty', async () => {
+  it('finds no rows in a text PDF without a statement table', async () => {
     const page = [{ x: 50, y: 700, size: 12, str: 'Dear customer, see you soon.' }];
-    expect(await parsePdfStatement(buffer(pdf([page])))).toEqual({ ok: false, problem: 'EMPTY' });
+    expect(await readPdf(pdf([page]))).toEqual([]);
   });
 });
 
