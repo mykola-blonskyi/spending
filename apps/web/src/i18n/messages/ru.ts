@@ -154,7 +154,7 @@ export const ru = {
       emptyTitle: 'Операций пока нет',
       emptyDescription: 'Добавьте расход или импортируйте банковскую выписку, чтобы начать.',
       searchLabel: 'Поиск операций',
-      searchPlaceholder: 'Искать в описаниях и заметках',
+      searchPlaceholder: 'Описание или заметка',
       kindFilter: 'Тип',
       allKinds: 'Все',
       noMatchesTitle: 'Ничего не найдено',
@@ -640,7 +640,7 @@ export const ru = {
       expense: 'Расходы',
       balance: 'Баланс',
       change: '{amount} по сравнению с предыдущим периодом',
-      comparedWith: 'Сравнение с {period}',
+      comparedWith: 'Сравнение: {period}',
     },
     trend: {
       title: 'Динамика',
@@ -658,7 +658,7 @@ export const ru = {
       empty: 'За этот период ничего не записано.',
     },
     budgets: {
-      title: 'Бюджеты на {month}',
+      title: 'Бюджеты · {month}',
       empty: 'На этот месяц бюджетов нет.',
       manage: 'Управлять бюджетами',
     },

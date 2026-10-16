@@ -144,7 +144,7 @@ export const en = {
       emptyTitle: 'No transactions yet',
       emptyDescription: 'Add an expense or import a bank statement to get started.',
       searchLabel: 'Search transactions',
-      searchPlaceholder: 'Search descriptions and notes',
+      searchPlaceholder: 'Description or note',
       kindFilter: 'Type',
       allKinds: 'All',
       noMatchesTitle: 'No matching transactions',

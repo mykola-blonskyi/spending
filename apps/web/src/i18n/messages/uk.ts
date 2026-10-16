@@ -153,7 +153,7 @@ export const uk = {
       emptyTitle: 'Операцій поки немає',
       emptyDescription: 'Додайте витрату або імпортуйте банківську виписку, щоб почати.',
       searchLabel: 'Пошук операцій',
-      searchPlaceholder: 'Шукати в описах і нотатках',
+      searchPlaceholder: 'Опис або нотатка',
       kindFilter: 'Тип',
       allKinds: 'Усі',
       noMatchesTitle: 'Нічого не знайдено',
@@ -635,7 +635,7 @@ export const uk = {
       expense: 'Витрати',
       balance: 'Баланс',
       change: '{amount} порівняно з попереднім періодом',
-      comparedWith: 'Порівняно з {period}',
+      comparedWith: 'Порівняння: {period}',
     },
     trend: {
       title: 'Динаміка',
@@ -653,7 +653,7 @@ export const uk = {
       empty: 'За цей період нічого не записано.',
     },
     budgets: {
-      title: 'Бюджети на {month}',
+      title: 'Бюджети · {month}',
       empty: 'На цей місяць бюджетів немає.',
       manage: 'Керувати бюджетами',
     },

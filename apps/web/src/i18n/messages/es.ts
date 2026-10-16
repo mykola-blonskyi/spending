@@ -150,7 +150,7 @@ export const es = {
       emptyTitle: 'Aún no hay movimientos',
       emptyDescription: 'Añade un gasto o importa un extracto bancario para empezar.',
       searchLabel: 'Buscar movimientos',
-      searchPlaceholder: 'Busca en descripciones y notas',
+      searchPlaceholder: 'Descripción o nota',
       kindFilter: 'Tipo',
       allKinds: 'Todos',
       noMatchesTitle: 'No hay movimientos que coincidan',
@@ -632,7 +632,7 @@ export const es = {
       expense: 'Gastos',
       balance: 'Saldo',
       change: '{amount} frente al periodo anterior',
-      comparedWith: 'Comparado con {period}',
+      comparedWith: 'Comparación: {period}',
     },
     trend: {
       title: 'Evolución',
@@ -650,7 +650,7 @@ export const es = {
       empty: 'No hay nada registrado en este periodo.',
     },
     budgets: {
-      title: 'Presupuestos de {month}',
+      title: 'Presupuestos · {month}',
       empty: 'No hay presupuestos para este mes.',
       manage: 'Gestionar presupuestos',
     },
