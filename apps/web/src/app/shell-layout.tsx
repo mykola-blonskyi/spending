@@ -10,6 +10,7 @@ import { Brand, BrandMark } from './brand';
 import { ADD_TRANSACTION_PATH, DESTINATIONS } from './destinations';
 import { LAYOUTS } from './layouts/registry';
 import { UserMenu } from './user-menu';
+import { cn } from '@shared/lib/utils';
 
 export function ShellLayout() {
   const t = useTranslations();
@@ -45,10 +46,15 @@ export function ShellLayout() {
         navItems={navItems}
         primaryAction={{ to: ADD_TRANSACTION_PATH, label: t('nav.addTransaction'), icon: Plus }}
         status={
-          <div className="flex min-w-0 items-center gap-2">
+          // Only the narrow journal and card stack headers let the status shrink; elsewhere the
+          // label keeps its width and the free-flowing nav makes room.
+          <div className={cn('flex items-center gap-2', narrowHeader && 'min-w-0')}>
             <Link
               to="/sync"
-              className="min-w-0 rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60"
+              className={cn(
+                'rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60',
+                narrowHeader && 'min-w-0',
+              )}
             >
               {syncStatus && <SyncStatusBadge status={syncStatus} compact={crowdedHeader} />}
             </Link>
