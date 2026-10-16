@@ -137,7 +137,8 @@ function ConversionMeta({
   const t = useTranslations('history');
   const { locale } = useSharedLocale();
   if (conversion.state === 'same') return null;
-  const fx = conversion.state === 'converted' ? fxLabels(conversion.fx, locale) : null;
+  const fx =
+    conversion.state === 'converted' ? fxLabels(conversion.fx, locale, t('sourceEcb')) : null;
   return (
     <>
       <MetaRow label={t('originalAmount')}>

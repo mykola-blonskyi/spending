@@ -67,7 +67,7 @@ const expected: Record<Locale, Expected> = {
   },
   uk: {
     eur: `-10,00${nbsp}EUR`,
-    details: `10,85${nbsp}USD · 1,0850 · 14 жовт. 2026 р. · ECB`,
+    details: `10,85${nbsp}USD · 1,0850 · 14 жовт. 2026 р. · ЄЦБ`,
     chf: `-5,00${nbsp}CHF`,
     unavailable: 'Конвертація недоступна',
     notConverted: 'Не конвертовано',
@@ -75,7 +75,7 @@ const expected: Record<Locale, Expected> = {
   },
   ru: {
     eur: formatMoney(-1000, 'EUR', 'ru'),
-    details: `${formatMoney(1085, 'USD', 'ru')} · 1,0850 · ${formatDate('2026-10-14', 'ru')} · ECB`,
+    details: `${formatMoney(1085, 'USD', 'ru')} · 1,0850 · ${formatDate('2026-10-14', 'ru')} · ЕЦБ`,
     chf: formatMoney(-500, 'CHF', 'ru'),
     unavailable: 'Конвертация недоступна',
     notConverted: 'Не конвертировано',
@@ -83,7 +83,7 @@ const expected: Record<Locale, Expected> = {
   },
   es: {
     eur: formatMoney(-1000, 'EUR', 'es'),
-    details: `${formatMoney(1085, 'USD', 'es')} · 1,0850 · ${formatDate('2026-10-14', 'es')} · ECB`,
+    details: `${formatMoney(1085, 'USD', 'es')} · 1,0850 · ${formatDate('2026-10-14', 'es')} · BCE`,
     chf: formatMoney(-500, 'CHF', 'es'),
     unavailable: 'Conversión no disponible',
     notConverted: 'Sin convertir',
@@ -122,6 +122,22 @@ describe('ConversionNote', () => {
     expect(
       screen.getByText('Converted to €10.00 at 1.0850 (ECB, Oct 14, 2026)'),
     ).toBeInTheDocument();
+  });
+
+  it('names the rate source in the reader’s language, an unknown one as sent', () => {
+    renderIn('uk', <ConversionNote conversion={usd.conversion} />);
+    expect(
+      exact(`Конвертовано в 10,00${nbsp}EUR за курсом 1,0850 (ЄЦБ, 14 жовт. 2026 р.)`),
+    ).toBeInTheDocument();
+    const other = row({
+      id: 'boe',
+      currency: 'USD',
+      amountMinor: 1085,
+      baseAmountMinor: 1000,
+      fx: { ...fx, source: 'boe' },
+    });
+    renderIn('uk', <ConversionNote conversion={other.conversion} />);
+    expect(screen.getByText(/\(BOE, /)).toBeInTheDocument();
   });
 
   it('says nothing for EUR or an edited amount', () => {

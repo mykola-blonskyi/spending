@@ -309,6 +309,7 @@ export const es = {
     rate: 'Tipo de cambio',
     rateDate: 'Fecha del tipo',
     rateSource: 'Fuente',
+    sourceEcb: 'BCE',
     convertedTo: 'Convertido a {amount} al tipo {rate} ({source}, {date})',
     originalAmount: 'Importe original',
     eurAmount: 'Importe en euros',

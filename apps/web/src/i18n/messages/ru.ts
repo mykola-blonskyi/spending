@@ -312,6 +312,7 @@ export const ru = {
     rate: 'Курс',
     rateDate: 'Дата курса',
     rateSource: 'Источник',
+    sourceEcb: 'ЕЦБ',
     convertedTo: 'Конвертировано в {amount} по курсу {rate} ({source}, {date})',
     originalAmount: 'Исходная сумма',
     eurAmount: 'Сумма в евро',

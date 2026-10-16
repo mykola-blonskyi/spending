@@ -50,11 +50,12 @@ export function EntryAmount({
   align?: 'end' | 'start';
   colored?: boolean;
 }) {
+  const t = useTranslations('history');
   const { locale } = useSharedLocale();
   const { conversion } = row;
   const sign = row.kind === 'expense' ? -1 : 1;
   const converted = conversion.state === 'converted';
-  const fx = converted ? fxLabels(conversion.fx, locale) : null;
+  const fx = converted ? fxLabels(conversion.fx, locale, t('sourceEcb')) : null;
   return (
     <span
       className={cn(
@@ -115,7 +116,7 @@ export function ConversionNote({
     <p className={cn('text-xs text-muted-foreground tabular', className)}>
       {t('convertedTo', {
         amount: formatMoney(conversion.baseAmountMinor, 'EUR', locale),
-        ...fxLabels(conversion.fx, locale),
+        ...fxLabels(conversion.fx, locale, t('sourceEcb')),
       })}
     </p>
   );

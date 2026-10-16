@@ -298,6 +298,7 @@ export const en = {
     rate: 'Rate',
     rateDate: 'Rate date',
     rateSource: 'Source',
+    sourceEcb: 'ECB',
     convertedTo: 'Converted to {amount} at {rate} ({source}, {date})',
     originalAmount: 'Original amount',
     eurAmount: 'Amount in EUR',

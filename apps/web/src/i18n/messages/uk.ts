@@ -310,6 +310,7 @@ export const uk = {
     rate: 'Курс',
     rateDate: 'Дата курсу',
     rateSource: 'Джерело',
+    sourceEcb: 'ЄЦБ',
     convertedTo: 'Конвертовано в {amount} за курсом {rate} ({source}, {date})',
     originalAmount: 'Початкова сума',
     eurAmount: 'Сума в євро',
