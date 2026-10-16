@@ -57,6 +57,13 @@
       "when": 1792088815967,
       "tag": "0007_cascade_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792109540516,
+      "tag": "0008_drop_conflict_server_snapshot",
+      "breakpoints": true
     }
   ]
 }
