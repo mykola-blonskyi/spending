@@ -65,6 +65,7 @@ export function page(patch: Partial<PullPage> = {}): PullPage {
     conflicts: [],
     cursor: 10,
     hasMore: false,
+    epoch: 'epoch-1',
     ...patch,
   };
 }
@@ -81,7 +82,12 @@ export function syncedState(...rows: ServerTransaction[]): LocalState {
         { id: row.id, workspaceId: row.workspaceId, server: row, local: null },
       ]),
     ),
-    meta: { ...state.meta, cursor: 10, lastSyncedAt: '2026-10-14T10:00:00.000Z' },
+    meta: {
+      ...state.meta,
+      cursor: 10,
+      lastSyncedAt: '2026-10-14T10:00:00.000Z',
+      epoch: 'epoch-1',
+    },
   };
 }
 
