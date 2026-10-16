@@ -123,7 +123,9 @@ stored lucide icon name to a curated icon set (`category-icons.ts`).
   build on a stale copy. After a commit the store posts on the `BroadcastChannel`
   `spending-sync:<userId>`, and other tabs re-read. Any tab may flush, but each flush holds the Web
   Lock of the same name, so flushes never overlap. Without Web Locks, flushes run uncoordinated;
-  the server applies each mutation ID once, so an overlapping push is harmless.
+  the server applies each mutation ID once, so an overlapping push is harmless. A flush resets
+  only `sending` mutations older than 60 s (twice the 30 s request timeout), whose tab died
+  mid-flush; a younger one may be another tab's push in flight.
 - **Flush triggers.** App start, the `online` event, becoming visible, 500 ms after a local
   write, and a 60 s heartbeat while visible and online. Transport errors and 5xx retry with
   backoff doubling from 1 s to 5 min, each wait drawn from its upper half. Offline, nothing is
@@ -131,6 +133,10 @@ stored lucide icon name to a curated icon set (`category-icons.ts`).
   `retrying`: the server may hold their results, so they are replayed unchanged and later edits
   queue behind them. A push that changed nothing (failed before the request left, or a 4xx such as 429) leaves them `queued`, still open to coalescing. A mutation that cannot be serialized
   fails on its own (`INTERNAL`) instead of stalling the queue.
+- **Abandoned pushes.** The server applies a push one mutation at a time behind the ledger lock
+  and stops once the client has disconnected (its 30 s timeout). Finishing a batch nobody waits
+  for only delays the retries queued behind it; under load that once multiplied the work and
+  stalled sync for minutes. `test/sync-load.int.test.ts` (`LOAD_TEST=1`) reproduces it.
 - **Offline start.** The service worker (`vite-plugin-pwa`, Workbox `generateSW`) precaches the
   shell with an `index.html` navigation fallback; `/api/*` is on the navigation denylist and
   has no runtime caching. The last signed-in user is kept in `localStorage['spending.lastUser']`

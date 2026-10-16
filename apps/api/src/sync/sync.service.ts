@@ -92,10 +92,19 @@ export class SyncService {
     @Inject(FxService) private readonly fx: FxService,
   ) {}
 
-  /** Each mutation commits on its own, so one rejection never blocks the rest (ADR-006). */
-  async push(actorId: string, mutations: readonly Mutation[]): Promise<PushResult[]> {
+  /**
+   * Each mutation commits on its own, so one rejection never blocks the rest (ADR-006). Once the
+   * client has gone (`gone`), the rest is left for its retry: finishing a batch nobody waits for
+   * only delays the retry queued behind the ledger lock.
+   */
+  async push(
+    actorId: string,
+    mutations: readonly Mutation[],
+    gone?: AbortSignal,
+  ): Promise<PushResult[]> {
     const results: PushResult[] = [];
     for (const mutation of mutations) {
+      if (gone?.aborted) break;
       results.push(
         await ledgerTransaction(this.db, async (tx) => {
           const [stored] = await tx
