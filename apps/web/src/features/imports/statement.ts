@@ -16,9 +16,7 @@ export const ROWS_MAX = 5000;
 export type Row = { line: number; cells: string[] };
 
 export type StatementFormat =
-  | { kind: 'csv'; encoding: Encoding; delimiter: Delimiter }
-  | { kind: 'xlsx' }
-  | { kind: 'pdf' };
+  { kind: 'csv'; encoding: Encoding; delimiter: Delimiter } | { kind: 'xlsx' } | { kind: 'pdf' };
 
 export type ParsedStatement = {
   format: StatementFormat;
@@ -29,7 +27,7 @@ export type ParsedStatement = {
 
 export type StatementFailure =
   | { problem: 'TOO_LARGE'; maxBytes: number }
-  | { problem: 'EMPTY' | 'TOO_MANY_ROWS' | 'LEGACY_XLS' | 'UNSUPPORTED' | PdfProblem };
+  | { problem: 'EMPTY' | 'TOO_MANY_ROWS' | 'LEGACY_XLS' | PdfProblem };
 
 const NUMBER_LIKE = /^[+-]?[\d.,\s]+$/;
 const DATE_LIKE = /^\d{1,4}[/.-]\d{1,2}[/.-]\d{1,4}$/;

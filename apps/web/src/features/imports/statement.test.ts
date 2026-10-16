@@ -92,7 +92,10 @@ describe('parseStatement', () => {
       first: 1,
       count: 5,
     });
-    expect(await read('monobank-uk.pdf')).toMatchObject({ header: 'Дата i час операції', count: 4 });
+    expect(await read('monobank-uk.pdf')).toMatchObject({
+      header: 'Дата i час операції',
+      count: 4,
+    });
     expect(await read('ukrsib.pdf')).toMatchObject({ header: 'Дата операції', count: 7 });
     expect(await parseStatement(fixture('scanned.pdf'))).toEqual({
       ok: false,

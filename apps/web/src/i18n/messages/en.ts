@@ -498,7 +498,8 @@ export const en = {
     noAccountsAction: 'Open accounts',
     noAccountsDescription: 'A statement is imported into one of your personal accounts.',
     file: 'Statement file',
-    fileHint: 'A CSV of up to 2 MiB or an XLSX of up to 5 MiB, with up to 5,000 rows.',
+    fileHint:
+      'A CSV of up to 2 MiB, an XLSX of up to 5 MiB or a PDF of up to 10 MiB and 100 pages, with up to 5,000 rows.',
     chooseFile: 'Choose file',
     noFile: 'No file chosen',
     fileTooLarge: 'This file is larger than {size} MiB. Export a shorter period and try again.',
@@ -507,7 +508,10 @@ export const en = {
     readFailed: 'This file could not be read.',
     legacyXls:
       'This is an old binary Excel file (.xls). Save it as .xlsx or CSV in a spreadsheet app and upload that.',
-    unsupported: 'This file type cannot be read. Upload a CSV or XLSX statement.',
+    pdfNoText:
+      'This PDF has no text, only images (a scan). Download the statement from your bank as a PDF with text, an XLSX or a CSV.',
+    pdfTooManyPages: 'This PDF has more than 100 pages. Export a shorter period and try again.',
+    detectedPdf: 'Read as a PDF table: {count, plural, one {# row} other {# rows}}.',
     detectedWorkbook: 'Read as an Excel workbook: {count, plural, one {# row} other {# rows}}.',
     detected: 'Read as {encoding}, {delimiter}: {count, plural, one {# row} other {# rows}}.',
     delimiters: {
@@ -521,6 +525,7 @@ export const en = {
       santander: 'Santander',
       monobank: 'monobank',
       privatbank: 'PrivatBank',
+      ukrsib: 'UKRSIBBANK',
       custom: 'Other',
     },
     columns: 'Columns',

@@ -42,10 +42,12 @@ const ACCEPT = [
   '.txt',
   '.xlsx',
   '.xls',
+  '.pdf',
   'text/csv',
   'text/plain',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.ms-excel',
+  'application/pdf',
 ].join(',');
 
 /**
@@ -188,7 +190,7 @@ function MappingStep({
               delimiter: t(`delimiters.${DELIMITER_NAMES[format.delimiter]}`),
               count: rows.length,
             })
-          : t('detectedWorkbook', { count: rows.length })}
+          : t(format.kind === 'xlsx' ? 'detectedWorkbook' : 'detectedPdf', { count: rows.length })}
       </p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -554,7 +556,8 @@ export function NewImportPage() {
           EMPTY: t('imports.emptyFile'),
           UNREADABLE: t('imports.readFailed'),
           LEGACY_XLS: t('imports.legacyXls'),
-          UNSUPPORTED: t('imports.unsupported'),
+          PDF_NO_TEXT: t('imports.pdfNoText'),
+          PDF_TOO_MANY_PAGES: t('imports.pdfTooManyPages'),
         }[failure.problem];
 
   return (
