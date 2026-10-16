@@ -92,7 +92,9 @@ export function PlayfulEntryView({ form }: { form: EntryForm }) {
                   category={category}
                   className="size-10 rounded-xl group-[:nth-child(odd)]/item:-rotate-3 group-[:nth-child(even)]/item:rotate-3"
                 />
-                <span className="max-w-full truncate px-1">{category.name}</span>
+                <span className="line-clamp-2 max-w-full px-1 leading-tight break-words hyphens-auto">
+                  {category.name}
+                </span>
                 <span
                   aria-hidden
                   className="absolute -top-2 -right-2 hidden size-6 items-center justify-center rounded-full bg-primary text-primary-foreground ring-[3px] ring-background group-data-[state=on]/item:flex"

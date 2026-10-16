@@ -109,7 +109,9 @@ export function CardsEntryView({ form }: { form: EntryForm }) {
                 category={category}
                 className="size-12 transition-colors duration-150 group-data-[state=on]/item:bg-primary! group-data-[state=on]/item:text-primary-foreground!"
               />
-              <span className="w-full truncate text-center">{category.name}</span>
+              <span className="line-clamp-2 w-full leading-tight break-words hyphens-auto">
+                {category.name}
+              </span>
             </>
           )}
         />
