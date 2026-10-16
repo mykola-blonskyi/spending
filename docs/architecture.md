@@ -133,10 +133,13 @@ stored lucide icon name to a curated icon set (`category-icons.ts`).
   `retrying`: the server may hold their results, so they are replayed unchanged and later edits
   queue behind them. A push that changed nothing (failed before the request left, or a 4xx such as 429) leaves them `queued`, still open to coalescing. A mutation that cannot be serialized
   fails on its own (`INTERNAL`) instead of stalling the queue.
-- **Abandoned pushes.** The server applies a push one mutation at a time behind the ledger lock
-  and stops once the client has disconnected (its 30 s timeout). Finishing a batch nobody waits
-  for only delays the retries queued behind it; under load that once multiplied the work and
-  stalled sync for minutes. `test/sync-load.int.test.ts` (`LOAD_TEST=1`) reproduces it.
+- **Slow pushes.** The server applies a push one mutation at a time behind the ledger lock. It
+  answers only the mutations it reached once 10 s have passed or the client has disconnected; the
+  flusher sends the rest at once, as it does with any mutation left without a result. A batch
+  therefore never outlasts the client's 30 s timeout, and no work continues for a request nobody
+  waits for. Before this, a loaded server kept finishing abandoned batches while every retry timed
+  out and backed off, which stalled sync for minutes. `test/sync-load.int.test.ts` (`LOAD_TEST=1`)
+  reproduces the load.
 - **Offline start.** The service worker (`vite-plugin-pwa`, Workbox `generateSW`) precaches the
   shell with an `index.html` navigation fallback; `/api/*` is on the navigation denylist and
   has no runtime caching. The last signed-in user is kept in `localStorage['spending.lastUser']`
