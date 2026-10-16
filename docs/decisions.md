@@ -308,3 +308,34 @@ Legacy binary `.xls` is refused with a message. Known banks are recognized by th
 **Consequences.** No new dependency. The reader takes formula cells by their cached value and
 skips ZIP64, CRC checks and every sheet but the first; a part over 64 MiB or a sheet over 100
 columns is refused. PDF statements will reuse the same cell table and mapping step.
+
+## ADR-015: Rebuild PDF statement tables from the text layer with pdf.js
+
+Date: 2026-10-17
+
+**Context.** UkrSibbank exports statements only as PDF; Santander and monobank offer PDF too.
+monobank's PDF is wrapped in a CMS SignedData (DSTU) signature. The same header metadata as in
+XLSX (ADR-014) must stay on the device, and the CSP allows scripts and workers from our origin
+only.
+
+**Decision.** Read PDFs in the browser with `pdfjs-dist` (exact pin), imported only when a PDF is
+opened, its worker built as a same-origin `.js` asset (nginx's `mime.types` has no `.mjs`), and
+WebAssembly off (it only decodes images). One generic layout parser turns positioned text into
+the shared cell table: lines by baseline, the header as the lowest same-size block above the first
+date line, column edges in the emptiest gutter between header centres, and lines without a date
+joined to the row above until a wide gap or a totals line. A header repeated on a later page
+continues the table; a later table with every column of the first joins it by label (UkrSib's
+card operations), one without (UkrSib's pending holds) is left out. The CMS wrapper is opened by
+a DER walk to the OCTET STRING that starts with `%PDF`; the signature is not verified.
+
+**Alternatives.**
+
+- A layout template per bank: exact, but every bank redesign breaks it, and other banks get
+  nothing.
+- Server-side extraction (pdftotext, Tabula): the metadata block would leave the device (BR-36).
+- Scanning for `%PDF` … last `%%EOF` in the CMS file: shorter, but wrong for a chunked OCTET
+  STRING, which the DER walk joins.
+
+**Consequences.** About 490 kB of pdf.js plus a 1.2 MB worker, loaded on demand and precached by
+the service worker for offline use. A scanned PDF (no text) is refused with a message; OCR is out
+of scope. BER indefinite-length CMS wrappers are refused. Limits: 10 MiB and 100 pages.
