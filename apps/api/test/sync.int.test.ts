@@ -14,8 +14,10 @@ import {
   as,
   loginAs,
   resetData,
+  SESSION_COOKIE,
   type Session,
   startTestApp,
+  TEST_APP_ORIGIN,
   TEST_CLIENT,
   type TestApp,
 } from './harness';
@@ -207,6 +209,39 @@ describe('sync', () => {
     expect(await t.db.select().from(transactions)).toHaveLength(3);
     expect(await serverRow(tx.id)).toMatchObject({ note: 'other device', version: 3 });
     expect((await serverRow(gone.id)).deletedAt).not.toBeNull();
+  });
+
+  it('stops applying a push once its client has gone', async () => {
+    const slow = sql.raw(`create function zz_slow() returns trigger language plpgsql as $$
+      begin perform pg_sleep(0.05); return new; end $$;
+      create trigger zz_slow before insert on sync_mutations
+      for each row execute function zz_slow();`);
+    await t.db.execute(slow);
+    try {
+      const mutations = Array.from({ length: 100 }, () => upsert(draft(annPersonal)));
+      const request = fetch(`${t.baseUrl}/api/v1/sync/push`, {
+        method: 'POST',
+        headers: {
+          cookie: `${SESSION_COOKIE}=${ann.cookie}`,
+          'x-csrf-token': ann.csrf,
+          origin: TEST_APP_ORIGIN,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ mutations }),
+        signal: AbortSignal.timeout(300),
+      });
+      await expect(request).rejects.toThrow();
+      const stored = async () => (await t.db.select().from(syncMutations)).length;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const afterAbort = await stored();
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      expect(await stored()).toBe(afterAbort);
+      expect(afterAbort).toBeLessThan(100);
+    } finally {
+      await t.db.execute(
+        sql.raw('drop trigger zz_slow on sync_mutations; drop function zz_slow();'),
+      );
+    }
   });
 
   it('keeps every mutation of a batch independent', async () => {
