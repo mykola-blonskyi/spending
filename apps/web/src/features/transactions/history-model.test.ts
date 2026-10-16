@@ -124,7 +124,7 @@ const row = (id: string, occurredOn: string, patch: Partial<TransactionEntry> = 
 
 const fx = { rate: '1.0850', rateDate: '2026-10-14', source: 'ecb' };
 const usd = { currency: 'USD', amountMinor: 1085, baseAmountMinor: 1000, fx };
-const chf = { currency: 'CHF', amountMinor: 500, baseAmountMinor: null, fx: null };
+const chf = { currency: 'CHF', amountMinor: 500, baseAmountMinor: null, fx: null, version: 1 };
 
 describe('conversion', () => {
   it('is same for EUR, converted with a rate, unavailable without one', () => {
@@ -138,11 +138,18 @@ describe('conversion', () => {
   });
 
   it('is pending, and counted apart from EUR, until the server converts an unsent entry', () => {
-    const unsent = row('d', '2026-10-14', { ...chf, sync: { state: 'pending' } });
+    const unsent = row('d', '2026-10-14', { ...chf, version: null, sync: { state: 'pending' } });
     expect(unsent.conversion).toEqual({ state: 'pending' });
     expect(summarize([unsent])).toEqual({
       base: { expense: 0, income: 0 },
       unconverted: [{ currency: 'CHF', expense: 500, income: 0 }],
+    });
+  });
+
+  it('is pending for a rejected entry the server never converted', () => {
+    const rejected = { state: 'failed', code: 'VALIDATION_FAILED' } as const;
+    expect(row('e', '2026-10-14', { ...chf, version: null, sync: rejected }).conversion).toEqual({
+      state: 'pending',
     });
   });
 });

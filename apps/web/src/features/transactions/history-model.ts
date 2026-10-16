@@ -60,11 +60,11 @@ export type Conversion =
   | Readonly<{ state: 'unavailable' }>;
 
 export function conversionOf(
-  entry: Pick<TransactionEntry, 'currency' | 'baseAmountMinor' | 'fx' | 'sync'>,
+  entry: Pick<TransactionEntry, 'currency' | 'baseAmountMinor' | 'fx' | 'version'>,
 ): Conversion {
   if (entry.currency === 'EUR') return { state: 'same' };
-  // The server converts on push, so an unsent entry has no EUR amount yet.
-  if (entry.baseAmountMinor === null && entry.sync.state === 'pending') return { state: 'pending' };
+  // The server converts on push, so a local entry (no version yet) has no EUR amount yet.
+  if (entry.baseAmountMinor === null && entry.version === null) return { state: 'pending' };
   if (entry.baseAmountMinor === null || !entry.fx) return { state: 'unavailable' };
   return { state: 'converted', baseAmountMinor: entry.baseAmountMinor, fx: entry.fx };
 }

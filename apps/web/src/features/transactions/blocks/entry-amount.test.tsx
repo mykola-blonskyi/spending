@@ -27,7 +27,7 @@ const row = (patch: Partial<TransactionEntry>) =>
     { categories: new Map(), accounts: new Map(), dayLabel: String, uncategorized: '' },
   );
 const usd = row({ id: 'usd', currency: 'USD', amountMinor: 1085, baseAmountMinor: 1000, fx });
-const chf = row({ id: 'chf', currency: 'CHF', amountMinor: 500 });
+const chf = row({ id: 'chf', currency: 'CHF', amountMinor: 500, version: 1 });
 
 function WithLocale({ locale, children }: { locale: string; children: ReactNode }) {
   const shared = useSharedLocale();

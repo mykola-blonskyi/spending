@@ -244,9 +244,18 @@ docker compose --env-file deploy/smoke.env -f docker-compose.yml \
 9. Deploy once (next section) and sign in.
 
 10. **Slow-query log.** The shared instance has `log_min_duration_statement = -1`, so a query
-    that turns slow as data grows goes unnoticed. As the superuser, once:
-    `ALTER DATABASE spending SET log_min_duration_statement = '500ms';`. It applies only to this
-    database, from the next connection on.
+    that turns slow as data grows (or a stalled sync) goes unnoticed. As the superuser, once:
+
+    ```sql
+    ALTER DATABASE spending SET log_min_duration_statement = '500ms';
+    ALTER DATABASE spending SET log_parameter_max_length = 0;
+    ```
+
+    The second line keeps bind parameters (amounts, notes) out of the log. Both apply only to
+    this database, from the next connection on, so the restore steps set them again on the new
+    database. Read the log with `docker logs 3p9qjnulllqn3bcjqokir0wq 2>&1 | grep 'duration:'`.
+    Undo with `ALTER DATABASE spending RESET log_min_duration_statement;` and
+    `ALTER DATABASE spending RESET log_parameter_max_length;`.
 
 ## Deploying
 
@@ -339,7 +348,9 @@ docker exec "$BACKUP" ls -l /backups/daily /backups/weekly /backups/pre-migrate
 
 docker exec -i 3p9qjnulllqn3bcjqokir0wq psql -U postgres \
   -c 'CREATE DATABASE spending_restore OWNER spending_app;' \
-  -c 'REVOKE ALL ON DATABASE spending_restore FROM PUBLIC;'
+  -c 'REVOKE ALL ON DATABASE spending_restore FROM PUBLIC;' \
+  -c "ALTER DATABASE spending_restore SET log_min_duration_statement = '500ms';" \
+  -c 'ALTER DATABASE spending_restore SET log_parameter_max_length = 0;'
 
 # DATABASE_URL is expanded inside the container, so it never reaches your shell history.
 docker exec "$BACKUP" sh -c 'pg_restore --dbname="${DATABASE_URL%/*}/spending_restore" \

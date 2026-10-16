@@ -10,7 +10,7 @@ function sendAll(state: LocalState): LocalState {
   return setMutationState(
     state,
     selectBatch(state).map((m) => m.mutationId),
-    { status: 'sending' },
+    { status: 'sending', since: new Date().toISOString() },
   );
 }
 
