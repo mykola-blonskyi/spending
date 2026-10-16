@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { useTranslations } from '@i18n/index';
 import { PageHeader } from '@shared/components';
+import { cn } from '@shared/lib/utils';
 import {
   AccountSelect,
   AmountInput,
@@ -47,8 +48,11 @@ function More({ form }: { form: EntryForm }) {
   );
 }
 
-/** Card stack entry: a bottom sheet over a muted canvas, the amount typed on a keypad. */
-export function CardsEntryView({ form }: { form: EntryForm }) {
+/**
+ * Card stack entry: a bottom sheet over a muted canvas, the amount typed on a keypad. The canvas
+ * bleeds over the cards shell's main padding; another shell passes its own bleed as `className`.
+ */
+export function CardsEntryView({ form, className }: { form: EntryForm; className?: string }) {
   const t = useTranslations();
   const page = form.mode === 'edit' ? 'editTransaction' : 'addTransaction';
   if (form.status !== 'ready') {
@@ -60,7 +64,12 @@ export function CardsEntryView({ form }: { form: EntryForm }) {
     );
   }
   return (
-    <div className="-mx-4 -mt-4 -mb-[calc(9rem+env(safe-area-inset-bottom))] bg-muted pt-6">
+    <div
+      className={cn(
+        '-mx-4 -mt-4 -mb-[calc(9rem+env(safe-area-inset-bottom))] bg-muted pt-6',
+        className,
+      )}
+    >
       <div className="mx-auto h-3 w-[88%] rounded-t-3xl bg-card opacity-60" aria-hidden />
       <form
         onSubmit={(event) => void form.submit(event)}
