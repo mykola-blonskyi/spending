@@ -42,7 +42,7 @@ describe('migrations', () => {
     await provider.close();
   });
 
-  it('0009 drops the seeded English names and keeps the ones users set', async () => {
+  it('0010 drops the seeded English names and keeps the ones users set', async () => {
     const { personal } = await workspacesOf(t, ann);
     const inWorkspace = (key: string) =>
       and(eq(categories.workspaceId, personal), eq(categories.systemKey, key));
@@ -51,7 +51,7 @@ describe('migrations', () => {
     await t.db.update(categories).set({ name: 'Other' }).where(inWorkspace('other_income'));
     await t.db.update(categories).set({ name: 'Pizza nights' }).where(inWorkspace('dining'));
 
-    await replay(t, '0009_stored_names_nullable.sql');
+    await replay(t, '0010_stored_names_nullable.sql');
 
     const nameOf = async (key: string) =>
       (await t.db.select({ name: categories.name }).from(categories).where(inWorkspace(key)))[0]!
@@ -69,7 +69,7 @@ describe('migrations', () => {
     ).toBeNull();
   });
 
-  it('0009 refuses a workspace with two categories under one system key', async () => {
+  it('0010 refuses a workspace with two categories under one system key', async () => {
     const { personal } = await workspacesOf(t, ann);
     await t.db.execute(sql`drop index if exists categories_system_key_uq`);
     await t.db.insert(categories).values({
@@ -80,6 +80,6 @@ describe('migrations', () => {
       icon: 'apple',
       systemKey: 'groceries',
     });
-    await expect(replay(t, '0009_stored_names_nullable.sql')).rejects.toThrow(/share a system_key/);
+    await expect(replay(t, '0010_stored_names_nullable.sql')).rejects.toThrow(/share a system_key/);
   });
 });

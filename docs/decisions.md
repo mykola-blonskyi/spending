@@ -250,7 +250,7 @@ name. The personal workspace was stored as "Personal" the same way.
 name, and the web derives the display name from `systemKey` (or the workspace kind) in one
 module, `features/ledger/category-view.ts`. A stored name exists only once the user set one. An
 ESLint rule bans `useCategories` outside that module, so no screen can fall back to raw rows.
-Migration `0009` nulls the seeded English names (a renamed category keeps its name).
+Migration `0010` nulls the seeded English names (a renamed category keeps its name).
 
 **Alternatives.** Translating in every consumer (what broke); comparing stored names to the
 English catalog (breaks on rename to an English word, and silently stores display text).

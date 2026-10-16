@@ -4,10 +4,10 @@ import { E2E_DATABASE_URL } from './env';
 export class E2EDatabase {
   private readonly pool = new pg.Pool({ connectionString: E2E_DATABASE_URL, max: 2 });
 
-  /** Every test starts from empty tables; the schema and migrations stay. */
+  /** Every test starts from empty tables; the schema, migrations and sync epoch stay. */
   async truncateAll(): Promise<void> {
     const { rows } = await this.pool.query<{ tablename: string }>(
-      "select tablename from pg_tables where schemaname = 'public'",
+      "select tablename from pg_tables where schemaname = 'public' and tablename <> 'sync_epoch'",
     );
     if (rows.length === 0) return;
     const tables = rows.map((row) => `"${row.tablename}"`).join(', ');

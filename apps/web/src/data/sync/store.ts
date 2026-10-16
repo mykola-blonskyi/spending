@@ -103,7 +103,7 @@ async function load(tx: Tx): Promise<LocalState> {
     workspaces: byId(workspaces),
     conflicts: byId(conflicts),
     mutations: new Map(mutations.map((mutation) => [mutation.mutationId, mutation])),
-    meta: meta ?? INITIAL_META,
+    meta: { ...INITIAL_META, ...meta },
   };
 }
 

@@ -81,6 +81,7 @@ function applyServerRow(
  * sync holds rows older than the cursor, so the cursor goes back to 0.
  */
 export function reducePull(state: LocalState, page: PullPage, now: string): PullOutcome {
+  if (state.meta.epoch !== null && state.meta.epoch !== page.epoch) return restart(state, page);
   const workspaces = new Map(page.workspaces.map((workspace) => [workspace.id, workspace]));
   const visible = new Set(workspaces.keys());
   const joined =
@@ -106,10 +107,31 @@ export function reducePull(state: LocalState, page: PullPage, now: string): Pull
       meta: {
         ...state.meta,
         cursor: joined ? 0 : page.cursor,
+        epoch: page.epoch,
         lastSyncedAt: hasMore ? state.meta.lastSyncedAt : now,
       },
     },
     hasMore,
+  };
+}
+
+/**
+ * The server's data was restored from a backup (BR-35), so the cached rows may be ones it lost.
+ * Only entries with unsent changes stay, and the pull starts over from 0. The changes replay
+ * idempotently on the next push.
+ */
+function restart(state: LocalState, page: PullPage): PullOutcome {
+  const pending = new Set([...state.mutations.values()].map((m) => m.transactionId));
+  return {
+    state: {
+      ...state,
+      transactions: new Map([...state.transactions].filter(([id]) => pending.has(id))),
+      accounts: new Map(),
+      categories: new Map(),
+      conflicts: new Map(),
+      meta: { ...state.meta, cursor: 0, epoch: page.epoch },
+    },
+    hasMore: true,
   };
 }
 

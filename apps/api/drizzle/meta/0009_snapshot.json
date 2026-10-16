@@ -1,5 +1,5 @@
 {
-  "id": "b68ec1c9-da90-41f1-bb46-e9eb54a8830f",
+  "id": "ad7e89c6-a210-4373-b18d-2c55db556a14",
   "prevId": "9d379567-18da-4d33-aa67-48197bad23d9",
   "version": "7",
   "dialect": "postgresql",
@@ -69,21 +69,6 @@
         }
       },
       "indexes": {
-        "accounts_workspace_idx": {
-          "name": "accounts_workspace_idx",
-          "columns": [
-            {
-              "expression": "workspace_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "accounts_name_uq": {
           "name": "accounts_name_uq",
           "columns": [
@@ -254,7 +239,7 @@
       "checkConstraints": {
         "budgets_amount_ck": {
           "name": "budgets_amount_ck",
-          "value": "\"budgets\".\"amount_minor\" > 0"
+          "value": "amount_minor between 1 and 1000000000000"
         }
       },
       "isRLSEnabled": false
@@ -280,7 +265,7 @@
           "name": "name",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "kind": {
           "name": "kind",
@@ -359,28 +344,6 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "categories_system_key_uq": {
-          "name": "categories_system_key_uq",
-          "columns": [
-            {
-              "expression": "workspace_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "system_key",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"categories\".\"system_key\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -808,7 +771,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "invitations_settled_once_ck": {
+          "name": "invitations_settled_once_ck",
+          "value": "\"invitations\".\"accepted_at\" is null or \"invitations\".\"revoked_at\" is null"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.login_attempts": {
@@ -1173,7 +1141,11 @@
       "checkConstraints": {
         "recurring_amount_ck": {
           "name": "recurring_amount_ck",
-          "value": "\"recurring_rules\".\"amount_minor\" > 0"
+          "value": "amount_minor between 1 and 1000000000000"
+        },
+        "recurring_ends_after_start_ck": {
+          "name": "recurring_ends_after_start_ck",
+          "value": "\"recurring_rules\".\"ends_on\" is null or \"recurring_rules\".\"ends_on\" >= \"recurring_rules\".\"starts_on\""
         },
         "recurring_interval_ck": {
           "name": "recurring_interval_ck",
@@ -1491,7 +1463,44 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "sync_conflicts_resolution_ck": {
+          "name": "sync_conflicts_resolution_ck",
+          "value": "(\"sync_conflicts\".\"status\" = 'resolved') = (\"sync_conflicts\".\"resolution\" is not null and \"sync_conflicts\".\"resolved_at\" is not null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.sync_epoch": {
+      "name": "sync_epoch",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "boolean",
+          "primaryKey": true,
+          "notNull": true,
+          "default": true
+        },
+        "epoch": {
+          "name": "epoch",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "sync_epoch_single_ck": {
+          "name": "sync_epoch_single_ck",
+          "value": "\"sync_epoch\".\"id\""
+        }
+      },
       "isRLSEnabled": false
     },
     "public.sync_mutations": {
@@ -1921,6 +1930,22 @@
           "method": "btree",
           "with": {}
         },
+        "transactions_fx_pending_idx": {
+          "name": "transactions_fx_pending_idx",
+          "columns": [
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"transactions\".\"currency\" <> 'EUR' and \"transactions\".\"deleted_at\" is null and (\"transactions\".\"fx_rate_date\" is null or \"transactions\".\"fx_rate_date\" < \"transactions\".\"occurred_on\")",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "transactions_import_hash_uq": {
           "name": "transactions_import_hash_uq",
           "columns": [
@@ -2046,7 +2071,7 @@
       "checkConstraints": {
         "transactions_amount_ck": {
           "name": "transactions_amount_ck",
-          "value": "\"transactions\".\"amount_minor\" > 0"
+          "value": "amount_minor between 1 and 1000000000000"
         },
         "transactions_currency_ck": {
           "name": "transactions_currency_ck",
@@ -2312,7 +2337,7 @@
           "name": "name",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "owner_id": {
           "name": "owner_id",

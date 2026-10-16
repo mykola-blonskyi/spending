@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   bigint,
+  boolean,
   check,
   date,
   foreignKey,
@@ -73,6 +74,8 @@ const revision = () =>
     .default(sql`nextval('ledger_revision')`);
 const currency = (name = 'currency') => text(name).notNull();
 const currencyCheck = (column: string) => sql.raw(`${column} ~ '^[A-Z]{3}$'`);
+/** BR-13. The cap also keeps analytics sums exact as JS numbers. */
+const amountCheck = (column: string) => sql.raw(`${column} between 1 and 1000000000000`);
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -185,7 +188,10 @@ export const invitations = pgTable(
     acceptedBy: uuid('accepted_by').references(() => users.id, { onDelete: 'set null' }),
     revokedAt: tstz('revoked_at'),
   },
-  (t) => [index('invitations_workspace_idx').on(t.workspaceId)],
+  (t) => [
+    index('invitations_workspace_idx').on(t.workspaceId),
+    check('invitations_settled_once_ck', sql`${t.acceptedAt} is null or ${t.revokedAt} is null`),
+  ],
 );
 
 /** The family audit log shown to members. */
@@ -220,7 +226,6 @@ export const accounts = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [
-    index('accounts_workspace_idx').on(t.workspaceId),
     uniqueIndex('accounts_name_uq').on(t.workspaceId, t.kind, t.name),
     index('accounts_revision_idx').on(t.revision),
     check('accounts_currency_ck', currencyCheck('currency')),
@@ -280,7 +285,11 @@ export const recurringRules = pgTable(
   },
   (t) => [
     index('recurring_due_idx').on(t.nextOccurrence),
-    check('recurring_amount_ck', sql`${t.amountMinor} > 0`),
+    check('recurring_amount_ck', amountCheck('amount_minor')),
+    check(
+      'recurring_ends_after_start_ck',
+      sql`${t.endsOn} is null or ${t.endsOn} >= ${t.startsOn}`,
+    ),
     check('recurring_interval_ck', sql`${t.interval} between 1 and 366`),
     check('recurring_currency_ck', currencyCheck('currency')),
   ],
@@ -352,6 +361,12 @@ export const transactions = pgTable(
     index('transactions_account_idx').on(t.accountId),
     index('transactions_created_by_idx').on(t.createdBy),
     index('transactions_import_batch_idx').on(t.importBatchId),
+    // FxService.backfill's candidates: a row at its own day's rate can never get a closer one.
+    index('transactions_fx_pending_idx')
+      .on(t.id)
+      .where(
+        sql`${t.currency} <> 'EUR' and ${t.deletedAt} is null and (${t.fxRateDate} is null or ${t.fxRateDate} < ${t.occurredOn})`,
+      ),
     // The hash already includes the account id (BR-27), so it is unique on its own and survives
     // the row moving to the family workspace or the account being archived.
     uniqueIndex('transactions_import_hash_uq')
@@ -360,7 +375,7 @@ export const transactions = pgTable(
     uniqueIndex('transactions_recurring_uq')
       .on(t.recurringRuleId, t.recurringOccurrence)
       .where(sql`${t.recurringRuleId} is not null`),
-    check('transactions_amount_ck', sql`${t.amountMinor} > 0`),
+    check('transactions_amount_ck', amountCheck('amount_minor')),
     check('transactions_currency_ck', currencyCheck('currency')),
     check(
       'transactions_fx_ck',
@@ -412,7 +427,24 @@ export const syncConflicts = pgTable(
       .where(sql`${t.status} = 'open'`),
     index('sync_conflicts_user_idx').on(t.userId, t.status),
     index('sync_conflicts_transaction_idx').on(t.transactionId),
+    check(
+      'sync_conflicts_resolution_ck',
+      sql`(${t.status} = 'resolved') = (${t.resolution} is not null and ${t.resolvedAt} is not null)`,
+    ),
   ],
+);
+
+/**
+ * One row naming this copy of the dataset. `deploy/after-restore.sql` replaces it, and a device
+ * that sees a new epoch on pull drops its server rows and pulls from 0 (BR-35).
+ */
+export const syncEpoch = pgTable(
+  'sync_epoch',
+  {
+    id: boolean('id').primaryKey().default(true),
+    epoch: uuid('epoch').notNull().defaultRandom(),
+  },
+  (t) => [check('sync_epoch_single_ck', sql`${t.id}`)],
 );
 
 /**
@@ -468,7 +500,7 @@ export const budgets = pgTable(
   },
   (t) => [
     uniqueIndex('budgets_category_uq').on(t.workspaceId, t.categoryId),
-    check('budgets_amount_ck', sql`${t.amountMinor} > 0`),
+    check('budgets_amount_ck', amountCheck('amount_minor')),
   ],
 );
 

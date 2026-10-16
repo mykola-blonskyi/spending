@@ -311,6 +311,7 @@ describe('data rights', () => {
             local: { deleted: true },
             status: 'resolved',
             resolution: 'server',
+            resolvedAt: new Date(),
           },
         ])
         .returning();

@@ -962,6 +962,8 @@ export interface components {
             })[];
         };
         PullResponseDto_Output: {
+            /** Format: uuid */
+            epoch: string;
             workspaces: {
                 /** Format: uuid */
                 id: string;

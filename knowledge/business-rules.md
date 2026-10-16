@@ -103,6 +103,10 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   shown to the user who made the edit.
 - **BR-20.** Resolving a conflict applies the chosen version (server, local or a merge of fields)
   as a normal write and closes the conflict. Resolving it again is a no-op.
+- **BR-35.** Restoring the server from a backup must not leave devices out of step. The restore
+  bumps the revision sequence past every cursor a device can hold and changes the dataset epoch.
+  A device that pulls a new epoch drops its cached server data and resyncs from the start. Its
+  unsent changes are kept and sent again.
 - **BR-21.** Pending-review transactions are excluded from history, totals and budgets until they
   are confirmed.
 

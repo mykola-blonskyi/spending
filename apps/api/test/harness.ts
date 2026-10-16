@@ -35,7 +35,7 @@ export async function startTestApp(env: Record<string, string> = {}): Promise<Te
 
 export async function resetData(db: Db): Promise<void> {
   const { rows } = await db.execute<{ tablename: string }>(
-    sql`select tablename from pg_tables where schemaname = 'public'`,
+    sql`select tablename from pg_tables where schemaname = 'public' and tablename <> 'sync_epoch'`,
   );
   if (rows.length === 0) return;
   const tables = rows.map((row) => `"${row.tablename}"`).join(', ');

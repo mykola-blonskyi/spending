@@ -243,6 +243,11 @@ docker compose --env-file deploy/smoke.env -f docker-compose.yml \
 
 9. Deploy once (next section) and sign in.
 
+10. **Slow-query log.** The shared instance has `log_min_duration_statement = -1`, so a query
+    that turns slow as data grows goes unnoticed. As the superuser, once:
+    `ALTER DATABASE spending SET log_min_duration_statement = '500ms';`. It applies only to this
+    database, from the next connection on.
+
 ## Deploying
 
 Automatic: every merge to `main` deploys once CI passes on it. The Deploy workflow starts from
@@ -343,7 +348,16 @@ docker exec "$BACKUP" sh -c 'pg_restore --dbname="${DATABASE_URL%/*}/spending_re
 docker exec -i 3p9qjnulllqn3bcjqokir0wq psql -U postgres -d spending_restore \
   -c '\dt' -c 'SELECT count(*) FROM drizzle.__drizzle_migrations;' \
   -c 'SELECT count(*) FROM transactions;'
+
+# Required. Moves ledger_revision past every device cursor and sets a new sync epoch, so every
+# device drops what it cached and pulls the restored data from 0 (BR-35).
+docker exec "$BACKUP" sh -c 'psql "${DATABASE_URL%/*}/spending_restore" -v ON_ERROR_STOP=1 \
+  -f /usr/local/share/spending/after-restore.sql'
 ```
+
+`after-restore.sql` lives in `deploy/` and ships in the backup image. A dump older than migration
+0009 has no `sync_epoch` table; the script skips the epoch and the redeploy's migration creates a
+fresh one.
 
 If the scratch copy is right, stop the resource in Coolify, then swap:
 
