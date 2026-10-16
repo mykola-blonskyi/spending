@@ -45,7 +45,7 @@ describe('scheduleWords', () => {
     expect(words('en', 'weekly', 2, '2026-01-11')).toBe('Every 2 weeks on Sunday');
     expect(words('ru', 'weekly', 1, '2026-01-06')).toBe('Каждую неделю во вторник');
     expect(words('ru', 'weekly', 1, '2026-01-07')).toBe('Каждую неделю в среду');
-    expect(words('uk', 'weekly', 1, '2026-01-09')).toBe('Щотижня в п’ятницю');
+    expect(words('uk', 'weekly', 1, '2026-01-09')).toBe('Щотижня в пʼятницю');
     expect(words('es', 'weekly', 3, '2026-01-10')).toBe('Cada 3 semanas el sábado');
   });
 
