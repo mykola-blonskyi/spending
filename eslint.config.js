@@ -100,6 +100,25 @@ export default tseslint.config(
     },
   },
   {
+    // Default categories carry no stored name; only the ledger module turns keys into names.
+    files: ['apps/web/src/**/*.{ts,tsx}'],
+    ignores: ['apps/web/src/features/ledger/**', 'apps/web/src/data/**', '**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@data/sync',
+              importNames: ['useCategories'],
+              message: 'Use useCategoryViews from @features/ledger: it localizes default names.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['apps/web/src/**/*.tsx'],
     ignores: ['**/*.test.tsx'],
     rules: {

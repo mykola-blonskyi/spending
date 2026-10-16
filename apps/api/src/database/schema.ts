@@ -132,7 +132,8 @@ export const workspaces = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     kind: workspaceKindEnum('kind').notNull(),
-    name: text('name').notNull(),
+    /** Null for a personal workspace: the UI names it in the user's language. */
+    name: text('name'),
     ownerId: uuid('owner_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
@@ -233,7 +234,8 @@ export const categories = pgTable(
     workspaceId: uuid('workspace_id')
       .notNull()
       .references(() => workspaces.id, { onDelete: 'cascade' }),
-    name: text('name').notNull(),
+    /** Null until the user names it: a default category is shown by its `systemKey`. */
+    name: text('name'),
     kind: entryKindEnum('kind').notNull(),
     color: text('color').notNull(),
     icon: text('icon').notNull(),

@@ -4,7 +4,7 @@ import type { components } from '@data/api.gen';
 import { errorCode } from '@data/api-error';
 import { api } from '@data/client';
 import { isSignedOutError, present } from '@data/session';
-import type { Category } from '@data/sync';
+import type { CategoryView } from '@features/ledger';
 import { useTranslations } from '@i18n/index';
 import type { Month } from './month';
 
@@ -48,16 +48,16 @@ export const useDeleteBudget = () =>
 
 /** Expense categories of the workspace that can still get a budget (PUT upserts per category). */
 export function budgetableCategories(
-  categories: readonly Category[],
+  categories: readonly CategoryView[],
   workspaceId: string,
   budgets: readonly Pick<Budget, 'categoryId'>[],
-): Category[] {
+): CategoryView[] {
   const budgeted = new Set(budgets.map((budget) => budget.categoryId));
   return categories.filter(
     (category) =>
       category.workspaceId === workspaceId &&
       category.kind === 'expense' &&
-      category.archivedAt === null &&
+      !category.archived &&
       !budgeted.has(category.id),
   );
 }

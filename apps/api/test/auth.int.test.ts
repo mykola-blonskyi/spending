@@ -110,7 +110,7 @@ describe('authentication', () => {
         .select()
         .from(workspaces)
         .where(eq(workspaces.ownerId, first.userId));
-      expect(owned).toEqual([expect.objectContaining({ kind: 'personal', name: 'Personal' })]);
+      expect(owned).toEqual([expect.objectContaining({ kind: 'personal', name: null })]);
       expect(await t.db.select().from(memberships)).toEqual([
         expect.objectContaining({ userId: first.userId, role: 'owner', workspaceKind: 'personal' }),
       ]);

@@ -97,7 +97,7 @@ export type SumRow = Readonly<{
 }>;
 
 export type CategoryInfo = Readonly<{
-  name: string;
+  name: string | null;
   systemKey: string | null;
   color: string;
 }>;

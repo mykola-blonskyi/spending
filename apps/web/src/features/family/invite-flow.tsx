@@ -11,7 +11,7 @@ import { EmptyState, ErrorState, LoadingState } from '@shared/components';
 import { formatDate } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import { Button } from '@shared/ui/button';
-import { useFamily } from './family';
+import { asFamily, useFamily } from './family';
 
 const card = 'w-full border-solid bg-card';
 
@@ -42,7 +42,7 @@ export function InviteFlow({ token }: { token: string }) {
     mutationFn: acceptInvitation,
     onSuccess: async (joined) => {
       await queryClient.invalidateQueries({ queryKey: FAMILY_KEY });
-      toast.success(t('invite.joined', { family: joined.name }));
+      toast.success(t('invite.joined', { family: asFamily(joined).name }));
       void navigate('/family', { replace: true });
     },
   });

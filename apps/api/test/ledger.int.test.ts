@@ -228,17 +228,19 @@ describe('ledger', () => {
     });
 
     it('creates and edits categories', async () => {
-      const taken = await as(t, ann, '/v1/categories', {
-        method: 'POST',
-        body: {
-          workspaceId: family,
-          name: 'Groceries',
-          kind: 'expense',
-          color: '#00ff00',
-          icon: 'apple',
-        },
-      });
-      expect(taken.status).toBe(409);
+      const market = {
+        workspaceId: family,
+        name: 'Market',
+        kind: 'expense',
+        color: '#00ff00',
+        icon: 'apple',
+      };
+      expect((await as(t, ann, '/v1/categories', { method: 'POST', body: market })).status).toBe(
+        201,
+      );
+      expect((await as(t, bob, '/v1/categories', { method: 'POST', body: market })).status).toBe(
+        409,
+      );
       const created = await json<{ id: string; color: string; systemKey: null }>(
         await as(t, bob, '/v1/categories', {
           method: 'POST',

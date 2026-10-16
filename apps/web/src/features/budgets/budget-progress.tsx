@@ -1,5 +1,5 @@
 import { CircleAlert, TriangleAlert } from 'lucide-react';
-import { useCategories } from '@data/sync';
+import { useCategoryViews } from '@features/ledger';
 import { useTranslations } from '@i18n/index';
 import { formatMoney } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
@@ -19,7 +19,7 @@ const INDICATOR: Record<Budget['status'], string> = {
 export function BudgetProgress({ budget }: { budget: Budget }) {
   const t = useTranslations();
   const { locale } = useSharedLocale();
-  const categories = useCategories().items;
+  const categories = useCategoryViews().items;
   const money = (minor: number) => formatMoney(minor, BUDGET_CURRENCY, locale);
   const name =
     categories.find((category) => category.id === budget.categoryId)?.name ??

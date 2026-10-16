@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
-import { useCategories, useWorkspaces } from '@data/sync';
+import { useWorkspaces } from '@data/sync';
+import { useCategoryViews } from '@features/ledger';
 import { useTranslations } from '@i18n/index';
 import {
   currencyExponent,
@@ -60,7 +61,7 @@ function BudgetForm({ mode, onDone }: { mode: BudgetDialogMode; onDone: () => vo
   const t = useTranslations();
   const base = useId();
   const workspaces = useWorkspaces().items;
-  const categories = useCategories().items;
+  const categories = useCategoryViews().items;
   const put = usePutBudget();
   const editing = mode.kind === 'edit' ? mode.budget : null;
   const personal = workspaces.find((workspace) => workspace.kind === 'personal');

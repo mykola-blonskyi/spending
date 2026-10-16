@@ -23,7 +23,7 @@ import { Input } from '@shared/ui/input';
 import { Label } from '@shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui/select';
 import { CATEGORY_ICON_NAMES, categoryIcon } from './category-icons';
-import { type CategoryView, useCategoryViews } from './category-view';
+import { type CategoryView, defaultCategoryName, useCategoryViews } from './category-view';
 import { ArchivedGroup, Field, RowActions } from './ledger-parts';
 import { useCategoriesAdmin } from './use-ledger-mutations';
 
@@ -129,6 +129,10 @@ function CategoryDialog({
   const actions = useTranslations('actions');
   const admin = useCategoriesAdmin();
   const base = useId();
+  const defaults = useTranslations('categoryDefaults');
+  const defaultName = category?.systemKey
+    ? defaultCategoryName(category.systemKey, defaults)
+    : null;
   const [name, setName] = useState(category?.name ?? '');
   const [kind, setKind] = useState<Kind>(category?.kind ?? 'expense');
   const [color, setColor] = useState(category?.color ?? SWATCHES[0] ?? '#16a34a');
@@ -138,11 +142,11 @@ function CategoryDialog({
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     const trimmed = name.trim();
-    const invalid = trimmed.length < 1 || trimmed.length > 60;
+    const invalid = (trimmed.length < 1 && defaultName === null) || trimmed.length > 60;
     setNameError(invalid);
     if (invalid) return;
     const saved = category
-      ? await admin.update(category.id, { name: trimmed, color, icon })
+      ? await admin.update(category.id, { name: trimmed || null, color, icon })
       : await admin.create({ workspaceId, name: trimmed, kind, color, icon });
     if (saved) onClose();
   };
@@ -166,6 +170,7 @@ function CategoryDialog({
             <Input
               id={`${base}-name`}
               value={name}
+              placeholder={defaultName ?? undefined}
               maxLength={60}
               autoComplete="off"
               aria-invalid={nameError || undefined}

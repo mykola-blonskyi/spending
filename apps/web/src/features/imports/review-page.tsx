@@ -3,7 +3,8 @@ import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { errorCode } from '@data/api-error';
 import type { ReviewItem } from '@data/imports';
-import { type Category, useCategories, useWorkspaces } from '@data/sync';
+import { type Category, useWorkspaces } from '@data/sync';
+import { type CategoryView, useCategoryViews } from '@features/ledger';
 import { useTranslations } from '@i18n/index';
 import { EmptyState, ErrorState, LoadingState, MoneyText, PageHeader } from '@shared/components';
 import { formatDate } from '@shared/format';
@@ -76,7 +77,7 @@ export function ReviewPage() {
   const hasFamily = useHasFamily();
   const queue = useReviewQueue();
   const workspaces = useWorkspaces();
-  const categories = useCategories();
+  const categories = useCategoryViews();
   const confirm = useConfirmReview();
   const [choices, setChoices] = useState<ReadonlyMap<string, Choice>>(new Map());
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
@@ -87,7 +88,7 @@ export function ReviewPage() {
     const family = workspaces.items.find((w) => w.kind === 'family')?.id;
     return (scope: Scope) => (scope === 'family' ? family : personal);
   }, [workspaces.items]);
-  const live = useMemo(() => categories.items.filter((c) => !c.archivedAt), [categories.items]);
+  const live = useMemo(() => categories.items.filter((c) => !c.archived), [categories.items]);
   const optionsFor = (scope: Scope, kind: Category['kind']) =>
     live.filter((c) => c.workspaceId === workspaceOf(scope) && c.kind === kind);
 
@@ -108,7 +109,7 @@ export function ReviewPage() {
     });
   };
   /** The bulk scope is chosen first; the category comes from that workspace, per row kind. */
-  const applyCategory = (category: Category) => {
+  const applyCategory = (category: CategoryView) => {
     setChoices((prev) => {
       const next = new Map(prev);
       for (const item of chosen) {

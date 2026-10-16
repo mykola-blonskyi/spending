@@ -21,7 +21,7 @@ vi.mock('@features/auth', () => ({ useSession: () => testSession() }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn() } }));
 
 const NOW = '2026-10-15T00:00:00.000Z';
-const salary = category({ id: 'cat-salary', name: 'Salary', kind: 'income', systemKey: 'salary' });
+const salary = category({ id: 'cat-salary', name: null, kind: 'income', systemKey: 'salary' });
 const usd = account({ id: 'acc-usd', name: 'Dollars', currency: 'USD' });
 
 function ledger(state: LocalState): LocalState {

@@ -64,6 +64,13 @@
       "when": 1792109540516,
       "tag": "0008_drop_conflict_server_snapshot",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792178792569,
+      "tag": "0009_stored_names_nullable",
+      "breakpoints": true
     }
   ]
 }

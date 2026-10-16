@@ -28,7 +28,7 @@ export const account = (patch: Partial<Account> = {}): Account => ({
 export const category = (patch: Partial<Category> = {}): Category => ({
   id: 'cat-groceries',
   workspaceId: PERSONAL.id,
-  name: 'Groceries',
+  name: null,
   kind: 'expense',
   color: '#16a34a',
   icon: 'shopping-basket',

@@ -48,8 +48,8 @@ const FORMER_MEMBER = {
  * "former member" in the actor's locale.
  */
 export function transactionsCsv(document: DataExport): string {
-  const names = (rows: readonly { id: string; name: string }[]) =>
-    new Map(rows.map((row) => [row.id, row.name]));
+  const names = (rows: readonly { id: string; name: string | null; systemKey?: string | null }[]) =>
+    new Map(rows.map((row) => [row.id, row.name ?? row.systemKey ?? '']));
   const workspaces = names(document.workspaces);
   const accounts = names(document.accounts);
   const categories = names(document.categories);

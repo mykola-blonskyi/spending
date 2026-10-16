@@ -212,7 +212,7 @@ export class FamilyService {
       throw new ApiError('INVITATION_INVALID');
     }
     return {
-      familyName: row.familyName,
+      familyName: row.familyName!,
       ownerName: row.ownerName,
       expiresAt: row.expiresAt.toISOString(),
       state: 'pending' as const,
@@ -349,9 +349,11 @@ export class FamilyService {
       delete from sync_conflicts c using transactions t
       where c.transaction_id = t.id and t.workspace_id = ${familyId}
         and c.user_id <> t.created_by`);
+    // An unnamed default maps to the personal default with the same key; a named category
+    // is copied by name, keeping its key unless the personal workspace already has it.
     await tx.execute(sql`
       insert into categories (workspace_id, name, kind, color, icon, system_key)
-      select distinct on (p.workspace_id, c.kind, c.name)
+      select distinct on (p.workspace_id, c.kind, coalesce(c.name, c.system_key))
              p.workspace_id, c.name, c.kind, c.color, c.icon,
              case when exists (
                select 1 from categories k
@@ -361,6 +363,9 @@ export class FamilyService {
       join categories c on c.id = t.category_id
       join memberships p on p.user_id = t.created_by and p.workspace_kind = 'personal'
       where t.workspace_id = ${familyId} and t.deleted_at is null
+        and (c.name is not null or not exists (
+          select 1 from categories k
+          where k.workspace_id = p.workspace_id and k.system_key = c.system_key))
       on conflict (workspace_id, kind, name) do nothing`);
     await tx.execute(sql`
       update transactions t set
@@ -368,8 +373,11 @@ export class FamilyService {
         category_id = (
           select pc.id from categories fc
           join categories pc
-            on pc.workspace_id = p.workspace_id and pc.kind = fc.kind and pc.name = fc.name
-          where fc.id = t.category_id),
+            on pc.workspace_id = p.workspace_id and pc.kind = fc.kind
+            and case when fc.name is null then pc.system_key = fc.system_key
+                     else pc.name = fc.name end
+          where fc.id = t.category_id
+          order by pc.created_at limit 1),
         account_id = case
           when t.account_id in (select id from accounts where workspace_id = ${familyId})
           then null else t.account_id end

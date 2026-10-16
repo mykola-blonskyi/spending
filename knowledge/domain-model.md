@@ -32,7 +32,8 @@ A pending OIDC authorization: `state` (primary key), `nonce`, `codeVerifier`, `r
 The ownership boundary for all ledger data.
 
 - `kind`: `personal` (exactly one member, its owner) or `family`.
-- `name`, `ownerId`, `createdAt`.
+- `name` (null for a personal workspace, which the UI names in the user's language), `ownerId`,
+  `createdAt`.
 - A transaction's scope (personal or family) is the kind of its workspace. Scope is never a
   separate field that could disagree with the workspace.
 
@@ -68,10 +69,11 @@ Where money sits: a card, a bank account, cash.
 
 ## Category
 
-- `id`, `workspaceId`, `name`, `kind` (`income|expense`), `color`, `icon`, `archivedAt`.
-- `systemKey` (nullable). Default categories carry a stable key such as `groceries`, so the UI can
-  localize their names while the stored name still equals the default English name. Renaming
-  keeps the key, which the import categorizer relies on. Every new workspace, personal or family, is
+- `id`, `workspaceId`, `name` (nullable), `kind` (`income|expense`), `color`, `icon`, `archivedAt`.
+- `systemKey` (nullable). Default categories carry a stable key such as `groceries` and no stored
+  name: the web shows `name ?? t(categoryDefaults.<systemKey>)` from one module
+  (`features/ledger/category-view.ts`). Renaming stores the user's name and keeps the key, which
+  the import categorizer relies on; clearing the name returns to the default (BR-4a, ADR-012). Every new workspace, personal or family, is
   seeded with 14 expense and 6 income defaults (`workspaces/default-categories.ts`).
 
 ## Transaction

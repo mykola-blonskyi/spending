@@ -109,7 +109,7 @@ describe('family workspaces', () => {
       .where(eq(categories.workspaceId, personal.id));
     expect(seeded).toHaveLength(20);
     expect(seeded.find((c) => c.systemKey === 'groceries')).toMatchObject({
-      name: 'Groceries',
+      name: null,
       kind: 'expense',
     });
     await loginAs(t, people[0].sub);
@@ -464,6 +464,11 @@ describe('family workspaces', () => {
       .select()
       .from(categories)
       .where(and(eq(categories.workspaceId, family.id), eq(categories.systemKey, 'groceries')));
+    const [familyDining] = await t.db
+      .update(categories)
+      .set({ name: 'Pizza nights' })
+      .where(and(eq(categories.workspaceId, family.id), eq(categories.systemKey, 'dining')))
+      .returning();
     const [bobGroceries] = await t.db
       .select()
       .from(categories)
@@ -491,12 +496,13 @@ describe('family workspaces', () => {
     });
     const bobRow = row(bob.userId, { accountId: bobCard!.id, categoryId: pets!.id });
     const bobGroceryRow = row(bob.userId, { categoryId: familyGroceries!.id });
+    const annDiningRow = row(ann.userId, { categoryId: familyDining!.id });
     const orphan = row(null);
     const annTombstone = row(ann.userId, { categoryId: pets!.id, deletedAt: new Date() });
     const catRow = row(cat.userId);
     const inserted = await t.db
       .insert(transactions)
-      .values([annRow, bobRow, bobGroceryRow, orphan, annTombstone, catRow])
+      .values([annRow, bobRow, bobGroceryRow, annDiningRow, orphan, annTombstone, catRow])
       .returning();
     const conflict = (userId: string) => ({
       transactionId: annRow.id,
@@ -553,6 +559,13 @@ describe('family workspaces', () => {
       categoryId: bobPets!.id,
     });
     expect(after.get(bobGroceryRow.id)!.categoryId).toBe(bobGroceries!.id);
+    // A renamed default is copied by name; ann already has her own `dining`, so the key stays there.
+    const [annPizza] = await t.db
+      .select()
+      .from(categories)
+      .where(and(eq(categories.workspaceId, annPersonal.id), eq(categories.name, 'Pizza nights')));
+    expect(annPizza).toMatchObject({ kind: 'expense', systemKey: null });
+    expect(after.get(annDiningRow.id)!.categoryId).toBe(annPizza!.id);
     const before = inserted.find((tx) => tx.id === annRow.id)!;
     expect(after.get(annRow.id)!.revision).toBeGreaterThan(before.revision);
 

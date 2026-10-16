@@ -87,14 +87,14 @@ test('a family member reviews imported rows and publishes some to the family', a
       .filter((r) => r.scope === 'family')
       .map((r) => r.category)
       .sort(),
-  ).toEqual(['Groceries', 'Groceries', 'Groceries', 'Salary']);
+  ).toEqual(['groceries', 'groceries', 'groceries', 'salary']);
   expect(history.find((r) => r.description === mercadona)).toMatchObject({
     scope: 'personal',
-    category: 'Groceries',
+    category: 'groceries',
   });
   expect(await db.categoryRules(ann.email)).toContainEqual({
     merchant_key: 'mercadona',
-    category: 'Groceries',
+    category: 'groceries',
   });
 
   await page.goto('/transactions');

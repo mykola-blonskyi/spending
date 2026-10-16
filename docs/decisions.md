@@ -235,3 +235,27 @@ separate `style-src-attr` directive.
 **Consequences.** CSS injection still requires an HTML injection first, which React's escaping
 prevents. Scripts stay strictly same-origin, so the policy still blocks injected script
 execution and cross-origin script loading.
+
+## ADR-012: The database stores keys, never translated display text
+
+Date: 2026-10-16
+
+**Context.** Default categories were seeded with English names next to a `systemKey`, and only
+the ledger pages translated them by comparing the stored name to the English default. Every other
+list (budgets, recurring rules, import review, history filters, conflicts) showed the English
+name. The personal workspace was stored as "Personal" the same way.
+
+**Decision.** Anything the app translates is stored as an identifier. `categories.name` and
+`workspaces.name` are nullable: a default category and the personal workspace have no stored
+name, and the web derives the display name from `systemKey` (or the workspace kind) in one
+module, `features/ledger/category-view.ts`. A stored name exists only once the user set one. An
+ESLint rule bans `useCategories` outside that module, so no screen can fall back to raw rows.
+Migration `0009` nulls the seeded English names (a renamed category keeps its name).
+
+**Alternatives.** Translating in every consumer (what broke); comparing stored names to the
+English catalog (breaks on rename to an English word, and silently stores display text).
+
+**Consequences.** The API, exports and E2E helpers return `name: null` for defaults, with
+`systemKey` as the stable identifier; the CSV export writes the key for an unnamed category.
+Name uniqueness per `(workspaceId, kind)` covers stored names only, so a custom category may
+carry the same words as a default's localized name.

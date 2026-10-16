@@ -7,12 +7,12 @@ import type { Category, Workspace } from '@data/sync';
 import { I18nProvider } from '@i18n/index';
 import { BudgetDialog } from './budget-dialog';
 
-const PERSONAL: Workspace = { id: 'ws-1', kind: 'personal', name: 'Personal', role: 'owner' };
+const PERSONAL: Workspace = { id: 'ws-1', kind: 'personal', name: null, role: 'owner' };
 const stamp = { revision: 1, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' };
 const category = (patch: Partial<Category>): Category => ({
   id: 'c-1',
   workspaceId: PERSONAL.id,
-  name: 'Groceries',
+  name: null,
   kind: 'expense',
   color: '#16a34a',
   icon: 'shopping-basket',
