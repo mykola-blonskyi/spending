@@ -83,7 +83,11 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   returns the stored outcome with the row's current view. A mutation ID already used by another
   user is rejected (`MUTATION_ID_REUSED`). A create (`baseVersion: null`) whose transaction ID
   already exists is treated as an update with an unknown base: applied when nothing would change,
-  otherwise a conflict (BR-19).
+  otherwise a conflict (BR-19). Stored outcomes are kept for 180 days, then pruned daily. A replay
+  of a pruned mutation is decided again against the row (BR-19): a create or update already
+  applied answers applied when nothing would change and a conflict otherwise, and a delete of a
+  deleted row succeeds. It never creates a duplicate or overwrites a newer change. The
+  `MUTATION_ID_REUSED` check covers only IDs still stored.
 - **BR-18a.** Personal rows are writable only by their workspace's owner; family rows by any
   member. Only the author moves a row between their personal workspace and the family; the other
   members then receive a tombstone for it. A row the

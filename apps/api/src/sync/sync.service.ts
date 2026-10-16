@@ -1,6 +1,13 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, exists, gt, inArray, ne, not, sql } from 'drizzle-orm';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  type OnApplicationBootstrap,
+  type OnApplicationShutdown,
+} from '@nestjs/common';
+import { and, asc, desc, eq, exists, gt, inArray, lt, ne, not, sql } from 'drizzle-orm';
+import { APP_CONFIG, type AppConfig } from '../common/config';
 import { ApiError } from '../common/errors';
 import type { CurrencyCode } from '../common/money';
 import { DB, type Db, ledgerTransaction, type Tx } from '../database/database.module';
@@ -38,6 +45,8 @@ import {
   type RejectCode,
   type TransactionInput,
 } from './mutations';
+
+const MUTATION_RETENTION_DAYS = 180;
 
 /** What `sync_mutations.result` keeps; replays rebuild the row view fresh (BR-18). */
 type Outcome =
@@ -110,6 +119,20 @@ export class SyncService {
       );
     }
     return results;
+  }
+
+  /**
+   * BR-18. Replaying a pruned mutation is decided again on the row, which only ever answers
+   * unchanged or conflict for a change already made, so old outcomes need not be kept.
+   */
+  async pruneMutations(): Promise<number> {
+    const pruned = await this.db
+      .delete(syncMutations)
+      .where(
+        lt(syncMutations.createdAt, sql`now() - make_interval(days => ${MUTATION_RETENTION_DAYS})`),
+      )
+      .returning({ id: syncMutations.id });
+    return pruned.length;
   }
 
   /**
@@ -499,5 +522,40 @@ export class SyncService {
     return row
       ? { workspaceId: row.workspaceId, kind: row.kind, archived: row.archivedAt !== null }
       : null;
+  }
+}
+
+const STARTUP_DELAY_MS = 60_000;
+const INTERVAL_MS = 24 * 60 * 60_000;
+
+/** Prunes old mutation outcomes shortly after startup and daily. Off in tests, which call it. */
+@Injectable()
+export class SyncScheduler implements OnApplicationBootstrap, OnApplicationShutdown {
+  private readonly logger = new Logger('Sync');
+  private timers: NodeJS.Timeout[] = [];
+
+  constructor(
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+    @Inject(SyncService) private readonly sync: SyncService,
+  ) {}
+
+  onApplicationBootstrap(): void {
+    if (this.config.env === 'test') return;
+    this.timers = [
+      setTimeout(() => void this.run(), STARTUP_DELAY_MS).unref(),
+      setInterval(() => void this.run(), INTERVAL_MS).unref(),
+    ];
+  }
+
+  onApplicationShutdown(): void {
+    for (const timer of this.timers) clearTimeout(timer);
+  }
+
+  private async run(): Promise<void> {
+    try {
+      this.logger.log(`sync_mutations_pruned count=${await this.sync.pruneMutations()}`);
+    } catch (error) {
+      this.logger.warn(`sync_prune_failed ${error instanceof Error ? error.message : 'unknown'}`);
+    }
   }
 }
