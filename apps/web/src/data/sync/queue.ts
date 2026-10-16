@@ -16,6 +16,9 @@ import {
 
 export const PUSH_LIMIT = 200;
 
+/** Twice the transport timeout: a mutation `sending` longer than this lost its flush with its tab. */
+export const SENDING_STALE_MS = 60_000;
+
 export type LocalChange =
   | {
       readonly type: 'upsert';
@@ -155,6 +158,18 @@ export function requeueInFlight(
     .filter((mutation) => !only || only.includes(mutation.mutationId))
     .map((mutation) => mutation.mutationId);
   return sending.length === 0 ? state : setMutationState(state, sending, { status });
+}
+
+/** Mutations whose flush died with its tab; a younger `sending` one may be another tab's push. */
+export function staleSending(state: LocalState, now: number): string[] {
+  return [...state.mutations.values()]
+    .filter(
+      (mutation) =>
+        mutation.state.status === 'sending' &&
+        // A row stored before `since` existed parses to NaN and counts as stale.
+        !(now - Date.parse(mutation.state.since) < SENDING_STALE_MS),
+    )
+    .map((mutation) => mutation.mutationId);
 }
 
 export function countMutations(state: LocalState): { pending: number; failed: number } {

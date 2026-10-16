@@ -8,7 +8,9 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { createZodDto, ZodResponse } from 'nestjs-zod';
 import { type Actor, CurrentActor } from '../common/actor';
@@ -42,8 +44,14 @@ export class SyncController {
   @RateLimit('sync')
   @ApiBody({ type: PushDto })
   @ZodResponse({ status: 200, type: PushResponseDto })
-  async push(@CurrentActor() actor: Actor, @Body() body: PushDto) {
-    return { results: await this.sync.push(actor.userId, body.mutations) };
+  async push(
+    @CurrentActor() actor: Actor,
+    @Body() body: PushDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const gone = new AbortController();
+    res.on('close', () => gone.abort());
+    return { results: await this.sync.push(actor.userId, body.mutations, gone.signal) };
   }
 
   @Get('pull')

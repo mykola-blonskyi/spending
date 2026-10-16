@@ -1,6 +1,13 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, exists, gt, inArray, ne, not, sql } from 'drizzle-orm';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  type OnApplicationBootstrap,
+  type OnApplicationShutdown,
+} from '@nestjs/common';
+import { and, asc, desc, eq, exists, gt, inArray, lt, ne, not, sql } from 'drizzle-orm';
+import { APP_CONFIG, type AppConfig } from '../common/config';
 import { ApiError } from '../common/errors';
 import type { CurrencyCode } from '../common/money';
 import { DB, type Db, ledgerTransaction, type Tx } from '../database/database.module';
@@ -39,6 +46,11 @@ import {
   type RejectCode,
   type TransactionInput,
 } from './mutations';
+
+const MUTATION_RETENTION_DAYS = 180;
+
+/** A third of the web client's 30 s push timeout. */
+const PUSH_BUDGET_MS = 10_000;
 
 /** What `sync_mutations.result` keeps; replays rebuild the row view fresh (BR-18). */
 type Outcome =
@@ -84,10 +96,22 @@ export class SyncService {
     @Inject(FxService) private readonly fx: FxService,
   ) {}
 
-  /** Each mutation commits on its own, so one rejection never blocks the rest (ADR-006). */
-  async push(actorId: string, mutations: readonly Mutation[]): Promise<PushResult[]> {
+  /**
+   * Each mutation commits on its own, so one rejection never blocks the rest (ADR-006). A push
+   * answers only the mutations it reached once the client has gone (`gone`) or `budgetMs` has
+   * passed; the client sends the rest again at once. Finishing a batch nobody waits for, or one
+   * that outlasts the client's timeout, only queues more work behind the ledger lock.
+   */
+  async push(
+    actorId: string,
+    mutations: readonly Mutation[],
+    gone?: AbortSignal,
+    budgetMs = PUSH_BUDGET_MS,
+  ): Promise<PushResult[]> {
+    const started = Date.now();
     const results: PushResult[] = [];
     for (const mutation of mutations) {
+      if (gone?.aborted || (results.length > 0 && Date.now() - started > budgetMs)) break;
       results.push(
         await ledgerTransaction(this.db, async (tx) => {
           const [stored] = await tx
@@ -111,6 +135,20 @@ export class SyncService {
       );
     }
     return results;
+  }
+
+  /**
+   * BR-18. A replay of a pruned mutation is decided again on the row, which never duplicates it
+   * or overwrites a newer change (BR-19), so old outcomes need not be kept.
+   */
+  async pruneMutations(): Promise<number> {
+    const pruned = await this.db
+      .delete(syncMutations)
+      .where(
+        lt(syncMutations.createdAt, sql`now() - make_interval(days => ${MUTATION_RETENTION_DAYS})`),
+      )
+      .returning({ id: syncMutations.id });
+    return pruned.length;
   }
 
   /**
@@ -502,5 +540,40 @@ export class SyncService {
     return row
       ? { workspaceId: row.workspaceId, kind: row.kind, archived: row.archivedAt !== null }
       : null;
+  }
+}
+
+const STARTUP_DELAY_MS = 60_000;
+const INTERVAL_MS = 24 * 60 * 60_000;
+
+/** Prunes old mutation outcomes shortly after startup and daily. Off in tests, which call it. */
+@Injectable()
+export class SyncScheduler implements OnApplicationBootstrap, OnApplicationShutdown {
+  private readonly logger = new Logger('Sync');
+  private timers: NodeJS.Timeout[] = [];
+
+  constructor(
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+    @Inject(SyncService) private readonly sync: SyncService,
+  ) {}
+
+  onApplicationBootstrap(): void {
+    if (this.config.env === 'test') return;
+    this.timers = [
+      setTimeout(() => void this.run(), STARTUP_DELAY_MS).unref(),
+      setInterval(() => void this.run(), INTERVAL_MS).unref(),
+    ];
+  }
+
+  onApplicationShutdown(): void {
+    for (const timer of this.timers) clearTimeout(timer);
+  }
+
+  private async run(): Promise<void> {
+    try {
+      this.logger.log(`sync_mutations_pruned count=${await this.sync.pruneMutations()}`);
+    } catch (error) {
+      this.logger.warn(`sync_prune_failed ${error instanceof Error ? error.message : 'unknown'}`);
+    }
   }
 }

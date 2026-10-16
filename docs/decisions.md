@@ -259,3 +259,27 @@ English catalog (breaks on rename to an English word, and silently stores displa
 `systemKey` as the stable identifier; the CSV export writes the key for an unnamed category.
 Name uniqueness per `(workspaceId, kind)` covers stored names only, so a custom category may
 carry the same words as a default's localized name.
+
+## ADR-013: Prune sync mutation outcomes after 180 days instead of capping offline age
+
+Date: 2026-10-16
+
+**Context.** `sync_mutations` keeps every push outcome so a replay returns it (BR-18), and nothing
+removed rows, so the table grew forever. Pruning is safe only if a replay of a pruned mutation
+cannot duplicate a row or silently overwrite a newer change.
+
+**Decision.** A daily job deletes outcomes older than 180 days. A replay after that is decided
+again on the row: transaction IDs are client-chosen primary keys, so a create cannot duplicate; a
+create or update whose base version is older than the row answers applied if the row already
+holds that intent and a conflict otherwise (BR-19); a delete of a deleted row succeeds. An
+integration test replays pruned creates, updates and deletes to prove it.
+
+**Alternatives.**
+
+- Reject mutations older than a maximum offline age and force a resync: needs a client state and
+  a wipe of local edits, for a guarantee the row-level checks already give.
+- Keep every outcome: unbounded growth for no benefit after the client has its answer.
+
+**Consequences.** A device that stays unanswered for over 180 days may see a conflict for its own
+already-applied change, instead of the stored outcome. A rejected outcome is decided again and can
+now succeed if what made it fail was fixed.

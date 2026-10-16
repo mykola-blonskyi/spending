@@ -4,7 +4,7 @@ import type { PullPage, PushResult, QueuedMutation, WireMutation } from './model
 import { toWire } from './model';
 import { reducePull } from './pull';
 import { applyPushResults, reducePush } from './push';
-import { requeueInFlight, selectBatch, setMutationState } from './queue';
+import { requeueInFlight, selectBatch, setMutationState, staleSending } from './queue';
 import { type LocalStore, StoreClosedError, syncChannelName } from './store';
 
 export type SyncTransport = {
@@ -26,7 +26,7 @@ export type FlushLock = (run: () => Promise<void>) => Promise<void>;
 /**
  * Each flush holds the user's Web Lock while it runs, so any tab may flush and two never overlap.
  * Without Web Locks, flushes run uncoordinated: the server applies a mutation ID once, so a rare
- * overlapping push is harmless.
+ * overlapping push is harmless, and a flush leaves another tab's recent `sending` batch alone.
  */
 export function userFlushLock(userId: string, locks: LockManager | undefined): FlushLock {
   if (!locks) return (run) => run();
@@ -149,7 +149,9 @@ export class SyncEngine {
     this.#setStatus({ phase: 'syncing' });
     this.#unapplied = false;
     try {
-      await this.#store.commit(requeueInFlight);
+      await this.#store.commit((state) =>
+        requeueInFlight(state, 'retrying', staleSending(state, Date.now())),
+      );
       await this.#pushAll();
       await this.#pullAll();
       this.#attempt = 0;
@@ -183,7 +185,10 @@ export class SyncEngine {
         this.#sent = batch.map((mutation) => mutation.mutationId);
         return batch.length === 0
           ? state
-          : setMutationState(state, this.#sent, { status: 'sending' });
+          : setMutationState(state, this.#sent, {
+              status: 'sending',
+              since: new Date().toISOString(),
+            });
       });
       if (batch.length === 0) return;
       const results = await this.#send(batch);

@@ -11,14 +11,17 @@ import {
   transactions,
   users,
 } from '../src/database/schema';
+import { SyncService } from '../src/sync/sync.service';
 import { testDatabaseUrl } from './env';
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
 import {
   as,
   loginAs,
   resetData,
+  SESSION_COOKIE,
   type Session,
   startTestApp,
+  TEST_APP_ORIGIN,
   TEST_CLIENT,
   type TestApp,
 } from './harness';
@@ -187,6 +190,75 @@ describe('sync', () => {
 
     const [stolen] = await push(bob, mutation);
     expect(stolen).toMatchObject({ status: 'rejected', code: 'MUTATION_ID_REUSED' });
+  });
+
+  it('prunes old mutation outcomes, after which a replay neither duplicates nor overwrites', async () => {
+    const tx = draft(annPersonal);
+    const created = upsert(tx);
+    const edited = upsert({ ...tx, note: 'mine' }, 1);
+    const gone = draft(annPersonal);
+    const goneCreated = upsert(gone);
+    await push(ann, created, edited, goneCreated);
+    const removed = { ...remove(gone.id, 1) };
+    await push(ann, removed);
+    await push(ann, upsert({ ...tx, note: 'other device' }, 2));
+    await t.db.execute(sql`update sync_mutations set created_at = now() - interval '181 days'`);
+    const fresh = upsert(draft(annPersonal));
+    await push(ann, fresh);
+
+    expect(await t.app.get(SyncService).pruneMutations()).toBe(5);
+    expect((await t.db.select().from(syncMutations)).map((m) => m.id)).toEqual([fresh.mutationId]);
+
+    const replays = await push(ann, created, edited, goneCreated, removed);
+    expect(replays.map((r) => r.status)).toEqual(['conflict', 'conflict', 'conflict', 'applied']);
+    expect(await t.db.select().from(transactions)).toHaveLength(3);
+    expect(await serverRow(tx.id)).toMatchObject({ note: 'other device', version: 3 });
+    expect((await serverRow(gone.id)).deletedAt).not.toBeNull();
+  });
+
+  it('stops applying a push once its client has gone', async () => {
+    const slow = sql.raw(`create function zz_slow() returns trigger language plpgsql as $$
+      begin perform pg_sleep(0.05); return new; end $$;
+      create trigger zz_slow before insert on sync_mutations
+      for each row execute function zz_slow();`);
+    await t.db.execute(slow);
+    try {
+      const mutations = Array.from({ length: 100 }, () => upsert(draft(annPersonal)));
+      const request = fetch(`${t.baseUrl}/api/v1/sync/push`, {
+        method: 'POST',
+        headers: {
+          cookie: `${SESSION_COOKIE}=${ann.cookie}`,
+          'x-csrf-token': ann.csrf,
+          origin: TEST_APP_ORIGIN,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ mutations }),
+        signal: AbortSignal.timeout(300),
+      });
+      await expect(request).rejects.toThrow();
+      const stored = async () => (await t.db.select().from(syncMutations)).length;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const afterAbort = await stored();
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      expect(await stored()).toBe(afterAbort);
+      expect(afterAbort).toBeLessThan(100);
+    } finally {
+      await t.db.execute(
+        sql.raw('drop trigger zz_slow on sync_mutations; drop function zz_slow();'),
+      );
+    }
+  });
+
+  it('answers part of a push that runs past its time budget, leaving the rest for the client', async () => {
+    const mutations = [draft(annPersonal), draft(annPersonal), draft(annPersonal)].map((tx) =>
+      upsert(tx),
+    );
+    const sync = t.app.get(SyncService);
+    const first = await sync.push(ann.userId, mutations as never, undefined, 0);
+    expect(first.map((r) => r.mutationId)).toEqual([mutations[0]!.mutationId]);
+    const rest = await push(ann, ...mutations);
+    expect(rest.map((r) => r.status)).toEqual(['applied', 'applied', 'applied']);
+    expect(await t.db.select().from(transactions)).toHaveLength(3);
   });
 
   it('keeps every mutation of a batch independent', async () => {
