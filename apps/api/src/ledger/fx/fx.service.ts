@@ -193,6 +193,8 @@ export class FxService {
             order by date desc limit 1
           ) r
           where t.currency <> 'EUR' and t.deleted_at is null
+            -- Implied by the next line, stated so transactions_fx_pending_idx serves the scan.
+            and (t.fx_rate_date is null or t.fx_rate_date < t.occurred_on)
             and (t.fx_rate_date is null or t.fx_rate_date < r.date)
             and t.id > ${after}::uuid
           order by t.id

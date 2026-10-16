@@ -285,6 +285,8 @@ export const conflictViewSchema = z.object({
 });
 
 export const pullResponseSchema = z.object({
+  /** Changes when the server's data is restored from a backup; see BR-35. */
+  epoch: z.uuid(),
   workspaces: z.array(
     z.object({
       id: z.uuid(),

@@ -4,6 +4,7 @@ FROM postgres:18.6-alpine
 RUN apk add --no-cache rclone \
  && install -d -o postgres -g postgres -m 700 /backups
 COPY --chmod=755 deploy/backup.sh /usr/local/bin/backup.sh
+COPY --chmod=644 deploy/after-restore.sql /usr/local/share/spending/after-restore.sql
 USER postgres
 ENV BACKUP_DIR=/backups
 HEALTHCHECK --interval=10m --timeout=10s --start-period=10m --retries=1 \
