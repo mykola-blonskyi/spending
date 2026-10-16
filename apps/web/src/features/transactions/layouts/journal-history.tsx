@@ -1,4 +1,4 @@
-import { Plus, Search, SlidersHorizontal } from 'lucide-react';
+import { Search, SlidersHorizontal } from 'lucide-react';
 import { useId } from 'react';
 import { Link } from 'react-router';
 import { AuthorBadge } from '@features/family';
@@ -91,22 +91,7 @@ export function JournalHistory() {
 
   return (
     <div className="flex flex-col">
-      <PageHeader
-        title={t('pages.transactions.title')}
-        actions={
-          <Link
-            to="/transactions/new"
-            className={cn(
-              'flex h-9 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-transform duration-150 ease-out active:scale-[0.97] max-lg:hidden',
-              ring,
-            )}
-          >
-            <Plus aria-hidden className="size-4" />
-            {t('nav.addTransaction')}
-          </Link>
-        }
-        className="mb-4"
-      />
+      <PageHeader title={t('pages.transactions.title')} className="mb-4" />
 
       <div className="flex items-center gap-2">
         <label

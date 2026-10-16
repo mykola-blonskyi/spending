@@ -4,6 +4,7 @@ import { useSignOut } from '@features/auth';
 import { useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
 import { UserAvatar } from '@shared/components';
+import { cn } from '@shared/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@shared/ui/dropdown-menu';
 
-export function UserMenu() {
+export function UserMenu({ showName = true }: { showName?: boolean }) {
   const t = useTranslations();
   const profile = useProfile();
   const signOut = useSignOut();
@@ -23,12 +24,17 @@ export function UserMenu() {
       <DropdownMenu>
         <DropdownMenuTrigger
           aria-label={t('userMenu.label', { name: profile.displayName })}
-          className="flex h-10 max-w-56 items-center gap-2 rounded-full p-1 transition-colors duration-150 outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/60 sm:pr-3"
+          className={cn(
+            'flex h-10 max-w-56 items-center gap-2 rounded-full p-1 transition-colors duration-150 outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/60',
+            showName && 'sm:pr-3',
+          )}
         >
           <UserAvatar user={profile} />
-          <span className="hidden truncate text-sm font-medium sm:inline">
-            {profile.displayName}
-          </span>
+          {showName && (
+            <span className="hidden truncate text-sm font-medium sm:inline">
+              {profile.displayName}
+            </span>
+          )}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-60">
           <DropdownMenuLabel className="flex flex-col gap-0.5 font-normal">

@@ -1,4 +1,4 @@
-import { Plus, Search, SlidersHorizontal } from 'lucide-react';
+import { Search, SlidersHorizontal } from 'lucide-react';
 import { useId } from 'react';
 import { Link } from 'react-router';
 import { AuthorBadge } from '@features/family';
@@ -168,14 +168,6 @@ export function CalmHistory() {
       <PageHeader
         title={t('pages.transactions.title')}
         description={t('pages.transactions.description')}
-        actions={
-          <Button asChild className="max-lg:hidden">
-            <Link to="/transactions/new">
-              <Plus aria-hidden />
-              {t('nav.addTransaction')}
-            </Link>
-          </Button>
-        }
       />
 
       <CalmToolbar history={history} />

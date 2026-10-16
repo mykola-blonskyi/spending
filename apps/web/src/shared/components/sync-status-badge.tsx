@@ -73,7 +73,16 @@ const APPEARANCE: Record<SyncStatus['state'], Appearance> = {
   },
 };
 
-export function SyncStatusBadge({ status, className }: { status: SyncStatus; className?: string }) {
+export function SyncStatusBadge({
+  status,
+  compact = false,
+  className,
+}: {
+  status: SyncStatus;
+  /** Icon only, the label kept for screen readers. */
+  compact?: boolean;
+  className?: string;
+}) {
   const { strings } = useSharedLocale();
   const appearance = APPEARANCE[status.state];
   const Icon = appearance.icon;
@@ -82,13 +91,13 @@ export function SyncStatusBadge({ status, className }: { status: SyncStatus; cla
       role="status"
       data-state={status.state}
       className={cn(
-        'inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium whitespace-nowrap',
+        'inline-flex h-7 max-w-full items-center gap-1.5 rounded-full px-2.5 text-xs font-medium whitespace-nowrap',
         appearance.tone,
         className,
       )}
     >
-      <Icon aria-hidden className={cn('size-3.5', appearance.spin && 'animate-spin')} />
-      {appearance.label(status, strings)}
+      <Icon aria-hidden className={cn('size-3.5 shrink-0', appearance.spin && 'animate-spin')} />
+      <span className={compact ? 'sr-only' : 'truncate'}>{appearance.label(status, strings)}</span>
     </span>
   );
 }

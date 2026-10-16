@@ -1,8 +1,5 @@
-import { Plus } from 'lucide-react';
-import { Link } from 'react-router';
 import { useTranslations } from '@i18n/index';
 import { PageHeader } from '@shared/components';
-import { Button } from '@shared/ui/button';
 import { MasterDetail } from '../blocks';
 import { useHistory } from '../use-history';
 import { CalmDay, CalmRow, CalmToolbar } from './calm-history';
@@ -19,14 +16,6 @@ export function HybridHistory() {
           <PageHeader
             title={t('pages.transactions.title')}
             description={t('pages.transactions.description')}
-            actions={
-              <Button asChild className="max-lg:hidden">
-                <Link to="/transactions/new">
-                  <Plus aria-hidden />
-                  {t('nav.addTransaction')}
-                </Link>
-              </Button>
-            }
           />
           <CalmToolbar history={history} />
         </div>

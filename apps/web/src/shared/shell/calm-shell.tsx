@@ -67,7 +67,7 @@ export function CalmShell({
         <main
           id={MAIN_ID}
           tabIndex={-1}
-          className="mx-auto w-full max-w-5xl flex-1 px-4 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))] outline-none sm:px-6 lg:px-10 lg:pt-2 lg:pb-12"
+          className="@container/main mx-auto w-full max-w-5xl flex-1 px-4 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))] outline-none sm:px-6 lg:px-10 lg:pt-2 lg:pb-12"
         >
           {children}
         </main>

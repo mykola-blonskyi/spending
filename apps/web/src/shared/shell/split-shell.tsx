@@ -73,7 +73,7 @@ export function SplitShell({
         <main
           id={MAIN_ID}
           tabIndex={-1}
-          className="min-h-0 flex-1 px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] outline-none lg:overflow-y-auto lg:px-6 lg:pt-6 lg:pb-6"
+          className="@container/main relative min-h-0 flex-1 px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] outline-none lg:overflow-y-auto lg:px-6 lg:pt-6 lg:pb-6"
         >
           {children}
         </main>
