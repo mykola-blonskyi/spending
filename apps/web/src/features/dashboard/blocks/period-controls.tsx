@@ -34,10 +34,10 @@ export function PeriodControls({
           const chosen = PERIOD_KINDS.find((option) => option === kind);
           if (chosen) dashboard.choosePeriodKind(chosen);
         }}
-        className="w-full sm:w-auto"
+        className="w-full @xl/main:w-auto"
       >
         {PERIOD_KINDS.map((kind) => (
-          <ToggleGroupItem key={kind} value={kind} className="h-10 flex-1 px-3 sm:flex-none">
+          <ToggleGroupItem key={kind} value={kind} className="h-10 flex-1 px-3 @xl/main:flex-none">
             {t(kind)}
           </ToggleGroupItem>
         ))}
@@ -124,10 +124,10 @@ export function ScopeSwitch({
         const chosen = DASHBOARD_SCOPES.find((option) => option === scope);
         if (chosen) dashboard.setScope(chosen);
       }}
-      className={cn('w-full sm:w-auto', className)}
+      className={cn('w-full @xl/main:w-auto', className)}
     >
       {DASHBOARD_SCOPES.map((scope) => (
-        <ToggleGroupItem key={scope} value={scope} className="h-10 flex-1 px-3 sm:flex-none">
+        <ToggleGroupItem key={scope} value={scope} className="h-10 flex-1 px-3 @xl/main:flex-none">
           {t(scope)}
         </ToggleGroupItem>
       ))}

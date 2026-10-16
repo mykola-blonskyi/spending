@@ -100,7 +100,7 @@ export function BentoShell({
         <main
           id={MAIN_ID}
           tabIndex={-1}
-          className="mx-auto w-full max-w-[1280px] flex-1 px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] outline-none lg:px-8 lg:pt-6 lg:pb-8"
+          className="@container/main mx-auto w-full max-w-[1280px] flex-1 px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] outline-none lg:px-8 lg:pt-6 lg:pb-8"
         >
           {children}
         </main>

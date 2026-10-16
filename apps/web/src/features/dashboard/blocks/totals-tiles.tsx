@@ -29,7 +29,7 @@ export function TotalsTiles({
   const { previous } = summary;
   return (
     <Section title={t('title')} className={className}>
-      <dl className="grid gap-3 sm:grid-cols-3">
+      <dl className="grid gap-3 @xl/main:grid-cols-3">
         {TOTALS.map(({ key, minor }) => (
           <div key={key} className={cn('flex flex-col gap-1', tileClassName)}>
             <dt className="text-sm text-muted-foreground">{t(key)}</dt>

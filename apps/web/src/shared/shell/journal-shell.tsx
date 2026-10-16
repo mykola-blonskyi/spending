@@ -123,7 +123,7 @@ export function JournalShell({
         <main
           id={MAIN_ID}
           tabIndex={-1}
-          className="mx-auto w-full max-w-[640px] flex-1 px-4 pt-6 pb-20 outline-none lg:px-0 lg:pt-10 [&_h1]:font-serif [&_h1]:tracking-[-0.005em]"
+          className="@container/main mx-auto w-full max-w-[640px] flex-1 px-4 pt-6 pb-20 outline-none lg:px-0 lg:pt-10 [&_h1]:font-serif [&_h1]:tracking-[-0.005em]"
         >
           {children}
         </main>

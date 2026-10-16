@@ -43,7 +43,7 @@ export function CardsShell({
         <main
           id={MAIN_ID}
           tabIndex={-1}
-          className="flex-1 px-4 pt-4 pb-[calc(9rem+env(safe-area-inset-bottom))] outline-none"
+          className="@container/main flex-1 px-4 pt-4 pb-[calc(9rem+env(safe-area-inset-bottom))] outline-none"
         >
           {children}
         </main>
