@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router';
 import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@data/api-error';
-import { deleteAccount, fetchExport } from '@data/data-rights';
+import { type DataExport, deleteAccount, fetchExport, fetchExportData } from '@data/data-rights';
 import { clearLocalUserData } from '@data/local-data';
 import { createQueryClient } from '@data/query-client';
 import { testSession } from '@data/testing';
@@ -20,8 +20,48 @@ vi.mock('@data/local-data', () => ({ clearLocalUserData: vi.fn() }));
 vi.mock(import('@data/data-rights'), async (importOriginal) => ({
   ...(await importOriginal()),
   fetchExport: vi.fn(),
+  fetchExportData: vi.fn(),
   deleteAccount: vi.fn(),
 }));
+
+const stamp = { revision: 1, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' };
+const exportDocument = {
+  workspaces: [{ id: 'w', kind: 'personal', name: null, role: 'owner', members: [] }],
+  accounts: [],
+  categories: [
+    {
+      id: 'c',
+      workspaceId: 'w',
+      name: null,
+      kind: 'expense',
+      color: '#16a34a',
+      icon: 'tag',
+      systemKey: 'groceries',
+      archivedAt: null,
+      ...stamp,
+    },
+  ],
+  transactions: [
+    {
+      id: 't',
+      workspaceId: 'w',
+      kind: 'expense',
+      amountMinor: 150,
+      currency: 'EUR',
+      baseAmountMinor: 150,
+      fx: null,
+      occurredOn: '2026-10-01',
+      accountId: null,
+      categoryId: 'c',
+      description: 'Bread',
+      note: '',
+      source: 'manual',
+      scope: 'personal',
+      reviewStatus: 'confirmed',
+      author: { userId: 'u', displayName: 'Ann' },
+    },
+  ],
+} as unknown as DataExport;
 
 function setup() {
   render(
@@ -48,8 +88,9 @@ beforeEach(() => {
 });
 
 describe('DataRightsSection', () => {
-  it('downloads the JSON and CSV exports', async () => {
+  it('downloads the JSON file and builds the CSV on the device', async () => {
     vi.mocked(fetchExport).mockResolvedValue(new Blob(['x']));
+    vi.mocked(fetchExportData).mockResolvedValue(exportDocument);
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
     setup();
 
@@ -57,7 +98,12 @@ describe('DataRightsSection', () => {
     await userEvent.click(screen.getByRole('button', { name: /Download CSV/ }));
 
     await waitFor(() => expect(click).toHaveBeenCalledTimes(2));
-    expect(vi.mocked(fetchExport).mock.calls.map(([format]) => format)).toEqual(['json', 'csv']);
+    expect(fetchExport).toHaveBeenCalledTimes(1);
+    const blobs = vi.mocked(URL.createObjectURL).mock.calls.map(([blob]) => blob as Blob);
+    expect(blobs[1]!.type).toBe('text/csv;charset=utf-8');
+    const csv = await blobs[1]!.text();
+    expect(csv.startsWith('﻿Date,Type,Amount,Currency,EUR amount,')).toBe(true);
+    expect(csv).toContain('2026-10-01,expense,1.50,EUR,1.50,,,personal,,,Groceries,Bread,,manual,Ann');
   });
 
   it('explains the consequences and keeps deletion locked until the phrase is typed', async () => {

@@ -64,6 +64,9 @@ function renderPage(page: React.ReactNode, locale: 'en' | 'uk' = 'en') {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Radix Select opens on pointer events jsdom does not implement.
+  Element.prototype.hasPointerCapture = () => false;
+  Element.prototype.scrollIntoView = () => {};
   admin.create.mockResolvedValue(true);
   admin.update.mockResolvedValue(true);
   admin.archive.mockResolvedValue(true);
@@ -198,18 +201,75 @@ describe('CategoriesPage', () => {
     renderPage(<CategoriesPage />);
     await userEvent.click(screen.getByRole('button', { name: 'Add category' }));
     const dialog = screen.getByRole('dialog', { name: 'New category' });
-    await userEvent.type(within(dialog).getByLabelText('Name'), 'Pets');
+    await userEvent.type(within(dialog).getByLabelText('Name'), 'Garden');
     await userEvent.click(within(dialog).getByRole('radio', { name: '#db2777' }));
     await userEvent.click(within(dialog).getByRole('radio', { name: 'pizza' }));
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
 
     expect(admin.create).toHaveBeenCalledWith({
       workspaceId: PERSONAL.id,
-      name: 'Pets',
+      name: 'Garden',
       kind: 'expense',
       color: '#db2777',
       icon: 'pizza',
     });
+  });
+
+  it('refuses a name a category of the same type already shows, and reveals that one', async () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    renderPage(<CategoriesPage />);
+    await userEvent.click(screen.getByRole('button', { name: 'Add category' }));
+    const dialog = screen.getByRole('dialog', { name: 'New category' });
+    await userEvent.type(within(dialog).getByLabelText('Name'), '  groceries ');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+
+    expect(within(dialog).getByText('This category already exists.')).toBeInTheDocument();
+    expect(admin.create).not.toHaveBeenCalled();
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Show it' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    const row = screen.getByText('Groceries').closest('li');
+    expect(row).toHaveAttribute('data-highlighted');
+    expect(scrollIntoView.mock.instances[0]).toBe(row);
+  });
+
+  it('compares against the localized name of a default', async () => {
+    renderPage(<CategoriesPage />, 'uk');
+    await userEvent.click(screen.getByRole('button', { name: 'Додати категорію' }));
+    const dialog = screen.getByRole('dialog');
+    await userEvent.type(within(dialog).getByLabelText('Назва'), 'продукти');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Зберегти' }));
+    expect(within(dialog).getByText('Така категорія вже є.')).toBeInTheDocument();
+    expect(admin.create).not.toHaveBeenCalled();
+  });
+
+  it('allows the same name for the other type', async () => {
+    renderPage(<CategoriesPage />);
+    await userEvent.click(screen.getByRole('button', { name: 'Add category' }));
+    const dialog = screen.getByRole('dialog', { name: 'New category' });
+    await userEvent.type(within(dialog).getByLabelText('Name'), 'Groceries');
+    await userEvent.click(within(dialog).getByRole('combobox', { name: 'Type' }));
+    await userEvent.click(await screen.findByRole('option', { name: 'Income' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    expect(admin.create).toHaveBeenCalledWith(expect.objectContaining({ kind: 'income' }));
+  });
+
+  it('blocks renaming onto another category but allows saving the own name', async () => {
+    renderPage(<CategoriesPage />);
+    await userEvent.click(screen.getByRole('button', { name: 'Edit Pets' }));
+    const dialog = screen.getByRole('dialog', { name: 'Edit category' });
+    const name = within(dialog).getByLabelText('Name');
+    await userEvent.clear(name);
+    await userEvent.type(name, 'groceries');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    expect(within(dialog).getByText('This category already exists.')).toBeInTheDocument();
+    expect(admin.update).not.toHaveBeenCalled();
+
+    await userEvent.clear(name);
+    await userEvent.type(name, 'Pets');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    expect(admin.update).toHaveBeenCalledWith('c-3', expect.objectContaining({ name: 'Pets' }));
   });
 
   it('restores an archived category directly', async () => {
