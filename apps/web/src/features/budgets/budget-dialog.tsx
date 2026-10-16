@@ -1,7 +1,13 @@
 import { useId, useState } from 'react';
 import { useCategories, useWorkspaces } from '@data/sync';
 import { useTranslations } from '@i18n/index';
-import { currencyExponent, minorToDecimalString, parseAmount } from '@shared/format';
+import {
+  currencyExponent,
+  decimalSeparator,
+  minorToDecimalString,
+  parseAmount,
+} from '@shared/format';
+import { useSharedLocale } from '@shared/lib/locale-context';
 import { Button } from '@shared/ui/button';
 import {
   Dialog,
@@ -50,6 +56,7 @@ export function BudgetDialog({
 }
 
 function BudgetForm({ mode, onDone }: { mode: BudgetDialogMode; onDone: () => void }) {
+  const { locale } = useSharedLocale();
   const t = useTranslations();
   const base = useId();
   const workspaces = useWorkspaces().items;
@@ -66,7 +73,12 @@ function BudgetForm({ mode, onDone }: { mode: BudgetDialogMode; onDone: () => vo
   const categoryId =
     editing?.categoryId ?? choices.find((c) => c.id === chosenId)?.id ?? choices[0]?.id;
   const [limit, setLimit] = useState(
-    editing ? minorToDecimalString(editing.amountMinor, currencyExponent(BUDGET_CURRENCY)) : '',
+    editing
+      ? minorToDecimalString(editing.amountMinor, currencyExponent(BUDGET_CURRENCY)).replace(
+          '.',
+          decimalSeparator(locale),
+        )
+      : '',
   );
   const [limitError, setLimitError] = useState(false);
 

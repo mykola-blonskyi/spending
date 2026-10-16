@@ -92,3 +92,11 @@ export function parseAmount(text: string, exponent: number): number | null {
   const minor = Number(whole + fraction.padEnd(exponent, '0'));
   return minor > 0 && minor <= MAX_AMOUNT_MINOR ? minor : null;
 }
+
+/** The decimal mark this locale writes, for the keypad label and the shown amount. */
+export function decimalSeparator(locale: string): string {
+  return (
+    new Intl.NumberFormat(locale).formatToParts(1.5).find((part) => part.type === 'decimal')
+      ?.value ?? '.'
+  );
+}

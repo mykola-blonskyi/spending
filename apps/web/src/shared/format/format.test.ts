@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   currencyExponent,
+  decimalSeparator,
   formatDate,
   formatMoney,
   formatMonth,
@@ -158,5 +159,16 @@ describe('parseAmount', () => {
   it('round-trips through the editable text', () => {
     expect(parseAmount(minorToDecimalString(1250, 2), 2)).toBe(1250);
     expect(minorToDecimalString(5, 2)).toBe('0.05');
+  });
+});
+
+describe('decimalSeparator', () => {
+  it.each([
+    ['en', '.'],
+    ['uk', ','],
+    ['ru', ','],
+    ['es', ','],
+  ])('is the %s mark', (locale, mark) => {
+    expect(decimalSeparator(locale)).toBe(mark);
   });
 });

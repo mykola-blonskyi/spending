@@ -7,7 +7,8 @@ import { useWorkspaces } from '@data/sync';
 import { useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
 import { EmptyState, LoadingState, PageHeader } from '@shared/components';
-import { todayIn } from '@shared/format';
+import { decimalSeparator, todayIn } from '@shared/format';
+import { useSharedLocale } from '@shared/lib/locale-context';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Button } from '@shared/ui/button';
 import { type RuleFormValues, valuesFromRule } from './form-values';
@@ -70,6 +71,7 @@ export function NewRulePage() {
 
 export function EditRulePage() {
   const t = useTranslations();
+  const { locale } = useSharedLocale();
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const query = useQuery(rulesQuery);
@@ -113,7 +115,7 @@ export function EditRulePage() {
       </Alert>
       <RuleForm
         key={rule.id}
-        initial={valuesFromRule(rule)}
+        initial={valuesFromRule(rule, decimalSeparator(locale))}
         workspaceId={rule.workspaceId}
         scopes={null}
         submitLabel={t('recurring.form.save')}

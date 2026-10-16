@@ -87,11 +87,3 @@ export function pressKey(amount: string, key: KeypadKey, exponent: number): stri
   // One digit short of the cap's, so every amount the keypad builds is within it (BR-13).
   return whole.length < String(MAX_AMOUNT_MINOR).length - 1 - exponent ? amount + key : amount;
 }
-
-/** The decimal mark this locale writes, for the keypad label and the shown amount. */
-export function decimalSeparator(locale: string): string {
-  return (
-    new Intl.NumberFormat(locale).formatToParts(1.5).find((part) => part.type === 'decimal')
-      ?.value ?? '.'
-  );
-}

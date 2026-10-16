@@ -71,8 +71,27 @@ describe('valuesFromRule', () => {
       endsOn: '2026-12-28',
       timezone: 'Asia/Tokyo',
     } as Rule;
-    const form = valuesFromRule(rule);
+    const form = valuesFromRule(rule, '.');
     expect(form).toMatchObject({ amount: '123456', interval: '2', endsOn: '2026-12-28' });
     expect(ruleFromValues(form, 'ws')).toMatchObject({ ok: true, input: { amountMinor: 123456 } });
+  });
+
+  it('writes the amount with the locale decimal mark and reads it back', () => {
+    const rule = {
+      kind: 'expense',
+      amountMinor: 1250,
+      currency: 'EUR',
+      accountId: null,
+      categoryId: null,
+      description: 'Gym',
+      frequency: 'monthly',
+      interval: 1,
+      startsOn: '2026-01-05',
+      endsOn: '',
+      timezone: 'Europe/Madrid',
+    } as unknown as Rule;
+    const form = valuesFromRule(rule, ',');
+    expect(form.amount).toBe('12,50');
+    expect(ruleFromValues(form, 'ws')).toMatchObject({ ok: true, input: { amountMinor: 1250 } });
   });
 });

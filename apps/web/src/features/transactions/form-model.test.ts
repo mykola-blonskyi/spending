@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseAmount } from '@shared/format';
-import {
-  decimalSeparator,
-  type FormValues,
-  type KeypadKey,
-  pressKey,
-  validate,
-  valuesFromDraft,
-} from './form-model';
+import { type FormValues, type KeypadKey, pressKey, validate, valuesFromDraft } from './form-model';
 
 const values: FormValues = {
   kind: 'expense',
@@ -83,17 +76,6 @@ describe('pressKey', () => {
     const amount = press(Array<KeypadKey>(20).fill('9'), exponent);
     expect(amount).toHaveLength(12 - exponent);
     expect(parseAmount(`${amount}.${'9'.repeat(exponent)}`, exponent)).not.toBeNull();
-  });
-});
-
-describe('decimalSeparator', () => {
-  it.each([
-    ['en', '.'],
-    ['uk', ','],
-    ['ru', ','],
-    ['es', ','],
-  ])('is the %s mark', (locale, mark) => {
-    expect(decimalSeparator(locale)).toBe(mark);
   });
 });
 
