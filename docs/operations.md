@@ -196,6 +196,19 @@ docker compose --env-file deploy/smoke.env -f docker-compose.yml \
    REVOKE ALL ON DATABASE spending FROM PUBLIC;
    ```
 
+   Log slow statements (500 ms or longer) without their bind parameters, so amounts and notes
+   never reach the log. The settings belong to the database, so set them again on any database
+   that replaces it (see the restore steps):
+
+   ```sql
+   ALTER DATABASE spending SET log_min_duration_statement = '500ms';
+   ALTER DATABASE spending SET log_parameter_max_length = 0;
+   ```
+
+   Read them with `docker logs 3p9qjnulllqn3bcjqokir0wq 2>&1 | grep 'duration:'`. Undo with
+   `ALTER DATABASE spending RESET log_min_duration_statement;` and
+   `ALTER DATABASE spending RESET log_parameter_max_length;`.
+
    `DATABASE_URL` is `postgres://spending_app:<generated>@3p9qjnulllqn3bcjqokir0wq:5432/spending`.
    Use the container name, never the `postgres` alias, which other stacks on the shared network
    may also answer to.
@@ -334,7 +347,9 @@ docker exec "$BACKUP" ls -l /backups/daily /backups/weekly /backups/pre-migrate
 
 docker exec -i 3p9qjnulllqn3bcjqokir0wq psql -U postgres \
   -c 'CREATE DATABASE spending_restore OWNER spending_app;' \
-  -c 'REVOKE ALL ON DATABASE spending_restore FROM PUBLIC;'
+  -c 'REVOKE ALL ON DATABASE spending_restore FROM PUBLIC;' \
+  -c "ALTER DATABASE spending_restore SET log_min_duration_statement = '500ms';" \
+  -c 'ALTER DATABASE spending_restore SET log_parameter_max_length = 0;'
 
 # DATABASE_URL is expanded inside the container, so it never reaches your shell history.
 docker exec "$BACKUP" sh -c 'pg_restore --dbname="${DATABASE_URL%/*}/spending_restore" \
