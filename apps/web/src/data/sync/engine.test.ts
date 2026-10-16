@@ -18,7 +18,7 @@ import {
   queueOrder,
   type WireMutation,
 } from './model';
-import { applyLocalChange, requeueInFlight, setMutationState } from './queue';
+import { applyLocalChange, requeueInFlight, SENDING_STALE_MS, setMutationState } from './queue';
 import { LocalStore } from './store';
 import { apiTransport, SYNC_TIMEOUT_MS } from './transport';
 import { deleteTransaction, recordTransaction, updateTransaction } from './writes';
@@ -266,6 +266,44 @@ describe('SyncEngine', () => {
       'queued',
       'sending',
     ]);
+  });
+
+  it('leaves another tab’s push in flight alone when it starts a flush', async () => {
+    store = await LocalStore.open('ann');
+    const local = store;
+    const id = await recordTransaction(local, { ...draft, description: 'theirs' });
+    const theirs = mutationsFor(local.state, id).map((mutation) => mutation.mutationId);
+    const since = new Date().toISOString();
+    await local.commit((state) => setMutationState(state, theirs, { status: 'sending', since }));
+    const server = fakeServer();
+    const engine = new SyncEngine(local, server.transport);
+
+    await engine.flush();
+    await updateTransaction(local, id, { ...draft, description: 'edited' });
+    engine.stop();
+
+    expect(server.pushes).toEqual([]);
+    expect(mutationsFor(local.state, id).map((mutation) => mutation.state.status)).toEqual([
+      'sending',
+      'queued',
+    ]);
+  });
+
+  it('replays a push left sending by a tab that closed mid-flush', async () => {
+    store = await LocalStore.open('ann');
+    const local = store;
+    const id = await recordTransaction(local, { ...draft, description: 'orphaned' });
+    const orphaned = mutationsFor(local.state, id).map((mutation) => mutation.mutationId);
+    const since = new Date(Date.now() - SENDING_STALE_MS - 1).toISOString();
+    await local.commit((state) => setMutationState(state, orphaned, { status: 'sending', since }));
+    const server = fakeServer();
+    const engine = new SyncEngine(local, server.transport);
+
+    await engine.flush();
+    engine.stop();
+
+    expect(server.pushes.map(described)).toEqual([['orphaned']]);
+    expect(local.state.mutations.size).toBe(0);
   });
 
   it('gives up a hung push, so the lock passes to the next flush', async () => {

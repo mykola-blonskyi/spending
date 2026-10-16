@@ -156,8 +156,9 @@ describe('smoothingDelay', () => {
   it.each<[string, SyncStatus, SyncStatus, number, number]>([
     ['syncing waits 300 ms', syncing, pending, 5000, 300],
     ['a count change shows at once', { state: 'pending', count: 2 }, pending, 0, 0],
-    ['synced holds 600 ms', pending, synced, 100, 500],
-    ['synced holds against syncing too', syncing, synced, 0, 600],
+    ['a pending change replaces synced at once', pending, synced, 100, 0],
+    ['going offline replaces synced at once', offline, synced, 100, 0],
+    ['synced holds 600 ms against syncing', syncing, synced, 0, 600],
     ['after the hold, the next state shows at once', offline, synced, 700, 0],
     ['leaving syncing is immediate', synced, syncing, 0, 0],
   ])('%s', (_, next, shown, shownFor, expected) => {
