@@ -29,6 +29,7 @@ type Summary = {
   byCategory: {
     categoryId: string | null;
     name: string | null;
+    systemKey: string | null;
     amountMinor: number;
     share: number;
   }[];
@@ -146,10 +147,12 @@ describe('analytics', () => {
       balanceMinor: 288_000,
     });
     expect(all.unconverted).toEqual([{ currency: 'ARS', incomeMinor: 0, expenseMinor: 90_000 }]);
-    expect(all.byCategory.map((c) => [c.categoryId, c.name, c.amountMinor, c.share])).toEqual([
-      [annGroceries, 'Groceries', 7_000, 0.5833],
-      [familyGroceries, 'Groceries', 5_000, 0.4167],
-      [expect.any(String), 'Salary', 300_000, 1],
+    expect(
+      all.byCategory.map((c) => [c.categoryId, c.name, c.systemKey, c.amountMinor, c.share]),
+    ).toEqual([
+      [annGroceries, null, 'groceries', 7_000, 0.5833],
+      [familyGroceries, null, 'groceries', 5_000, 0.4167],
+      [expect.any(String), null, 'salary', 300_000, 1],
     ]);
     expect(all.series).toHaveLength(31);
     expect(all.series[1]).toEqual({ bucket: '2026-10-02', incomeMinor: 0, expenseMinor: 5_000 });

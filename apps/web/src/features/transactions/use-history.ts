@@ -49,16 +49,18 @@ export function useHistory() {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const text = useDeferredValue(filters.text);
   const { kind, from, to, categoryId, accountId, currency } = filters;
-  const query = useMemo(
-    () => toQuery({ text, kind, from, to, categoryId, accountId, currency }),
-    [text, kind, from, to, categoryId, accountId, currency],
-  );
+  const categories = useCategoryViews();
+  const query = useMemo(() => {
+    const base = toQuery({ text, kind, from, to, categoryId, accountId, currency });
+    if (!base.text) return base;
+    const categoryNames = new Map([...categories.byId].map(([id, c]) => [id, c.name]));
+    return { ...base, categoryNames };
+  }, [text, kind, from, to, categoryId, accountId, currency, categories.byId]);
 
   const localStatus = useLocalDataStatus();
   const transactions = useLocalTransactions(query);
   const initialSync = useInitialSync();
   const context = useRowContext();
-  const categories = useCategoryViews();
   const accounts = useAccounts();
 
   const rows = useMemo(

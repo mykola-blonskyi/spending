@@ -9,7 +9,7 @@ export function bulkCategoryChoice(
   choice: Choice,
   kind: Category['kind'],
   bulkScope: Scope,
-  category: Category,
+  category: Pick<Category, 'id' | 'kind'>,
 ): Choice {
   if (choice.scope !== bulkScope || kind !== category.kind) return choice;
   return { ...choice, categoryId: category.id };

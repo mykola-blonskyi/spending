@@ -1,6 +1,16 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { memberships, transactions, users, workspaces } from '../src/database/schema';
+import {
+  budgets,
+  categories,
+  invitations,
+  memberships,
+  recurringRules,
+  syncConflicts,
+  transactions,
+  users,
+  workspaces,
+} from '../src/database/schema';
 import { ledgerTransaction } from '../src/database/database.module';
 import { resetData, startTestApp, type TestApp } from './harness';
 
@@ -122,6 +132,73 @@ describe('schema invariants', () => {
     await expect(
       t.db.insert(transactions).values({ ...baseTx(workspace.id), currency: 'eur' }),
     ).rejects.toThrow();
+  });
+
+  it('enforces the documented invariants the services already check', async () => {
+    const { user, workspace } = await userWithWorkspace('ck');
+    const violated = (write: PromiseLike<unknown>) =>
+      Promise.resolve(write).then(
+        () => 'none',
+        (error: Error) => (error.cause as { constraint?: string }).constraint,
+      );
+    const tooBig = 1_000_000_000_001;
+    expect(
+      await violated(
+        t.db
+          .insert(transactions)
+          .values({ ...baseTx(workspace.id), amountMinor: tooBig, baseAmountMinor: tooBig }),
+      ),
+    ).toBe('transactions_amount_ck');
+    const [category] = await t.db
+      .insert(categories)
+      .values({ workspaceId: workspace.id, name: 'Food', kind: 'expense', color: 'c', icon: 'i' })
+      .returning();
+    expect(
+      await violated(
+        t.db
+          .insert(budgets)
+          .values({ workspaceId: workspace.id, categoryId: category!.id, amountMinor: tooBig }),
+      ),
+    ).toBe('budgets_amount_ck');
+    const rule = {
+      workspaceId: workspace.id,
+      kind: 'expense' as const,
+      amountMinor: 100,
+      currency: 'EUR',
+      frequency: 'monthly' as const,
+      startsOn: '2026-10-01',
+      timezone: 'Europe/Berlin',
+    };
+    expect(
+      await violated(t.db.insert(recurringRules).values({ ...rule, amountMinor: tooBig })),
+    ).toBe('recurring_amount_ck');
+    expect(
+      await violated(t.db.insert(recurringRules).values({ ...rule, endsOn: '2026-09-30' })),
+    ).toBe('recurring_ends_after_start_ck');
+    expect(
+      await violated(
+        t.db.insert(invitations).values({
+          workspaceId: workspace.id,
+          tokenHash: 'h',
+          expiresAt: new Date(),
+          acceptedAt: new Date(),
+          revokedAt: new Date(),
+        }),
+      ),
+    ).toBe('invitations_settled_once_ck');
+    const [row] = await t.db.insert(transactions).values(baseTx(workspace.id)).returning();
+    expect(
+      await violated(
+        t.db.insert(syncConflicts).values({
+          transactionId: row!.id,
+          userId: user.id,
+          baseVersion: 1,
+          serverVersion: 1,
+          local: {},
+          status: 'resolved',
+        }),
+      ),
+    ).toBe('sync_conflicts_resolution_ck');
   });
 
   it('requires a conversion unless the rate is genuinely missing', async () => {

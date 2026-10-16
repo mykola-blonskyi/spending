@@ -203,7 +203,8 @@ edited through REST and arrive through pull like transactions.
   revision sequence, so each is read with `limit + 1` rows. If any overflows, the page stops at
   the smallest `limit`-th revision among the overflowing sources, and `hasMore` is true. The
   returned `cursor` is the page's last revision (the input cursor when nothing changed).
-  Pending-review rows are included; the client hides them.
+  Pending-review rows are included; the client hides them. Every page also carries `epoch`, the
+  uuid in the single-row `sync_epoch` table, which only `deploy/after-restore.sql` changes.
 - **Moves.** When an author moves a row to their other workspace, a `sync_tombstones` row for the
   workspace it left is written at the move's revision, and other users' open conflicts on it are
   dropped. Members of that workspace pull it once as a tombstone in `transactions`. Later edits
@@ -213,7 +214,13 @@ edited through REST and arrive through pull like transactions.
 - **Client duties.** Drop local rows of workspaces missing from `workspaces` (BR-17). An entry
   there with a pending change stays, its latest change failed with the client-only code
   `NO_ACCESS` until the user discards it. When a new workspace id appears (the user joined a
-  family), reset the cursor to 0, because that workspace's rows predate the cursor.
+  family), reset the cursor to 0, because that workspace's rows predate the cursor. When `epoch`
+  differs from the stored one (BR-35), discard the page, drop every cached server row (accounts,
+  categories, conflicts, and entries without a pending change), store the new epoch and pull from 0. Unsent mutations stay queued and replay idempotently (BR-18).
+- **Timeouts.** Every API connection runs with `statement_timeout` 30 s, `lock_timeout` 10 s
+  (which bounds the wait for the ledger lock) and `idle_in_transaction_session_timeout` 60 s, and
+  waits at most 10 s for a pool connection. A statement or lock timeout answers
+  `503 UNAVAILABLE` with nothing committed; the client keeps the push queued and retries it.
 - **Account references (BR-3).** A viewer who cannot see a row's account receives
   `accountId: null`. Sending that null back in an upsert keeps the author's account. Only the
   author may choose an account from their own personal workspace.
@@ -273,7 +280,8 @@ Every error is `{ error: { code, message, details? } }` with a stable `code` fro
 `SESSION_REVOKED`, `CSRF_FAILED`, `CONFIRMATION_MISMATCH` (400), `FAMILY_EXISTS` (409),
 `OWNER_CANNOT_LEAVE` (409), `NAME_TAKEN` (409), `REVIEW_REQUIRED` (409), `MUTATION_ID_REUSED`
 (409), `INVITATION_INVALID` (410), `INVALID_ACCOUNT` (422), `INVALID_CATEGORY` (422). Sync push
-reports rejections per mutation with the same codes instead of an HTTP error. A workspace the actor does not belong to
+reports rejections per mutation with the same codes instead of an HTTP error. A database
+statement or lock timeout is `503 UNAVAILABLE`, safe to retry. A workspace the actor does not belong to
 is always `NOT_FOUND`, never `FORBIDDEN`.
 
 ## FX rates

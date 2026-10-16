@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
-import { useCategories, useWorkspaces } from '@data/sync';
+import { useWorkspaces } from '@data/sync';
+import { useCategoryViews } from '@features/ledger';
 import { useTranslations } from '@i18n/index';
 import {
   currencyExponent,
@@ -60,13 +61,15 @@ function BudgetForm({ mode, onDone }: { mode: BudgetDialogMode; onDone: () => vo
   const t = useTranslations();
   const base = useId();
   const workspaces = useWorkspaces().items;
-  const categories = useCategories().items;
+  const categories = useCategoryViews().items;
   const put = usePutBudget();
   const editing = mode.kind === 'edit' ? mode.budget : null;
   const personal = workspaces.find((workspace) => workspace.kind === 'personal');
   const family = workspaces.find((workspace) => workspace.kind === 'family');
 
-  const [workspaceId, setWorkspaceId] = useState(editing?.workspaceId ?? personal?.id ?? '');
+  const [chosenWorkspaceId, setWorkspaceId] = useState(editing?.workspaceId ?? null);
+  // Derived, not snapshotted: the dialog may open before the first pull brings the workspaces.
+  const workspaceId = chosenWorkspaceId ?? personal?.id ?? '';
   const choices =
     mode.kind === 'create' ? budgetableCategories(categories, workspaceId, mode.budgets) : [];
   const [chosenId, setChosenId] = useState<string | null>(null);

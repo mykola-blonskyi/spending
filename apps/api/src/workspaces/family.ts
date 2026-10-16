@@ -21,6 +21,9 @@ export type WorkspaceEventType = (typeof WORKSPACE_EVENT_TYPES)[number];
 
 export const INVITATION_DEFAULT_DAYS = 7;
 
+/** Null while a default category or the personal workspace goes by its key (ADR-012). */
+export const storedName = z.string().nullable().meta({ id: 'StoredName' });
+
 /** State is never stored; it follows from the timestamps (domain model, Invitation). */
 export function invitationState(
   invitation: { acceptedAt: Date | null; revokedAt: Date | null; expiresAt: Date },
@@ -54,7 +57,7 @@ export const memberViewSchema = z.object({
 export const workspaceViewSchema = z.object({
   id: z.uuid(),
   kind: z.enum(WORKSPACE_KINDS),
-  name: z.string(),
+  name: storedName,
   role: z.enum(MEMBER_ROLES),
   members: z.array(memberViewSchema),
 });

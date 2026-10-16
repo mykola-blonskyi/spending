@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool } from 'pg';
 
-/** Applies pending migrations. Each migration runs in a transaction; reruns are no-ops. */
+/** Applies all pending migrations in one transaction, so a failure applies none; reruns are no-ops. */
 export async function runMigrations(databaseUrl: string): Promise<void> {
   const pool = new Pool({ connectionString: databaseUrl, max: 1 });
   try {

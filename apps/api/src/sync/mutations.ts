@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { ErrorCode } from '../common/errors';
-import { MEMBER_ROLES, WORKSPACE_KINDS } from '../workspaces/family';
+import { MEMBER_ROLES, storedName, WORKSPACE_KINDS } from '../workspaces/family';
 import {
   accountViewSchema,
   amountMinorSchema,
@@ -285,11 +285,13 @@ export const conflictViewSchema = z.object({
 });
 
 export const pullResponseSchema = z.object({
+  /** Changes when the server's data is restored from a backup; see BR-35. */
+  epoch: z.uuid(),
   workspaces: z.array(
     z.object({
       id: z.uuid(),
       kind: z.enum(WORKSPACE_KINDS),
-      name: z.string(),
+      name: storedName,
       role: z.enum(MEMBER_ROLES),
     }),
   ),

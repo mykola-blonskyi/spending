@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { QueryUnavailable } from '@data/query-unavailable';
 import { useRefetchErrorToast } from '@data/refetch-error-toast';
-import { useCategories } from '@data/sync';
+import { useCategoryViews } from '@features/ledger';
 import { useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
 import { ConfirmDialog, EmptyState, MoneyText, PageHeader } from '@shared/components';
@@ -104,7 +104,7 @@ function RuleRow({ rule, onDelete }: { rule: Rule; onDelete: () => void }) {
   const tRecurring = useTranslations('recurring');
   const { locale } = useSharedLocale();
   const today = todayIn(useProfile().timezone);
-  const categories = useCategories().items;
+  const categories = useCategoryViews().items;
   const update = useUpdateRule();
   const category = categories.find((c) => c.id === rule.categoryId);
   const title = rule.description || category?.name || t('pages.transactions.uncategorized');

@@ -117,6 +117,24 @@ describe('SyncEngine', () => {
     expect(intercepted).toBe(2);
   });
 
+  it('keeps a push the server timed out (503) for a retry instead of failing it', async () => {
+    store = await LocalStore.open('ann');
+    const id = await recordTransaction(store, draft);
+    const server = fakeServer({
+      onPush: () => {
+        throw new ApiError({ status: 503, code: 'UNAVAILABLE', message: 'UNAVAILABLE' });
+      },
+    });
+    const engine = new SyncEngine(store, server.transport);
+
+    await engine.flush();
+
+    expect(engine.getStatus().phase).toBe('retrying');
+    expect(queueOrder(store.state).map((m) => [m.transactionId, m.state.status])).toEqual([
+      [id, 'retrying'],
+    ]);
+  });
+
   it('retries a refused batch one mutation at a time so only the invalid one fails', async () => {
     store = await LocalStore.open('ann');
     const good = await recordTransaction(store, { ...draft, description: 'good' });

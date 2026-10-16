@@ -196,19 +196,6 @@ docker compose --env-file deploy/smoke.env -f docker-compose.yml \
    REVOKE ALL ON DATABASE spending FROM PUBLIC;
    ```
 
-   Log slow statements (500 ms or longer) without their bind parameters, so amounts and notes
-   never reach the log. The settings belong to the database, so set them again on any database
-   that replaces it (see the restore steps):
-
-   ```sql
-   ALTER DATABASE spending SET log_min_duration_statement = '500ms';
-   ALTER DATABASE spending SET log_parameter_max_length = 0;
-   ```
-
-   Read them with `docker logs 3p9qjnulllqn3bcjqokir0wq 2>&1 | grep 'duration:'`. Undo with
-   `ALTER DATABASE spending RESET log_min_duration_statement;` and
-   `ALTER DATABASE spending RESET log_parameter_max_length;`.
-
    `DATABASE_URL` is `postgres://spending_app:<generated>@3p9qjnulllqn3bcjqokir0wq:5432/spending`.
    Use the container name, never the `postgres` alias, which other stacks on the shared network
    may also answer to.
@@ -255,6 +242,20 @@ docker compose --env-file deploy/smoke.env -f docker-compose.yml \
    repository but optional; green CI on `main` is already the gate.
 
 9. Deploy once (next section) and sign in.
+
+10. **Slow-query log.** The shared instance has `log_min_duration_statement = -1`, so a query
+    that turns slow as data grows (or a stalled sync) goes unnoticed. As the superuser, once:
+
+    ```sql
+    ALTER DATABASE spending SET log_min_duration_statement = '500ms';
+    ALTER DATABASE spending SET log_parameter_max_length = 0;
+    ```
+
+    The second line keeps bind parameters (amounts, notes) out of the log. Both apply only to
+    this database, from the next connection on, so the restore steps set them again on the new
+    database. Read the log with `docker logs 3p9qjnulllqn3bcjqokir0wq 2>&1 | grep 'duration:'`.
+    Undo with `ALTER DATABASE spending RESET log_min_duration_statement;` and
+    `ALTER DATABASE spending RESET log_parameter_max_length;`.
 
 ## Deploying
 
@@ -358,7 +359,16 @@ docker exec "$BACKUP" sh -c 'pg_restore --dbname="${DATABASE_URL%/*}/spending_re
 docker exec -i 3p9qjnulllqn3bcjqokir0wq psql -U postgres -d spending_restore \
   -c '\dt' -c 'SELECT count(*) FROM drizzle.__drizzle_migrations;' \
   -c 'SELECT count(*) FROM transactions;'
+
+# Required. Moves ledger_revision past every device cursor and sets a new sync epoch, so every
+# device drops what it cached and pulls the restored data from 0 (BR-35).
+docker exec "$BACKUP" sh -c 'psql "${DATABASE_URL%/*}/spending_restore" -v ON_ERROR_STOP=1 \
+  -f /usr/local/share/spending/after-restore.sql'
 ```
+
+`after-restore.sql` lives in `deploy/` and ships in the backup image. A dump older than migration
+0009 has no `sync_epoch` table; the script skips the epoch and the redeploy's migration creates a
+fresh one.
 
 If the scratch copy is right, stop the resource in Coolify, then swap:
 

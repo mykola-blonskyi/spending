@@ -89,7 +89,7 @@ export function useLocalTransaction(id: string): {
   }, [state, id]);
 }
 
-function useSorted<T extends { name: string }>(
+function useSorted<T extends { name: string | null }>(
   pick: (state: LocalState) => ReadonlyMap<string, T>,
 ): LocalList<T> {
   const state = useLocalState();
@@ -98,7 +98,7 @@ function useSorted<T extends { name: string }>(
     () => ({
       ready: collection !== null,
       items: collection
-        ? [...collection.values()].sort((a, b) => a.name.localeCompare(b.name))
+        ? [...collection.values()].sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
         : [],
     }),
     [collection],

@@ -1,19 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import type { Category } from '@data/sync';
+import { type CategoryView, categoryIcon } from '@features/ledger';
 import { budgetableCategories } from './budgets';
 
-const category = (patch: Partial<Category>): Category => ({
+const category = (patch: Partial<CategoryView>): CategoryView => ({
   id: 'cat',
   workspaceId: 'ws-personal',
   name: 'Category',
   kind: 'expense',
   color: '#000000',
-  icon: 'tag',
-  systemKey: null,
-  archivedAt: null,
-  revision: 1,
-  createdAt: '2026-10-01T00:00:00.000Z',
-  updatedAt: '2026-10-01T00:00:00.000Z',
+  Icon: categoryIcon('tag'),
+  archived: false,
   ...patch,
 });
 
@@ -23,7 +19,7 @@ describe('budgetableCategories', () => {
       category({ id: 'groceries' }),
       category({ id: 'rent' }),
       category({ id: 'salary', kind: 'income' }),
-      category({ id: 'old', archivedAt: '2026-09-01T00:00:00.000Z' }),
+      category({ id: 'old', archived: true }),
       category({ id: 'home', workspaceId: 'ws-family' }),
     ];
     const ids = (workspaceId: string, budgeted: string[]) =>

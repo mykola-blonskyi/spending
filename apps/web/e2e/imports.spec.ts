@@ -215,8 +215,8 @@ test('a corrected category teaches the next import', async ({ page, signInAs, db
   await expect
     .poll(() => db.categoryRules(ann.email))
     .toEqual([
-      { merchant_key: 'fruteria pepe malaga', category: 'Groceries' },
-      { merchant_key: 'transferencia juan perez', category: 'Gifts received' },
+      { merchant_key: 'fruteria pepe malaga', category: 'groceries' },
+      { merchant_key: 'transferencia juan perez', category: 'gifts_received' },
     ]);
 
   // A later statement with the same merchant uses what was learned (BR-29).

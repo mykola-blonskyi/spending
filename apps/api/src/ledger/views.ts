@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { isCalendarDate } from '../common/dates';
 import { parseCurrency } from '../common/money';
-import { WORKSPACE_KINDS, type WorkspaceKind } from '../workspaces/family';
+import { storedName, WORKSPACE_KINDS, type WorkspaceKind } from '../workspaces/family';
 
 export const ACCOUNT_KINDS = ['cash', 'bank', 'card', 'savings', 'other'] as const;
 export const ENTRY_KINDS = ['income', 'expense'] as const;
@@ -46,7 +46,7 @@ export type AccountView = z.infer<typeof accountViewSchema>;
 export const categoryViewSchema = z.object({
   id: z.uuid(),
   workspaceId: z.uuid(),
-  name: z.string(),
+  name: storedName,
   kind: z.enum(ENTRY_KINDS),
   color: z.string(),
   icon: z.string(),
@@ -77,7 +77,8 @@ export const createCategorySchema = z.strictObject({
   icon,
 });
 export const updateCategorySchema = z.strictObject({
-  name: name.optional(),
+  /** `null` returns a default category to its localized name. */
+  name: name.nullable().optional(),
   color: color.transform((value) => value.toLowerCase()).optional(),
   icon: icon.optional(),
   archived: z.boolean().optional(),

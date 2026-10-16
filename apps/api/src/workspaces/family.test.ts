@@ -34,11 +34,9 @@ describe('request schemas', () => {
 });
 
 describe('DEFAULT_CATEGORIES', () => {
-  it('has unique system keys and unique names per kind', () => {
+  it('has unique system keys', () => {
     const keys = DEFAULT_CATEGORIES.map((c) => c.systemKey);
     expect(new Set(keys).size).toBe(keys.length);
-    const names = DEFAULT_CATEGORIES.map((c) => `${c.kind}:${c.name}`);
-    expect(new Set(names).size).toBe(names.length);
     expect(DEFAULT_CATEGORIES.filter((c) => c.kind === 'expense')).toHaveLength(14);
     expect(DEFAULT_CATEGORIES.filter((c) => c.kind === 'income')).toHaveLength(6);
   });

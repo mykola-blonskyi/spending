@@ -7,11 +7,11 @@ import {
   type Resolution,
   type TransactionInput,
   useAccounts,
-  useCategories,
   useConflicts,
   useResolveConflict,
   useWorkspaces,
 } from '@data/sync';
+import { useCategoryViews } from '@features/ledger';
 import { useTranslations } from '@i18n/index';
 import { EmptyState, PageHeader } from '@shared/components';
 import { formatDate, formatMoney } from '@shared/format';
@@ -114,7 +114,7 @@ function useFieldText() {
   const t = useTranslations();
   const { locale } = useSharedLocale();
   const accounts = useAccounts().items;
-  const categories = useCategories().items;
+  const categories = useCategoryViews().items;
   const workspaces = useWorkspaces().items;
   return (field: ConflictField, row: TransactionInput): string => {
     switch (field) {

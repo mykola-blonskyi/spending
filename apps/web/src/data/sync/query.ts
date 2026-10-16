@@ -34,6 +34,8 @@ export type TransactionEntry = LocalTransaction &
 
 export type TransactionFilter = Readonly<{
   text?: string;
+  /** Category display names by id, so `text` also matches the category as the user sees it. */
+  categoryNames?: ReadonlyMap<string, string>;
   /** Inclusive `YYYY-MM-DD` bounds. */
   from?: string;
   to?: string;
@@ -122,7 +124,8 @@ function matchesFilter(entry: TransactionEntry, filter: TransactionFilter): bool
   if (filter.to && entry.occurredOn > filter.to) return false;
   const text = filter.text?.trim().toLocaleLowerCase();
   if (text) {
-    const haystack = `${entry.description}\n${entry.note}`.toLocaleLowerCase();
+    const category = (entry.categoryId && filter.categoryNames?.get(entry.categoryId)) ?? '';
+    const haystack = `${entry.description}\n${entry.note}\n${category}`.toLocaleLowerCase();
     if (!haystack.includes(text)) return false;
   }
   return true;

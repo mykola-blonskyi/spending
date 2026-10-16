@@ -75,6 +75,8 @@ export type SyncMeta = Readonly<{
   /** When a pull last reached `hasMore: false`. Null until the first full sync completes. */
   lastSyncedAt: string | null;
   nextSeq: number;
+  /** The server dataset the cached rows came from (BR-35). Null until the first pull. */
+  epoch: string | null;
 }>;
 
 export type LocalState = Readonly<{
@@ -87,7 +89,7 @@ export type LocalState = Readonly<{
   meta: SyncMeta;
 }>;
 
-export const INITIAL_META: SyncMeta = { cursor: 0, lastSyncedAt: null, nextSeq: 1 };
+export const INITIAL_META: SyncMeta = { cursor: 0, lastSyncedAt: null, nextSeq: 1, epoch: null };
 
 export function emptyLocalState(): LocalState {
   return {

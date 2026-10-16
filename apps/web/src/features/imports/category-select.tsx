@@ -1,4 +1,4 @@
-import type { Category } from '@data/sync';
+import type { CategoryView } from '@features/ledger';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui/select';
 
 const NONE = 'none';
@@ -13,7 +13,7 @@ export function CategorySelect({
   className,
 }: {
   value: string | null;
-  categories: readonly Category[];
+  categories: readonly CategoryView[];
   onChange: (categoryId: string | null) => void;
   label: string;
   noneLabel: string;

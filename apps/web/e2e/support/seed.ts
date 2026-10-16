@@ -34,8 +34,11 @@ export async function seedEntries(page: Page, count: number): Promise<void> {
       accounts = [...accounts, await created.json()];
     }
   }
-  const byName = (name: string, kind: string) =>
-    categories.find((c: { name: string; kind: string }) => c.name === name && c.kind === kind);
+  const byKey = (name: string, kind: string) =>
+    categories.find(
+      (c: { systemKey: string | null; kind: string }) =>
+        c.systemKey === name.toLowerCase() && c.kind === kind,
+    );
   const start = new Date();
   const mutations = [];
   for (let n = 1; n <= count; n += 1) {
@@ -43,9 +46,7 @@ export async function seedEntries(page: Page, count: number): Promise<void> {
     const date = new Date(start);
     date.setDate(start.getDate() - Math.floor((n - 1) / 5));
     const currency = ['EUR', 'EUR', 'EUR', 'USD', 'GBP'][n % 5]!;
-    const category = income
-      ? byName('Salary', 'income')
-      : byName(CATEGORY_NAMES[n % 5]!, 'expense');
+    const category = income ? byKey('Salary', 'income') : byKey(CATEGORY_NAMES[n % 5]!, 'expense');
     mutations.push({
       mutationId: crypto.randomUUID(),
       type: 'transaction.upsert',
@@ -94,7 +95,7 @@ type Entry = {
   amountMinor: number;
   currency?: string;
   occurredOn: string;
-  /** A default category of the personal workspace, by English name. */
+  /** A default category of the personal workspace, by system key. */
   category?: string;
   description: string;
 };
@@ -104,10 +105,10 @@ export async function pushEntries(page: Page, entries: readonly Entry[]): Promis
   const session = await (await page.request.get('/api/v1/auth/session')).json();
   const pull = await (await page.request.get('/api/v1/sync/pull?cursor=0&limit=1000')).json();
   const personal = pull.workspaces.find((w: { kind: string }) => w.kind === 'personal');
-  const categoryId = (name: string | undefined, kind: string) =>
+  const categoryId = (key: string | undefined, kind: string) =>
     pull.categories.find(
-      (c: { workspaceId: string; name: string; kind: string }) =>
-        c.workspaceId === personal.id && c.name === name && c.kind === kind,
+      (c: { workspaceId: string; systemKey: string | null; kind: string }) =>
+        c.workspaceId === personal.id && c.systemKey === key && c.kind === kind,
     )?.id ?? null;
   const response = await page.request.post('/api/v1/sync/push', {
     headers: { 'X-CSRF-Token': session.csrfToken, Origin: APP_ORIGIN },

@@ -73,7 +73,7 @@ describe('periodProblem', () => {
 
 const share = (patch: Partial<CategoryShare>): CategoryShare => ({
   categoryId: 'groceries',
-  name: 'Groceries',
+  name: null,
   systemKey: 'groceries',
   kind: 'expense',
   color: '#16a34a',

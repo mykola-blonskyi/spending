@@ -641,13 +641,14 @@ export interface components {
             palette?: "emerald" | "rose" | "ocean" | "sand" | "graphite";
             timezone?: string;
         };
+        StoredName_Output: string | null;
         WorkspaceListDto_Output: {
             workspaces: {
                 /** Format: uuid */
                 id: string;
                 /** @enum {string} */
                 kind: "personal" | "family";
-                name: string;
+                name: components["schemas"]["StoredName_Output"];
                 /** @enum {string} */
                 role: "owner" | "member";
                 members: {
@@ -670,7 +671,7 @@ export interface components {
             id: string;
             /** @enum {string} */
             kind: "personal" | "family";
-            name: string;
+            name: components["schemas"]["StoredName_Output"];
             /** @enum {string} */
             role: "owner" | "member";
             members: {
@@ -805,7 +806,7 @@ export interface components {
                 id: string;
                 /** Format: uuid */
                 workspaceId: string;
-                name: string;
+                name: components["schemas"]["StoredName_Output"];
                 /** @enum {string} */
                 kind: "income" | "expense";
                 color: string;
@@ -833,7 +834,7 @@ export interface components {
             id: string;
             /** Format: uuid */
             workspaceId: string;
-            name: string;
+            name: components["schemas"]["StoredName_Output"];
             /** @enum {string} */
             kind: "income" | "expense";
             color: string;
@@ -847,7 +848,7 @@ export interface components {
             updatedAt: string;
         };
         UpdateCategoryDto: {
-            name?: string;
+            name?: string | null;
             color?: string;
             icon?: string;
             archived?: boolean;
@@ -961,12 +962,14 @@ export interface components {
             })[];
         };
         PullResponseDto_Output: {
+            /** Format: uuid */
+            epoch: string;
             workspaces: {
                 /** Format: uuid */
                 id: string;
                 /** @enum {string} */
                 kind: "personal" | "family";
-                name: string;
+                name: components["schemas"]["StoredName_Output"];
                 /** @enum {string} */
                 role: "owner" | "member";
             }[];
@@ -991,7 +994,7 @@ export interface components {
                 id: string;
                 /** Format: uuid */
                 workspaceId: string;
-                name: string;
+                name: components["schemas"]["StoredName_Output"];
                 /** @enum {string} */
                 kind: "income" | "expense";
                 color: string;
@@ -1099,6 +1102,7 @@ export interface components {
             transaction: components["schemas"]["TransactionView_Output"] | components["schemas"]["Tombstone_Output"];
         };
         AvatarUrl: string | null;
+        StoredName: string | null;
         ArchivedAt: string | null;
         SystemKey: string | null;
         TransactionView: {
@@ -1163,7 +1167,7 @@ export interface components {
                 id: string;
                 /** @enum {string} */
                 kind: "personal" | "family";
-                name: string;
+                name: components["schemas"]["StoredName"];
                 /** @enum {string} */
                 role: "owner" | "member";
                 members: {
@@ -1198,7 +1202,7 @@ export interface components {
                 id: string;
                 /** Format: uuid */
                 workspaceId: string;
-                name: string;
+                name: components["schemas"]["StoredName"];
                 /** @enum {string} */
                 kind: "income" | "expense";
                 color: string;
