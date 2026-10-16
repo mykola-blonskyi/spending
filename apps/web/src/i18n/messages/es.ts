@@ -404,6 +404,8 @@ export const es = {
       archiveDescription:
         'Dejará de aparecer al crear movimientos nuevos. Los anteriores la conservan y puedes restaurarla cuando quieras.',
       sectionEmpty: 'Todavía no hay nada en esta sección.',
+      duplicate: 'Esta categoría ya existe.',
+      showExisting: 'Mostrar',
     },
   },
   settings: {
@@ -457,6 +459,23 @@ export const es = {
           'Todo lo que puedes ver: tus datos personales y los datos compartidos de tu familia, nunca los datos personales de otro miembro.',
         json: 'Descargar JSON (completo)',
         csv: 'Descargar CSV (movimientos)',
+        columns: {
+          date: 'Fecha',
+          kind: 'Tipo',
+          amount: 'Importe',
+          currency: 'Moneda',
+          eurAmount: 'Importe en EUR',
+          fxRate: 'Tipo de cambio',
+          fxRateDate: 'Fecha del tipo de cambio',
+          scope: 'Ámbito',
+          workspace: 'Espacio',
+          account: 'Cuenta',
+          category: 'Categoría',
+          description: 'Descripción',
+          note: 'Nota',
+          source: 'Origen',
+          author: 'Autor',
+        },
       },
       delete: {
         title: 'Eliminar cuenta',

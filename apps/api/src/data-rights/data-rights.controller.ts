@@ -5,7 +5,6 @@ import {
   Get,
   HttpCode,
   Inject,
-  Query,
   Res,
   StreamableFile,
 } from '@nestjs/common';
@@ -14,7 +13,6 @@ import {
   ApiExtraModels,
   ApiNoContentResponse,
   ApiOkResponse,
-  ApiQuery,
   getSchemaPath,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
@@ -23,16 +21,14 @@ import { clearSessionCookie } from '../auth/session-cookie';
 import { type Actor, CurrentActor } from '../common/actor';
 import { APP_CONFIG, type AppConfig } from '../common/config';
 import { RateLimit } from '../common/rate-limit';
-import { deleteUserBodySchema, exportQuerySchema } from './data-rights';
+import { deleteUserBodySchema } from './data-rights';
 import { DataRightsService } from './data-rights.service';
 import { dataExportSchema } from './export-sections';
 
 class DataExportDto extends createZodDto(dataExportSchema) {}
-class ExportQueryDto extends createZodDto(exportQuerySchema) {}
 class DeleteUserDto extends createZodDto(deleteUserBodySchema) {}
 
-// @ApiBody and @ApiQuery are explicit because tsx, which writes the OpenAPI file, emits no
-// parameter metadata.
+// @ApiBody is explicit because tsx, which writes the OpenAPI file, emits no parameter metadata.
 @Controller('v1/me')
 @ApiExtraModels(DataExportDto)
 export class DataRightsController {
@@ -44,19 +40,15 @@ export class DataRightsController {
   /** A file download, so the body bypasses the zod serializer; its JSON shape is DataExportDto. */
   @Get('export')
   @RateLimit('sensitive')
-  @ApiQuery({ type: ExportQueryDto })
   @ApiOkResponse({
-    description: 'Everything the caller can see (JSON) or their confirmed transactions (CSV)',
-    content: {
-      'application/json': { schema: { $ref: getSchemaPath(DataExportDto) } },
-      'text/csv': { schema: { type: 'string' } },
-    },
+    description: 'Everything the caller can see',
+    content: { 'application/json': { schema: { $ref: getSchemaPath(DataExportDto) } } },
   })
-  async export(@CurrentActor() actor: Actor, @Query() query: ExportQueryDto) {
-    const file = await this.dataRights.exportFile(actor.userId, query.format);
-    return new StreamableFile(Buffer.from(file.body, 'utf8'), {
-      type: file.contentType,
-      disposition: `attachment; filename="${file.fileName}"`,
+  async export(@CurrentActor() actor: Actor) {
+    const document = await this.dataRights.exportData(actor.userId);
+    return new StreamableFile(Buffer.from(JSON.stringify(document, null, 2), 'utf8'), {
+      type: 'application/json; charset=utf-8',
+      disposition: `attachment; filename="spending-export-${document.exportedAt.slice(0, 10)}.json"`,
     });
   }
 

@@ -989,29 +989,14 @@
     "/api/v1/me/export": {
       "get": {
         "operationId": "DataRightsController_export",
-        "parameters": [
-          {
-            "required": false,
-            "name": "format",
-            "in": "query",
-            "schema": {
-              "default": "json",
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
-            "description": "Everything the caller can see (JSON) or their confirmed transactions (CSV)",
+            "description": "Everything the caller can see",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DataExportDto"
-                }
-              },
-              "text/csv": {
-                "schema": {
-                  "type": "string"
                 }
               }
             }

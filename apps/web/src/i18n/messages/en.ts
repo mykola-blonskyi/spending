@@ -390,6 +390,8 @@ export const en = {
       archiveDescription:
         'It disappears from the pickers for new transactions. Past transactions keep it, and you can restore it any time.',
       sectionEmpty: 'Nothing in this section yet.',
+      duplicate: 'This category already exists.',
+      showExisting: 'Show it',
     },
   },
   settings: {
@@ -443,6 +445,23 @@ export const en = {
           "Everything you can see: your personal data and your family's shared data, never another member's personal data.",
         json: 'Download JSON (complete)',
         csv: 'Download CSV (transactions)',
+        columns: {
+          date: 'Date',
+          kind: 'Type',
+          amount: 'Amount',
+          currency: 'Currency',
+          eurAmount: 'EUR amount',
+          fxRate: 'FX rate',
+          fxRateDate: 'FX rate date',
+          scope: 'Scope',
+          workspace: 'Workspace',
+          account: 'Account',
+          category: 'Category',
+          description: 'Description',
+          note: 'Note',
+          source: 'Source',
+          author: 'Author',
+        },
       },
       delete: {
         title: 'Delete account',

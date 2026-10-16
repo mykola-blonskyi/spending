@@ -7,22 +7,19 @@ import { errorCode } from '@data/api-error';
 import {
   DELETE_CONFIRMATION,
   deleteAccount,
-  type ExportFormat,
   fetchExport,
+  fetchExportData,
 } from '@data/data-rights';
 import { clearLocalUserData } from '@data/local-data';
 import { useSession } from '@features/auth';
+import { categoryView } from '@features/ledger';
 import { useTranslations } from '@i18n/index';
 import { ConfirmDialog } from '@shared/components';
 import { loadPage } from '@shared/lib/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@shared/ui/alert';
 import { Button } from '@shared/ui/button';
 import { Card } from '@shared/ui/card';
-
-const FILE_NAMES: Record<ExportFormat, string> = {
-  json: 'spending-export.json',
-  csv: 'spending-transactions.csv',
-};
+import { transactionsCsv } from './transactions-csv';
 
 function saveFile(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob);
@@ -36,13 +33,25 @@ function saveFile(blob: Blob, fileName: string) {
 
 export function DataRightsSection() {
   const t = useTranslations();
+  const defaults = useTranslations('categoryDefaults');
   const queryClient = useQueryClient();
   const { user } = useSession();
   const [confirming, setConfirming] = useState(false);
 
   const download = useMutation({
-    mutationFn: async (format: ExportFormat) =>
-      saveFile(await fetchExport(format), FILE_NAMES[format]),
+    mutationFn: async (format: 'json' | 'csv') => {
+      if (format === 'json') return saveFile(await fetchExport(), 'spending-export.json');
+      const csv = transactionsCsv(await fetchExportData(), {
+        header: (column) => t(`settings.dataRights.export.columns.${column}`),
+        category: (category) => categoryView(category, defaults).name,
+        formerMember: t('family.author.formerMember'),
+      });
+      // The byte order mark makes spreadsheet apps read it as UTF-8.
+      saveFile(
+        new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }),
+        'spending-transactions.csv',
+      );
+    },
     onError: (error) => toast.error(t(`errors.${errorCode(error)}`)),
   });
 
