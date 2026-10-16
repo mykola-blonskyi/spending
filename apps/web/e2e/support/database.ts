@@ -135,8 +135,11 @@ export class E2EDatabase {
       category: string | null;
       version: number;
       deleted: boolean;
+      currency: string;
+      occurred_on: string;
     }>(
-      `select t.description, t.amount_minor, w.kind as scope, t.review_status,
+      `select t.description, t.amount_minor, t.currency, t.occurred_on::text as occurred_on,
+              w.kind as scope, t.review_status,
               coalesce(c.name, c.system_key) as category, t.version,
               t.deleted_at is not null as deleted
          from transactions t

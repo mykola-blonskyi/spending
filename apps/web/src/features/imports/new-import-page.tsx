@@ -5,37 +5,71 @@ import type { ImportResult } from '@data/imports';
 import { type Account, useAccounts, useWorkspaces } from '@data/sync';
 import { useTranslations } from '@i18n/index';
 import { EmptyState, LoadingState, MoneyText, PageHeader } from '@shared/components';
-import { currencyExponent, formatDate } from '@shared/format';
+import { formatDate } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import { cn } from '@shared/lib/utils';
 import { Button, buttonVariants } from '@shared/ui/button';
 import { Label } from '@shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@shared/ui/toggle-group';
-import { FILE_MAX_BYTES, type ParsedStatement, parseStatement, type StatementProblem } from './csv';
 import { ImportSummary } from './import-summary';
 import { useCreateImport, useHasFamily } from './imports';
 import {
+  type Card,
   type Columns,
   DATE_FORMATS,
   detectPreset,
-  exponentFor,
   isComplete,
+  listCards,
   type Mapping,
-  normalizeRow,
+  type NormalizedRow,
   PRESET_IDS,
   type PresetId,
+  prepareRows,
   presetMapping,
+  recallMapping,
+  rememberMapping,
 } from './mapping';
+import { type ParsedStatement, parseStatement, type StatementFailure } from './statement';
 import { Table, Td, Th, Tr } from './table';
 
 const NONE = 'none';
 const PREVIEW_ROWS = 5;
 const DELIMITER_NAMES = { ';': 'semicolon', ',': 'comma', '\t': 'tab' } as const;
-const COLUMN_FIELDS: readonly (keyof Columns)[] = ['date', 'description', 'externalId', 'currency'];
+const OPTIONAL_COLUMNS: readonly (keyof Columns)[] = ['externalId', 'currency', 'card', 'balance'];
+const ACCEPT = [
+  '.csv',
+  '.txt',
+  '.xlsx',
+  '.xls',
+  'text/csv',
+  'text/plain',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+].join(',');
 
-type FileProblem = StatementProblem | 'TOO_LARGE' | 'UNREADABLE';
-type Loaded = { file: File; statement: ParsedStatement; mapping: Mapping };
+/**
+ * `card` is the card the user picked, null until they do; `imported` lists the cards of this
+ * file already imported, so the next one can follow (BR-36).
+ */
+type Loaded = {
+  file: File;
+  statement: ParsedStatement;
+  mapping: Mapping;
+  card: string | null;
+  imported: readonly string[];
+};
+
+/** The picked card, else the first not yet imported, preferring the account's currency. */
+function cardToImport(cards: readonly Card[], loaded: Loaded, currency: string): Card | undefined {
+  const left = cards.filter((c) => !loaded.imported.includes(c.card));
+  return (
+    cards.find((c) => c.card === loaded.card) ??
+    left.find((c) => c.currency.toUpperCase() === currency) ??
+    left[0] ??
+    cards[0]
+  );
+}
 
 function Field({
   id,
@@ -105,28 +139,34 @@ function MappingStep({
 }: {
   loaded: Loaded;
   account: Account;
-  onChange: (mapping: Mapping) => void;
-  onSubmit: (rows: ReturnType<typeof normalizeRow>[]) => void;
+  onChange: (loaded: Loaded) => void;
+  onSubmit: (rows: NormalizedRow[], card: string | null) => void;
   submitting: boolean;
 }) {
   const t = useTranslations('imports');
   const { locale } = useSharedLocale();
   const base = useId();
   const { statement, mapping } = loaded;
-  const { headers, rows } = statement;
+  const { headers, rows, format } = statement;
   const sample = rows[0]?.cells ?? [];
-  const accountExponent = currencyExponent(account.currency);
-  const normalized = useMemo(
-    () =>
-      rows.map((row) =>
-        normalizeRow(row, mapping, (currency) => exponentFor(currency, accountExponent)),
-      ),
-    [rows, mapping, accountExponent],
+  const cards = useMemo(() => listCards(rows, mapping), [rows, mapping]);
+  const card = cards.length > 1 ? cardToImport(cards, loaded, account.currency) : undefined;
+  const prepared = useMemo(
+    () => prepareRows(rows, mapping, account.currency, card?.card ?? null),
+    [rows, mapping, account.currency, card?.card],
   );
-  const problems = normalized.filter((row) => row.problems.length > 0).length;
+  const { entries, skipped, balanceMismatches } = prepared;
+  const problems = entries.filter(({ normalized }) => normalized.problems.length > 0).length;
+  const checks = [
+    ...skipped.map((row) => ({ row, note: t('skippedNote') })),
+    ...entries
+      .filter(({ row }) => balanceMismatches.includes(row.line))
+      .map(({ row }) => ({ row, note: t('balanceNote') })),
+  ].sort((a, b) => a.row.line - b.row.line);
   const complete = isComplete(mapping);
+  const setMapping = (next: Mapping) => onChange({ ...loaded, mapping: next });
   const setColumn = (field: keyof Columns, index: number | null) =>
-    onChange({ ...mapping, preset: 'custom', columns: { ...mapping.columns, [field]: index } });
+    setMapping({ ...mapping, preset: 'custom', columns: { ...mapping.columns, [field]: index } });
   const columnSelect = (field: keyof Columns) => (
     <Field key={field} id={`${base}-${field}`} label={t(`column.${field}`)}>
       <ColumnSelect
@@ -142,32 +182,59 @@ function MappingStep({
   return (
     <div className="flex flex-col gap-6">
       <p className="text-sm text-muted-foreground">
-        {t('detected', {
-          encoding: statement.encoding === 'utf-8' ? 'UTF-8' : 'Windows-1252',
-          delimiter: t(`delimiters.${DELIMITER_NAMES[statement.delimiter]}`),
-          count: rows.length,
-        })}
+        {format.kind === 'csv'
+          ? t('detected', {
+              encoding: format.encoding === 'utf-8' ? 'UTF-8' : 'Windows-1252',
+              delimiter: t(`delimiters.${DELIMITER_NAMES[format.delimiter]}`),
+              count: rows.length,
+            })
+          : t('detectedWorkbook', { count: rows.length })}
       </p>
 
-      <div className="flex flex-col gap-1.5">
-        <Label id={`${base}-preset`}>{t('bank')}</Label>
-        <ToggleGroup
-          type="single"
-          variant="outline"
-          aria-labelledby={`${base}-preset`}
-          value={mapping.preset}
-          onValueChange={(preset) =>
-            PRESET_IDS.includes(preset as PresetId) &&
-            onChange(presetMapping(preset as PresetId, headers))
-          }
-          className="w-full sm:w-auto"
-        >
-          {PRESET_IDS.map((preset) => (
-            <ToggleGroupItem key={preset} value={preset} className="flex-1 px-4 sm:flex-none">
-              {t(`presets.${preset}`)}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field id={`${base}-preset`} label={t('bank')}>
+          <Select
+            value={mapping.preset}
+            onValueChange={(preset) =>
+              PRESET_IDS.includes(preset as PresetId) &&
+              setMapping(presetMapping(preset as PresetId, headers))
+            }
+          >
+            <SelectTrigger id={`${base}-preset`} className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PRESET_IDS.map((preset) => (
+                <SelectItem key={preset} value={preset}>
+                  {t(`presets.${preset}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+        {card && (
+          <Field id={`${base}-card`} label={t('card')} hint={t('cardHint')}>
+            <Select value={card.card} onValueChange={(next) => onChange({ ...loaded, card: next })}>
+              <SelectTrigger id={`${base}-card`} className="w-full">
+                <SelectValue>
+                  <span className="truncate">{card.card || t('noCard')}</span>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {cards.map((option) => (
+                  <SelectItem key={option.card} value={option.card}>
+                    {option.card || t('noCard')}
+                    <span className="text-muted-foreground">
+                      {' '}
+                      · {t('cardRows', { currency: option.currency || '—', count: option.count })}
+                      {loaded.imported.includes(option.card) && ` · ${t('cardImported')}`}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        )}
       </div>
 
       <fieldset className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -183,7 +250,7 @@ function MappingStep({
             value={mapping.amountLayout}
             onValueChange={(layout) =>
               (layout === 'signed' || layout === 'split') &&
-              onChange({ ...mapping, preset: 'custom', amountLayout: layout })
+              setMapping({ ...mapping, preset: 'custom', amountLayout: layout })
             }
             className="w-full sm:w-auto"
           >
@@ -203,12 +270,12 @@ function MappingStep({
             {columnSelect('credit')}
           </>
         )}
-        {COLUMN_FIELDS.filter((f) => f !== 'date' && f !== 'description').map(columnSelect)}
+        {OPTIONAL_COLUMNS.map(columnSelect)}
         <Field id={`${base}-dateFormat`} label={t('dateFormat')}>
           <Select
             value={mapping.dateFormat}
             onValueChange={(dateFormat) =>
-              onChange({
+              setMapping({
                 ...mapping,
                 preset: 'custom',
                 dateFormat: dateFormat as Mapping['dateFormat'],
@@ -232,7 +299,7 @@ function MappingStep({
             value={mapping.decimal}
             onValueChange={(decimal) =>
               (decimal === ',' || decimal === '.') &&
-              onChange({ ...mapping, preset: 'custom', decimal })
+              setMapping({ ...mapping, preset: 'custom', decimal })
             }
           >
             <SelectTrigger id={`${base}-decimal`} className="w-full">
@@ -263,11 +330,11 @@ function MappingStep({
             </tr>
           </thead>
           <tbody>
-            {normalized.slice(0, PREVIEW_ROWS).map((row, index) => {
+            {entries.slice(0, PREVIEW_ROWS).map(({ row: source, normalized: row }) => {
               const badDate = row.problems.includes('date');
               const badCurrency = row.problems.includes('currency');
               const badAmount = row.problems.includes('amount') || badCurrency;
-              const raw = rows[index]!.cells;
+              const raw = source.cells;
               return (
                 <Tr key={row.line}>
                   <Td className="hidden text-muted-foreground tabular-nums sm:table-cell">
@@ -315,21 +382,67 @@ function MappingStep({
             <span className="text-muted-foreground">{t('incomplete')}</span>
           ) : (
             <>
-              <span>{t('readyRows', { count: rows.length - problems })}</span>
+              <span>{t('readyRows', { count: entries.length - problems })}</span>
               {problems > 0 && (
                 <span className="text-destructive">. {t('problemRows', { count: problems })}</span>
+              )}
+              {skipped.length > 0 && (
+                <span className="text-muted-foreground">
+                  . {t('skippedRows', { count: skipped.length })}
+                </span>
+              )}
+              {balanceMismatches.length > 0 && (
+                <span className="text-warning-foreground">
+                  . {t('balanceRows', { count: balanceMismatches.length })}
+                </span>
               )}
             </>
           )}
         </p>
       </section>
 
+      {complete && checks.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <div className="flex flex-col gap-0.5 px-1">
+            <h2 id={`${base}-checks`} className="text-sm font-medium">
+              {t('checks')}
+            </h2>
+            <p className="text-xs text-muted-foreground">{t('checksHint')}</p>
+          </div>
+          <Table aria-labelledby={`${base}-checks`}>
+            <thead>
+              <tr>
+                <Th className="w-16">{t('summary.line')}</Th>
+                <Th>{t('column.description')}</Th>
+                <Th>{t('note')}</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {checks.map(({ row, note }) => (
+                <Tr key={row.line}>
+                  <Td className="text-muted-foreground tabular-nums">{row.line}</Td>
+                  <Td className="max-w-xs truncate">
+                    {row.cells[mapping.columns.description ?? -1] || '—'}
+                  </Td>
+                  <Td className="text-muted-foreground">{note}</Td>
+                </Tr>
+              ))}
+            </tbody>
+          </Table>
+        </section>
+      )}
+
       <div>
         <Button
-          disabled={!complete || submitting || rows.length === 0}
-          onClick={() => onSubmit(normalized)}
+          disabled={!complete || submitting || entries.length === 0}
+          onClick={() =>
+            onSubmit(
+              entries.map(({ normalized }) => normalized),
+              card?.card ?? null,
+            )
+          }
         >
-          {submitting ? t('importing') : t('submit', { count: rows.length })}
+          {submitting ? t('importing') : t('submit', { count: entries.length })}
         </Button>
       </div>
     </div>
@@ -346,7 +459,7 @@ export function NewImportPage() {
   const fileId = useId();
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [loaded, setLoaded] = useState<Loaded | null>(null);
-  const [problem, setProblem] = useState<FileProblem | null>(null);
+  const [problem, setProblem] = useState<StatementFailure | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
 
@@ -386,6 +499,8 @@ export function NewImportPage() {
     );
   }
   if (result) {
+    const cards = loaded ? listCards(loaded.statement.rows, loaded.mapping) : [];
+    const nextCard = cards.length > 1 && cards.find((c) => !loaded!.imported.includes(c.card));
     return (
       <div className="flex flex-col gap-8">
         {header}
@@ -393,6 +508,17 @@ export function NewImportPage() {
           result={result}
           accountName={account.name}
           waitsForReview={hasFamily}
+          nextCard={
+            nextCard
+              ? {
+                  label: nextCard.card || t('imports.noCard'),
+                  onClick: () => {
+                    setResult(null);
+                    setLoaded({ ...loaded!, card: nextCard.card });
+                  },
+                }
+              : undefined
+          }
           onImportAnother={() => {
             setResult(null);
             setLoaded(null);
@@ -408,28 +534,28 @@ export function NewImportPage() {
     setProblem(null);
     setFileName(file?.name ?? null);
     if (!file) return;
-    if (file.size > FILE_MAX_BYTES) return setProblem('TOO_LARGE');
-    let bytes: ArrayBuffer;
-    try {
-      bytes = await file.arrayBuffer();
-    } catch {
-      return setProblem('UNREADABLE');
-    }
-    const parsed = parseStatement(bytes);
-    if (!parsed.ok) return setProblem(parsed.problem);
+    const parsed = await parseStatement(file);
+    if (!parsed.ok) return setProblem(parsed);
     const { statement } = parsed;
+    const { headers } = statement;
     setLoaded({
       file,
       statement,
-      mapping: presetMapping(detectPreset(statement.headers), statement.headers),
+      mapping: recallMapping(headers) ?? presetMapping(detectPreset(headers), headers),
+      card: null,
+      imported: [],
     });
   };
-  const problemText: Record<FileProblem, string> = {
-    TOO_LARGE: t('imports.fileTooLarge'),
-    TOO_MANY_ROWS: t('imports.tooManyRows'),
-    EMPTY: t('imports.emptyFile'),
-    UNREADABLE: t('imports.readFailed'),
-  };
+  const problemText = (failure: StatementFailure) =>
+    failure.problem === 'TOO_LARGE'
+      ? t('imports.fileTooLarge', { size: failure.maxBytes / (1024 * 1024) })
+      : {
+          TOO_MANY_ROWS: t('imports.tooManyRows'),
+          EMPTY: t('imports.emptyFile'),
+          UNREADABLE: t('imports.readFailed'),
+          LEGACY_XLS: t('imports.legacyXls'),
+          UNSUPPORTED: t('imports.unsupported'),
+        }[failure.problem];
 
   return (
     <div className="flex flex-col gap-8">
@@ -454,7 +580,7 @@ export function NewImportPage() {
             <input
               id={fileId}
               type="file"
-              accept=".csv,.txt,text/csv,text/plain"
+              accept={ACCEPT}
               aria-invalid={problem !== null || undefined}
               aria-describedby={problem ? `${fileId}-error` : undefined}
               onChange={(event) => void readFile(event.target.files?.[0])}
@@ -476,7 +602,7 @@ export function NewImportPage() {
           </div>
           {problem && (
             <p id={`${fileId}-error`} role="alert" className="text-sm text-destructive">
-              {problemText[problem]}
+              {problemText(problem)}
             </p>
           )}
         </Field>
@@ -486,22 +612,25 @@ export function NewImportPage() {
           loaded={loaded}
           account={account}
           submitting={create.isPending}
-          onChange={(mapping) => setLoaded({ ...loaded, mapping })}
-          onSubmit={(rows) =>
+          onChange={setLoaded}
+          onSubmit={(rows, card) => {
+            rememberMapping(loaded.statement.headers, loaded.mapping);
             create.mutate(
               {
                 accountId: account.id,
                 fileName: loaded.file.name,
-                mapping: {
-                  ...loaded.mapping,
-                  delimiter: loaded.statement.delimiter,
-                  encoding: loaded.statement.encoding,
-                },
+                // Column choices and format only: card numbers and header metadata stay here.
+                mapping: { ...loaded.mapping, ...loaded.statement.format },
                 rows: rows.map(({ problems: _problems, ...row }) => row),
               },
-              { onSuccess: setResult },
-            )
-          }
+              {
+                onSuccess: (imported) => {
+                  if (card !== null) setLoaded({ ...loaded, imported: [...loaded.imported, card] });
+                  setResult(imported);
+                },
+              },
+            );
+          }}
         />
       )}
     </div>
