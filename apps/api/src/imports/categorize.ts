@@ -88,6 +88,66 @@ export const KEYWORD_RULES: readonly (readonly [systemKey: string, keywords: rea
     ['interest', ['intereses', 'interest']],
   ];
 
+/**
+ * Built-in rules for the bank's own category text (PrivatBank), by default-category `systemKey`.
+ * Keywords are whole tokens of the folded text, matched like `KEYWORD_RULES`.
+ */
+const BANK_CATEGORY_RULES: readonly (readonly [systemKey: string, keywords: readonly string[]])[] =
+  [
+    ['groceries', ['продукти', 'супермаркети']],
+    ['dining', ['кафе', 'ресторани']],
+    ['transport', ['транспорт', 'таксі', 'пальне', 'азс']],
+    ['utilities', ['комуналка', 'комунальні', 'інтернет']],
+    ['health', ['аптеки', 'медицина', "здоров'я"]],
+    ['shopping', ['одяг', 'взуття', 'магазини']],
+    ['entertainment', ['розваги']],
+    ['travel', ['подорожі']],
+    ['education', ['освіта']],
+    ['kids', ['дитячі']],
+    ['salary', ['зарплата']],
+  ];
+
+/** Card-scheme merchant category codes (monobank) by default category: [from, to, systemKey]. */
+const MCC_RANGES: readonly (readonly [from: number, to: number, systemKey: string])[] = [
+  [5411, 5411, 'groceries'],
+  [5422, 5422, 'groceries'],
+  [5441, 5441, 'groceries'],
+  [5451, 5451, 'groceries'],
+  [5462, 5462, 'groceries'],
+  [5499, 5499, 'groceries'],
+  [5811, 5814, 'dining'],
+  [4111, 4112, 'transport'],
+  [4121, 4121, 'transport'],
+  [4131, 4131, 'transport'],
+  [4789, 4789, 'transport'],
+  [5541, 5542, 'transport'],
+  [7523, 7523, 'transport'],
+  [4900, 4900, 'utilities'],
+  [4814, 4814, 'utilities'],
+  [4899, 4899, 'subscriptions'],
+  [5815, 5818, 'subscriptions'],
+  [5912, 5912, 'health'],
+  [8011, 8099, 'health'],
+  [5311, 5311, 'shopping'],
+  [5651, 5651, 'shopping'],
+  [5691, 5691, 'shopping'],
+  [5732, 5732, 'shopping'],
+  [5999, 5999, 'shopping'],
+  [3000, 3299, 'travel'],
+  [4511, 4511, 'travel'],
+  [7011, 7011, 'travel'],
+  [7832, 7832, 'entertainment'],
+  [7922, 7922, 'entertainment'],
+  [7996, 7996, 'entertainment'],
+  [8211, 8299, 'education'],
+];
+
+/** The default category an MCC suggests, or undefined. */
+export function mccSystemKey(mcc: string): string | undefined {
+  const code = Number(mcc);
+  return MCC_RANGES.find(([from, to]) => code >= from && code <= to)?.[2];
+}
+
 /** Bank boilerplate that says nothing about the merchant. */
 const STOPWORDS = new Set([
   'compra',
@@ -147,6 +207,12 @@ export function merchantKey(description: string): string {
     .join(' ');
 }
 
+/** The bank category as stored and matched: folded words, '' when none. */
+export const foldBankCategory = (text: string) => words(text).join(' ');
+
+/** The learned-rule key of a folded bank category; the prefix keeps it apart from merchant keys. */
+export const bankCategoryKey = (folded: string) => `bank:${folded}`;
+
 export type CategoryRef = Readonly<{ id: string; kind: EntryKind }>;
 
 /** What one workspace offers the categorizer: learned rules and its default categories. */
@@ -155,25 +221,57 @@ export type CategoryCatalog = Readonly<{
   bySystemKey: ReadonlyMap<string, CategoryRef>;
 }>;
 
-/** BR-29: a learned rule, then a built-in keyword rule, else uncategorized; kinds must match. */
-export function categorize(
-  description: string,
+/** The bank's own category text and MCC for a row; neither is stored on the transaction. */
+export type Hints = Readonly<{ bankCategory?: string; mcc?: string }>;
+
+/** The longest keyword of `rules` found in the folded text whose category exists with this kind. */
+function keywordMatch(
+  text: string,
+  rules: typeof KEYWORD_RULES,
   kind: EntryKind,
   catalog: CategoryCatalog,
 ): string | null {
-  const learned = catalog.learned.get(merchantKey(description));
-  if (learned?.kind === kind) return learned.id;
-  const text = ` ${words(description).join(' ')} `;
+  const padded = ` ${text} `;
   let best: { id: string; length: number } | null = null;
-  for (const [systemKey, keywords] of KEYWORD_RULES) {
+  for (const [systemKey, keywords] of rules) {
     const category = catalog.bySystemKey.get(systemKey);
     if (category?.kind !== kind) continue;
     for (const keyword of keywords) {
       const length = keyword.split(' ').length;
-      if ((best === null || length > best.length) && text.includes(` ${keyword} `)) {
+      if ((best === null || length > best.length) && padded.includes(` ${keyword} `)) {
         best = { id: category.id, length };
       }
     }
   }
   return best?.id ?? null;
+}
+
+const FOLDED_BANK_CATEGORY_RULES = BANK_CATEGORY_RULES.map(
+  ([systemKey, keywords]) => [systemKey, keywords.map(foldBankCategory)] as const,
+);
+
+/**
+ * BR-29: a learned rule on the description, a learned rule on the bank category, the MCC table,
+ * the built-in bank category words, then built-in keywords on the description, else
+ * uncategorized; kinds must match.
+ */
+export function categorize(
+  description: string,
+  kind: EntryKind,
+  catalog: CategoryCatalog,
+  hints: Hints = {},
+): string | null {
+  const learnedFor = (key: string) => {
+    const learned = key === '' ? undefined : catalog.learned.get(key);
+    return learned?.kind === kind ? learned.id : null;
+  };
+  const bankCategory = foldBankCategory(hints.bankCategory ?? '');
+  const mccCategory = catalog.bySystemKey.get(mccSystemKey(hints.mcc ?? '') ?? '');
+  return (
+    learnedFor(merchantKey(description)) ??
+    (bankCategory ? learnedFor(bankCategoryKey(bankCategory)) : null) ??
+    (mccCategory?.kind === kind ? mccCategory.id : null) ??
+    keywordMatch(bankCategory, FOLDED_BANK_CATEGORY_RULES, kind, catalog) ??
+    keywordMatch(words(description).join(' '), KEYWORD_RULES, kind, catalog)
+  );
 }

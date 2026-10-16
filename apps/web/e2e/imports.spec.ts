@@ -383,6 +383,28 @@ test('a PrivatBank file with two cards imports one card, then the next', async (
   ]);
 });
 
+test('the bank category suggests a default category and is not stored', async ({
+  page,
+  signInAs,
+  db,
+}) => {
+  await signInAs('ann');
+  await createAccount(page, 'Privat UAH', 'UAH');
+  await page.goto('/imports/new');
+  await page.getByLabel('Statement file').setInputFiles(fixture('privatbank-hints.xlsx'));
+  await expect(page.getByLabel('Bank category (suggestion only)')).toHaveText(/Категорія/);
+  const body = importBody(page);
+  await page.getByRole('button', { name: 'Import 2 rows' }).click();
+  await expect(page.getByRole('heading', { name: 'Import finished' })).toBeVisible();
+  expect(await body).toContain('Комуналка та Інтернет');
+  await expect(categoryOf(page, 'Київводоканал')).toHaveText('Utilities');
+  await expect(categoryOf(page, 'Невідома крамниця')).toHaveText('Uncategorized');
+  expect((await db.transactions(ann.email)).map((r) => r.description)).toEqual([
+    'Київводоканал',
+    'Невідома крамниця',
+  ]);
+});
+
 test('a legacy .xls is refused, rows without an amount are skipped, a mapping is remembered', async ({
   page,
   signInAs,

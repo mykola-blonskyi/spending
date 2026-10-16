@@ -29,7 +29,7 @@ import {
   toView,
   toLedgerRow,
 } from '../ledger/views';
-import { learnCategoryRules } from '../imports/category-rules';
+import { learnCategoryRules, loadBankCategories } from '../imports/category-rules';
 import { AccessPolicy } from '../workspaces/access-policy';
 import {
   type ConflictLocal,
@@ -422,6 +422,7 @@ export class SyncService {
                 workspaceId: intended.workspaceId,
                 description: existing!.description,
                 categoryId: intended.categoryId,
+                bankCategory: (await loadBankCategories(tx, [input.id])).get(input.id),
               },
             ]);
           }

@@ -148,7 +148,9 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   credentials and never initiates payments.
 - **BR-26.** The upload limit is 2 MiB for CSV, 5 MiB for XLSX, and 5000 rows. The client shows a preview and column
   mapping before anything is written. The server re-validates every row and reports rejected rows
-  with a reason code.
+  with a reason code. The optional hints `bankCategory` (at most 100 characters) and `mcc` (four
+  digits) are checked on the whole request: a malformed hint is a 400, so the client sends only
+  well-formed ones.
 - **BR-27.** The dedupe key is the provider transaction ID when mapped. Otherwise it is
   SHA-256 of account, date, amount, currency, normalized description, and the ordinal of that
   identical tuple within the file. Re-importing the same statement adds nothing. Two identical
@@ -161,13 +163,20 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   with the personal category suggestion. Confirming moves a family row to the family workspace
   with its account kept (BR-3); the category must belong to the target workspace (BR-4). One
   confirmation request is all or nothing.
-- **BR-29.** Auto-categorization first uses the user's learned CategoryRules (per merchant key),
-  then built-in keyword rules for default categories, and otherwise leaves the category empty.
-  Only categories of the row's kind qualify, and archived ones are skipped. Confirming or changing
-  the category of an imported row (sync push or review confirmation) updates the learned rule of
-  the row's workspace. The merchant key is the first three words of the stored description, folded
-  to lowercase without accents, with dates, card masks, numbers and bank boilerplate ("compra",
-  "tarjeta", "recibo") removed.
+- **BR-29.** Auto-categorization tries, in order: the user's learned CategoryRule for the merchant
+  key; the learned rule for the row's bank category; the default category of the row's MCC; the
+  built-in words for the bank category text; the built-in keyword rules on the description; else
+  the category stays empty. Only categories of the row's kind qualify, and archived ones are
+  skipped. Confirming or changing the category of an imported row (sync push or review
+  confirmation) updates the learned rules of the row's workspace: one for the merchant key and,
+  when the row came with a bank category, one for the bank category. The merchant key is the first
+  three words of the stored description, folded to lowercase without accents, with dates, card
+  masks, numbers and bank boilerplate ("compra", "tarjeta", "recibo") removed. The bank category
+  key is `bank:` plus all folded words of the bank category. The bank category (PrivatBank) and
+  the MCC (monobank) are hints: the MCC is never kept, and the folded bank category is kept per
+  imported transaction (`import_hints`, never shown or synced) only so that a later category
+  choice can teach the rule above. The MCC table covers groceries, dining, transport, utilities,
+  subscriptions, health, shopping, travel, entertainment and education.
 - **BR-30.** Undoing an import batch deletes (tombstones) its transactions that were not edited
   after import and clears their dedupe keys, so the same statement can be imported again. Edited
   ones are kept and reported. Deleting a single imported transaction keeps its key, so a

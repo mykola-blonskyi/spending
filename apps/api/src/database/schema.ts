@@ -504,6 +504,17 @@ export const budgets = pgTable(
   ],
 );
 
+/**
+ * BR-29: the folded bank category an imported row came with, kept only so that choosing the row's
+ * category can teach a rule for it. Never shown or synced.
+ */
+export const importHints = pgTable('import_hints', {
+  transactionId: uuid('transaction_id')
+    .primaryKey()
+    .references(() => transactions.id, { onDelete: 'cascade' }),
+  bankCategory: text('bank_category').notNull(),
+});
+
 export const categoryRules = pgTable(
   'category_rules',
   {

@@ -1,6 +1,12 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { categoryRules, fxRates, importBatches, transactions } from '../src/database/schema';
+import {
+  categoryRules,
+  fxRates,
+  importBatches,
+  importHints,
+  transactions,
+} from '../src/database/schema';
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
 import {
   as,
@@ -22,6 +28,8 @@ type Row = {
   description: string;
   currency?: string;
   externalId?: string;
+  bankCategory?: string;
+  mcc?: string;
 };
 type ImportResult = {
   batch: { id: string; importedCount: number; duplicateCount: number; rejectedCount: number };
@@ -367,6 +375,44 @@ describe('imports', () => {
       expect(rows.get('Bar Manolo')!.categoryId).toBe(ids.get('dining'));
     });
 
+    it('suggests from the bank category and MCC and rejects malformed hints', async () => {
+      const ids = await categoryIds(ann, annPersonal);
+      await importRows(ann, [
+        row(2, { description: 'Kyivvodokanal', bankCategory: 'Комуналка та Інтернет' }),
+        row(3, { description: 'Silpo', mcc: '5411' }),
+        row(4, { description: 'Nothing', bankCategory: 'Невідома', mcc: '4829' }),
+      ]);
+      const rows = await byDescription(ann);
+      expect(rows.get('Kyivvodokanal')!.categoryId).toBe(ids.get('utilities'));
+      expect(rows.get('Silpo')!.categoryId).toBe(ids.get('groceries'));
+      expect(rows.get('Nothing')!.categoryId).toBeNull();
+      expect(rows.get('Silpo')).not.toHaveProperty('mcc');
+      for (const bad of [{ mcc: '541' }, { mcc: 'abcd' }, { bankCategory: 'x'.repeat(101) }]) {
+        expect((await post(ann, [row(2, bad)])).status).toBe(400);
+      }
+    });
+
+    it('learns a correction on the bank category and applies it to other merchants', async () => {
+      const ids = await categoryIds(ann, annPersonal);
+      const bankCategory = 'Комуналка та Інтернет';
+      await importRows(ann, [row(2, { description: 'Provider One', bankCategory })]);
+      const imported = (await history(ann))[0]!;
+      expect(imported.categoryId).toBe(ids.get('utilities'));
+      expect((await edit(ann, imported, { categoryId: ids.get('housing') })).status).toBe(
+        'applied',
+      );
+      expect((await t.db.select().from(categoryRules)).map((r) => r.merchantKey).sort()).toEqual([
+        'bank:комуналка та інтернет',
+        'provider one',
+      ]);
+
+      await importRows(ann, [
+        row(2, { description: 'Other Provider', bankCategory, occurredOn: '2026-10-05' }),
+      ]);
+      expect((await byDescription(ann)).get('Other Provider')!.categoryId).toBe(ids.get('housing'));
+      expect(await t.db.select().from(importHints)).toHaveLength(2);
+    });
+
     it('does not learn from manual rows or unchanged categories', async () => {
       const ids = await categoryIds(ann, annPersonal);
       await importRows(ann, [row(2, { description: 'Mercadona' })]);
@@ -534,6 +580,23 @@ describe('imports', () => {
       expect(
         (await confirm(ann, [{ transactionId: mine, scope: 'personal', categoryId: null }])).status,
       ).toBe(404);
+    });
+
+    it('learns the bank category when a review is confirmed', async () => {
+      const ids = await categoryIds(ann, annPersonal);
+      const { imported } = await importRows(ann, [
+        row(2, { description: 'Zerno', bankCategory: 'Кафе' }),
+      ]);
+      await confirm(ann, [
+        {
+          transactionId: imported.transactionIds[0]!,
+          scope: 'personal',
+          categoryId: ids.get('entertainment'),
+        },
+      ]);
+      expect((await t.db.select().from(categoryRules)).map((r) => r.merchantKey)).toContain(
+        'bank:кафе',
+      );
     });
 
     it('learns the last category chosen for a merchant confirmed twice at once', async () => {

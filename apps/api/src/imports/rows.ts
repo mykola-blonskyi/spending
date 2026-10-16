@@ -5,6 +5,7 @@ import { amountMinorSchema, calendarDateSchema, type EntryKind } from '../ledger
 export const IMPORT_ROWS_MAX = 5000;
 const DESCRIPTION_MAX = 200;
 const EXTERNAL_ID_MAX = 100;
+const BANK_CATEGORY_MAX = 100;
 export const MAPPING_MAX_BYTES = 4096;
 
 export const REJECT_REASONS = [
@@ -29,6 +30,12 @@ export const importRowSchema = z.strictObject({
   currency: z.string().optional(),
   description: z.string(),
   externalId: z.string().optional(),
+  // Category hints (BR-29): validated here, so a bad value fails the request, not one row.
+  bankCategory: z.string().max(BANK_CATEGORY_MAX).optional(),
+  mcc: z
+    .string()
+    .regex(/^\d{4}$/)
+    .optional(),
 });
 export type ImportRowInput = z.infer<typeof importRowSchema>;
 
@@ -41,6 +48,8 @@ export type NormalizedRow = Readonly<{
   currency: CurrencyCode;
   description: string;
   externalId: string | null;
+  bankCategory?: string;
+  mcc?: string;
 }>;
 
 type Checked = { row: NormalizedRow } | { reason: RejectReason };
@@ -64,6 +73,8 @@ function checkRow(input: ImportRowInput, accountCurrency: CurrencyCode): Checked
       currency,
       description,
       externalId,
+      bankCategory: input.bankCategory,
+      mcc: input.mcc,
     },
   };
 }

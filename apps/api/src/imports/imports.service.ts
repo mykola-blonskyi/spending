@@ -4,14 +4,14 @@ import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { ApiError } from '../common/errors';
 import { type CurrencyCode } from '../common/money';
 import { DB, type Db, ledgerTransaction, type Tx } from '../database/database.module';
-import { accounts, categories, importBatches, transactions } from '../database/schema';
+import { accounts, categories, importBatches, importHints, transactions } from '../database/schema';
 import { convert, type RateQuote } from '../ledger/fx/conversion';
 import { FxService } from '../ledger/fx/fx.service';
 import { LedgerService, selectViewRows } from '../ledger/ledger.service';
 import { toLedgerRow, type TransactionView } from '../ledger/views';
 import { AccessPolicy } from '../workspaces/access-policy';
-import { categorize } from './categorize';
-import { learnCategoryRules, loadCatalog } from './category-rules';
+import { categorize, foldBankCategory } from './categorize';
+import { learnCategoryRules, loadBankCategories, loadCatalog } from './category-rules';
 import { importHashes } from './dedupe';
 import { validateRows } from './rows';
 import {
@@ -71,9 +71,13 @@ export class ImportsService {
         quotes.set(currency, await this.fx.quotes(tx, currency, dates));
       }
       const values = [];
+      const bankCategories = new Map<string, string>();
       for (const [index, row] of valid.entries()) {
+        const id = crypto.randomUUID();
+        const bankCategory = foldBankCategory(row.bankCategory ?? '');
+        if (bankCategory) bankCategories.set(id, bankCategory);
         values.push({
-          id: crypto.randomUUID(),
+          id,
           workspaceId,
           createdBy: actorId,
           kind: row.kind,
@@ -81,7 +85,7 @@ export class ImportsService {
           currency: row.currency,
           occurredOn: row.occurredOn,
           accountId: account.id,
-          categoryId: categorize(row.description, row.kind, catalog),
+          categoryId: categorize(row.description, row.kind, catalog, row),
           description: row.description,
           externalId: row.externalId,
           importHash: hashes[index]!,
@@ -107,6 +111,13 @@ export class ImportsService {
           })
           .returning({ id: transactions.id });
         transactionIds.push(...inserted.map((r) => r.id));
+      }
+      const hints = transactionIds.flatMap((transactionId) => {
+        const bankCategory = bankCategories.get(transactionId);
+        return bankCategory ? [{ transactionId, bankCategory }] : [];
+      });
+      for (let i = 0; i < hints.length; i += INSERT_CHUNK) {
+        await tx.insert(importHints).values(hints.slice(i, i + INSERT_CHUNK));
       }
       const duplicates = valid.length - transactionIds.length;
       const [stored] = await tx
@@ -197,10 +208,16 @@ export class ImportsService {
           desc(transactions.id),
         );
       const visible = new Set([personalId, ...(family ? [family.workspaceId] : [])]);
+      const bankCategories = await loadBankCategories(
+        tx,
+        rows.map((row) => row.id),
+      );
       return rows.map((row) => ({
         transaction: toLedgerRow(row, visible) as TransactionView,
         familyCategoryId: familyCatalog
-          ? categorize(row.description, row.kind, familyCatalog)
+          ? categorize(row.description, row.kind, familyCatalog, {
+              bankCategory: bankCategories.get(row.id),
+            })
           : null,
       }));
     });
@@ -279,10 +296,13 @@ export class ImportsService {
         set workspace_id = v.workspace_id, category_id = v.category_id, review_status = 'confirmed'
         from (values ${values}) as v(id, workspace_id, category_id)
         where t.id = v.id`);
+      const bankCategories = await loadBankCategories(tx, ids);
       await learnCategoryRules(
         tx,
-        confirmed.flatMap(({ workspaceId, description, categoryId }) =>
-          categoryId ? [{ workspaceId, description, categoryId }] : [],
+        confirmed.flatMap(({ id, workspaceId, description, categoryId }) =>
+          categoryId
+            ? [{ workspaceId, description, categoryId, bankCategory: bankCategories.get(id) }]
+            : [],
         ),
       );
       const views = await this.ledger.ledgerRows(tx, actorId, ids);

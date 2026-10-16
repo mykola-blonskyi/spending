@@ -308,3 +308,10 @@ Legacy binary `.xls` is refused with a message. Known banks are recognized by th
 **Consequences.** No new dependency. The reader takes formula cells by their cached value and
 skips ZIP64, CRC checks and every sheet but the first; a part over 64 MiB or a sheet over 100
 columns is refused. PDF statements will reuse the same cell table and mapping step.
+
+**Addendum (category hints, #104).** The mapping step has two optional roles, bank category and
+MCC, set by the PrivatBank and monobank presets. Each row carries them as optional request fields,
+used only by BR-29. They are not columns of the transaction. The one thing kept is the folded bank
+category in a server-side `import_hints` table (cascade on the transaction), because a category
+correction happens long after the import and must still learn the bank-category rule; the MCC
+needs no learning, so it is not kept. The amount parser also accepts "грн" and "₴" for UAH.

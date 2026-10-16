@@ -81,3 +81,10 @@ describe('validateRows', () => {
     expect(validateRows([row({ externalId: '  ' })], EUR).valid[0]!.externalId).toBeNull();
   });
 });
+
+describe('category hints', () => {
+  it('carries the bank category and MCC through', () => {
+    const { valid } = validateRows([row({ bankCategory: 'Кафе', mcc: '5812' })], EUR);
+    expect(valid[0]).toMatchObject({ bankCategory: 'Кафе', mcc: '5812' });
+  });
+});
