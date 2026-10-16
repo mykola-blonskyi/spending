@@ -1,5 +1,5 @@
 import { ChevronDown } from 'lucide-react';
-import { Fragment, type ReactNode, useId, useState } from 'react';
+import { type ReactNode, useId, useState } from 'react';
 import type { Scope } from '@features/family';
 import { useTranslations } from '@i18n/index';
 import { PageHeader } from '@shared/components';
@@ -84,7 +84,7 @@ function Pills<T extends string>({
           aria-checked={item.value === value}
           onClick={() => onChange(item.value)}
           className={cn(
-            'flex h-10 min-w-11 items-center justify-center rounded-full px-4 text-[13px] transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.97]',
+            'flex h-10 min-w-11 items-center justify-center rounded-full px-3 text-[13px] transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.97]',
             item.value === value
               ? 'bg-accent font-medium text-accent-foreground'
               : 'text-muted-foreground hover:text-foreground',
@@ -137,13 +137,23 @@ function Options({
   );
 }
 
-/** Fills the catalog sentence's `{name}` blanks, so each language orders them its own way. */
+const PUNCTUATION = /^[,.;:!?]+/;
+
+/**
+ * Fills the catalog sentence's `{name}` blanks, so each language orders them its own way. A
+ * blank keeps the punctuation after it, so a line never starts with a comma.
+ */
 function fill(template: string, blanks: Record<string, ReactNode>): ReactNode[] {
-  return template
-    .split(/\{(\w+)\}/)
-    .map((part, index) =>
-      index % 2 === 0 ? part : <Fragment key={part}>{blanks[part]}</Fragment>,
+  const parts = template.split(/\{(\w+)\}/);
+  return parts.map((part, index) => {
+    if (index % 2 === 0) return index === 0 ? part : part.replace(PUNCTUATION, '');
+    return (
+      <span key={part} className="whitespace-nowrap">
+        {blanks[part]}
+        {PUNCTUATION.exec(parts[index + 1] ?? '')?.[0]}
+      </span>
     );
+  });
 }
 
 function Sentence({
@@ -183,7 +193,7 @@ function Sentence({
           amount: (
             <label
               htmlFor={amountId}
-              className="tabular inline-flex items-baseline gap-1 rounded-xl bg-muted px-3 py-0.5 align-baseline font-sans text-5xl font-semibold tracking-tight text-foreground focus-within:outline-2 focus-within:outline-ring"
+              className="tabular inline-flex items-baseline gap-2 rounded-xl bg-muted px-3 py-0.5 align-baseline font-sans text-5xl font-semibold tracking-tight text-foreground focus-within:outline-2 focus-within:outline-ring"
             >
               <input
                 id={amountId}
@@ -332,10 +342,10 @@ export function JournalEntryView({ form }: { form: EntryForm }) {
               {t('transactionForm.save')}
             </Button>
             {form.canDiscard && (
-              <DiscardButton onConfirm={() => void form.discard()} className="rounded-full" />
+              <DiscardButton onConfirm={() => void form.discard()} className="h-12 rounded-full" />
             )}
             {form.canDelete && (
-              <DeleteButton onConfirm={() => void form.remove()} className="rounded-full" />
+              <DeleteButton onConfirm={() => void form.remove()} className="h-12 rounded-full" />
             )}
             <p className="text-center text-xs text-muted-foreground sm:text-left">
               {t('transactionForm.saveHint')}

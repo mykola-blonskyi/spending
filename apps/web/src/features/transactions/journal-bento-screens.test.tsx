@@ -45,3 +45,12 @@ describe.each([
     expect(screen.getByLabelText('Amount')).toBeInTheDocument();
   });
 });
+
+describe('journal entry', () => {
+  it('keeps punctuation on the line of the blank before it', () => {
+    renderTransactionScreen(<JournalEntry />, { data: fakeLocalData(state).value, ...entry });
+    const blank = screen.getByRole('button', { name: 'No account' }).parentElement;
+    expect(blank).toHaveClass('whitespace-nowrap');
+    expect(blank).toHaveTextContent(/^No account\.$/);
+  });
+});
