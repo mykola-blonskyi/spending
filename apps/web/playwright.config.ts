@@ -53,6 +53,8 @@ export default defineConfig({
         OIDC_CLIENT_SECRET: OIDC_CLIENT.secret,
         SESSION_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
         COOKIE_SECURE: 'false',
+        // The 5,000-entry history seeds push far more than a user's minute of mutations.
+        SYNC_MUTATIONS_PER_MINUTE: '100000',
       },
     },
     {

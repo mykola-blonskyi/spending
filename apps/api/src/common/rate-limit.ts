@@ -1,7 +1,14 @@
-import { type CanActivate, type ExecutionContext, Injectable, SetMetadata } from '@nestjs/common';
+import {
+  type CanActivate,
+  type ExecutionContext,
+  Inject,
+  Injectable,
+  SetMetadata,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { ThrottlerModuleOptions } from '@nestjs/throttler';
 import type { ActorRequest } from './actor';
+import { APP_CONFIG, type AppConfig } from './config';
 import { ApiError } from './errors';
 
 const MINUTE = 60_000;
@@ -38,15 +45,16 @@ export const rateLimitOptions: ThrottlerModuleOptions = {
 };
 
 /**
- * Every sync mutation holds the single ledger lock, so a push costs its mutation count. 2000 a
- * minute lets an offline queue of a few hundred through in one or two pushes, and keeps one user
- * to about a fifth of what the lock serializes. Charged before the body is validated.
+ * Every sync mutation holds the single ledger lock, so a push costs its mutation count. The
+ * default of 2000 a minute lets an offline queue of a few hundred through in one or two pushes,
+ * and keeps one user to about a fifth of what the lock serializes. Charged before the body is
+ * validated.
  */
-export const SYNC_MUTATIONS_PER_MINUTE = 2000;
-
 @Injectable()
 export class SyncMutationBudget implements CanActivate {
   private readonly windows = new Map<string, { startedAt: number; used: number }>();
+
+  constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {}
 
   canActivate(context: ExecutionContext): boolean {
     const req = context.switchToHttp().getRequest<ActorRequest>();
@@ -57,7 +65,7 @@ export class SyncMutationBudget implements CanActivate {
     const current = this.windows.get(key);
     const window =
       current && now - current.startedAt < MINUTE ? current : { startedAt: now, used: 0 };
-    if (window.used + cost > SYNC_MUTATIONS_PER_MINUTE) throw new ApiError('RATE_LIMITED');
+    if (window.used + cost > this.config.syncMutationsPerMinute) throw new ApiError('RATE_LIMITED');
     window.used += cost;
     this.windows.set(key, window);
     return true;
