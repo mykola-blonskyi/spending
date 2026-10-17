@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ComponentType } from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { serverRow, syncedState } from '@data/sync/fixtures';
+import { FAMILY, PERSONAL, serverRow, syncedState } from '@data/sync/fixtures';
 import { type LocalState, queueOrder } from '@data/sync/model';
 import { testSession } from '@data/testing';
 import { CalmEntry } from './layouts/calm-entry';
@@ -274,6 +274,22 @@ describe('recording a transfer in the entry form (BR-37)', () => {
     const option = screen.getByRole('radio', { name: 'Transfer' });
     expect(option).toBeDisabled();
     expect(option).toHaveAccessibleDescription('A transfer needs two accounts in this space.');
+  });
+
+  it('falls back to an expense when the chosen space has fewer than two accounts', async () => {
+    newScreen({
+      ...ledger(),
+      workspaces: new Map([PERSONAL, FAMILY].map((w) => [w.id, w])),
+      accounts: new Map([
+        ['acc-card', account()],
+        ['acc-savings', account({ id: 'acc-savings', name: 'Savings' })],
+        ['acc-joint', account({ id: 'acc-joint', workspaceId: FAMILY.id, name: 'Joint' })],
+      ]),
+    });
+    await userEvent.click(screen.getByRole('radio', { name: 'Transfer' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Family' }));
+    expect(screen.getByRole('radio', { name: 'Expense' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Transfer' })).toBeDisabled();
   });
 
   it('keeps the entry form when editing a side', () => {

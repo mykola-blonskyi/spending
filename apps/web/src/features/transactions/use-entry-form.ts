@@ -219,7 +219,13 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
     scope,
     /** Family members choose where a new entry goes (BR-12). */
     scopeOffered: mode === 'new' && family !== undefined,
-    setScope,
+    setScope: (next: Scope) => {
+      setScope(next);
+      const target = (next === 'family' && family ? family : personal)?.id;
+      // A space with fewer than two accounts cannot hold a transfer, so the form falls back.
+      if (activeAccounts.filter((account) => account.workspaceId === target).length < 2)
+        change((current) => (current.kind === 'transfer' ? withKind(current, 'expense') : current));
+    },
     setAccount: (accountId: string | null) => {
       const account = accounts.items.find((item) => item.id === accountId);
       change((current) => ({
