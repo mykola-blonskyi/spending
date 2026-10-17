@@ -18,9 +18,13 @@ The local profile of an OIDC subject.
 An opaque, revocable server-side login session.
 
 - `tokenHash` (SHA-256 of the cookie value, primary key), `userId`, `csrfToken`
+- `previousTokenHash`: the hash before the last rotation, accepted for a short grace window so
+  concurrent requests never fork the session
 - `expiresAt`, `rotatedAt`, `lastSeenAt`
 - `refreshTokenEnc` (the OIDC refresh token, AES-256-GCM encrypted) and `grantCheckedAt`. The API
   re-checks the provider grant by refreshing at most every 5 minutes (ADR-003).
+- `idTokenEnc` (the OIDC ID token, encrypted the same way), sent as the logout hint to the
+  provider's end-session endpoint.
 
 ## LoginAttempt
 
