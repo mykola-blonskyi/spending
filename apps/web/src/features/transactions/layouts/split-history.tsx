@@ -176,7 +176,11 @@ function Header({ history }: { history: History }) {
           chipClassName="h-9 rounded-md lg:h-7"
         />
       </div>
-      <TotalsLine totals={history.totals} className="pb-2.5 text-[13px]" />
+      <TotalsLine
+        totals={history.totals}
+        balance={history.balance}
+        className="pb-2.5 text-[13px]"
+      />
     </header>
   );
 }

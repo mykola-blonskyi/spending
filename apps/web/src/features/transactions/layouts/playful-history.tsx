@@ -165,7 +165,7 @@ export function PlayfulHistory() {
         <ActiveChips chips={history.chips} chipClassName="h-11 px-4 text-sm font-semibold" />
       </div>
 
-      <TotalsLine totals={history.totals} />
+      <TotalsLine totals={history.totals} balance={history.balance} />
       <HistoryStatus status={history.status} loaded={history.loaded} />
       {history.status === 'ready' && (
         <HistoryList

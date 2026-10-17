@@ -151,7 +151,7 @@ export function CardsHistory() {
       </ToggleGroup>
       <ActiveChips chips={history.chips} />
 
-      <TotalsLine totals={history.totals} />
+      <TotalsLine totals={history.totals} balance={history.balance} />
       <HistoryStatus status={history.status} loaded={history.loaded} />
       {history.status === 'ready' && (
         <HistoryList

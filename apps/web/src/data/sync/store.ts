@@ -13,7 +13,12 @@ import {
 
 interface LocalSchema extends DBSchema {
   transactions: { key: string; value: TransactionRecord; indexes: { workspaceId: string } };
-  accounts: { key: string; value: Account };
+  /** Accounts cached before BR-40 lack the opening fields. */
+  accounts: {
+    key: string;
+    value: Omit<Account, 'openingBalanceMinor' | 'openingOn'> &
+      Partial<Pick<Account, 'openingBalanceMinor' | 'openingOn'>>;
+  };
   categories: { key: string; value: Category };
   workspaces: { key: string; value: Workspace };
   conflicts: { key: string; value: Conflict };
@@ -98,7 +103,8 @@ async function load(tx: Tx): Promise<LocalState> {
     ]);
   return {
     transactions: byId(transactions),
-    accounts: byId(accounts),
+    // A missing opening field means no opening balance (BR-40).
+    accounts: byId(accounts.map((a) => ({ openingBalanceMinor: 0, openingOn: null, ...a }))),
     categories: byId(categories),
     workspaces: byId(workspaces),
     conflicts: byId(conflicts),

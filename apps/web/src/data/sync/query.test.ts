@@ -5,7 +5,7 @@ import { localRow, page, sequentialIds, serverRow, syncedState } from './fixture
 import { emptyLocalState, type LocalState } from './model';
 import { reducePull } from './pull';
 import { applyLocalChange, setMutationState } from './queue';
-import { queryTransactions } from './query';
+import { accountBalance, queryTransactions } from './query';
 import { deriveSyncStatus, smoothingDelay } from './status';
 
 const history = syncedState(
@@ -163,5 +163,73 @@ describe('smoothingDelay', () => {
     ['leaving syncing is immediate', synced, syncing, 0, 0],
   ])('%s', (_, next, shown, shownFor, expected) => {
     expect(smoothingDelay(next, shown, shownFor)).toBe(expected);
+  });
+});
+
+describe('accountBalance (BR-40)', () => {
+  const savings: Parameters<typeof accountBalance>[0] = {
+    id: 'acc-savings',
+    openingBalanceMinor: 100000,
+    openingOn: '2026-10-01',
+  };
+  const on = (patch: Parameters<typeof serverRow>[0]) =>
+    serverRow({ accountId: savings.id, amountMinor: 1000, occurredOn: '2026-10-10', ...patch });
+  const balanceOf = (state: LocalState, account = savings) =>
+    accountBalance(account, state.transactions.values());
+
+  it('adds income and subtracts expenses to the opening balance, other accounts ignored', () => {
+    const state = syncedState(
+      on({ id: 'a', kind: 'income', amountMinor: 20000 }),
+      on({ id: 'b', kind: 'expense', amountMinor: 5000 }),
+      serverRow({ id: 'c', accountId: 'acc-card', amountMinor: 999 }),
+    );
+    expect(balanceOf(state)).toEqual({ balanceMinor: 115000, uncounted: 0 });
+  });
+
+  it('counts transfer sides in and out, and rows awaiting review', () => {
+    const state = syncedState(
+      on({ id: 'in', kind: 'income', amountMinor: 30000, transferId: 'tr-1' }),
+      on({
+        id: 'out',
+        kind: 'expense',
+        amountMinor: 10000,
+        transferOutside: true,
+        transferId: 'tr-2',
+      }),
+      on({ id: 'review', kind: 'expense', amountMinor: 2000, reviewStatus: 'pending_review' }),
+    );
+    expect(balanceOf(state).balanceMinor).toBe(118000);
+  });
+
+  it('leaves entries before the opening date out and reports how many', () => {
+    const state = syncedState(
+      on({ id: 'old', occurredOn: '2026-09-30', amountMinor: 7000 }),
+      on({ id: 'first', occurredOn: '2026-10-01', amountMinor: 1000 }),
+    );
+    expect(balanceOf(state)).toEqual({ balanceMinor: 99000, uncounted: 1 });
+  });
+
+  it('counts every entry when the account has no opening date', () => {
+    const state = syncedState(on({ id: 'old', occurredOn: '2020-01-01', amountMinor: 7000 }));
+    expect(balanceOf(state, { ...savings, openingBalanceMinor: 0, openingOn: null })).toEqual({
+      balanceMinor: -7000,
+      uncounted: 0,
+    });
+  });
+
+  it('goes negative from a negative opening balance', () => {
+    const state = syncedState(on({ id: 'a', amountMinor: 500 }));
+    expect(balanceOf(state, { ...savings, openingBalanceMinor: -2000 }).balanceMinor).toBe(-2500);
+  });
+
+  it('counts a pending edit instead of the server row and ignores a pending delete', () => {
+    let state = syncedState(on({ id: 'a', amountMinor: 1000 }), on({ id: 'b', amountMinor: 3000 }));
+    state = applyLocalChange(
+      state,
+      { type: 'upsert', row: localRow({ id: 'a', accountId: savings.id, amountMinor: 4000 }) },
+      sequentialIds(),
+    );
+    state = applyLocalChange(state, { type: 'delete', id: 'b' }, sequentialIds('d'));
+    expect(balanceOf(state).balanceMinor).toBe(96000);
   });
 });

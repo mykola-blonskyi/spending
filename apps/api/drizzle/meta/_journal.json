@@ -99,6 +99,13 @@
       "when": 1792270331092,
       "tag": "0013_entry_account_currency",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792275326645,
+      "tag": "0014_account_opening_balance",
+      "breakpoints": true
     }
   ]
 }

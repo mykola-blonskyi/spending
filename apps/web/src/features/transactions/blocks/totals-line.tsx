@@ -31,14 +31,34 @@ function Sums({
   );
 }
 
-/** Spent and received in EUR, then a separate line per currency with no EUR amount (BR-15). */
-export function TotalsLine({ totals, className }: { totals: Totals; className?: string }) {
+/**
+ * Spent and received in EUR, then a separate line per currency with no EUR amount (BR-15). With
+ * an account filter, its current balance leads, whatever the period (BR-40).
+ */
+export function TotalsLine({
+  totals,
+  balance,
+  className,
+}: {
+  totals: Totals;
+  balance: { amountMinor: number; currency: string } | null;
+  className?: string;
+}) {
   const t = useTranslations('history');
   const { base, unconverted } = totals;
   const hasBase = base.expense + base.income > 0;
-  if (!hasBase && unconverted.length === 0) return null;
+  if (!hasBase && unconverted.length === 0 && !balance) return null;
   return (
     <div className={cn('flex flex-col gap-1 text-sm', className)}>
+      {balance && (
+        <div className="flex gap-1.5">
+          <span className="text-muted-foreground">{t('balanceNow')}</span>
+          <MoneyText
+            {...balance}
+            className={cn('font-medium', balance.amountMinor < 0 && 'text-expense')}
+          />
+        </div>
+      )}
       {hasBase && <Sums {...base} currency="EUR" />}
       {unconverted.map((sum) => (
         <div key={sum.currency} className="flex flex-wrap items-center gap-x-3 gap-y-1">

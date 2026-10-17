@@ -224,6 +224,9 @@ export const accounts = pgTable(
     name: text('name').notNull(),
     kind: accountKindEnum('kind').notNull(),
     currency: currency(),
+    /** BR-40. May be negative; bounded like an amount (BR-13). Null `openingOn` counts every entry. */
+    openingBalanceMinor: minor('opening_balance_minor').notNull().default(0),
+    openingOn: date('opening_on', { mode: 'string' }),
     archivedAt: tstz('archived_at'),
     revision: revision(),
     createdAt: createdAt(),
@@ -233,6 +236,11 @@ export const accounts = pgTable(
     uniqueIndex('accounts_name_uq').on(t.workspaceId, t.kind, t.name),
     index('accounts_revision_idx').on(t.revision),
     check('accounts_currency_ck', currencyCheck('currency')),
+    check(
+      'accounts_opening_balance_ck',
+      sql.raw('opening_balance_minor between -1000000000000 and 1000000000000'),
+    ),
+    check('accounts_opening_on_ck', sql.raw('(opening_balance_minor = 0) = (opening_on is null)')),
   ],
 );
 

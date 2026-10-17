@@ -31,6 +31,16 @@ export const calendarDateSchema = z
   .refine((value) => value >= '1970-01-01' && value <= '2100-12-31', 'out of range');
 
 const name = z.string().trim().min(1).max(60);
+/** BR-40: may be negative, within the amount ceiling. */
+const openingBalanceMinor = z.int().min(-AMOUNT_MINOR_MAX).max(AMOUNT_MINOR_MAX);
+const openingOn = calendarDateSchema.nullable().meta({ id: 'OpeningOnInput' });
+/** BR-40: the opening fields come together, with a date exactly when the balance is not 0. */
+function openingPaired(value: { openingBalanceMinor?: number; openingOn?: string | null }) {
+  const { openingBalanceMinor: balance, openingOn: date } = value;
+  if (balance === undefined) return date === undefined;
+  return date !== undefined && (balance === 0) === (date === null);
+}
+const OPENING_PAIRED = 'openingOn is required exactly when openingBalanceMinor is not 0';
 const color = z.string().regex(/^#[0-9a-f]{6}$/i);
 const icon = z.string().regex(/^[a-z0-9-]{1,40}$/);
 
@@ -40,6 +50,8 @@ export const accountViewSchema = z.object({
   name: z.string(),
   kind: z.enum(ACCOUNT_KINDS),
   currency: z.string(),
+  openingBalanceMinor: z.int(),
+  openingOn: z.string().nullable().meta({ id: 'OpeningOn' }),
   archivedAt,
   revision: z.int(),
   createdAt: timestamp,
@@ -62,17 +74,25 @@ export const categoryViewSchema = z.object({
 });
 export type CategoryView = z.infer<typeof categoryViewSchema>;
 
-export const createAccountSchema = z.strictObject({
-  workspaceId: z.uuid(),
-  name,
-  kind: z.enum(ACCOUNT_KINDS),
-  currency: currencySchema,
-});
-export const updateAccountSchema = z.strictObject({
-  name: name.optional(),
-  kind: z.enum(ACCOUNT_KINDS).optional(),
-  archived: z.boolean().optional(),
-});
+export const createAccountSchema = z
+  .strictObject({
+    workspaceId: z.uuid(),
+    name,
+    kind: z.enum(ACCOUNT_KINDS),
+    currency: currencySchema,
+    openingBalanceMinor: openingBalanceMinor.optional(),
+    openingOn: openingOn.optional(),
+  })
+  .refine(openingPaired, OPENING_PAIRED);
+export const updateAccountSchema = z
+  .strictObject({
+    name: name.optional(),
+    kind: z.enum(ACCOUNT_KINDS).optional(),
+    openingBalanceMinor: openingBalanceMinor.optional(),
+    openingOn: openingOn.optional(),
+    archived: z.boolean().optional(),
+  })
+  .refine(openingPaired, OPENING_PAIRED);
 export const createCategorySchema = z.strictObject({
   workspaceId: z.uuid(),
   name,

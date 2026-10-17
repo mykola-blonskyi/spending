@@ -415,3 +415,36 @@ the version bump sends the counterpart to devices. It is the one place where the
 both sides at once; it needs no new conflict, because sync refuses edits of pending rows
 (`REVIEW_REQUIRED`) and a stale edit of the confirmed side meets the bumped version like any other
 server change.
+
+## ADR-017: The opening balance is an account field, not an entry
+
+Date: 2026-10-18
+
+**Context.** People who track savings want to see how much is on each account (#131). The app
+knows only the entries recorded since they started using it, so an account needs a starting
+amount. It must work offline, sync like the rest of the account, and leave income, spending,
+categories and budgets as they are.
+
+**Decision.** An account gains `openingBalanceMinor` (integer minor units, may be negative,
+default 0) and `openingOn` (a nullable date, present exactly when the balance is not 0, checked by
+zod and a CHECK). An existing account keeps 0 and null; a device reads an account it cached
+without the fields the same way, so migration 0014 needs no backfill or revision bump. Both are
+edited in the account dialog through the account REST endpoints and pulled with the account. The
+balance is never stored: one pure function on the device (`accountBalance` in
+`data/sync/query.ts`) adds the signed amounts of the account's live local entries from `openingOn`
+on (every entry when it is null) to the opening balance and counts the older ones it leaves out
+(BR-40).
+
+**Alternatives.**
+
+- An opening entry, an income or expense dated on the opening day: it would count as income or
+  spending in analytics and budgets, and need its own exclusion like transfers (BR-37), plus a
+  way to tell it apart in history, import matching and exports.
+- No opening balance, the balance being only the sum of entries: wrong for any account that
+  held money before the first recorded entry, which is nearly every account.
+
+**Consequences.** Analytics need no change. Entries before the opening date stop counting
+towards the balance, which is shown as "N entries before the opening date are not counted". An
+account without an opening balance counts its whole history, so existing accounts show the sum of
+their entries until the user enters what they held on a date. Setting the current balance to match the bank (#132) can recompute the
+opening balance without creating an entry.

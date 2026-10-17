@@ -178,7 +178,11 @@ export function BentoHistory() {
           </ToggleGroup>
           <ActiveChips chips={history.chips} chipClassName="rounded-xl" />
         </div>
-        <TotalsLine totals={history.totals} className="text-muted-foreground" />
+        <TotalsLine
+          totals={history.totals}
+          balance={history.balance}
+          className="text-muted-foreground"
+        />
       </section>
 
       <HistoryStatus status={history.status} loaded={history.loaded} />

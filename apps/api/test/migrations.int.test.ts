@@ -125,4 +125,23 @@ describe('migrations', () => {
       cause: { message: expect.stringMatching(/^1 live transactions or recurring rules differ/) },
     });
   });
+
+  it('0014 leaves existing accounts without an opening balance and pairs date with balance (BR-40)', async () => {
+    const { personal } = await workspacesOf(t, ann);
+    const card = { workspaceId: personal, kind: 'card' as const, currency: 'EUR' };
+    const [plain] = await t.db
+      .insert(accounts)
+      .values({ ...card, name: 'Card' })
+      .returning();
+    expect(plain).toMatchObject({ openingBalanceMinor: 0, openingOn: null });
+
+    for (const opening of [
+      { openingBalanceMinor: 100, openingOn: null },
+      { openingBalanceMinor: 0, openingOn: '2026-01-01' },
+    ]) {
+      await expect(
+        t.db.insert(accounts).values({ ...card, name: crypto.randomUUID(), ...opening }),
+      ).rejects.toMatchObject({ cause: { constraint: 'accounts_opening_on_ck' } });
+    }
+  });
 });
