@@ -14,7 +14,7 @@ function Sums({
 }) {
   const t = useTranslations('pages.transactions');
   return (
-    <dl className="flex gap-3">
+    <dl className="flex flex-wrap gap-x-3 gap-y-1">
       <div className="flex gap-1.5">
         <dt className="text-muted-foreground">{t('totalSpent')}</dt>
         <dd>
@@ -56,7 +56,7 @@ export function TotalsLine({ totals, className }: { totals: Totals; className?: 
 /** A day header's net per currency: EUR, then each currency still waiting for a rate. */
 export function DayNets({ totals, className }: { totals: Totals; className?: string }) {
   return (
-    <span className={cn('flex gap-2', className)}>
+    <span className={cn('flex min-w-0 flex-wrap justify-end gap-x-2', className)}>
       {dayNets(totals).map(({ currency, net }) => (
         <MoneyText key={currency} amountMinor={net} currency={currency} signDisplay="exceptZero" />
       ))}

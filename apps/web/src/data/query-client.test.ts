@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from './api-error';
 import { createQueryClient, shouldRetry } from './query-client';
 
@@ -15,6 +15,15 @@ describe('shouldRetry', () => {
     expect(shouldRetry(0, error)).toBe(true);
     expect(shouldRetry(1, error)).toBe(true);
     expect(shouldRetry(2, error)).toBe(false);
+  });
+});
+
+describe('shouldRetry offline', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('does not retry while the device is offline, so the offline state shows at once', () => {
+    vi.stubGlobal('navigator', { onLine: false });
+    expect(shouldRetry(0, apiError(0))).toBe(false);
   });
 });
 

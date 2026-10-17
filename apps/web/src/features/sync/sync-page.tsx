@@ -1,5 +1,5 @@
 import { GitCompare, RefreshCw } from 'lucide-react';
-import { useState } from 'react';
+import { type ReactNode, useId, useState } from 'react';
 import { toast } from 'sonner';
 import { errorCode } from '@data/api-error';
 import {
@@ -9,9 +9,11 @@ import {
   useAccounts,
   useConflicts,
   useResolveConflict,
+  useUnsentCounts,
   useWorkspaces,
 } from '@data/sync';
 import { useCategoryViews } from '@features/ledger';
+import { UnsyncedEntries } from '@features/transactions';
 import { useTranslations } from '@i18n/index';
 import { EmptyState, PageHeader } from '@shared/components';
 import { formatDate, formatMoney } from '@shared/format';
@@ -41,24 +43,49 @@ import {
 
 const SIDES: readonly Side[] = ['local', 'server'];
 
-/** The sync center: open conflicts, each reviewed in a dialog. */
+function Section({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  const id = useId();
+  return (
+    <section aria-labelledby={id} className="flex flex-col gap-3">
+      <div className="flex flex-col gap-0.5 px-1">
+        <h2 id={id} className="text-sm font-medium text-muted-foreground">
+          {title}
+        </h2>
+        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/**
+ * The sync center: open conflicts, each reviewed in a dialog, then changes the server refused
+ * and changes still waiting, each opening its entry.
+ */
 export function SyncPage() {
   const t = useTranslations();
   const conflicts = useConflicts();
+  const { pending, failed } = useUnsentCounts();
   return (
     <div className="flex flex-col gap-8">
       <PageHeader title={t('pages.sync.title')} description={t('pages.sync.description')} />
-      {conflicts.items.length === 0 ? (
+      {conflicts.items.length === 0 && pending === 0 && failed === 0 && (
         <EmptyState
           icon={RefreshCw}
           title={t('pages.sync.emptyTitle')}
           description={t('pages.sync.emptyDescription')}
         />
-      ) : (
-        <section className="flex flex-col gap-3">
-          <h2 className="px-1 text-sm font-medium text-muted-foreground">
-            {t('syncCenter.conflictsTitle')}
-          </h2>
+      )}
+      {conflicts.items.length > 0 && (
+        <Section title={t('syncCenter.conflictsTitle')}>
           <ul className="flex flex-col gap-2">
             {conflicts.items.map((conflict) => (
               <li key={conflict.id}>
@@ -66,7 +93,23 @@ export function SyncPage() {
               </li>
             ))}
           </ul>
-        </section>
+        </Section>
+      )}
+      {failed > 0 && (
+        <Section
+          title={t('syncCenter.failedTitle', { count: failed })}
+          description={t('syncCenter.failedDescription')}
+        >
+          <UnsyncedEntries state="failed" />
+        </Section>
+      )}
+      {pending > 0 && (
+        <Section
+          title={t('states.sync.pending', { count: pending })}
+          description={t('pages.sync.emptyDescription')}
+        >
+          <UnsyncedEntries state="pending" />
+        </Section>
       )}
     </div>
   );

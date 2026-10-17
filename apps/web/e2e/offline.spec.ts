@@ -62,7 +62,14 @@ test('works offline through a reload and syncs exactly the intended rows on reco
   );
   await expect(page.getByRole('link', { name: /Remove me/ })).toHaveCount(0);
 
+  await page.getByRole('banner').locator('a[href="/sync"]').click();
+  const waiting = page.getByRole('region', { name: '3 changes waiting to sync' });
+  await expect(waiting.getByRole('link', { name: /Keep me/ })).toContainText('Waiting to sync');
+  await expect(waiting.getByRole('link', { name: /Made offline/ })).toBeVisible();
+  await expect(page.getByText('Everything is in sync')).toHaveCount(0);
+
   await context.setOffline(false);
+  await expect(page.getByText('Everything is in sync')).toBeVisible();
   await expect(badge(page)).toHaveText('Up to date');
   await expect
     .poll(async () =>

@@ -1,10 +1,10 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { serverRow, syncedState } from '@data/sync/fixtures';
+import { fakeLocalData, serverRow, syncedState } from '@data/sync/fixtures';
 import { queueOrder } from '@data/sync/model';
 import { testSession } from '@data/testing';
-import { account, category, fakeLocalData, renderTransactionScreen } from './test-helpers';
+import { account, category, renderTransactionScreen } from './test-helpers';
 import { CalmEntry } from './layouts/calm-entry';
 import { CalmHistory } from './layouts/calm-history';
 

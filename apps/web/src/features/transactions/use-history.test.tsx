@@ -1,10 +1,10 @@
 import { act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { testSession } from '@data/testing';
-import { serverRow, syncedState } from '@data/sync/fixtures';
+import { fakeLocalData, serverRow, syncedState } from '@data/sync/fixtures';
 import type { LocalData } from '@data/sync/local-data-context';
 import { emptyLocalState, type LocalState } from '@data/sync/model';
-import { account, category, fakeLocalData, renderTransactionHook } from './test-helpers';
+import { account, category, renderTransactionHook } from './test-helpers';
 import { useHistory, useRowContext } from './use-history';
 
 const profile = vi.hoisted(() => ({ timezone: 'Europe/Madrid' }));

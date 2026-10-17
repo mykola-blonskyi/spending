@@ -81,6 +81,7 @@ export function KindToggle({
   const reasonId = useId();
   const kinds = form.transferOffered ? [...KINDS, 'transfer' as const] : KINDS;
   const blocked = form.transferOffered && form.transferBlocked;
+  if (form.isTransfer) return null;
   return (
     <div className="flex flex-col gap-1.5">
       <ToggleGroup
@@ -160,7 +161,10 @@ export function AmountInput({
   );
 }
 
-/** Categories of the entry's kind; pressing the chosen one again leaves the entry uncategorized. */
+/**
+ * Categories of the entry's kind; pressing the chosen one again leaves the entry uncategorized.
+ * Tiles are at least 5.5rem wide, so a phone gets three and names break between words.
+ */
 export function CategoryPicker({
   form,
   className,
@@ -199,7 +203,10 @@ export function CategoryPicker({
         aria-labelledby={labelId}
         value={values.categoryId ?? ''}
         onValueChange={(next) => form.setCategory(next || null)}
-        className={cn('grid w-full grid-cols-4 gap-2', className)}
+        className={cn(
+          'grid w-full grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-2',
+          className,
+        )}
       >
         {form.categories.map((category) => (
           <ToggleGroupItem

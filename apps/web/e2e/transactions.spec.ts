@@ -107,3 +107,20 @@ test('search narrows the history and reports when nothing matches', async ({ pag
   await search.fill('');
   await expect(page.getByRole('link', { name: /Train ticket/ })).toBeVisible();
 });
+
+test('a refused save on a phone brings the invalid amount into view', async ({
+  page,
+  signInAs,
+}) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await signInAs('ann');
+  await page.goto('/transactions/new');
+  await page.getByLabel('Description').fill('Lunch');
+  await page.getByRole('button', { name: 'Save' }).click();
+
+  const amount = page.getByLabel('Amount');
+  await expect(amount).toBeFocused();
+  await expect(amount).toBeInViewport();
+  await expect(page.getByText('Enter an amount above zero', { exact: false })).toBeInViewport();
+  await expect(page).toHaveURL('/transactions/new');
+});

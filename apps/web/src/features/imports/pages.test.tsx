@@ -12,10 +12,12 @@ import {
   useWorkspaces,
   type Workspace,
 } from '@data/sync';
+import { ApiError } from '@data/api-error';
 import { I18nProvider } from '@i18n/index';
 import { ImportSummary } from './import-summary';
 import { TransferSuggestions } from './transfer-suggestions';
-import { useHasFamily, useReviewQueue } from './imports';
+import { useHasFamily, useImportBatches, useReviewQueue } from './imports';
+import { ImportsPage } from './imports-page';
 import { bulkCategoryChoice, transferChoice } from './review-choice';
 import { ReviewPage } from './review-page';
 
@@ -37,6 +39,8 @@ const confirmMutate = vi.hoisted(() => vi.fn());
 vi.mock('./imports', () => ({
   useHasFamily: vi.fn(),
   useReviewQueue: vi.fn(),
+  useImportBatches: vi.fn(),
+  useUndoImport: vi.fn(),
   useConfirmReview: () => ({ mutate: confirmMutate, isPending: false }),
   bankCategoryOf: () => undefined,
 }));
@@ -53,6 +57,28 @@ const ui = (node: React.ReactNode) =>
   );
 
 beforeEach(() => vi.clearAllMocks());
+
+describe('ImportsPage', () => {
+  it('shows past imports as needing a connection when they cannot be loaded offline', () => {
+    vi.mocked(useHasFamily).mockReturnValue(false);
+    vi.mocked(useReviewQueue).mockReturnValue({ data: [] } as unknown as ReturnType<
+      typeof useReviewQueue
+    >);
+    vi.mocked(useImportBatches).mockReturnValue({
+      isPending: false,
+      isError: true,
+      isSuccess: false,
+      fetchStatus: 'idle',
+      error: new ApiError({ status: 0, code: 'NETWORK', message: 'offline' }),
+      data: undefined,
+    } as unknown as ReturnType<typeof useImportBatches>);
+    ui(<ImportsPage />);
+    expect(
+      screen.getByRole('heading', { name: 'Past imports need a connection' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+  });
+});
 
 describe('ReviewPage', () => {
   beforeEach(() => vi.mocked(useLocalTransactions).mockReturnValue({ ready: true, items: [] }));

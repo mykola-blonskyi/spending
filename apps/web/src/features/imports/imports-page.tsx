@@ -2,17 +2,11 @@ import { ClipboardCheck, FileUp, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
-import { errorCode } from '@data/api-error';
 import type { ImportBatch } from '@data/imports';
+import { QueryUnavailable } from '@data/query-unavailable';
 import { useAccounts } from '@data/sync';
 import { useTranslations } from '@i18n/index';
-import {
-  ConfirmDialog,
-  EmptyState,
-  ErrorState,
-  LoadingState,
-  PageHeader,
-} from '@shared/components';
+import { ConfirmDialog, EmptyState, PageHeader } from '@shared/components';
 import { formatDate } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import { useOnlineStatus } from '@shared/lib/network';
@@ -116,12 +110,11 @@ export function ImportsPage() {
       {!online && <p className="text-sm text-muted-foreground">{t('imports.offline')}</p>}
       {hasFamily && pendingReview > 0 && <ReviewBanner count={pendingReview} />}
 
-      {batches.isPending ? (
-        <LoadingState rows={3} />
-      ) : batches.isError ? (
-        <ErrorState
-          title={t(`errors.${errorCode(batches.error)}`)}
-          onRetry={() => void batches.refetch()}
+      {!batches.isSuccess ? (
+        <QueryUnavailable
+          query={batches}
+          offlineTitle={t('imports.offlineTitle')}
+          offlineDescription={t('imports.offlineDescription')}
         />
       ) : batches.data.length === 0 ? (
         <EmptyState

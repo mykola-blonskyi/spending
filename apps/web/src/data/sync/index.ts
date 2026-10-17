@@ -16,6 +16,7 @@ export {
   useResolveConflict,
   useSyncStatus,
   useUnmarkTransfer,
+  useUnsentCounts,
   useUpdateTransaction,
   useWorkspaces,
 } from './local-data-context';

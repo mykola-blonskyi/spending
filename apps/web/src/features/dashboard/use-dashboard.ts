@@ -19,6 +19,7 @@ import {
   periodContaining,
   periodProblem,
   shiftPeriod,
+  withoutEmptyComparison,
 } from './dashboard-model';
 
 const ANALYTICS_KEY = ['analytics'];
@@ -60,7 +61,8 @@ export function useDashboard() {
   const views = useCategoryViews().byId;
   // Another period's figures are no answer for this one once the switch is paused or fails.
   const stale = summary.isPlaceholderData && (summary.isError || summary.fetchStatus === 'paused');
-  const data = problem === null && !stale ? summary.data : undefined;
+  const fetched = problem === null && !stale ? summary.data : undefined;
+  const data = useMemo(() => fetched && withoutEmptyComparison(fetched), [fetched]);
   const categories = useMemo(
     () =>
       (data ? compareCategories(data) : []).map((row) => {

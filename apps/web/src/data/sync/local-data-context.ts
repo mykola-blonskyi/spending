@@ -26,6 +26,7 @@ import {
   type TransactionEntry,
   type TransactionFilter,
 } from './query';
+import { countMutations } from './queue';
 import { deriveSyncStatus, smoothingDelay } from './status';
 import type { LocalStore } from './store';
 import type { TransferDraft } from './transfer';
@@ -125,6 +126,12 @@ export function useConflicts(): LocalList<Conflict> {
     }),
     [conflicts],
   );
+}
+
+/** Changes not yet on the server: those waiting to be sent, and those it refused. */
+export function useUnsentCounts(): { pending: number; failed: number } {
+  const state = useLocalState();
+  return useMemo(() => (state ? countMutations(state) : { pending: 0, failed: 0 }), [state]);
 }
 
 /** Null while there is no local store to report on (opening, or IndexedDB unavailable). */

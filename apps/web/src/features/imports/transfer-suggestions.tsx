@@ -68,7 +68,7 @@ export function TransferSuggestions({ suggestions }: { suggestions: readonly Sug
             className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 text-sm"
           >
             <ArrowLeftRight aria-hidden className="size-4 shrink-0 text-primary" />
-            <div className="min-w-0 flex-1">
+            <div className="min-w-48 flex-1">
               <span className="block truncate font-medium">{entry.description}</span>
               <span className="block text-xs text-muted-foreground">
                 {counterpart

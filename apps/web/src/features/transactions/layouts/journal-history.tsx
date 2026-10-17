@@ -96,7 +96,7 @@ export function JournalHistory() {
       <div className="flex items-center gap-2">
         <label
           htmlFor={searchId}
-          className="flex h-11 min-w-0 flex-1 items-center gap-2.5 border-b border-input/50 text-sm text-muted-foreground focus-within:border-ring"
+          className="flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-t-sm border-b border-input/50 text-sm text-muted-foreground focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/60"
         >
           <Search aria-hidden className="size-4 shrink-0" strokeWidth={1.8} />
           <span className="sr-only">{t('pages.transactions.searchLabel')}</span>
