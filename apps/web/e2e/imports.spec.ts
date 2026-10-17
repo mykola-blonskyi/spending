@@ -584,6 +584,20 @@ test.describe('PDF statements', () => {
   });
 });
 
+/** The #110 transfer statements: ISO dates and a dot as the decimal separator. */
+async function importTransferStatement(page: Page, account: string, name: string, rows: number) {
+  await page.goto('/imports/new');
+  await page.getByRole('combobox', { name: 'Account' }).click();
+  await page.getByRole('option', { name: new RegExp(account) }).click();
+  await page.getByLabel('Statement file').setInputFiles(fixture(name));
+  await page.getByLabel('Date format').click();
+  await page.getByRole('option', { name: 'Year-Month-Day' }).click();
+  await page.getByLabel('Decimal separator').click();
+  await page.getByRole('option', { name: 'Dot (12.50)' }).click();
+  await page.getByRole('button', { name: new RegExp(`^Import ${rows} rows?$`) }).click();
+  await expect(page.getByRole('heading', { name: 'Import finished' })).toBeVisible();
+}
+
 test('two statements of own accounts suggest the transfer between them, linked on confirm', async ({
   page,
   signInAs,
@@ -592,18 +606,8 @@ test('two statements of own accounts suggest the transfer between them, linked o
   await signInAs('ann');
   await createAccount(page, 'Main');
   await createAccount(page, 'Savings');
-  const importInto = async (account: string, name: string, rows: number) => {
-    await page.goto('/imports/new');
-    await page.getByRole('combobox', { name: 'Account' }).click();
-    await page.getByRole('option', { name: new RegExp(account) }).click();
-    await page.getByLabel('Statement file').setInputFiles(fixture(name));
-    await page.getByLabel('Date format').click();
-    await page.getByRole('option', { name: 'Year-Month-Day' }).click();
-    await page.getByLabel('Decimal separator').click();
-    await page.getByRole('option', { name: 'Dot (12.50)' }).click();
-    await page.getByRole('button', { name: new RegExp(`^Import ${rows} rows?$`) }).click();
-    await expect(page.getByRole('heading', { name: 'Import finished' })).toBeVisible();
-  };
+  const importInto = (account: string, name: string, rows: number) =>
+    importTransferStatement(page, account, name, rows);
   const suggestion = (description: string) =>
     page.getByRole('listitem', { name: `Suggested transfer: ${description}` });
 
@@ -632,4 +636,57 @@ test('two statements of own accounts suggest the transfer between them, linked o
       return [sides.length, new Set(sides.map((r) => r.transfer_id)).size];
     })
     .toEqual([2, 1]);
+});
+
+test('a family member links two rows awaiting review as one transfer', async ({
+  page,
+  signInAs,
+  db,
+}) => {
+  await signInAs('ann');
+  await apiCall(page, 'POST', '/api/v1/family', { name: 'Examples' });
+  await createAccount(page, 'Main');
+  await createAccount(page, 'Savings');
+  await importTransferStatement(page, 'Main', 'transfer-main.csv', 3);
+  await importTransferStatement(page, 'Savings', 'transfer-savings.csv', 1);
+
+  await page.goto('/imports/review');
+  const rowOf = (description: string) =>
+    page
+      .getByRole('list', { name: 'Review imported rows' })
+      .getByRole('listitem')
+      .filter({ has: page.getByRole('checkbox', { name: `Select ${description}` }) });
+  await expect(rowOf('From main card')).toContainText(
+    'Looks like a transfer · Other side: Main, Oct 5, 2026',
+  );
+  await expect(rowOf('To savings')).toContainText('Other side: Savings, Oct 6, 2026');
+  await expect(rowOf('To Ann Example')).toContainText('Own account outside the app');
+  await expect(rowOf('Coffee beans').getByRole('button', { name: /^Transfer/ })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Transfer: From main card' }).click();
+  await expect(page.getByRole('button', { name: 'Transfer: To savings' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.getByRole('combobox', { name: 'Category: To savings' })).toHaveCount(0);
+  await page.getByRole('checkbox', { name: 'Select From main card' }).click();
+  await page.getByRole('button', { name: 'Publish 2 rows' }).click();
+  await expect(rowOf('From main card')).toHaveCount(0);
+  await expect(rowOf('To savings')).toHaveCount(0);
+
+  await page.goto('/transactions');
+  const transfer = page.getByRole('link', { name: /Main → Savings/ });
+  await expect(transfer).toContainText('€300.00');
+  await expect(page.getByRole('link', { name: /From main card/ })).toHaveCount(0);
+  const sides = (await db.transactions(ann.email)).filter((r) => r.transfer_id !== null);
+  expect(sides).toHaveLength(2);
+  expect(new Set(sides.map((r) => r.transfer_id)).size).toBe(1);
+  expect(sides.map((r) => r.scope)).toEqual(['personal', 'personal']);
+  const linked = (await db.history(ann.email)).filter((r) =>
+    ['To savings', 'From main card'].includes(r.description),
+  );
+  expect(linked.map((r) => [r.review_status, r.category])).toEqual([
+    ['confirmed', null],
+    ['confirmed', null],
+  ]);
 });
