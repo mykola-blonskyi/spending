@@ -312,6 +312,7 @@ export const en = {
     conversionUnavailable: 'Conversion unavailable',
     conversionUnavailableHint:
       'The ECB has not published a rate for this date yet. The EUR amount appears once it does.',
+    balanceNow: 'Balance now',
     notConverted: 'Not converted',
     rate: 'Rate',
     rateDate: 'Rate date',
@@ -418,6 +419,14 @@ export const en = {
       kind: 'Type',
       currency: 'Currency',
       currencyLocked: 'The currency cannot be changed once the account exists.',
+      openingBalance: 'Opening balance',
+      openingBalanceHint: 'What the account held on the opening date. A debt starts with a minus.',
+      openingBalanceInvalid: 'Enter an amount such as 1000 or -250.50.',
+      openingOn: 'Opening date',
+      total: 'Total',
+      uncounted:
+        '{count, plural, one {# entry before the opening date is not counted} other {# entries before the opening date are not counted}}',
+      archiveBalance: 'There is still {amount} on this account.',
       archiveTitle: 'Archive {name}?',
       archiveDescription:
         'It disappears from the pickers for new transactions. Past transactions keep it, and you can restore it any time.',

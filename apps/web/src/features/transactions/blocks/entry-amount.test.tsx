@@ -114,7 +114,7 @@ describe.each(Object.entries(expected) as [Locale, Expected][])(
     });
 
     it('totals EUR and lists the unconverted currency on its own line', () => {
-      renderIn(locale, <TotalsLine totals={summarize([usd, chf])} />);
+      renderIn(locale, <TotalsLine totals={summarize([usd, chf])} balance={null} />);
       expect(exact(want.spent)).toBeInTheDocument();
       const line = exact(want.notConverted).parentElement!.textContent;
       expect(line).toContain(want.chf.replace('-', ''));

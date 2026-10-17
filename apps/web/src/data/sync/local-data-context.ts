@@ -21,6 +21,8 @@ import type {
   Workspace,
 } from './model';
 import {
+  type AccountBalance,
+  accountBalance,
   localEntries,
   queryTransactions,
   type TransactionEntry,
@@ -111,6 +113,19 @@ function useSorted<T extends { name: string | null }>(
 }
 
 export const useAccounts = (): LocalList<Account> => useSorted((state) => state.accounts);
+
+/** Every account's balance on this device, by account id (BR-40). */
+export function useAccountBalances(): ReadonlyMap<string, AccountBalance> {
+  const state = useLocalState();
+  return useMemo(() => {
+    const balances = new Map<string, AccountBalance>();
+    if (!state) return balances;
+    for (const account of state.accounts.values()) {
+      balances.set(account.id, accountBalance(account, state.transactions.values()));
+    }
+    return balances;
+  }, [state]);
+}
 export const useCategories = (): LocalList<Category> => useSorted((state) => state.categories);
 export const useWorkspaces = (): LocalList<Workspace> => useSorted((state) => state.workspaces);
 

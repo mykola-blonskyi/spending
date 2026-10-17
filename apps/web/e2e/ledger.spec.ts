@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 import { E2E_USERS } from './support/env';
+import { createAccount } from './support/seed';
 
 const ann = E2E_USERS.ann;
 
@@ -88,6 +89,55 @@ test('the server rejects a second account with the same name and kind', async ({
   await expect(page.getByText('That name is already used. Pick another one.')).toBeVisible();
   // The dialog stays open so the name can be fixed.
   await expect(dialog(page).getByLabel('Name')).toHaveValue('Revolut USD');
+});
+
+test('an opening balance, an income and a transfer in add up to the account balance', async ({
+  page,
+  signInAs,
+}) => {
+  await signInAs('ann');
+  await createAccount(page, { name: 'Card', kind: 'card', currency: 'EUR' });
+  await page.goto('/accounts');
+  await page.getByRole('button', { name: 'Add account' }).click();
+  await dialog(page).getByLabel('Name').fill('Savings');
+  await pickOption(page, 'Type', 'Savings');
+  await dialog(page).getByLabel('Opening balance').fill('1000');
+  await dialog(page).getByRole('button', { name: 'Save' }).click();
+  await expect(dialog(page)).toBeHidden();
+
+  await page.goto('/transactions/new');
+  await page.getByRole('radio', { name: 'Income' }).click();
+  await page.getByLabel('Amount').fill('200');
+  await page.getByRole('combobox', { name: 'Account' }).click();
+  await page.getByRole('option', { name: 'Savings', exact: true }).click();
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page).toHaveURL('/transactions');
+
+  await page.goto('/transactions/new');
+  await page.getByRole('radio', { name: 'Transfer' }).click();
+  await page.getByLabel('Amount').fill('300');
+  await page.getByRole('combobox', { name: 'From account' }).click();
+  await page.getByRole('option', { name: 'Card · EUR' }).click();
+  await page.getByRole('combobox', { name: 'To account' }).click();
+  await page.getByRole('option', { name: 'Savings · EUR' }).click();
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page).toHaveURL('/transactions');
+
+  await page.goto('/accounts');
+  await expect(page.getByRole('listitem').filter({ hasText: 'Savings' })).toContainText(
+    '€1,500.00',
+  );
+  await expect(page.getByRole('listitem').filter({ hasText: 'Card' })).toContainText('-€300.00');
+
+  await page.goto('/transactions');
+  await page.getByRole('button', { name: /^Open filters/ }).click();
+  await page
+    .getByRole('dialog', { name: 'Filters' })
+    .getByRole('combobox', { name: 'Account' })
+    .click();
+  await page.getByRole('option', { name: 'Savings', exact: true }).click();
+  await page.getByRole('button', { name: 'Show results' }).click();
+  await expect(page.getByText('Balance now').locator('..')).toContainText('€1,500.00');
 });
 
 test('categories can be created, edited, archived and shown in the chosen language', async ({

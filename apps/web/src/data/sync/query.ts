@@ -1,10 +1,12 @@
 import {
+  type Account,
   isDeleted,
   type LocalState,
   type LocalTransaction,
   type QueuedMutation,
   queueOrder,
   type ServerTransaction,
+  type TransactionRecord,
 } from './model';
 
 const BASE_CURRENCY = 'EUR';
@@ -147,4 +149,26 @@ export function queryTransactions(
   return localEntries(state)
     .filter((entry) => matchesFilter(entry, filter))
     .sort(compareEntries);
+}
+
+export type AccountBalance = Readonly<{ balanceMinor: number; uncounted: number }>;
+
+/**
+ * BR-40: the opening balance plus the signed sum of the account's live entries from the opening
+ * date on, rows awaiting review and transfer sides included. Older ones are only tallied.
+ */
+export function accountBalance(
+  account: Pick<Account, 'id' | 'openingBalanceMinor' | 'openingOn'>,
+  records: Iterable<TransactionRecord>,
+): AccountBalance {
+  let balanceMinor = account.openingBalanceMinor;
+  let uncounted = 0;
+  for (const record of records) {
+    if (isDeleted(record.local)) continue;
+    const row = record.local ?? record.server;
+    if (row?.accountId !== account.id) continue;
+    if (row.occurredOn < account.openingOn) uncounted += 1;
+    else balanceMinor += row.kind === 'income' ? row.amountMinor : -row.amountMinor;
+  }
+  return { balanceMinor, uncounted };
 }

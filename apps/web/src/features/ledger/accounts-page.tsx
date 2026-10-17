@@ -8,17 +8,36 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useId, useMemo, useState } from 'react';
-import { type Account, useAccounts, useLocalDataStatus, useWorkspaces } from '@data/sync';
+import {
+  type Account,
+  type AccountBalance,
+  useAccountBalances,
+  useAccounts,
+  useLocalDataStatus,
+  useWorkspaces,
+} from '@data/sync';
+import { useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
 import {
   ConfirmDialog,
   EmptyState,
   ErrorState,
   LoadingState,
+  MoneyText,
   PageHeader,
 } from '@shared/components';
-import { COMMON_CURRENCIES } from '@shared/format';
+import {
+  COMMON_CURRENCIES,
+  currencyExponent,
+  decimalSeparator,
+  formatMoney,
+  minorToDecimalString,
+  parseAmount,
+  todayIn,
+} from '@shared/format';
+import { useSharedLocale } from '@shared/lib/locale-context';
 import { useOnlineStatus } from '@shared/lib/network';
+import { cn } from '@shared/lib/utils';
 import { Button } from '@shared/ui/button';
 import {
   Dialog,
@@ -56,6 +75,15 @@ const ACCOUNT_CURRENCIES = [
 
 type Dialog = { account: Account } | 'new' | null;
 
+/** An opening balance as typed: empty or zero is 0, a leading minus makes it negative. */
+function parseOpeningBalance(text: string, exponent: number): number | null {
+  const negative = /^\s*[-−]/.test(text);
+  const magnitude = text.replace(/^\s*[-−]/, '');
+  if (/^[\s0]*([.,]0*)?\s*$/.test(magnitude)) return 0;
+  const minor = parseAmount(magnitude, exponent);
+  return minor === null ? null : negative ? -minor : minor;
+}
+
 function AccountDialog({
   account,
   workspaces,
@@ -76,16 +104,31 @@ function AccountDialog({
   const [currency, setCurrency] = useState(account?.currency ?? currencies[0] ?? 'EUR');
   const [workspaceId, setWorkspaceId] = useState(workspaces[0]?.id ?? '');
   const [nameError, setNameError] = useState(false);
+  const { locale } = useSharedLocale();
+  const [opening, setOpening] = useState(() =>
+    account?.openingBalanceMinor
+      ? minorToDecimalString(
+          account.openingBalanceMinor,
+          currencyExponent(account.currency),
+        ).replace('.', decimalSeparator(locale))
+      : '',
+  );
+  const today = todayIn(useProfile().timezone);
+  const [openingOn, setOpeningOn] = useState(account?.openingOn ?? today);
+  const [openingError, setOpeningError] = useState(false);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     const trimmed = name.trim();
     const invalid = trimmed.length < 1 || trimmed.length > 60;
+    const openingBalanceMinor = parseOpeningBalance(opening, currencyExponent(currency));
     setNameError(invalid);
-    if (invalid) return;
+    setOpeningError(openingBalanceMinor === null);
+    if (invalid || openingBalanceMinor === null) return;
+    const fields = { name: trimmed, kind, openingBalanceMinor, openingOn };
     const saved = account
-      ? await admin.update(account.id, { name: trimmed, kind })
-      : await admin.create({ workspaceId, name: trimmed, kind, currency });
+      ? await admin.update(account.id, fields)
+      : await admin.create({ workspaceId, currency, ...fields });
     if (saved) onClose();
   };
 
@@ -150,6 +193,32 @@ function AccountDialog({
               </SelectContent>
             </Select>
           </Field>
+          <Field
+            id={`${base}-opening`}
+            label={t('accounts.openingBalance')}
+            hint={t('accounts.openingBalanceHint')}
+            error={openingError ? t('accounts.openingBalanceInvalid') : undefined}
+          >
+            <Input
+              id={`${base}-opening`}
+              autoComplete="off"
+              placeholder="0"
+              value={opening}
+              aria-invalid={openingError || undefined}
+              aria-describedby={openingError ? `${base}-opening-error` : `${base}-opening-hint`}
+              onChange={(event) => setOpening(event.target.value)}
+            />
+          </Field>
+          <Field id={`${base}-opening-on`} label={t('accounts.openingOn')}>
+            <Input
+              id={`${base}-opening-on`}
+              type="date"
+              required
+              className="h-11"
+              value={openingOn}
+              onChange={(event) => event.target.value && setOpeningOn(event.target.value)}
+            />
+          </Field>
           {!account && workspaces.length > 1 && (
             <Field id={`${base}-workspace`} label={t('workspace')}>
               <Select value={workspaceId} onValueChange={setWorkspaceId}>
@@ -182,6 +251,7 @@ function AccountDialog({
 
 function AccountRow({
   account,
+  balance,
   scope,
   disabled,
   onEdit,
@@ -189,6 +259,7 @@ function AccountRow({
   onRestore,
 }: {
   account: Account;
+  balance: AccountBalance | undefined;
   scope: string | null;
   disabled: boolean;
   onEdit: () => void;
@@ -202,13 +273,27 @@ function AccountRow({
       <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground">
         <Icon aria-hidden className="size-5" strokeWidth={1.75} />
       </span>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate font-medium">{account.name}</span>
-        <span className="truncate text-sm text-muted-foreground">
-          {[t(`accounts.kinds.${account.kind}`), account.currency, scope]
-            .filter(Boolean)
-            .join(' · ')}
-        </span>
+      <div className="flex min-w-0 flex-1 flex-col sm:flex-row sm:items-center sm:gap-3">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate font-medium">{account.name}</span>
+          <span className="truncate text-sm text-muted-foreground">
+            {[t(`accounts.kinds.${account.kind}`), account.currency, scope]
+              .filter(Boolean)
+              .join(' · ')}
+          </span>
+          {balance?.uncounted ? (
+            <span className="text-xs text-muted-foreground">
+              {t('accounts.uncounted', { count: balance.uncounted })}
+            </span>
+          ) : null}
+        </div>
+        {balance && (
+          <MoneyText
+            amountMinor={balance.balanceMinor}
+            currency={account.currency}
+            className={cn('font-medium', balance.balanceMinor < 0 && 'text-expense')}
+          />
+        )}
       </div>
       <RowActions
         name={account.name}
@@ -231,8 +316,11 @@ export function AccountsPage() {
   const accounts = useAccounts();
   const workspaces = useWorkspaces();
   const admin = useAccountsAdmin();
+  const balances = useAccountBalances();
+  const { locale } = useSharedLocale();
   const [dialog, setDialog] = useState<Dialog>(null);
   const [toArchive, setToArchive] = useState<Account | null>(null);
+  const toArchiveBalance = toArchive ? (balances.get(toArchive.id)?.balanceMinor ?? 0) : 0;
 
   const scopes = useMemo(
     () =>
@@ -261,6 +349,11 @@ export function AccountsPage() {
 
   const active = accounts.items.filter((a) => a.archivedAt === null);
   const archived = accounts.items.filter((a) => a.archivedAt !== null);
+  const totals = new Map<string, number>();
+  for (const account of active) {
+    const balance = balances.get(account.id)?.balanceMinor ?? 0;
+    totals.set(account.currency, (totals.get(account.currency) ?? 0) + balance);
+  }
   const blocked = !online;
   const add = (
     <Button disabled={blocked} onClick={() => setDialog('new')} className="active:scale-[0.97]">
@@ -272,6 +365,7 @@ export function AccountsPage() {
     <AccountRow
       key={account.id}
       account={account}
+      balance={balances.get(account.id)}
       scope={scopes.get(account.workspaceId) ?? null}
       disabled={blocked || admin.isPending}
       onEdit={() => setDialog({ account })}
@@ -302,6 +396,25 @@ export function AccountsPage() {
   } else {
     body = (
       <div className="flex flex-col gap-4">
+        {totals.size > 0 && (
+          <p className="flex flex-wrap items-center gap-x-2 text-sm">
+            <span className="text-muted-foreground">{t('accounts.total')}</span>
+            {[...totals].map(([currency, amountMinor], index) => (
+              <span key={currency} className="flex items-center gap-2">
+                {index > 0 && (
+                  <span aria-hidden className="text-muted-foreground">
+                    ·
+                  </span>
+                )}
+                <MoneyText
+                  amountMinor={amountMinor}
+                  currency={currency}
+                  className={cn('font-medium', amountMinor < 0 && 'text-expense')}
+                />
+              </span>
+            ))}
+          </p>
+        )}
         <ul className="rounded-xl border bg-card px-4">{active.map(row)}</ul>
         <ArchivedGroup count={archived.length}>
           <ul className="rounded-xl border bg-card px-4">{archived.map(row)}</ul>
@@ -335,7 +448,13 @@ export function AccountsPage() {
         open={toArchive !== null}
         onOpenChange={(open) => !open && setToArchive(null)}
         title={t('accounts.archiveTitle', { name: toArchive?.name ?? '' })}
-        description={t('accounts.archiveDescription')}
+        description={
+          toArchive && toArchiveBalance !== 0
+            ? `${t('accounts.archiveBalance', {
+                amount: formatMoney(toArchiveBalance, toArchive.currency, locale),
+              })} ${t('accounts.archiveDescription')}`
+            : t('accounts.archiveDescription')
+        }
         confirmLabel={t('accounts.archiveConfirm')}
         onConfirm={() => {
           if (toArchive) void admin.archive(toArchive.id, true);

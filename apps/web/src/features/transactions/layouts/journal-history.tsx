@@ -158,7 +158,11 @@ export function JournalHistory() {
         <ActiveChips chips={history.chips} />
       </div>
 
-      <TotalsLine totals={history.totals} className="mt-3 text-muted-foreground" />
+      <TotalsLine
+        totals={history.totals}
+        balance={history.balance}
+        className="mt-3 text-muted-foreground"
+      />
       <HistoryStatus status={history.status} loaded={history.loaded} className="mt-8" />
       {history.status === 'ready' && (
         <HistoryList
