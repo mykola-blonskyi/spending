@@ -522,7 +522,9 @@ export const en = {
   },
   imports: {
     start: 'Import statement',
-    offline: 'Importing needs a connection. Your past imports are listed below.',
+    offline: 'Importing needs a connection.',
+    offlineTitle: 'Past imports need a connection',
+    offlineDescription: 'They are kept on the server. Reconnect to see them.',
     newTitle: 'Import a statement',
     newDescription:
       'Upload a CSV or XLSX from your bank, check how its columns are read, then import.',
