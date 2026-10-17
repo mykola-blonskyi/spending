@@ -511,7 +511,8 @@ export const uk = {
     noAccountsAction: 'Відкрити рахунки',
     noAccountsDescription: 'Виписка імпортується на один з ваших особистих рахунків.',
     file: 'Файл виписки',
-    fileHint: 'CSV до 2 МіБ або XLSX до 5 МіБ, не більше 5 000 рядків.',
+    fileHint:
+      'CSV до 2 МіБ, XLSX до 5 МіБ або PDF до 10 МіБ і 100 сторінок, не більше 5 000 рядків.',
     chooseFile: 'Вибрати файл',
     noFile: 'Файл не вибрано',
     fileTooLarge: 'Файл більший за {size} МіБ. Експортуйте коротший період і спробуйте ще раз.',
@@ -520,7 +521,12 @@ export const uk = {
     readFailed: 'Не вдалося прочитати цей файл.',
     legacyXls:
       'Це старий двійковий файл Excel (.xls). Збережіть його як .xlsx або CSV у табличному редакторі й завантажте.',
-    unsupported: 'Цей тип файлу не читається. Завантажте виписку CSV або XLSX.',
+    pdfNoText:
+      'У цьому PDF немає тексту, лише зображення (скан). Завантажте з банку виписку у PDF з текстом, XLSX або CSV.',
+    pdfTooManyPages:
+      'У цьому PDF понад 100 сторінок. Експортуйте коротший період і спробуйте ще раз.',
+    detectedPdf:
+      'Прочитано як таблицю PDF: {count, plural, one {# рядок} few {# рядки} many {# рядків} other {# рядків}}.',
     detectedWorkbook:
       'Прочитано як книгу Excel: {count, plural, one {# рядок} few {# рядки} many {# рядків} other {# рядків}}.',
     detected:
@@ -536,6 +542,7 @@ export const uk = {
       santander: 'Santander',
       monobank: 'monobank',
       privatbank: 'ПриватБанк',
+      ukrsib: 'УКРСИББАНК',
       custom: 'Інший',
     },
     columns: 'Стовпці',

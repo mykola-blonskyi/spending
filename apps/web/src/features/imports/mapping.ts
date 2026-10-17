@@ -50,7 +50,14 @@ export type Mapping = {
   decimal: DecimalSeparator;
 };
 
-export const PRESET_IDS = ['bbva', 'santander', 'monobank', 'privatbank', 'custom'] as const;
+export const PRESET_IDS = [
+  'bbva',
+  'santander',
+  'monobank',
+  'privatbank',
+  'ukrsib',
+  'custom',
+] as const;
 export type PresetId = (typeof PRESET_IDS)[number];
 
 type Preset = {
@@ -80,7 +87,7 @@ const PRESETS: Record<Exclude<PresetId, 'custom'>, Preset> = {
     ...SPANISH,
     headers: {
       date: ['fecha operación', 'fecha operacion', 'transaction date', 'fecha'],
-      description: ['concepto', 'description'],
+      description: ['concepto', 'description', 'transaction'],
       amount: ['importe', 'amount'],
       externalId: ['referencia'],
       balance: ['saldo', 'balance'],
@@ -122,6 +129,19 @@ const PRESETS: Record<Exclude<PresetId, 'custom'>, Preset> = {
       bankCategory: ['категорія'],
     },
     signatures: [['картка', 'валюта картки']],
+  },
+  // UkrSib PDF: the operation date and the account-currency amount; rows without one are skipped.
+  ukrsib: {
+    dateFormat: 'dmy',
+    decimal: '.',
+    headers: {
+      date: ['дата операції'],
+      description: ['опис операції'],
+      amount: ['сума в валюті рахунку'],
+      currency: [],
+      balance: [],
+    },
+    signatures: [['дата розрахунку', 'сума в валюті рахунку']],
   },
 };
 

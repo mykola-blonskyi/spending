@@ -1,5 +1,5 @@
 import { Wallet } from 'lucide-react';
-import { useId, useMemo, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import type { ImportResult } from '@data/imports';
 import { type Account, useAccounts, useWorkspaces } from '@data/sync';
@@ -49,10 +49,12 @@ const ACCEPT = [
   '.txt',
   '.xlsx',
   '.xls',
+  '.pdf',
   'text/csv',
   'text/plain',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.ms-excel',
+  'application/pdf',
 ].join(',');
 
 /**
@@ -195,7 +197,7 @@ function MappingStep({
               delimiter: t(`delimiters.${DELIMITER_NAMES[format.delimiter]}`),
               count: rows.length,
             })
-          : t('detectedWorkbook', { count: rows.length })}
+          : t(format.kind === 'xlsx' ? 'detectedWorkbook' : 'detectedPdf', { count: rows.length })}
       </p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -469,6 +471,7 @@ export function NewImportPage() {
   const [problem, setProblem] = useState<StatementFailure | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
+  const reading = useRef<File | undefined>(undefined);
 
   const personal = workspaces.items.find((w) => w.kind === 'personal');
   const usable = useMemo(
@@ -540,8 +543,11 @@ export function NewImportPage() {
     setLoaded(null);
     setProblem(null);
     setFileName(file?.name ?? null);
+    reading.current = file;
     if (!file) return;
     const parsed = await parseStatement(file);
+    // A PDF reads for seconds: a file chosen meanwhile wins.
+    if (reading.current !== file) return;
     if (!parsed.ok) return setProblem(parsed);
     const { statement } = parsed;
     const { headers } = statement;
@@ -561,7 +567,8 @@ export function NewImportPage() {
           EMPTY: t('imports.emptyFile'),
           UNREADABLE: t('imports.readFailed'),
           LEGACY_XLS: t('imports.legacyXls'),
-          UNSUPPORTED: t('imports.unsupported'),
+          PDF_NO_TEXT: t('imports.pdfNoText'),
+          PDF_TOO_MANY_PAGES: t('imports.pdfTooManyPages'),
         }[failure.problem];
 
   return (

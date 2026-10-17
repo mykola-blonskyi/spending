@@ -325,6 +325,39 @@ describe('XLSX bank presets', () => {
   });
 });
 
+const SANTANDER_PDF = ['Transaction date', 'Transaction', 'Amount', 'Balance', 'Value date'];
+const UKRSIB = [
+  'Дата операції',
+  'Дата розрахунку',
+  'Опис операції',
+  'Операція Валюта',
+  'Операція Сума',
+  'Сума в валюті рахунку',
+  'Код авторизації',
+];
+
+describe('PDF bank presets', () => {
+  it('recognizes Santander, monobank and UkrSibbank PDF tables', () => {
+    expect(detectPreset(SANTANDER_PDF)).toBe('santander');
+    expect(detectPreset(UKRSIB)).toBe('ukrsib');
+    expect(detectPreset(UKRSIB.slice(0, 6))).toBe('ukrsib');
+  });
+
+  it('maps the account-currency amount and the operation date', () => {
+    expect(presetMapping('santander', SANTANDER_PDF).columns).toMatchObject({
+      date: 0,
+      description: 1,
+      amount: 2,
+      balance: 3,
+    });
+    expect(presetMapping('ukrsib', UKRSIB)).toMatchObject({
+      columns: { date: 0, description: 2, amount: 5, currency: null, balance: null },
+      dateFormat: 'dmy',
+      decimal: '.',
+    });
+  });
+});
+
 describe('value formats (#101, decision 5)', () => {
   it('drops the time of a date and keeps the printed day', () => {
     expect(parseDate('16.10.2026 23:59:59', 'dmy')).toBe('2026-10-16');

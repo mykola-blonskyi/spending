@@ -5,17 +5,18 @@
  * tax id) stays in the browser: only mapped cells of data rows are sent.
  */
 import { decodeStatement, type Delimiter, detectDelimiter, type Encoding, parseCsv } from './csv';
+import { type PdfProblem, readPdf } from './pdf';
 import { readXlsx } from './xlsx';
 
 const MiB = 1024 * 1024;
-export const MAX_BYTES = { csv: 2 * MiB, xlsx: 5 * MiB } as const;
+export const MAX_BYTES = { csv: 2 * MiB, xlsx: 5 * MiB, pdf: 10 * MiB } as const;
 export const ROWS_MAX = 5000;
 
-/** `line` is the 1-based file line (CSV) or sheet row (XLSX) the row starts on. */
+/** `line` is the 1-based file line (CSV), sheet row (XLSX) or transaction (PDF) the row starts on. */
 export type Row = { line: number; cells: string[] };
 
 export type StatementFormat =
-  { kind: 'csv'; encoding: Encoding; delimiter: Delimiter } | { kind: 'xlsx' };
+  { kind: 'csv'; encoding: Encoding; delimiter: Delimiter } | { kind: 'xlsx' } | { kind: 'pdf' };
 
 export type ParsedStatement = {
   format: StatementFormat;
@@ -26,7 +27,7 @@ export type ParsedStatement = {
 
 export type StatementFailure =
   | { problem: 'TOO_LARGE'; maxBytes: number }
-  | { problem: 'EMPTY' | 'TOO_MANY_ROWS' | 'LEGACY_XLS' | 'UNSUPPORTED' | 'UNREADABLE' };
+  | { problem: 'EMPTY' | 'TOO_MANY_ROWS' | 'LEGACY_XLS' | PdfProblem };
 
 const NUMBER_LIKE = /^[+-]?[\d.,\s]+$/;
 const DATE_LIKE = /^\d{1,4}[/.-]\d{1,2}[/.-]\d{1,4}$/;
@@ -69,17 +70,26 @@ const startsWith = (bytes: Uint8Array, magic: readonly number[]) =>
 const ZIP = [0x50, 0x4b, 0x03, 0x04];
 const OLE = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1];
 const PDF = [0x25, 0x50, 0x44, 0x46];
+/** DER SEQUENCE with a long length, then the CMS signedData OID: monobank's signed PDF. */
+const SIGNED = (head: Uint8Array) =>
+  head[0] === 0x30 &&
+  (head[1]! & 0x80) !== 0 &&
+  head.subarray(0, 32).join(',').includes('42,134,72,134,247,13,1,7,2');
 
 /** The format is read from the bytes, not the name: monobank's `.xls` is an XLSX zip. */
 async function readRows(
   file: Blob,
 ): Promise<{ format: StatementFormat; rows: Row[] } | StatementFailure> {
-  const head = new Uint8Array(await file.slice(0, 8).arrayBuffer());
+  const head = new Uint8Array(await file.slice(0, 32).arrayBuffer());
   if (startsWith(head, OLE)) return { problem: 'LEGACY_XLS' };
-  if (startsWith(head, PDF)) return { problem: 'UNSUPPORTED' };
-  const kind = startsWith(head, ZIP) ? 'xlsx' : 'csv';
+  const kind =
+    startsWith(head, PDF) || SIGNED(head) ? 'pdf' : startsWith(head, ZIP) ? 'xlsx' : 'csv';
   if (file.size > MAX_BYTES[kind]) return { problem: 'TOO_LARGE', maxBytes: MAX_BYTES[kind] };
   const bytes = await file.arrayBuffer();
+  if (kind === 'pdf') {
+    const rows = await readPdf(new Uint8Array(bytes));
+    return 'problem' in rows ? rows : { format: { kind }, rows };
+  }
   if (kind === 'xlsx') {
     try {
       return { format: { kind }, rows: await readXlsx(new Uint8Array(bytes)) };

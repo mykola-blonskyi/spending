@@ -257,17 +257,20 @@ passport, IBAN, card numbers) never leaves the device (BR-36). The pipeline is o
 table of text cells (`Row = { line, cells }`), made by a reader per format:
 
 - `statement.ts` sniffs the bytes (zip magic is XLSX, the OLE magic is a legacy `.xls` and is
-  refused, `%PDF` is not read yet, anything else is CSV), applies the size limit of that format,
-  finds the header row and the row limit (BR-26).
+  refused, `%PDF` or a CMS SignedData is PDF, anything else is CSV), applies the size limit of
+  that format, finds the header row and the row limit (BR-26).
 - `csv.ts` decodes UTF-8 or Windows-1252, detects the delimiter and splits RFC 4180 rows.
 - `xlsx.ts` reads the zip with `DecompressionStream('deflate-raw')` and the XML with
   `DOMParser`: first sheet, shared and inline strings, numbers at Excel's 15 digits, date-styled
   numbers as `YYYY-MM-DD`. Rows are padded to one width, as a CSV pads its metadata lines.
+- `pdf.ts` unwraps monobank's CMS signature, lazy-loads pdf.js (worker from our origin, no
+  WebAssembly) and rebuilds the table from text positions (ADR-015). It returns the header row
+  first, so the shared header and row-limit step applies unchanged.
 - `mapping.ts` owns presets (matched on the header signature), value parsing (the only money
   parser), card listing, skipped rows and the running-balance check (`prepareRows`), and the
   remembered mapping per header signature in `localStorage['spending.importMapping:<headers>']`.
 
-A new format (PDF next) only needs a reader that returns rows and a branch in `statement.ts`.
+A new format only needs a reader that returns rows and a branch in `statement.ts`.
 The server receives the normalized rows and the mapping (column indexes, formats, file kind) and
 validates them as before.
 
