@@ -49,7 +49,9 @@ deploy/      Docker images, nginx config, backup script
 `workspaces` exports `AccessPolicy`, which every other module calls before touching
 workspace-scoped data (BR-1, BR-2). Business logic that needs no I/O (money, schedules, dedupe
 keys, categorization, CSV row parsing, conflict detection) is written as pure functions with unit
-tests. Services are thin shells over them.
+tests. Services are thin shells over them. The ledger invariants (BR-3, BR-4, BR-37) live in
+`ledger/rules.ts` with the one account and category lookup they need; sync, recurring and the
+import review all check through it.
 
 ## Frontend layers (`apps/web/src`)
 
@@ -306,7 +308,7 @@ no category, else 400). `confirm` links it in the same ledger transaction: one s
 `transferId`, set on a confirmed counterpart too, or `transferOutside` for null. The counterpart
 must be a live non-transfer row of the personal workspace on another account, used once, either
 confirmed or a pending item of the same request pointing back; `transferError` from
-`sync/mutations.ts` checks the workspace and kind. Anything else is `422 INVALID_TRANSFER`. The
+`ledger/rules.ts` checks the workspace and kind. Anything else is `422 INVALID_TRANSFER`. The
 version trigger bumps the linked rows, so devices pull them. The review page
 (`features/imports/review-page.tsx`) shows a Transfer toggle per suggestion, sets it on both rows
 of a pending pair and publishes them together (`review-choice.ts` holds the choice shape).

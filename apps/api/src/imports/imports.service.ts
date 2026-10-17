@@ -9,8 +9,8 @@ import { accounts, categories, importBatches, transactions, users } from '../dat
 import { convert, type RateQuote } from '../ledger/fx/conversion';
 import { FxService } from '../ledger/fx/fx.service';
 import { LedgerService, releaseLoneSides, selectViewRows } from '../ledger/ledger.service';
+import { loadReferenceFacts, referenceError, transferError } from '../ledger/rules';
 import { type EntryKind, toLedgerRow, type TransactionView } from '../ledger/views';
-import { transferError } from '../sync/mutations';
 import { AccessPolicy } from '../workspaces/access-policy';
 import { categorize } from './categorize';
 import { learnCategoryRules, loadCatalog } from './category-rules';
@@ -345,35 +345,27 @@ export class ImportsService {
           ),
         );
       const rows = new Map(pending.map((r) => [r.id, r]));
-      const categoryIds = items.flatMap((i) => (i.categoryId ? [i.categoryId] : []));
-      const found =
-        categoryIds.length === 0
-          ? []
-          : await tx
-              .select({
-                id: categories.id,
-                workspaceId: categories.workspaceId,
-                kind: categories.kind,
-                archivedAt: categories.archivedAt,
-              })
-              .from(categories)
-              .where(inArray(categories.id, categoryIds));
-      const categoryById = new Map(found.map((c) => [c.id, c]));
+      const references = await loadReferenceFacts(
+        tx,
+        [],
+        items.map((i) => i.categoryId),
+      );
       const confirmed = items.map((item) => {
         const row = rows.get(item.transactionId);
         const target = item.scope === 'family' ? familyId : personalId;
         if (!row || !target) throw new ApiError('NOT_FOUND');
-        if (item.categoryId) {
-          const category = categoryById.get(item.categoryId);
-          if (
-            !category ||
-            category.workspaceId !== target ||
-            category.kind !== row.kind ||
-            (category.archivedAt && category.id !== row.categoryId)
-          ) {
-            throw new ApiError('INVALID_CATEGORY');
-          }
-        }
+        const error = referenceError({
+          workspaceId: target,
+          kind: row.kind,
+          accountId: null,
+          categoryId: item.categoryId,
+          current: { accountId: null, categoryId: row.categoryId },
+          isAuthor: true,
+          authorPersonalWorkspaceId: personalId,
+          account: null,
+          category: references.categories.get(item.categoryId ?? '') ?? null,
+        });
+        if (error) throw new ApiError(error);
         return {
           id: row.id,
           description: row.description,
