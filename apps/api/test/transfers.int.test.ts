@@ -260,6 +260,24 @@ describe('transfers (BR-37)', () => {
     ]);
   });
 
+  it('marks transfers in the JSON export (BR-31)', async () => {
+    const [out, into, , , september] = await seed();
+    const transferId = crypto.randomUUID();
+    await link([out!, into!], transferId);
+    const outsideId = crypto.randomUUID();
+    await push(ann, [{ row: september!, patch: { transferId: outsideId, transferOutside: true } }]);
+    const response = await as(t, ann, '/v1/me/export');
+    expect(response.status).toBe(200);
+    const { transactions: rows } = (await response.json()) as {
+      transactions: { id: string; transferId: string | null; transferOutside: boolean }[];
+    };
+    const marks = new Map(rows.map((r) => [r.id, [r.transferId, r.transferOutside]]));
+    expect(marks.get(out!.id)).toEqual([transferId, false]);
+    expect(marks.get(into!.id)).toEqual([transferId, false]);
+    expect(marks.get(september!.id)).toEqual([outsideId, true]);
+    expect([...marks.values()].filter(([id]) => id === null)).toHaveLength(2);
+  });
+
   it('keeps the other side as a one-sided transfer when its import is undone', async () => {
     const imported = await as(t, ann, '/v1/imports', {
       method: 'POST',

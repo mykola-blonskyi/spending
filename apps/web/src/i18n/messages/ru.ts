@@ -499,6 +499,7 @@ export const ru = {
           note: 'Заметка',
           source: 'Источник',
           author: 'Автор',
+          transfer: 'Перевод',
         },
       },
       delete: {

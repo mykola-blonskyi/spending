@@ -498,6 +498,7 @@ export const es = {
           note: 'Nota',
           source: 'Origen',
           author: 'Autor',
+          transfer: 'Transferencia',
         },
       },
       delete: {

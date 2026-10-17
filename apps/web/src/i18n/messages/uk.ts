@@ -496,6 +496,7 @@ export const uk = {
           note: 'Нотатка',
           source: 'Джерело',
           author: 'Автор',
+          transfer: 'Переказ',
         },
       },
       delete: {

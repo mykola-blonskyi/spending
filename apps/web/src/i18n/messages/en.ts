@@ -483,6 +483,7 @@ export const en = {
           note: 'Note',
           source: 'Source',
           author: 'Author',
+          transfer: 'Transfer',
         },
       },
       delete: {
