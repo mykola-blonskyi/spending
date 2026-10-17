@@ -558,6 +558,17 @@ describe('sync', () => {
     ]);
   });
 
+  it('refuses an entry in a currency other than its account’s (BR-39)', async () => {
+    const card = await account(ann, annPersonal);
+    const [refused, applied] = await push(
+      ann,
+      upsert(draft(annPersonal, { accountId: card, currency: 'USD' })),
+      upsert(draft(annPersonal, { currency: 'USD' })),
+    );
+    expect(refused!.code).toBe('CURRENCY_MISMATCH');
+    expect(applied!.status).toBe('applied');
+  });
+
   it('applies BR-3 and BR-4 to references', async () => {
     const annCard = await account(ann, annPersonal);
     const familyAccount = await account(ann, family, 'Joint');

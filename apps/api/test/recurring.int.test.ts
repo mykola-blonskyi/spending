@@ -268,6 +268,14 @@ describe('recurring rules', () => {
     await reject({ amountMinor: -5 }, 400, 'VALIDATION_FAILED');
     await reject({ frequency: 'hourly' }, 400, 'VALIDATION_FAILED');
     await reject({ timezone: 'Mars/Olympus' }, 400, 'VALIDATION_FAILED');
+    const { id: usdCard } = await json<{ id: string }>(
+      await as(t, ann, '/v1/accounts', {
+        method: 'POST',
+        body: { workspaceId: annPersonal, name: 'Visa', kind: 'card', currency: 'USD' },
+      }),
+      201,
+    );
+    await reject({ accountId: usdCard }, 422, 'CURRENCY_MISMATCH');
     const rule = await json<Rule>(await create(ann, { endsOn: '2030-03-01' }), 201);
     expect((await patch(ann, rule.id, { startsOn: '2030-04-01' })).status).toBe(400);
   });

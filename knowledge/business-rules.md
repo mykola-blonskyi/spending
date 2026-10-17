@@ -18,6 +18,11 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
 - **BR-4.** A transaction's category must belong to the transaction's workspace and match its kind.
   The service layer enforces it, because family deletion (BR-11) moves rows between workspaces. An
   archived category stays allowed only on a row that already uses it.
+- **BR-39.** A transaction with an account is in that account's currency; one without an account
+  may be in any currency. Sync push, recurring rules and imports refuse a mismatch
+  (`CURRENCY_MISMATCH`; an import rejects the row), and the entry form locks the currency to the
+  picked account. A CHECK cannot compare with another table, so the database relies on this rule:
+  migration 0013 refuses to run while any live transaction breaks it.
 - **BR-4a.** The database stores no display text the app translates (ADR-012). A default category
   has `name = null` and is shown by its `systemKey` in the user's language; renaming stores the
   user's name and keeps the key, and `PATCH name: null` returns it to the default (`400` on a

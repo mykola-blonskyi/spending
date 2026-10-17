@@ -58,7 +58,8 @@ export async function seedEntries(page: Page, count: number): Promise<void> {
         amountMinor: 100 + ((n * 37) % 20000),
         currency,
         occurredOn: date.toISOString().slice(0, 10),
-        accountId: accounts[n % (accounts.length || 1)]?.id ?? null,
+        // The seeded accounts are EUR, and an entry with an account is in its currency (BR-39).
+        accountId: currency === 'EUR' ? (accounts[n % (accounts.length || 1)]?.id ?? null) : null,
         categoryId: category?.id ?? null,
         description: `Seed ${n} ${CATEGORY_NAMES[n % CATEGORY_NAMES.length]}`,
         note: n % 3 === 0 ? `note ${n}` : '',

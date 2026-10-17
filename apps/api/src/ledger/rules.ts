@@ -3,7 +3,7 @@ import type { Tx } from '../database/database.module';
 import { accounts, categories } from '../database/schema';
 import type { EntryKind } from './views';
 
-export type AccountFact = Readonly<{ workspaceId: string; archived: boolean }>;
+export type AccountFact = Readonly<{ workspaceId: string; archived: boolean; currency: string }>;
 export type CategoryFact = Readonly<{ workspaceId: string; kind: EntryKind; archived: boolean }>;
 
 /** The account and category facts the reference rules need, by id; a missing id is absent. */
@@ -25,6 +25,7 @@ export async function loadReferenceFacts(
             id: accounts.id,
             workspaceId: accounts.workspaceId,
             archivedAt: accounts.archivedAt,
+            currency: accounts.currency,
           })
           .from(accounts)
           .where(inArray(accounts.id, accountKeys));
@@ -44,7 +45,7 @@ export async function loadReferenceFacts(
     accounts: new Map(
       accountRows.map((r) => [
         r.id,
-        { workspaceId: r.workspaceId, archived: r.archivedAt !== null },
+        { workspaceId: r.workspaceId, archived: r.archivedAt !== null, currency: r.currency },
       ]),
     ),
     categories: new Map(
@@ -59,6 +60,7 @@ export async function loadReferenceFacts(
 export type ReferenceFacts = Readonly<{
   workspaceId: string;
   kind: EntryKind;
+  currency: string;
   accountId: string | null;
   categoryId: string | null;
   /** The references the row or rule already has, which stay allowed even when archived. */
@@ -69,10 +71,10 @@ export type ReferenceFacts = Readonly<{
   category: CategoryFact | null;
 }>;
 
-/** BR-3, BR-4 reference rules, shared by sync upserts, recurring rule templates and import review. */
+/** BR-3, BR-4, BR-39 reference rules, shared by sync upserts, recurring rule templates and import review. */
 export function referenceError(
   facts: ReferenceFacts,
-): 'INVALID_ACCOUNT' | 'INVALID_CATEGORY' | null {
+): 'INVALID_ACCOUNT' | 'INVALID_CATEGORY' | 'CURRENCY_MISMATCH' | null {
   const { account, category } = facts;
   if (facts.accountId !== null) {
     const unchanged = facts.current?.accountId === facts.accountId;
@@ -82,6 +84,7 @@ export function referenceError(
       (account.workspaceId === facts.workspaceId ||
         (account.workspaceId === facts.authorPersonalWorkspaceId && (facts.isAuthor || unchanged)));
     if (!allowed || (account.archived && !unchanged)) return 'INVALID_ACCOUNT';
+    if (account.currency !== facts.currency) return 'CURRENCY_MISMATCH';
   }
   if (facts.categoryId !== null) {
     const unchanged = facts.current?.categoryId === facts.categoryId;

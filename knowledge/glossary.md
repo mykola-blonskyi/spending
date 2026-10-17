@@ -13,6 +13,7 @@ same thing; translations use one word for both.
 ### Account
 
 Where money sits: cash, a card, a bank account, savings. Has one currency, fixed at creation.
+An entry with an account is in the account's currency (BR-39).
 
 ### Period net
 

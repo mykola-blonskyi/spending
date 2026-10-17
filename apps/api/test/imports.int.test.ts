@@ -153,21 +153,22 @@ describe('imports', () => {
         row(7, { description: 'x'.repeat(201) }),
         row(8, { currency: 'USD', amountMinor: -500 }),
       ]);
-      expect(result.imported.count).toBe(3);
+      expect(result.imported.count).toBe(2);
       expect(result.duplicates).toBe(0);
       expect(result.rejected).toEqual([
         { line: 3, reason: 'INVALID_DATE' },
         { line: 5, reason: 'INVALID_AMOUNT' },
         { line: 6, reason: 'INVALID_CURRENCY' },
         { line: 7, reason: 'DESCRIPTION_TOO_LONG' },
+        { line: 8, reason: 'CURRENCY_MISMATCH' },
       ]);
       expect(result.batch).toMatchObject({
         accountId: account,
         fileName: 'statement.csv',
         rowCount: 7,
-        importedCount: 3,
+        importedCount: 2,
         duplicateCount: 0,
-        rejectedCount: 4,
+        rejectedCount: 5,
         undoneAt: null,
       });
       const [stored] = await t.db
@@ -190,11 +191,6 @@ describe('imports', () => {
         workspaceId: annPersonal,
         accountId: account,
         reviewStatus: 'confirmed',
-      });
-      expect(byDescription.get('Shop 8')).toMatchObject({
-        kind: 'expense',
-        currency: 'USD',
-        baseAmountMinor: null,
       });
     });
 

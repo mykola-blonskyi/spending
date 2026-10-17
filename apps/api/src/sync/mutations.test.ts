@@ -137,13 +137,17 @@ describe('decideUpsert', () => {
       ["someone else's personal workspace", ANN_PERSONAL, 'rejected'],
     ])('accounts in %s', (_name, workspaceId, outcome) => {
       expect(
-        decideUpsert(facts({ intended: withAccount, account: { workspaceId, archived: false } }))
-          .outcome,
+        decideUpsert(
+          facts({
+            intended: withAccount,
+            account: { workspaceId, archived: false, currency: 'EUR' },
+          }),
+        ).outcome,
       ).toBe(outcome);
     });
 
     it("lets only the author pick an account from the author's personal workspace", () => {
-      const annAccount = { workspaceId: ANN_PERSONAL, archived: false };
+      const annAccount = { workspaceId: ANN_PERSONAL, archived: false, currency: 'EUR' };
       const onAnnsRow = {
         existing: row(),
         baseVersion: 3,
@@ -170,7 +174,7 @@ describe('decideUpsert', () => {
         outcome: 'rejected',
         code: 'INVALID_ACCOUNT',
       });
-      const archived = { workspaceId: FAMILY, archived: true };
+      const archived = { workspaceId: FAMILY, archived: true, currency: 'EUR' };
       expect(decideUpsert(facts({ intended: withAccount, account: archived }))).toEqual({
         outcome: 'rejected',
         code: 'INVALID_ACCOUNT',

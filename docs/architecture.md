@@ -49,7 +49,7 @@ deploy/      Docker images, nginx config, backup script
 `workspaces` exports `AccessPolicy`, which every other module calls before touching
 workspace-scoped data (BR-1, BR-2). Business logic that needs no I/O (money, schedules, dedupe
 keys, categorization, CSV row parsing, conflict detection) is written as pure functions with unit
-tests. Services are thin shells over them. The ledger invariants (BR-3, BR-4, BR-37) live in
+tests. Services are thin shells over them. The ledger invariants (BR-3, BR-4, BR-37, BR-39) live in
 `ledger/rules.ts` with the one account and category lookup they need; sync, recurring and the
 import review all check through it.
 
@@ -220,7 +220,7 @@ edited through REST and arrive through pull like transactions.
   A mutation is `transaction.upsert` (`baseVersion` is the version the client edited, or null for a
   new row) or `transaction.delete` (`baseVersion` required). Each result is `applied` (with the
   fresh row), `conflict` (with `conflictId` and the server row) or `rejected` (with a stable code:
-  `NOT_FOUND`, `FORBIDDEN`, `INVALID_ACCOUNT`, `INVALID_CATEGORY`, `INVALID_TRANSFER`, `REVIEW_REQUIRED`,
+  `NOT_FOUND`, `FORBIDDEN`, `INVALID_ACCOUNT`, `INVALID_CATEGORY`, `INVALID_TRANSFER`, `CURRENCY_MISMATCH`, `REVIEW_REQUIRED`,
   `MUTATION_ID_REUSED`). Rate limit: 2000 mutations per minute per user
   (`SYNC_MUTATIONS_PER_MINUTE`; E2E raises it to seed large histories), counted by the mutations in each push, since each one holds the
   ledger lock; a push over the budget is refused whole with `RATE_LIMITED`.
@@ -272,6 +272,11 @@ edited through REST and arrive through pull like transactions.
 - **Account references (BR-3).** A viewer who cannot see a row's account receives
   `accountId: null`. Sending that null back in an upsert keeps the author's account. Only the
   author may choose an account from their own personal workspace.
+- **Account currency (BR-39).** An entry with an account is in that account's currency; anything
+  else is rejected with `CURRENCY_MISMATCH`, and an import row is rejected with the same reason.
+  The entry form locks the currency to the picked account ("Account currency"). A CHECK cannot
+  read the account, so migration 0013 only refuses to run on a database that already holds a
+  mismatch.
 - **Author names.** A row carries its author's display name as read at pull time. Sign-in
   refreshes the name from the provider without bumping any revision, so rows a device already
   holds keep the old name until each changes or the cursor resets. Accepted: the name is a label,
@@ -372,7 +377,7 @@ Every error is `{ error: { code, message, details? } }` with a stable `code` fro
 `apps/api/src/common/errors.ts`, which the web app localizes. Codes outside the generic HTTP set:
 `SESSION_REVOKED`, `CSRF_FAILED`, `CONFIRMATION_MISMATCH` (400), `FAMILY_EXISTS` (409),
 `OWNER_CANNOT_LEAVE` (409), `NAME_TAKEN` (409), `REVIEW_REQUIRED` (409), `MUTATION_ID_REUSED`
-(409), `INVITATION_INVALID` (410), `INVALID_ACCOUNT` (422), `INVALID_CATEGORY` (422), `INVALID_TRANSFER` (422). Sync push
+(409), `INVITATION_INVALID` (410), `INVALID_ACCOUNT` (422), `INVALID_CATEGORY` (422), `INVALID_TRANSFER` (422), `CURRENCY_MISMATCH` (422). Sync push
 reports rejections per mutation with the same codes instead of an HTTP error. A database
 statement or lock timeout is `503 UNAVAILABLE`, safe to retry. A workspace the actor does not belong to
 is always `NOT_FOUND`, never `FORBIDDEN`.

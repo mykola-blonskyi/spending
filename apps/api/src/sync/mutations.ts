@@ -91,6 +91,7 @@ export type RejectCode = Extract<
   | 'INVALID_ACCOUNT'
   | 'INVALID_CATEGORY'
   | 'INVALID_TRANSFER'
+  | 'CURRENCY_MISMATCH'
   | 'REVIEW_REQUIRED'
 >;
 
