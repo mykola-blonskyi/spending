@@ -40,7 +40,9 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   grant for this app; the provider's gate guarantees that. A user who already has a family cannot
   accept (`409 FAMILY_EXISTS`), and the invitation stays pending. An unknown, used, revoked or
   expired invitation fails with the same `410 INVITATION_INVALID`, so the endpoint is no oracle.
-  Only the token's SHA-256 is stored; the raw link is shown once. Previewing a link shows the family and owner names only
+  Only the token's SHA-256 is stored; the raw link is shown once. A signed-out invitee's Join
+  keeps the token in that browser tab's `sessionStorage` across sign-in and returns to `/invite`,
+  so the raw token never reaches a login attempt. Previewing a link shows the family and owner names only
   while it is pending; every other state answers the same `410`.
 - **BR-9.** When a member leaves or is removed, the family transactions they authored stay in the
   family with their authorship intact. Their personal data is untouched. Their open sync conflicts

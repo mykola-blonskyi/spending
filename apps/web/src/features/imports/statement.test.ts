@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { findHeaderRow, MAX_BYTES, parseStatement, ROWS_MAX } from './statement';
+import { workbook } from './testing';
 
 const file = (bytes: Uint8Array<ArrayBuffer> | string) => new Blob([bytes]);
 const fixture = (name: string) => file(new Uint8Array(readFileSync(`e2e/fixtures/${name}`)));
@@ -60,6 +61,12 @@ describe('parseStatement', () => {
     expect(await parseStatement(file('Fecha;Importe\n'))).toEqual({ ok: false, problem: 'EMPTY' });
     const big = 'date,amount\n' + '2026-10-01,-1\n'.repeat(ROWS_MAX + 1);
     expect(await parseStatement(file(big))).toEqual({ ok: false, problem: 'TOO_MANY_ROWS' });
+  });
+
+  it('refuses an XLSX sheet far past the row limit before reading it', async () => {
+    const rows = Array.from({ length: 2 * ROWS_MAX + 1 }, (_, i) => `<row r="${i + 1}"><c/></row>`);
+    const result = await parseStatement(new Blob([workbook(rows)]));
+    expect(result).toEqual({ ok: false, problem: 'TOO_MANY_ROWS' });
   });
 
   it('finds the header below each bank’s metadata block in its XLSX export', async () => {

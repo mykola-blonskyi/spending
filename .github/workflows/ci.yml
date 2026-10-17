@@ -48,6 +48,8 @@ jobs:
           test -z "$(git status --porcelain -- apps/web/src/data)"
       - name: Deploy script tests
         run: sh scripts/coolify-deploy.test.sh
+      - name: Backup script tests
+        run: sh scripts/backup.test.sh
 
   unit:
     name: Unit and component tests

@@ -1,6 +1,7 @@
 import { MailOpen, MailX, Users } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router';
+import { useEffect, useState } from 'react';
+import { Link, Navigate, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { ApiError, errorCode } from '@data/api-error';
 import { acceptInvitation, FAMILY_KEY, invitationPreviewQuery } from '@data/family';
@@ -19,9 +20,55 @@ const card = 'w-full border-solid bg-card';
 const isInvalid = (error: unknown) =>
   error instanceof ApiError && error.status >= 400 && error.status < 500;
 
+/** Carries the token across sign-in, so it never reaches the server's login attempt (BR-8). */
+const PENDING_INVITE_KEY = 'spending.pendingInvite';
+
+function stashInvite(token: string): void {
+  try {
+    sessionStorage.setItem(PENDING_INVITE_KEY, token);
+  } catch {
+    // Storage can be unavailable; `/invite` then asks to open the link again.
+  }
+}
+
+function readPendingInvite(): string | null {
+  try {
+    return sessionStorage.getItem(PENDING_INVITE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/** Where sign-in returns a visitor who pressed Join: back to the link they came from. */
+export function PendingInvite() {
+  const t = useTranslations();
+  const [token] = useState(readPendingInvite);
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem(PENDING_INVITE_KEY);
+    } catch {
+      // Nothing was stored.
+    }
+  }, []);
+  if (token) return <Navigate to={`/invite/${encodeURIComponent(token)}`} replace />;
+  return (
+    <EmptyState
+      className={card}
+      icon={MailOpen}
+      title={t('invite.reopenTitle')}
+      description={t('invite.reopenDescription')}
+      action={
+        <Button asChild variant="outline">
+          <Link to="/">{t('actions.goHome')}</Link>
+        </Button>
+      }
+    />
+  );
+}
+
 /**
  * An invitation link: the preview is public, joining needs a session. A signed-out visitor's
- * Join goes through sign-in and comes back here to accept.
+ * Join goes through sign-in and comes back through `PendingInvite` to accept.
  */
 export function InviteFlow({ token }: { token: string }) {
   const t = useTranslations();
@@ -111,7 +158,9 @@ export function InviteFlow({ token }: { token: string }) {
             </Button>
           ) : (
             <Button asChild size="lg">
-              <a href={loginHref(`/invite/${encodeURIComponent(token)}`)}>{join}</a>
+              <a href={loginHref('/invite')} onClick={() => stashInvite(token)}>
+                {join}
+              </a>
             </Button>
           )}
           <Button asChild variant="ghost">

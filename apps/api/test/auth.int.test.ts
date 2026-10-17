@@ -229,6 +229,19 @@ describe('authentication', () => {
       expect(statuses[20]).toBe(429);
     });
 
+    it('keys the sign-in limit on the hop nginx adds, not on addresses a client prepends', async () => {
+      const ip = freshIp();
+      const statuses: number[] = [];
+      for (let i = 1; i <= 21; i += 1) {
+        const response = await fetch(`${t.baseUrl}/api/v1/auth/login`, {
+          redirect: 'manual',
+          headers: { 'x-forwarded-for': `198.51.100.${i}, ${ip}` },
+        });
+        statuses.push(response.status);
+      }
+      expect(statuses[20]).toBe(429);
+    });
+
     it('rate-limits each signed-in user on their own budget, whatever their IP', async () => {
       const [annSession, bobSession] = [await signedIn(ann.sub), await signedIn(bob.sub)];
       const invite = (session: Session) =>

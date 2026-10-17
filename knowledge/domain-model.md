@@ -25,7 +25,8 @@ An opaque, revocable server-side login session.
 ## LoginAttempt
 
 A pending OIDC authorization: `state` (primary key), `nonce`, `codeVerifier`, `returnTo`,
-`expiresAt`. Single use. Deleted on callback or expiry.
+`expiresAt`. Single use. Deleted on callback or expiry. An `/invite/<token>` return target is
+stored as `/invite`, so an abandoned login never keeps an invitation token (BR-8).
 
 ## Workspace
 

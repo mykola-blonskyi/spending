@@ -4,7 +4,7 @@
 #   backup.sh pre-migrate  one dump before migrations; keeps the newest 10
 #   backup.sh daily        today's dump (rerunning the same day overwrites it); keeps 14 daily
 #                          and 8 weekly
-#   backup.sh schedule     daily at 03:00 UTC, forever
+#   backup.sh schedule     daily at 03:00 UTC, forever; exits an hour after any failure
 #
 # Dumps use pg_dump's custom format, which is gzip-compressed and is what pg_restore reads.
 # Every dump is checked with pg_restore --list before it is kept (a daily dump must list the
@@ -16,6 +16,13 @@
 # DATABASE_URL (optionally ?sslmode=...) is split into the PG* environment variables, so the password is never in a
 # process argument list, and is never printed.
 set -eu
+
+# Coolify alerts on a restart, not on an unhealthy healthcheck. A failed scheduled run therefore
+# exits, and `restart: unless-stopped` restarts the container: one "Resource restarted" alert and
+# one retry. Waiting an hour first keeps a lasting failure from restarting faster than that.
+if [ "${1:-}" = schedule ]; then
+  trap 'status=$?; [ "$status" -eq 0 ] || sleep 3600; exit "$status"' EXIT
+fi
 
 : "${DATABASE_URL:?DATABASE_URL is required}"
 dir=${BACKUP_DIR:-/backups}
@@ -123,23 +130,34 @@ daily() {
   return $rc
 }
 
+# `daily.failed` survives the restart, so the startup check retries even when today's dump exists
+# and only the off-host copy failed.
+run_daily() {
+  if ! "$0" daily; then
+    touch "$dir/daily.failed"
+    log "daily dump failed; restarting in an hour to retry"
+    exit 1
+  fi
+  rm -f "$dir/daily.failed"
+}
+
 schedule() {
   run_at=$((3 * 3600))
-  # Run at start when today's dump is missing, or when an off-host copy is configured but none is
-  # fresh (just enabled, or the last copy failed): the healthcheck needs both. A separate
-  # process keeps set -e in force; inside `||` it would be suspended.
-  if [ ! -e "$dir/daily/daily-$(date -u +%Y-%m-%d).dump" ] || {
+  # Run at start when today's dump is missing, when the last run failed, or when an off-host copy
+  # is configured but none is fresh (just enabled, or the last copy failed): the healthcheck needs
+  # both. A separate process keeps set -e in force; inside `if !` it would be suspended.
+  if [ ! -e "$dir/daily/daily-$(date -u +%Y-%m-%d).dump" ] || [ -e "$dir/daily.failed" ] || {
     [ -n "${BACKUP_OFFSITE_REMOTE:-}" ] &&
       ! find "$dir/offsite.ok" -mmin -1560 2>/dev/null | grep -q .
   }; then
-    "$0" daily || log "daily dump failed"
+    run_daily
   fi
   while :; do
     now=$(($(date -u +%s) % 86400))
     wait=$(((run_at - now + 86400) % 86400))
     [ "$wait" -gt 0 ] || wait=86400
     sleep "$wait"
-    "$0" daily || log "daily dump failed"
+    run_daily
   done
 }
 

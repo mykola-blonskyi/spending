@@ -7,6 +7,8 @@ import type { Row } from './statement';
 
 /** Bigger parts than this are not a bank statement; it also stops a zip bomb. */
 const PART_MAX_BYTES = 64 * 1024 * 1024;
+/** Self-closing rows are empty; any namespace prefix is allowed. */
+const ROW_OPEN = /<(?:[\w.-]+:)?row\b[^>]*>/g;
 /** shortcut: wider sheets are refused instead of read, raise it if a bank exports more columns. */
 const COLUMNS_MAX = 100;
 const MAIN = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
@@ -14,6 +16,10 @@ const RELS = 'http://schemas.openxmlformats.org/package/2006/relationships';
 const DOC_RELS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 
 type Entry = { method: number; offset: number; compressed: number; size: number };
+/** `inflatedMax` bounds all parts together; `rowsMax` the sheet's non-empty rows. */
+export type XlsxLimits = { inflatedMax: number; rowsMax: number };
+
+export class TooManyRowsError extends Error {}
 
 /** shortcut: no ZIP64 and no CRC check; statements are under 5 MiB and the XML parse fails on damage. */
 function zipEntries(bytes: Uint8Array<ArrayBuffer>): Map<string, Entry> {
@@ -38,7 +44,7 @@ function zipEntries(bytes: Uint8Array<ArrayBuffer>): Map<string, Entry> {
   return entries;
 }
 
-async function inflate(data: Uint8Array<ArrayBuffer>): Promise<Uint8Array> {
+async function inflate(data: Uint8Array<ArrayBuffer>, limit: number): Promise<Uint8Array> {
   const reader = new ReadableStream<Uint8Array<ArrayBuffer>>({
     start(controller) {
       controller.enqueue(data);
@@ -53,9 +59,9 @@ async function inflate(data: Uint8Array<ArrayBuffer>): Promise<Uint8Array> {
     const { done, value } = await reader.read();
     if (done) break;
     total += value.length;
-    if (total > PART_MAX_BYTES) {
+    if (total > limit) {
       await reader.cancel();
-      throw new Error('part too large');
+      throw new Error('workbook too large');
     }
     chunks.push(value);
   }
@@ -68,10 +74,17 @@ async function inflate(data: Uint8Array<ArrayBuffer>): Promise<Uint8Array> {
   return out;
 }
 
-async function readPart(bytes: Uint8Array<ArrayBuffer>, entries: Map<string, Entry>, name: string) {
+/** A part's text, charged to `budget` so that all parts together stay under the limit. */
+async function readText(
+  bytes: Uint8Array<ArrayBuffer>,
+  entries: Map<string, Entry>,
+  name: string,
+  budget: { left: number },
+) {
   const entry = entries.get(name);
   if (!entry) return null;
-  if (entry.size > PART_MAX_BYTES) throw new Error('part too large');
+  const limit = Math.min(PART_MAX_BYTES, budget.left);
+  if (entry.size > limit) throw new Error('workbook too large');
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   if (view.getUint32(entry.offset, true) !== 0x04034b50) throw new Error('bad zip entry');
   const start =
@@ -80,11 +93,26 @@ async function readPart(bytes: Uint8Array<ArrayBuffer>, entries: Map<string, Ent
     view.getUint16(entry.offset + 26, true) +
     view.getUint16(entry.offset + 28, true);
   const data = bytes.subarray(start, start + entry.compressed);
-  const raw = entry.method === 0 ? data : entry.method === 8 ? await inflate(data) : null;
+  const raw = entry.method === 0 ? data : entry.method === 8 ? await inflate(data, limit) : null;
   if (!raw) throw new Error('unsupported compression');
-  const doc = new DOMParser().parseFromString(new TextDecoder().decode(raw), 'application/xml');
+  if (raw.length > limit) throw new Error('workbook too large');
+  budget.left -= raw.length;
+  return new TextDecoder().decode(raw);
+}
+
+function parseXml(text: string | null, name: string) {
+  if (text === null) return null;
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
   if (doc.getElementsByTagName('parsererror').length > 0) throw new Error(`bad XML in ${name}`);
   return doc;
+}
+
+function countRowsPast(text: string, max: number): boolean {
+  let count = 0;
+  for (const [tag] of text.matchAll(ROW_OPEN)) {
+    if (!tag.endsWith('/>') && ++count > max) return true;
+  }
+  return false;
 }
 
 const children = (parent: Element | Document, ns: string, tag: string) =>
@@ -148,16 +176,25 @@ function firstSheetPath(workbook: Document, rels: Document | null): string {
   return path.startsWith('/') ? path.slice(1) : `xl/${path}`;
 }
 
-export async function readXlsx(bytes: Uint8Array<ArrayBuffer>): Promise<Row[]> {
+export async function readXlsx(
+  bytes: Uint8Array<ArrayBuffer>,
+  { inflatedMax, rowsMax }: XlsxLimits,
+): Promise<Row[]> {
   const entries = zipEntries(bytes);
-  const workbook = await readPart(bytes, entries, 'xl/workbook.xml');
+  const budget = { left: inflatedMax };
+  const readPart = async (name: string) =>
+    parseXml(await readText(bytes, entries, name, budget), name);
+  const workbook = await readPart('xl/workbook.xml');
   if (!workbook) throw new Error('no workbook');
-  const rels = await readPart(bytes, entries, 'xl/_rels/workbook.xml.rels');
-  const sheet = await readPart(bytes, entries, firstSheetPath(workbook, rels));
+  const rels = await readPart('xl/_rels/workbook.xml.rels');
+  const sheetPath = firstSheetPath(workbook, rels);
+  const sheetText = await readText(bytes, entries, sheetPath, budget);
+  if (sheetText !== null && countRowsPast(sheetText, rowsMax)) throw new TooManyRowsError();
+  const sheet = parseXml(sheetText, sheetPath);
   if (!sheet) throw new Error('no sheet');
-  const shared = await readPart(bytes, entries, 'xl/sharedStrings.xml');
+  const shared = await readPart('xl/sharedStrings.xml');
   const strings = shared ? children(shared, MAIN, 'si').map(stringText) : [];
-  const dates = dateStyles(await readPart(bytes, entries, 'xl/styles.xml'));
+  const dates = dateStyles(await readPart('xl/styles.xml'));
   const pr = children(workbook, MAIN, 'workbookPr')[0]?.getAttribute('date1904');
   const date1904 = pr === '1' || pr === 'true';
 

@@ -8,6 +8,7 @@ import {
 import { and, asc, eq, inArray, isNull, lte, type SQL, sql } from 'drizzle-orm';
 import { APP_CONFIG, type AppConfig } from '../common/config';
 import { addDays, todayIn } from '../common/dates';
+import { describeUnexpected } from '../common/error.filter';
 import { ApiError } from '../common/errors';
 import type { CurrencyCode } from '../common/money';
 import { DB, type Db, ledgerTransaction, type Tx } from '../database/database.module';
@@ -132,9 +133,7 @@ export class RecurringService {
       try {
         generated += (await this.catchUp(id, now)).inserted;
       } catch (error) {
-        this.logger.warn(
-          `recurring_rule_failed id=${id} ${error instanceof Error ? error.message : 'unknown'}`,
-        );
+        this.logger.warn(`recurring_rule_failed id=${id} ${describeUnexpected(error)}`);
       }
     }
     return generated;
@@ -331,9 +330,7 @@ export class RecurringScheduler implements OnApplicationBootstrap, OnApplication
     try {
       this.logger.log(`recurring_generated count=${await this.recurring.runDue(new Date())}`);
     } catch (error) {
-      this.logger.warn(
-        `recurring_run_failed ${error instanceof Error ? error.message : 'unknown'}`,
-      );
+      this.logger.warn(`recurring_run_failed ${describeUnexpected(error)}`);
     }
   }
 }

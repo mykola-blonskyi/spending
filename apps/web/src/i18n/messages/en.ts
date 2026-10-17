@@ -132,6 +132,8 @@ export const en = {
     alreadyDescription:
       'A person belongs to one family at a time. Leave {family} before joining another.',
     openFamily: 'Open your family',
+    reopenTitle: 'Open your invitation link again',
+    reopenDescription: 'Open the invitation link you were sent once more to join the family.',
   },
   pages: {
     dashboard: {

@@ -11,5 +11,7 @@ export function sanitizeReturnTo(value: unknown): string {
   if (parsed.origin !== 'http://app.invalid') return '/';
   const target = `${parsed.pathname}${parsed.search}${parsed.hash}`;
   // Dot segments collapse during parsing ("/..//evil" becomes "//evil"), so check the result too.
-  return target.startsWith('//') || target.startsWith('/\\') ? '/' : target;
+  if (target.startsWith('//') || target.startsWith('/\\')) return '/';
+  // The web app carries the invitation token itself; it is never stored in a login attempt (BR-8).
+  return parsed.pathname.startsWith('/invite/') ? '/invite' : target;
 }

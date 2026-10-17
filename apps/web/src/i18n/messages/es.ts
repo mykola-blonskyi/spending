@@ -138,6 +138,9 @@ export const es = {
     alreadyDescription:
       'Solo se puede pertenecer a una familia a la vez. Sal de {family} antes de unirte a otra.',
     openFamily: 'Abrir mi familia',
+    reopenTitle: 'Vuelve a abrir el enlace de invitación',
+    reopenDescription:
+      'Abre de nuevo el enlace de invitación que recibiste para unirte a la familia.',
   },
   pages: {
     dashboard: {

@@ -64,6 +64,7 @@ run_case flaky 0
 run_case failed 1
 run_case cancelled 1
 run_case unknown_status 1
+run_case truncated_logs 1
 run_case no_uuid 1
 run_case never_settles 1 1
 run_case trigger_unauthorized 1
@@ -73,6 +74,7 @@ run_case wrong_token 1 30 not-the-token
 
 expect_output finished 'finished'
 expect_output failed 'no space left on device'
+expect_output truncated_logs 'Build log unreadable'
 expect_output never_settles 'no terminal status'
 expect_output trigger_unauthorized 'HTTP 401'
 expect_output status_unauthorized '"read" abilities'

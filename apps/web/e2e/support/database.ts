@@ -185,6 +185,14 @@ export class E2EDatabase {
     return rows;
   }
 
+  /** Where each pending sign-in returns to, as the server stores it. */
+  async loginReturnTargets(): Promise<string[]> {
+    const { rows } = await this.pool.query<{ return_to: string }>(
+      'select return_to from login_attempts',
+    );
+    return rows.map((row) => row.return_to);
+  }
+
   /** Every invitation link is past its expiry from now on. */
   async expireInvitations(): Promise<void> {
     await this.pool.query("update invitations set expires_at = now() - interval '1 minute'");

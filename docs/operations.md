@@ -153,8 +153,27 @@ proxied traffic, or the client itself when someone reaches the VPS directly.
 nginx (`deploy/nginx.conf`) recovers that peer from private-range proxies. It believes
 `CF-Connecting-IP` only when the peer is in Cloudflare's published ranges
 (`deploy/cloudflare-ips.conf`). A request that bypasses Cloudflare therefore cannot spoof its
-address. nginx sends the result as the only `X-Forwarded-For` value to the API, which trusts
-only private ranges, so rate limits key on the real client.
+address. nginx sends the result as the only `X-Forwarded-For` value to the API.
+
+The API sets Express `trust proxy` to `1`: it trusts exactly one hop, the peer that connects to
+it, and takes `req.ip` from the rightmost `X-Forwarded-For` entry, the one nginx wrote. The
+per-IP `auth` and `sensitive` budgets key on it. Two other values were rejected:
+
+- A list of private ranges (the earlier `loopback, linklocal, uniquelocal`) also walks past any
+  private address a client prepends, and is no narrower: every container on the `coolify`
+  network has such an address.
+- The stack network's subnet. Docker assigns it when Coolify creates the network, so it is not
+  known in advance and can change on recreate. When the subnet is wrong, `req.ip` becomes
+  nginx's own address, every visitor shares one sign-in budget, and sign-in locks out
+  site-wide.
+
+Residual risk: the API is reachable on the shared `coolify` network (it needs it for Postgres).
+Another container on that network can call `spending-api:3000` directly with a forged
+`X-Forwarded-For`, and so evade the per-IP budgets. The per-user budgets still apply after
+sign-in. This stack's containers drop `NET_RAW` (see Container hardening), so a compromised one
+cannot ARP-spoof the plaintext nginx→API and API→Postgres hops; other stacks on that network
+are outside this repository. Closing the gap fully needs nginx to prove itself to the API, for
+example with a shared-secret header. That is not done.
 
 Cloudflare occasionally changes its ranges. Refresh the file, review the diff, and redeploy:
 
@@ -180,6 +199,24 @@ APP_URL=http://127.0.0.1:18080 sh scripts/check-deploy.sh
 docker compose --env-file deploy/smoke.env -f docker-compose.yml \
   -f deploy/docker-compose.smoke.yml down -v
 ```
+
+### Container hardening
+
+Every service in `docker-compose.yml` runs as a non-root user, drops all Linux capabilities
+(`cap_drop: [ALL]`) and sets `no-new-privileges`. None needs a capability: nginx listens on
+8080, node and the backup scripts only open outbound connections and write files their user
+owns. Dropping `NET_RAW` in particular stops a compromised container from sniffing or
+ARP-spoofing the plaintext hops on the shared network. The throwaway Postgres in
+`deploy/docker-compose.smoke.yml` is left at Docker's defaults: its entrypoint starts as root
+and needs `CHOWN`, `SETUID`, `SETGID`, `FOWNER` and `DAC_OVERRIDE`, and it never runs in
+production.
+
+Not done yet, each worth adding later:
+
+- `read_only: true` with a `tmpfs` for `/tmp` on `web` and `spending-api` (nginx writes its pid
+  and temp files to `/tmp`; the backup containers also write `/backups`).
+- Base images pinned by digest instead of by tag, with a scheduled job to bump them.
+- Memory limits per service.
 
 ## First-time production setup (owner checklist)
 
@@ -230,7 +267,8 @@ docker compose --env-file deploy/smoke.env -f docker-compose.yml \
    - Environment variables: `DATABASE_URL`, `APP_ORIGIN=https://spending.blonskyi.dev`,
      `OIDC_ISSUER=https://login.blonskyi.dev`, `OIDC_CLIENT_ID=spending`, `OIDC_CLIENT_SECRET`,
      `SESSION_ENCRYPTION_KEY`. Each is `${VAR:?}` in the compose file, so a missing one fails
-     the deploy.
+     the deploy. `MIGRATION_DATABASE_URL` is optional until the roles are split
+     (Database roles).
 
 7. **Coolify API token.** Keys & Tokens → new token with only the `deploy` and `read`
    abilities. Do NOT grant `read:sensitive` while the repository is public: Actions logs are
@@ -242,9 +280,13 @@ docker compose --env-file deploy/smoke.env -f docker-compose.yml \
    variable `APP_URL=https://spending.blonskyi.dev`. Required reviewers are free on a public
    repository but optional; green CI on `main` is already the gate.
 
-9. Deploy once (next section) and sign in.
+9. **Notifications.** Coolify → Notifications: set up a channel (email, Telegram, Discord, ...)
+   and select Deployment Failure, Resource status changes, Restart limit reached and Server
+   unreachable. "Resource status changes" is how a failed backup reaches you.
 
-10. **Slow-query log.** The shared instance has `log_min_duration_statement = -1`, so a query
+10. Deploy once (next section) and sign in.
+
+11. **Slow-query log.** The shared instance has `log_min_duration_statement = -1`, so a query
     that turns slow as data grows (or a stalled sync) goes unnoticed. As the superuser, once:
 
     ```sql
@@ -257,6 +299,113 @@ docker compose --env-file deploy/smoke.env -f docker-compose.yml \
     database. Read the log with `docker logs 3p9qjnulllqn3bcjqokir0wq 2>&1 | grep 'duration:'`.
     Undo with `ALTER DATABASE spending RESET log_min_duration_statement;` and
     `ALTER DATABASE spending RESET log_parameter_max_length;`.
+
+## Database roles
+
+`spending_app` owns the database today and runs both the migrations and the app, so a SQL-level
+compromise of the app could run DDL or `DROP` its tables. The split below gives the schema to a
+`spending_owner` role that only `migrate` uses (`MIGRATION_DATABASE_URL`), and leaves
+`spending_app` with data access only. Until it is done, `MIGRATION_DATABASE_URL` stays unset and
+`migrate` uses `DATABASE_URL`, as before.
+
+What each role needs, from the code:
+
+- The API at runtime: `SELECT`, `INSERT`, `UPDATE`, `DELETE` on the tables, and `USAGE` on the
+  `ledger_revision` sequence (column defaults and the stamp triggers call `nextval`). It runs no
+  DDL, no `TRUNCATE` and no `setval`; the ledger lock is an advisory lock, which needs no
+  privilege. The trigger functions run with the caller's rights and `EXECUTE` stays granted to
+  `PUBLIC`.
+- `pg_dump` in `backup` and `predeploy-backup`: `SELECT` on every table and sequence, including
+  the `drizzle` schema, which it dumps too.
+- Migrations: ownership of both schemas and every object in them. The migrator runs
+  `CREATE SCHEMA IF NOT EXISTS drizzle` on every start, which fails without `CREATE` on the
+  database even when no migration is pending. So once the roles are split, a deploy without
+  `MIGRATION_DATABASE_URL` fails at `migrate`, and the site stays down until it is set.
+- `deploy/after-restore.sql` calls `setval`, which needs `UPDATE` on the sequence, so it runs as
+  the superuser (see Backups and restore).
+
+Split the roles (owner, once). Do steps 1 to 3 without a deploy in between; the running app is
+not affected.
+
+1. Generate a password with `openssl rand -hex 24`, then open psql as the superuser on the
+   `spending` database:
+
+   ```bash
+   ssh blonskyi
+   docker exec -i 3p9qjnulllqn3bcjqokir0wq psql -U postgres -d spending
+   ```
+
+2. Paste this, with the password in place of `<generated>`:
+
+   ```sql
+   \set ON_ERROR_STOP on
+   BEGIN;
+   CREATE ROLE spending_owner LOGIN PASSWORD '<generated>' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;
+   -- Everything spending_app owns here, and the spending database itself, moves to the owner.
+   REASSIGN OWNED BY spending_app TO spending_owner;
+   GRANT CONNECT ON DATABASE spending TO spending_app;
+   GRANT USAGE ON SCHEMA public, drizzle TO spending_app;
+   GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO spending_app;
+   GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO spending_app;
+   GRANT SELECT ON ALL TABLES IN SCHEMA drizzle TO spending_app;
+   GRANT SELECT ON ALL SEQUENCES IN SCHEMA drizzle TO spending_app;
+   ALTER DEFAULT PRIVILEGES FOR ROLE spending_owner IN SCHEMA public
+     GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO spending_app;
+   ALTER DEFAULT PRIVILEGES FOR ROLE spending_owner IN SCHEMA public
+     GRANT USAGE, SELECT ON SEQUENCES TO spending_app;
+   ALTER DEFAULT PRIVILEGES FOR ROLE spending_owner IN SCHEMA drizzle
+     GRANT SELECT ON TABLES TO spending_app;
+   ALTER DEFAULT PRIVILEGES FOR ROLE spending_owner IN SCHEMA drizzle
+     GRANT SELECT ON SEQUENCES TO spending_app;
+   COMMIT;
+   ```
+
+   `REASSIGN OWNED` also hands over any other database `spending_app` owns (a leftover
+   `spending_restore` or `spending_replaced_*`), but not the objects inside them. The default
+   privileges make every table and sequence a later migration creates usable by `spending_app`.
+
+3. Verify, in the same psql session. Both `CREATE` statements must fail with
+   `permission denied`, the owner must be `spending_owner`, and the count must be 0:
+
+   ```sql
+   SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname = 'spending';
+   SELECT count(*) FROM pg_class
+     WHERE relnamespace IN ('public'::regnamespace, 'drizzle'::regnamespace)
+       AND pg_get_userbyid(relowner) = 'spending_app';
+   SET ROLE spending_app;
+   \set ON_ERROR_STOP off
+   CREATE TABLE public.ddl_probe (id int);
+   CREATE SCHEMA ddl_probe;
+   RESET ROLE;
+   ```
+
+4. In Coolify, add `MIGRATION_DATABASE_URL` =
+   `postgres://spending_owner:<generated>@3p9qjnulllqn3bcjqokir0wq:5432/spending` to the
+   resource, then redeploy (Deploying). `DATABASE_URL` stays `spending_app`. Check that the
+   `migrate` container exited 0, `/api/health/ready` answers, and that the next `backup` run
+   logs `wrote daily-...`.
+
+Roll back (owner): remove `MIGRATION_DATABASE_URL` from Coolify, then as the superuser:
+
+```sql
+\set ON_ERROR_STOP on
+BEGIN;
+REASSIGN OWNED BY spending_owner TO spending_app;
+-- Nothing is owned by spending_owner any more; this drops its default privileges and grants.
+DROP OWNED BY spending_owner;
+COMMIT;
+DROP ROLE spending_owner;
+```
+
+`DROP ROLE` fails with "objects in database ..." when `spending_owner` still owns objects
+elsewhere, such as a scratch restore database: connect to each database it names
+(`psql -U postgres -d <name>`), run the `BEGIN` ... `COMMIT` block there, then `DROP ROLE`
+again. Redeploy afterwards.
+
+The runbook was rehearsed on a throwaway local database: migrations up to 0010 as the app role,
+then the split, migration 0011 applied as the owner, the app (sign-in, sync push, family
+invitation, export, recurring generation, mutation pruning) run as `spending_app`, a table
+created later by the owner used by the app, `pg_dump` and the restore below, and the rollback.
 
 ## Deploying
 
@@ -314,7 +463,13 @@ origin's headers for this host only: Caching → Cache Rules → Create rule, Ho
 - Each dump is checked with `pg_restore --list` before it is kept; a daily dump must also list
   the `transactions` table data. A corrupt, empty or wrong-database dump is
   discarded and the run fails: `predeploy-backup` stops the deploy, and for the daily dump the
-  container turns unhealthy once the last good one is older than 26 hours. `DATABASE_URL` may
+  container turns unhealthy once the last good one is older than 26 hours.
+- A failed daily run (at 03:00 or at start) is logged, and an hour later the `backup` container
+  exits 1. `restart: unless-stopped` starts it again, which sends Coolify's "Resource restarted"
+  notification, and the start retries the dump (a `daily.failed` marker in the volume forces it).
+  While the failure lasts that is one alert and one retry per hour; the hour's wait also covers a
+  configuration error, so the container never restarts faster. A good run removes the marker and
+  the daily loop continues. `scripts/backup.test.sh` covers these paths. `DATABASE_URL` may
   carry `?sslmode=...` (passed as `PGSSLMODE`); any other query parameter is refused.
 - The volume is on the VPS disk only unless the optional off-host copy is configured. When
   `BACKUP_OFFSITE_REMOTE` is set on the Coolify resource, the `backup` container also copies each
@@ -347,27 +502,35 @@ backup container name comes from `docker ps --format '{{.Names}}' | grep '^backu
 
 ```bash
 BACKUP=<backup container name>
+OWNER=spending_owner   # spending_app while the roles are not split (Database roles)
 docker exec "$BACKUP" ls -l /backups/daily /backups/weekly /backups/pre-migrate
 
 docker exec -i 3p9qjnulllqn3bcjqokir0wq psql -U postgres \
-  -c 'CREATE DATABASE spending_restore OWNER spending_app;' \
+  -c "CREATE DATABASE spending_restore OWNER $OWNER;" \
   -c 'REVOKE ALL ON DATABASE spending_restore FROM PUBLIC;' \
+  -c 'GRANT CONNECT ON DATABASE spending_restore TO spending_app;' \
   -c "ALTER DATABASE spending_restore SET log_min_duration_statement = '500ms';" \
   -c 'ALTER DATABASE spending_restore SET log_parameter_max_length = 0;'
 
-# DATABASE_URL is expanded inside the container, so it never reaches your shell history.
-docker exec "$BACKUP" sh -c 'pg_restore --dbname="${DATABASE_URL%/*}/spending_restore" \
-  --no-owner --exit-on-error /backups/daily/daily-YYYY-MM-DD.dump'
+# The superuser restores as $OWNER, so no password is typed and every object belongs to it.
+docker exec "$BACKUP" cat /backups/daily/daily-YYYY-MM-DD.dump |
+  docker exec -i 3p9qjnulllqn3bcjqokir0wq pg_restore -U postgres --dbname=spending_restore \
+    --no-owner --role="$OWNER" --exit-on-error
 
 docker exec -i 3p9qjnulllqn3bcjqokir0wq psql -U postgres -d spending_restore \
   -c '\dt' -c 'SELECT count(*) FROM drizzle.__drizzle_migrations;' \
   -c 'SELECT count(*) FROM transactions;'
 
 # Required. Moves ledger_revision past every device cursor and sets a new sync epoch, so every
-# device drops what it cached and pulls the restored data from 0 (BR-35).
-docker exec "$BACKUP" sh -c 'psql "${DATABASE_URL%/*}/spending_restore" -v ON_ERROR_STOP=1 \
-  -f /usr/local/share/spending/after-restore.sql'
+# device drops what it cached and pulls the restored data from 0 (BR-35). It calls setval, which
+# spending_app may not, so the superuser runs it.
+docker exec "$BACKUP" cat /usr/local/share/spending/after-restore.sql |
+  docker exec -i 3p9qjnulllqn3bcjqokir0wq psql -U postgres -d spending_restore -v ON_ERROR_STOP=1
 ```
+
+With split roles, also run the `GRANT` and `ALTER DEFAULT PRIVILEGES` statements of Database
+roles step 2 in `spending_restore` (`psql -U postgres -d spending_restore`). A dump taken before
+the split carries none, and default privileges belong to each database. They are idempotent.
 
 `after-restore.sql` lives in `deploy/` and ships in the backup image. A dump older than migration
 0009 has no `sync_epoch` table; the script skips the epoch and the redeploy's migration creates a
@@ -389,7 +552,9 @@ restored database has been in use for a while.
 - Container logs and status: the Coolify resource page (`api` logs are JSON lines).
 - Health: `/api/health` (process up) and `/api/health/ready` (database reachable), also used by
   the container health checks and the Deploy workflow.
-- Backups: the `backup` container's health and log lines.
+- Backups: the `backup` container's health and log lines. Coolify does not notify on an
+  unhealthy container, so a failed daily run restarts the container instead (Backups and
+  restore), which it does notify on.
 - The web access log redacts invitation tokens, `returnTo` values and the OIDC callback query
   (`code`, `state`). The nginx error log does not: when the API is unreachable it names the
   request line, so a failed `/invite/<token>` or callback request shows its secrets there. Accepted

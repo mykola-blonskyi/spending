@@ -6,11 +6,17 @@
  */
 import { decodeStatement, type Delimiter, detectDelimiter, type Encoding, parseCsv } from './csv';
 import { type PdfProblem, readPdf } from './pdf';
-import { readXlsx } from './xlsx';
+import { readXlsx, TooManyRowsError } from './xlsx';
 
 const MiB = 1024 * 1024;
 export const MAX_BYTES = { csv: 2 * MiB, xlsx: 5 * MiB, pdf: 10 * MiB } as const;
 export const ROWS_MAX = 5000;
+const XLSX_LIMITS = {
+  /** Five parts at the per-part cap would still exhaust the tab. */
+  inflatedMax: 128 * MiB,
+  /** Room for metadata and styled empty rows; past it the sheet is refused before it is parsed. */
+  rowsMax: 2 * ROWS_MAX,
+};
 
 /** `line` is the 1-based file line (CSV), sheet row (XLSX) or transaction (PDF) the row starts on. */
 export type Row = { line: number; cells: string[] };
@@ -92,9 +98,9 @@ async function readRows(
   }
   if (kind === 'xlsx') {
     try {
-      return { format: { kind }, rows: await readXlsx(new Uint8Array(bytes)) };
-    } catch {
-      return { problem: 'UNREADABLE' };
+      return { format: { kind }, rows: await readXlsx(new Uint8Array(bytes), XLSX_LIMITS) };
+    } catch (error) {
+      return { problem: error instanceof TooManyRowsError ? 'TOO_MANY_ROWS' : 'UNREADABLE' };
     }
   }
   const { text, encoding } = decodeStatement(bytes);

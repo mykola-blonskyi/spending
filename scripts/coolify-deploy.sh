@@ -49,7 +49,7 @@ report_logs() {
   # `>&2` must precede `2>/dev/null`, or jq's output follows fd 2 into /dev/null.
   # Entries Coolify marks hidden can carry secrets and must never reach the public Actions log.
   printf '%s' "$logs" | jq -r 'map(select(.hidden != true) | .output) | join("\n")' >&2 2>/dev/null ||
-    printf '%s\n' "$logs" >&2
+    echo "Build log unreadable; see the Coolify UI." >&2
 }
 
 # Coolify's /deploy route only deploys on POST; GET answers "use POST instead".

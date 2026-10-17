@@ -30,7 +30,7 @@ export const routes: RouteObject[] = [
         ),
         errorElement: <RouteErrorPage />,
       },
-      { path: '/invite/:token', element: <InvitePage />, errorElement: <RouteErrorPage /> },
+      { path: '/invite/:token?', element: <InvitePage />, errorElement: <RouteErrorPage /> },
       {
         element: (
           <RequireSession>

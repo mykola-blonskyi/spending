@@ -19,7 +19,8 @@ export async function createApp(config: AppConfig): Promise<NestExpressApplicati
 export function configureApp(app: NestExpressApplication): void {
   app.setGlobalPrefix('api');
   app.disable('x-powered-by');
-  app.set('trust proxy', 'loopback, linklocal, uniquelocal');
+  // One hop: the web container's nginx, which sends a single X-Forwarded-For (docs/operations.md).
+  app.set('trust proxy', 1);
   app.useBodyParser('json', { limit: '3mb' });
   app.use('/api', httpMiddleware);
   app.enableShutdownHooks();
