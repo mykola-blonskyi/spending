@@ -71,6 +71,13 @@ describe.each(Object.entries(TRANSACTION_SCREENS))('the %s entry screen', (_, { 
       route: path === '/transactions/new' ? path : '/transactions/:id',
     });
 
+  it('asks for the kind before the category', () => {
+    open(ledger, '/transactions/new');
+    const kind = screen.getByRole('radio', { name: 'Expense' });
+    const categories = screen.getByRole('radiogroup', { name: 'Category' });
+    expect(kind.compareDocumentPosition(categories)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   it('moves focus to the invalid amount when a save is refused', async () => {
     open(ledger, '/transactions/new');
     await userEvent.click(screen.getByRole('button', { name: /^Save/ }));

@@ -61,14 +61,6 @@ export function BentoEntryView({ form }: { form: EntryForm }) {
             />
           </Tile>
 
-          <Tile className="col-span-2 lg:col-[1/3] lg:row-[2/5]">
-            <CategoryPicker
-              form={form}
-              className="grid-cols-3"
-              itemClassName="border-transparent bg-muted/60 text-xs font-medium hover:bg-muted"
-            />
-          </Tile>
-
           <Tile className="col-span-2 lg:col-[3/5] lg:row-[2/3]">
             <ScopeChoice form={form} />
             <KindToggle
@@ -77,6 +69,13 @@ export function BentoEntryView({ form }: { form: EntryForm }) {
               itemClassName="h-9 rounded-lg text-muted-foreground transition-[background-color,color,box-shadow] duration-150 ease-out hover:bg-transparent data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-sm"
             />
             <CurrencySelect form={form} />
+          </Tile>
+          <Tile className="col-span-2 lg:col-[1/3] lg:row-[2/5]">
+            <CategoryPicker
+              form={form}
+              className="grid-cols-3"
+              itemClassName="border-transparent bg-muted/60 text-xs font-medium hover:bg-muted"
+            />
           </Tile>
           <Tile className="lg:col-[3/4] lg:row-[3/4]">
             <AccountSelect form={form} />
