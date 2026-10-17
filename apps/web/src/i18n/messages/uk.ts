@@ -556,6 +556,8 @@ export const uk = {
       currency: 'Валюта',
       card: 'Картка',
       balance: 'Залишок',
+      bankCategory: 'Категорія банку (лише підказка)',
+      mcc: 'MCC (лише підказка)',
     },
     notMapped: 'Немає в цьому файлі',
     amountLayout: 'Стовпці суми',

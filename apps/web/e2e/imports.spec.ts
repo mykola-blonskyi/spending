@@ -384,6 +384,34 @@ test('a PrivatBank file with two cards imports one card, then the next', async (
   ]);
 });
 
+test('the bank category suggests a default category', async ({ page, signInAs, db }) => {
+  await signInAs('ann');
+  await createAccount(page, 'Privat UAH', 'UAH');
+  await page.goto('/imports/new');
+  await page.getByLabel('Statement file').setInputFiles(fixture('privatbank-hints.xlsx'));
+  await expect(page.getByLabel('Statement category (suggestion only)')).toHaveText(/Категорія/);
+  const body = importBody(page);
+  await page.getByRole('button', { name: 'Import 2 rows' }).click();
+  await expect(page.getByRole('heading', { name: 'Import finished' })).toBeVisible();
+  expect(await body).toContain('Комуналка та Інтернет');
+  await expect(categoryOf(page, 'Київводоканал')).toHaveText('Utilities');
+  await expect(categoryOf(page, 'Невідома крамниця')).toHaveText('Uncategorized');
+  expect((await db.transactions(ann.email)).map((r) => r.description)).toEqual([
+    'Київводоканал',
+    'Невідома крамниця',
+  ]);
+
+  // A choice made on the summary teaches the bank category too; nothing keeps it after.
+  await categoryOf(page, 'Невідома крамниця').click();
+  await page.getByRole('option', { name: 'Shopping' }).click();
+  await expect
+    .poll(() => db.categoryRules(ann.email))
+    .toEqual([
+      { merchant_key: 'bank:різне', category: 'shopping' },
+      { merchant_key: 'невідома крамниця', category: 'shopping' },
+    ]);
+});
+
 test('a legacy .xls is refused, rows without an amount are skipped, a mapping is remembered', async ({
   page,
   signInAs,

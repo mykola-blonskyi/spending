@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CATEGORIES } from '../workspaces/default-categories';
-import { type CategoryCatalog, categorize, KEYWORD_RULES, merchantKey } from './categorize';
+import {
+  bankCategoryKey,
+  type CategoryCatalog,
+  categorize,
+  foldBankCategory,
+  KEYWORD_RULES,
+  mccSystemKey,
+  merchantKey,
+} from './categorize';
 
 const bySystemKey = new Map(
   DEFAULT_CATEGORIES.map((c) => [c.systemKey, { id: `cat-${c.systemKey}`, kind: c.kind }]),
@@ -78,5 +86,74 @@ describe('categorize', () => {
   it('only names default categories that exist', () => {
     const keys = new Set(DEFAULT_CATEGORIES.map((c) => c.systemKey));
     expect(KEYWORD_RULES.map(([key]) => key).filter((key) => !keys.has(key))).toEqual([]);
+  });
+});
+
+describe('bank category and MCC hints (BR-29)', () => {
+  it.each([
+    ['5411', 'groceries'],
+    ['5499', 'groceries'],
+    ['5812', 'dining'],
+    ['5814', 'dining'],
+    ['4111', 'transport'],
+    ['4121', 'transport'],
+    ['5541', 'transport'],
+    ['4900', 'utilities'],
+    ['4899', 'subscriptions'],
+    ['5815', 'subscriptions'],
+    ['5818', 'subscriptions'],
+    ['5912', 'health'],
+    ['8011', 'health'],
+    ['8099', 'health'],
+    ['5999', 'shopping'],
+    ['4829', undefined],
+    ['0000', undefined],
+    ['', undefined],
+  ])('MCC %s suggests %s', (mcc, systemKey) => {
+    expect(mccSystemKey(mcc)).toBe(systemKey);
+  });
+
+  it('only names default categories that exist', () => {
+    const keys = new Set(DEFAULT_CATEGORIES.map((c) => c.systemKey));
+    for (let mcc = 0; mcc < 10000; mcc++) {
+      const key = mccSystemKey(String(mcc).padStart(4, '0'));
+      if (key) expect(keys.has(key), `${mcc} -> ${key}`).toBe(true);
+    }
+  });
+
+  it('suggests a default from the bank category text', () => {
+    const hints = { bankCategory: 'Комуналка та Інтернет' };
+    expect(categorize('Київводоканал', 'expense', catalog(), hints)).toBe('cat-utilities');
+    expect(categorize('Кав’ярня Зерно', 'expense', catalog(), { bankCategory: 'Кафе' })).toBe(
+      'cat-dining',
+    );
+    expect(categorize('X', 'expense', catalog(), { bankCategory: 'Невідома' })).toBeNull();
+  });
+
+  it('applies the order: learned description, learned bank category, MCC, bank words, keywords', () => {
+    const mine = (id: string) => ({ id, kind: 'expense' as const });
+    const bank = bankCategoryKey(foldBankCategory('Комуналка та Інтернет'));
+    const hints = { bankCategory: 'Комуналка та Інтернет', mcc: '5411' };
+    const learned = new Map([[bank, mine('cat-bank-rule')]]);
+    expect(categorize('Mercadona', 'expense', catalog(learned), hints)).toBe('cat-bank-rule');
+    learned.set('mercadona', mine('cat-merchant-rule'));
+    expect(categorize('Mercadona', 'expense', catalog(learned), hints)).toBe('cat-merchant-rule');
+    expect(categorize('Mercadona', 'expense', catalog(), hints)).toBe('cat-groceries');
+    expect(categorize('Lidl', 'expense', catalog(), { bankCategory: 'Кафе', mcc: '4900' })).toBe(
+      'cat-utilities',
+    );
+    expect(categorize('Lidl', 'expense', catalog(), { bankCategory: 'Кафе' })).toBe('cat-dining');
+    expect(categorize('Lidl', 'expense', catalog(), { bankCategory: 'Невідома' })).toBe(
+      'cat-groceries',
+    );
+  });
+
+  it('skips a hint whose category has the other kind', () => {
+    expect(categorize('Return', 'income', catalog(), { mcc: '5411' })).toBeNull();
+  });
+
+  it('keeps bank-category keys apart from merchant keys', () => {
+    expect(bankCategoryKey(foldBankCategory('Кафе'))).toBe('bank:кафе');
+    expect(merchantKey('bank:кафе')).toBe('bank кафе');
   });
 });

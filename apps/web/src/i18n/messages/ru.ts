@@ -559,6 +559,8 @@ export const ru = {
       currency: 'Валюта',
       card: 'Карта',
       balance: 'Остаток',
+      bankCategory: 'Категория банка (только подсказка)',
+      mcc: 'MCC (только подсказка)',
     },
     notMapped: 'Нет в этом файле',
     amountLayout: 'Столбцы суммы',

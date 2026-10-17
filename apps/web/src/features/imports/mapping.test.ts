@@ -38,6 +38,8 @@ describe('presets', () => {
         currency: 5,
         card: null,
         balance: 6,
+        bankCategory: null,
+        mcc: null,
       },
       amountLayout: 'signed',
       dateFormat: 'dmy',
@@ -87,6 +89,11 @@ describe('parseAmountToMinor', () => {
     expect(parseAmountToMinor('1,2345', 2, ',', 'EUR')).toBeNull();
     expect(parseAmountToMinor('1234', 0, '.', 'JPY')).toBe(1234);
     expect(parseAmountToMinor('abc', 2, '.', 'EUR')).toBeNull();
+    expect(parseAmountToMinor('1 234,50 грн', 2, ',', 'UAH')).toBe(123450);
+    expect(parseAmountToMinor('-250.5 грн.', 2, '.', 'UAH')).toBe(-25050);
+    expect(parseAmountToMinor('₴100.00', 2, '.', 'UAH')).toBe(10000);
+    expect(parseAmountToMinor('-₴100.00', 2, '.', 'UAH')).toBe(-10000);
+    expect(parseAmountToMinor('100 грн', 2, '.', 'EUR')).toBeNull();
   });
 
   it('reads a Unicode minus sign and nothing else that is not a plain sign', () => {
@@ -115,6 +122,8 @@ describe('normalizeRow', () => {
       currency: 4,
       card: null,
       balance: null,
+      bankCategory: null,
+      mcc: null,
     },
     amountLayout: 'signed',
     dateFormat: 'dmy',
@@ -270,7 +279,16 @@ describe('XLSX bank presets', () => {
   it('maps the card-currency amount and leaves operation currency, commission and cashback out', () => {
     for (const headers of [MONO_EN, MONO_UK]) {
       expect(presetMapping('monobank', headers)).toMatchObject({
-        columns: { date: 0, description: 1, amount: 3, currency: null, card: null, balance: 9 },
+        columns: {
+          date: 0,
+          description: 1,
+          amount: 3,
+          currency: null,
+          card: null,
+          balance: 9,
+          mcc: 2,
+          bankCategory: null,
+        },
         dateFormat: 'dmy',
         decimal: '.',
       });
@@ -285,7 +303,25 @@ describe('XLSX bank presets', () => {
       debit: null,
       credit: null,
       externalId: null,
+      bankCategory: 1,
+      mcc: null,
     });
+  });
+
+  it('sends the bank category and a four-digit MCC as hints, and drops anything else', () => {
+    const privat = presetMapping('privatbank', PRIVAT);
+    const row = (cells: string[]) => ({ line: 3, cells });
+    const cells = ['10.10.2026', ' Комуналка та Інтернет ', 'c', 'Київводоканал', '-100', 'UAH'];
+    expect(normalizeRow(row(cells), privat, 'UAH').bankCategory).toBe('Комуналка та Інтернет');
+    expect(normalizeRow(row(['', '—', ...cells.slice(2)]), privat, 'UAH')).not.toHaveProperty(
+      'bankCategory',
+    );
+    const mono = presetMapping('monobank', MONO_EN);
+    const monoRow = (mcc: string) => row(['08.10.2026', 'Silpo', mcc, '-250.5']);
+    expect(normalizeRow(monoRow('5411'), mono, 'UAH').mcc).toBe('5411');
+    for (const bad of ['', '0', '54110', 'abcd', '—']) {
+      expect(normalizeRow(monoRow(bad), mono, 'UAH')).not.toHaveProperty('mcc');
+    }
   });
 });
 

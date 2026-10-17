@@ -23,6 +23,9 @@ export type Columns = {
   card: number | null;
   /** The running balance after each row, checked but never imported. */
   balance: number | null;
+  /** The bank's own category text and MCC: category hints only, never stored (BR-29). */
+  bankCategory: number | null;
+  mcc: number | null;
 };
 const COLUMN_KEYS = [
   'date',
@@ -34,6 +37,8 @@ const COLUMN_KEYS = [
   'currency',
   'card',
   'balance',
+  'bankCategory',
+  'mcc',
 ] as const satisfies readonly (keyof Columns)[];
 export type AmountLayout = 'signed' | 'split';
 
@@ -104,6 +109,7 @@ const PRESETS: Record<Exclude<PresetId, 'custom'>, Preset> = {
       amount: ['card currency amount', 'сума в валюті картки'],
       currency: [],
       balance: ['balance', 'залишок після операції'],
+      mcc: ['mcc'],
     },
     signatures: [
       ['mcc', 'card currency amount'],
@@ -120,6 +126,7 @@ const PRESETS: Record<Exclude<PresetId, 'custom'>, Preset> = {
       currency: ['валюта картки'],
       card: ['картка'],
       balance: ['залишок на кінець періоду'],
+      bankCategory: ['категорія'],
     },
     signatures: [['картка', 'валюта картки']],
   },
@@ -148,6 +155,7 @@ const GENERIC: Preset['headers'] = {
   currency: ['currency', 'divisa', 'moneda', 'валюта'],
   card: ['card', 'tarjeta', 'картка', 'карта'],
   balance: ['balance', 'saldo', 'залишок', 'остаток'],
+  mcc: ['mcc'],
 };
 
 /**
@@ -271,6 +279,9 @@ export function parseDate(text: string, format: DateFormat): string | null {
 
 const KNOWN_CURRENCIES = new Set(Intl.supportedValuesOf('currency'));
 
+/** How local statements write a currency besides its code and symbol (uppercase, as compared). */
+const LOCAL_MARKERS: Record<string, string[]> = { UAH: ['ГРН', 'ГРН.'] };
+
 const markers = new Map<string, string[]>();
 /** "EUR", "€": what may stand before or after an amount in this currency. */
 function currencyMarkers(currency: string): string[] {
@@ -280,7 +291,14 @@ function currencyMarkers(currency: string): string[] {
       new Intl.NumberFormat('en', { style: 'currency', currency, currencyDisplay: display })
         .formatToParts(1)
         .find((part) => part.type === 'currency')!.value;
-    found = [...new Set([currency, symbol('symbol'), symbol('narrowSymbol')])];
+    found = [
+      ...new Set([
+        currency,
+        symbol('symbol'),
+        symbol('narrowSymbol'),
+        ...(LOCAL_MARKERS[currency] ?? []),
+      ]),
+    ];
     markers.set(currency, found);
   }
   return found;
@@ -331,6 +349,9 @@ export function parseAmountToMinor(
   if (minor > BigInt(MAX_AMOUNT_MINOR)) return null;
   return Number(match[1] === '-' ? -minor : minor);
 }
+
+const MCC = /^\d{4}$/;
+const BANK_CATEGORY_MAX = 100;
 
 export type NormalizedRow = ImportRow & {
   /** Which cells could not be read; the server will reject the row for the same reason. */
@@ -394,6 +415,8 @@ export function normalizeRow(
   const amountMinor = readAmount(row.cells, mapping, read);
   if (amountMinor === null || amountMinor === 0) problems.push('amount');
   const externalId = cellAt(row.cells, columns.externalId);
+  const bankCategory = cellAt(row.cells, columns.bankCategory).trim().slice(0, BANK_CATEGORY_MAX);
+  const mcc = cellAt(row.cells, columns.mcc).trim();
   return {
     line: row.line,
     occurredOn: occurredOn ?? rawDate,
@@ -401,6 +424,8 @@ export function normalizeRow(
     description: cellAt(row.cells, columns.description),
     ...(currency && { currency }),
     ...(externalId && { externalId }),
+    ...(bankCategory && { bankCategory }),
+    ...(MCC.test(mcc) && { mcc }),
     problems,
   };
 }
