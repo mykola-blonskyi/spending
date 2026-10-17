@@ -1,18 +1,19 @@
 import { isDeleted, type Resolution, type TransactionInput } from './model';
 import { settleConflict } from './pull';
 import { discardFailed } from './push';
-import { applyLocalChange, type LocalChange } from './queue';
+import { applyLocalChange } from './queue';
 import type { LocalStore } from './store';
-import { markTransfer as markSides, unmarkTransfer as unmarkSides } from './transfer';
+import {
+  deleteEntry,
+  editEntry,
+  markTransfer as markSides,
+  unmarkTransfer as unmarkSides,
+} from './transfer';
 import { postResolution } from './transport';
 
 export type TransactionDraft = Omit<TransactionInput, 'id'>;
 
 const newId = () => crypto.randomUUID();
-
-function write(store: LocalStore, change: LocalChange) {
-  return store.commit((state) => applyLocalChange(state, change, newId));
-}
 
 /** Records a new entry locally and queues it; resolves with its ID once both are on disk. */
 export async function recordTransaction(
@@ -21,7 +22,8 @@ export async function recordTransaction(
   now: Date = new Date(),
 ): Promise<string> {
   const id = newId();
-  await write(store, { type: 'upsert', row: { ...draft, id, createdAt: now.toISOString() } });
+  const row = { ...draft, id, createdAt: now.toISOString() };
+  await store.commit((state) => applyLocalChange(state, { type: 'upsert', row }, newId));
   return id;
 }
 
@@ -35,15 +37,13 @@ export async function updateTransaction(
   const local = record?.local ?? null;
   const current = isDeleted(local) ? null : (local ?? record?.server);
   if (!current) throw new Error(`Transaction ${id} is not on this device`);
-  await write(store, {
-    type: 'upsert',
-    row: { ...draft, id, createdAt: current.createdAt },
-    editedVersion,
-  });
+  const row = { ...draft, id, createdAt: current.createdAt };
+  await store.commit((state) => editEntry(state, row, editedVersion, newId));
 }
 
+/** Deletes the entry, and with it the other side of its transfer, in one local commit. */
 export async function deleteTransaction(store: LocalStore, id: string): Promise<void> {
-  await write(store, { type: 'delete', id });
+  await store.commit((state) => deleteEntry(state, id, newId));
 }
 
 /** Both sides change in one local commit (BR-37). `counterpartId` null: an own account outside the app. */

@@ -56,16 +56,61 @@ export function markTransfer(
   return setSides(state, ids, { transferId, transferOutside: !counterpartId }, newMutationId);
 }
 
+/** Every side of the entry's transfer, or just the entry when it is not one. */
+function sidesOf(state: LocalState, id: string): string[] {
+  const transferId = currentRow(state, id)?.transferId;
+  if (!transferId) return [id];
+  return [...state.transactions.keys()].filter(
+    (other) => currentRow(state, other)?.transferId === transferId,
+  );
+}
+
 /** Turns every side of the entry's transfer back into income or expense awaiting a category. */
 export function unmarkTransfer(
   state: LocalState,
   id: string,
   newMutationId: () => string,
 ): LocalState {
-  const transferId = currentRow(state, id)?.transferId;
-  if (!transferId) return state;
-  const sides = [...state.transactions.keys()].filter(
-    (other) => currentRow(state, other)?.transferId === transferId,
+  if (!currentRow(state, id)?.transferId) return state;
+  return setSides(
+    state,
+    sidesOf(state, id),
+    { transferId: null, transferOutside: false },
+    newMutationId,
   );
-  return setSides(state, sides, { transferId: null, transferOutside: false }, newMutationId);
+}
+
+/** Deletes the entry and every other side of its transfer, one delete per side (BR-37). */
+export function deleteEntry(
+  state: LocalState,
+  id: string,
+  newMutationId: () => string,
+): LocalState {
+  return sidesOf(state, id).reduce(
+    (next, side) => applyLocalChange(next, { type: 'delete', id: side }, newMutationId),
+    state,
+  );
+}
+
+/**
+ * Saves an edited entry. A transfer's other sides take the same date and note; amount, account
+ * and description stay per side (BR-37).
+ */
+export function editEntry(
+  state: LocalState,
+  row: LocalTransaction,
+  editedVersion: number | null,
+  newMutationId: () => string,
+): LocalState {
+  const others = sidesOf(state, row.id).filter((id) => id !== row.id);
+  const edited = applyLocalChange(state, { type: 'upsert', row, editedVersion }, newMutationId);
+  return others.reduce((next, id) => {
+    const side = currentRow(next, id)!;
+    if (side.occurredOn === row.occurredOn && side.note === row.note) return next;
+    const change = {
+      type: 'upsert' as const,
+      row: { ...side, occurredOn: row.occurredOn, note: row.note },
+    };
+    return applyLocalChange(next, change, newMutationId);
+  }, edited);
 }
