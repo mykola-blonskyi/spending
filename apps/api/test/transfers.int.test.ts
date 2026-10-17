@@ -350,6 +350,39 @@ describe('transfers (BR-37)', () => {
     expect(sides[0]!.transferId).not.toBe(sides[1]!.transferId);
   });
 
+  it('leaves a half-linked transfer outside the deleted family untouched', async () => {
+    const bobPersonal = (await workspacesOf(t, bob)).personal;
+    const [annSide] = await pushNew(t, ann, [
+      { workspaceId: personal, kind: 'expense', amountMinor: 2000 },
+    ]);
+    const [bobSide] = await pushNew(t, bob, [
+      { workspaceId: bobPersonal, kind: 'income', amountMinor: 2000 },
+    ]);
+    const transferId = crypto.randomUUID();
+    await t.db
+      .update(transactions)
+      .set({ transferId })
+      .where(sql`${transactions.id} in (${annSide!.id}, ${bobSide!.id})`);
+    await t.db
+      .update(transactions)
+      .set({ deletedAt: sql`now()` })
+      .where(eq(transactions.id, bobSide!.id));
+    const before = await t.db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.transferId, transferId));
+    const deleted = await as(t, ann, '/v1/family', {
+      method: 'DELETE',
+      body: { confirmName: 'Home' },
+    });
+    expect(deleted.status, await deleted.clone().text()).toBe(204);
+    const after = await t.db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.transferId, transferId));
+    expect(after).toEqual(before);
+  });
+
   it('keeps a family side one-sided when its partner had no author left', async () => {
     const [annSide] = await pushNew(t, ann, [{ workspaceId: family, kind: 'expense' }]);
     const [bobSide] = await pushNew(t, bob, [{ workspaceId: family, kind: 'income' }]);
