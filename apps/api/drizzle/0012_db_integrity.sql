@@ -22,4 +22,4 @@ END $$;
 CREATE CONSTRAINT TRIGGER transactions_transfer_shape
   AFTER INSERT OR UPDATE OF transfer_id, transfer_outside, workspace_id, kind, deleted_at
   ON transactions DEFERRABLE INITIALLY DEFERRED
-  FOR EACH ROW EXECUTE FUNCTION transaction_transfer_shape();
+  FOR EACH ROW WHEN (NEW.transfer_id IS NOT NULL) EXECUTE FUNCTION transaction_transfer_shape();
