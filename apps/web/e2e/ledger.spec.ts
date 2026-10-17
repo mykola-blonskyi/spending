@@ -10,6 +10,8 @@ const dialog = (page: Page) => page.getByRole('dialog');
 async function pickOption(page: Page, field: string, option: string) {
   await dialog(page).getByRole('combobox', { name: field }).click();
   await page.getByRole('option', { name: option, exact: true }).click();
+  // The closing list still covers the form for a moment and would swallow the next click.
+  await expect(page.getByRole('listbox')).toBeHidden();
 }
 
 test('accounts can be created, renamed, archived and restored', async ({ page, signInAs, db }) => {
