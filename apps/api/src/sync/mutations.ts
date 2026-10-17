@@ -210,7 +210,10 @@ export type TransferPeer = Readonly<{
  * the first side of a pair arrives alone and is valid.
  */
 export function transferError(
-  intended: IntendedFields,
+  intended: Pick<
+    IntendedFields,
+    'workspaceId' | 'kind' | 'categoryId' | 'transferId' | 'transferOutside'
+  >,
   peers: readonly TransferPeer[],
 ): 'INVALID_TRANSFER' | null {
   if (intended.transferId === null) return intended.transferOutside ? 'INVALID_TRANSFER' : null;

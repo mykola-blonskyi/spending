@@ -714,6 +714,7 @@ export const uk = {
       confirming: 'Публікуємо…',
       confirmed:
         '{count, plural, one {# рядок опубліковано} few {# рядки опубліковано} many {# рядків опубліковано} other {# рядків опубліковано}}.',
+      transferChosen: 'Особисте, без категорії: це переказ',
     },
   },
   dashboard: {

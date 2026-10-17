@@ -1,9 +1,15 @@
-import { ClipboardCheck } from 'lucide-react';
+import { ArrowLeftRight, ClipboardCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { errorCode } from '@data/api-error';
 import type { ReviewItem } from '@data/imports';
-import { type Category, useWorkspaces } from '@data/sync';
+import {
+  type Category,
+  type TransactionEntry,
+  useAccounts,
+  useLocalTransactions,
+  useWorkspaces,
+} from '@data/sync';
 import { type CategoryView, useCategoryViews } from '@features/ledger';
 import { useTranslations } from '@i18n/index';
 import { EmptyState, ErrorState, LoadingState, MoneyText, PageHeader } from '@shared/components';
@@ -22,12 +28,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@shared/ui/select';
+import { Toggle } from '@shared/ui/toggle';
 import { ToggleGroup, ToggleGroupItem } from '@shared/ui/toggle-group';
 import { CategorySelect } from './category-select';
 import { bankCategoryOf, useConfirmReview, useHasFamily, useReviewQueue } from './imports';
-import { bulkCategoryChoice, type Choice, type Scope } from './review-choice';
+import { bulkCategoryChoice, type Choice, type Scope, transferChoice } from './review-choice';
 
 const SCOPES: readonly Scope[] = ['personal', 'family'];
+const ALL = {};
+
+/** Null: an own account outside the app. */
+type OtherSide = Pick<TransactionEntry, 'accountId' | 'occurredOn'> | null;
 
 /** Checkbox, description, amount; scope and category beside them on wide screens, under them on phones. */
 const ROW =
@@ -79,6 +90,8 @@ export function ReviewPage() {
   const workspaces = useWorkspaces();
   const categories = useCategoryViews();
   const confirm = useConfirmReview();
+  const local = useLocalTransactions(ALL);
+  const accounts = useAccounts();
   const [choices, setChoices] = useState<ReadonlyMap<string, Choice>>(new Map());
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [bulkScope, setBulkScope] = useState<Scope>('personal');
@@ -92,19 +105,66 @@ export function ReviewPage() {
   const optionsFor = (scope: Scope, kind: Category['kind']) =>
     live.filter((c) => c.workspaceId === workspaceOf(scope) && c.kind === kind);
 
-  const items = queue.data ?? [];
+  const items = useMemo(() => queue.data ?? [], [queue.data]);
+  const pending = useMemo(() => new Map(items.map((i) => [i.transaction.id, i])), [items]);
+  /**
+   * BR-38: the other side of each suggestion, a row of this queue or an entry on this device. A
+   * suggestion whose other side is not here, or became a transfer meanwhile, is not offered.
+   */
+  const otherSides = useMemo(() => {
+    const entries = new Map(local.items.map((entry) => [entry.id, entry]));
+    return new Map(
+      items.flatMap((item): [string, OtherSide][] => {
+        const id = item.transferSuggestion?.counterpartId;
+        if (id === undefined) return [];
+        if (id === null) return [[item.transaction.id, null]];
+        const other = pending.get(id)?.transaction ?? entries.get(id);
+        return other && !other.transferId ? [[item.transaction.id, other]] : [];
+      }),
+    );
+  }, [items, pending, local.items]);
+  const accountName = (id: string | null) => accounts.items.find((a) => a.id === id)?.name ?? '';
+
   const choiceOf = (item: ReviewItem) =>
     choices.get(item.transaction.id) ?? defaultChoice(item, 'personal');
   const setChoice = (id: string, choice: Choice) =>
     setChoices((prev) => new Map(prev).set(id, choice));
-  const allSelected = items.length > 0 && items.every((i) => selected.has(i.transaction.id));
-  const chosen = items.filter((i) => selected.has(i.transaction.id));
+  /** The other row of a transfer chosen between two rows of this queue; they publish together. */
+  const partnerOf = (id: string) => {
+    const counterpartId = choices.get(id)?.transfer?.counterpartId;
+    return counterpartId && pending.has(counterpartId) ? counterpartId : null;
+  };
+  const withPartner = (id: string) => {
+    const partner = partnerOf(id);
+    return partner ? [id, partner] : [id];
+  };
+  const chosen = items.filter((i) => withPartner(i.transaction.id).some((id) => selected.has(id)));
+  const chosenIds = new Set(chosen.map((i) => i.transaction.id));
+  const allSelected = items.length > 0 && chosen.length === items.length;
 
+  const setTransfer = (item: ReviewItem, on: boolean) => {
+    const id = item.transaction.id;
+    const counterpartId = item.transferSuggestion?.counterpartId ?? null;
+    const partner = counterpartId ? pending.get(counterpartId) : undefined;
+    setChoices((prev) => {
+      const next = new Map(prev);
+      next.set(id, on ? transferChoice(counterpartId) : defaultChoice(item, 'personal'));
+      if (partner) {
+        next.set(
+          partner.transaction.id,
+          on ? transferChoice(id) : defaultChoice(partner, 'personal'),
+        );
+      }
+      return next;
+    });
+  };
   const applyScope = (scope: Scope) => {
     setBulkScope(scope);
     setChoices((prev) => {
       const next = new Map(prev);
-      for (const item of chosen) next.set(item.transaction.id, defaultChoice(item, scope));
+      for (const item of chosen) {
+        if (!choiceOf(item).transfer) next.set(item.transaction.id, defaultChoice(item, scope));
+      }
       return next;
     });
   };
@@ -224,16 +284,19 @@ export function ReviewPage() {
               {items.map((item) => {
                 const row = item.transaction;
                 const choice = choiceOf(item);
+                const otherSide = otherSides.get(row.id);
                 return (
                   <li key={row.id} data-scope={choice.scope} className={ROW}>
                     <Checkbox
                       aria-label={t('imports.review.selectRow', { description: row.description })}
-                      checked={selected.has(row.id)}
+                      checked={chosenIds.has(row.id)}
                       onCheckedChange={(checked) =>
                         setSelected((prev) => {
                           const next = new Set(prev);
-                          if (checked === true) next.add(row.id);
-                          else next.delete(row.id);
+                          for (const id of withPartner(row.id)) {
+                            if (checked === true) next.add(id);
+                            else next.delete(id);
+                          }
                           return next;
                         })
                       }
@@ -243,6 +306,30 @@ export function ReviewPage() {
                       <span className="block text-xs text-muted-foreground">
                         {formatDate(row.occurredOn, locale)}
                       </span>
+                      {otherSide !== undefined && (
+                        <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
+                          <Toggle
+                            variant="outline"
+                            size="sm"
+                            aria-label={`${t('transfer.label')}: ${row.description}`}
+                            pressed={choice.transfer !== undefined}
+                            onPressedChange={(on) => setTransfer(item, on)}
+                          >
+                            <ArrowLeftRight aria-hidden />
+                            {t('transfer.label')}
+                          </Toggle>
+                          <span className="min-w-0 text-muted-foreground">
+                            {t('imports.suggestions.title')}
+                            {' · '}
+                            {otherSide
+                              ? t('imports.suggestions.otherSide', {
+                                  account: accountName(otherSide.accountId),
+                                  date: formatDate(otherSide.occurredOn, locale),
+                                })
+                              : t('transfer.outside')}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <MoneyText
                       amountMinor={row.kind === 'expense' ? -row.amountMinor : row.amountMinor}
@@ -250,23 +337,31 @@ export function ReviewPage() {
                       colored
                       className="justify-self-end"
                     />
-                    <div className={WRAPPED}>
-                      <ScopeToggle
-                        value={choice.scope}
-                        onChange={(scope) => setChoice(row.id, defaultChoice(item, scope))}
-                        label={`${t('imports.review.scope')}: ${row.description}`}
-                      />
-                    </div>
-                    <div className={WRAPPED}>
-                      <CategorySelect
-                        value={choice.categoryId}
-                        categories={optionsFor(choice.scope, row.kind)}
-                        onChange={(categoryId) => setChoice(row.id, { ...choice, categoryId })}
-                        label={`${t('imports.review.category')}: ${row.description}`}
-                        noneLabel={t('imports.review.noCategory')}
-                        className="w-full"
-                      />
-                    </div>
+                    {choice.transfer ? (
+                      <span className="col-span-2 col-start-2 text-xs text-muted-foreground sm:col-span-2 sm:col-start-auto">
+                        {t('imports.review.transferChosen')}
+                      </span>
+                    ) : (
+                      <>
+                        <div className={WRAPPED}>
+                          <ScopeToggle
+                            value={choice.scope}
+                            onChange={(scope) => setChoice(row.id, defaultChoice(item, scope))}
+                            label={`${t('imports.review.scope')}: ${row.description}`}
+                          />
+                        </div>
+                        <div className={WRAPPED}>
+                          <CategorySelect
+                            value={choice.categoryId}
+                            categories={optionsFor(choice.scope, row.kind)}
+                            onChange={(categoryId) => setChoice(row.id, { ...choice, categoryId })}
+                            label={`${t('imports.review.category')}: ${row.description}`}
+                            noneLabel={t('imports.review.noCategory')}
+                            className="w-full"
+                          />
+                        </div>
+                      </>
+                    )}
                   </li>
                 );
               })}

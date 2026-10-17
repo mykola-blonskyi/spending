@@ -291,6 +291,19 @@ calls the pure `imports/transfer-match.ts`. The result, `imported.transferSugges
 (`features/imports/transfer-suggestions.tsx`) shows the ones still open on the device and confirms
 through `markTransfer`, so a confirmation queues like any mark and works offline.
 
+Rows awaiting review get theirs from `ImportsService.review`: the same matcher, with the queue's
+rows as the imported side and as extra candidates beside the confirmed entries of the personal
+workspace, so two pending rows can pair; such a pair is reported on both items
+(`transferSuggestion`). A confirm item may carry `transfer: { counterpartId | null }` (personal,
+no category, else 400). `confirm` links it in the same ledger transaction: one shared
+`transferId`, set on a confirmed counterpart too, or `transferOutside` for null. The counterpart
+must be a live non-transfer row of the personal workspace on another account, used once, either
+confirmed or a pending item of the same request pointing back; `transferError` from
+`sync/mutations.ts` checks the workspace and kind. Anything else is `422 INVALID_TRANSFER`. The
+version trigger bumps the linked rows, so devices pull them. The review page
+(`features/imports/review-page.tsx`) shows a Transfer toggle per suggestion, sets it on both rows
+of a pending pair and publishes them together (`review-choice.ts` holds the choice shape).
+
 ## Analytics
 
 `GET /analytics/summary?from=&to=&scope=personal|family|all&compare=previous|none` (defaults

@@ -552,7 +552,13 @@ describe('imports', () => {
   });
 
   describe('family review queue (BR-28)', () => {
-    type Review = { items: { transaction: View; familyCategoryId: string | null }[] };
+    type Review = {
+      items: {
+        transaction: View;
+        familyCategoryId: string | null;
+        transferSuggestion?: { counterpartId: string | null; reason: string };
+      }[];
+    };
     let family: string;
 
     beforeEach(async () => {
@@ -598,6 +604,171 @@ describe('imports', () => {
     it('suggests no transfers while the rows wait for review (BR-38)', async () => {
       const { imported } = await importRows(ann, [row(2, { description: 'TRASPASO A CUENTA' })]);
       expect(imported.transferSuggestions).toEqual([]);
+    });
+
+    describe('transfers (BR-38)', () => {
+      let savings: string;
+      let manual: { id: string };
+      let ids: Record<'toSavings' | 'traspaso' | 'again' | 'shop' | 'fromMain', string>;
+
+      const entry = (accountId: string, kind: string, amountMinor: number) => ({
+        id: crypto.randomUUID(),
+        workspaceId: annPersonal,
+        kind,
+        amountMinor,
+        currency: 'EUR',
+        occurredOn: '2026-10-02',
+        accountId,
+        categoryId: null,
+        description: `Manual ${kind}`,
+        note: '',
+      });
+      const add = async <T extends { id: string }>(s: Session, transaction: T) => {
+        expect(
+          (await push(s, { type: 'transaction.upsert', baseVersion: null, transaction })).status,
+        ).toBe('applied');
+        return transaction;
+      };
+
+      beforeEach(async () => {
+        savings = await createAccount(ann, annPersonal, 'Savings');
+        manual = await add(ann, entry(savings, 'income', 50000));
+        const main = await importRows(ann, [
+          row(2, { amountMinor: -50000, description: 'To savings' }),
+          row(3, {
+            amountMinor: -2000,
+            description: 'TRASPASO A CUENTA',
+            bankCategory: 'Перекази',
+          }),
+          row(4, { amountMinor: -3000, description: 'To savings again' }),
+          row(5),
+        ]);
+        const other = await importRows(
+          ann,
+          [row(2, { amountMinor: 3000, occurredOn: '2026-10-03', description: 'From main' })],
+          savings,
+        );
+        const [toSavings, traspaso, again, shop] = main.imported.transactionIds as [
+          string,
+          string,
+          string,
+          string,
+        ];
+        ids = { toSavings, traspaso, again, shop, fromMain: other.imported.transactionIds[0]! };
+      });
+
+      const transferItem = (transactionId: string, counterpartId: string | null) => ({
+        transactionId,
+        scope: 'personal',
+        categoryId: null,
+        transfer: { counterpartId },
+      });
+      const stored = async (id: string) =>
+        (
+          await t.db
+            .select({
+              workspaceId: transactions.workspaceId,
+              categoryId: transactions.categoryId,
+              reviewStatus: transactions.reviewStatus,
+              transferId: transactions.transferId,
+              transferOutside: transactions.transferOutside,
+              version: transactions.version,
+            })
+            .from(transactions)
+            .where(eq(transactions.id, id))
+        )[0]!;
+
+      it('suggests counterparts among confirmed entries and rows awaiting review', async () => {
+        const review = await json<Review>(await as(t, ann, '/v1/imports/review'), 200);
+        const suggestionOf = new Map(
+          review.items.map((i) => [i.transaction.id, i.transferSuggestion]),
+        );
+        expect(Object.fromEntries(suggestionOf)).toEqual({
+          [ids.toSavings]: { counterpartId: manual.id, reason: 'counterpart' },
+          [ids.traspaso]: { counterpartId: null, reason: 'keyword' },
+          [ids.again]: { counterpartId: ids.fromMain, reason: 'counterpart' },
+          [ids.fromMain]: { counterpartId: ids.again, reason: 'counterpart' },
+          [ids.shop]: undefined,
+        });
+      });
+
+      it('links a pair awaiting review, a confirmed counterpart and a one-sided transfer, learning nothing', async () => {
+        const { transactions: confirmed } = await json<{ transactions: View[] }>(
+          await confirm(ann, [
+            transferItem(ids.again, ids.fromMain),
+            transferItem(ids.toSavings, manual.id),
+            { ...transferItem(ids.traspaso, null), bankCategory: 'Перекази' },
+            transferItem(ids.fromMain, ids.again),
+          ]),
+          200,
+        );
+        expect(confirmed.map((c) => c.id)).toEqual([
+          ids.again,
+          ids.toSavings,
+          ids.traspaso,
+          ids.fromMain,
+        ]);
+        const [again, toSavings, traspaso, fromMain, other] = await Promise.all(
+          [ids.again, ids.toSavings, ids.traspaso, ids.fromMain, manual.id].map(stored),
+        );
+        for (const side of [again, toSavings, traspaso, fromMain, other]) {
+          expect(side).toMatchObject({
+            workspaceId: annPersonal,
+            categoryId: null,
+            reviewStatus: 'confirmed',
+          });
+          expect(side!.transferId).not.toBeNull();
+        }
+        expect(again!.transferId).toBe(fromMain!.transferId);
+        expect(toSavings!.transferId).toBe(other!.transferId);
+        expect(new Set([again, toSavings, traspaso].map((side) => side!.transferId)).size).toBe(3);
+        expect(
+          [again, toSavings, traspaso, fromMain, other].map((s) => s!.transferOutside),
+        ).toEqual([false, false, true, false, false]);
+        // The confirmed side changed on the server, so devices pull it.
+        expect(other!.version).toBe(2);
+        expect((await pulled(ann)).map((r) => r.id)).toContain(manual.id);
+        expect(await t.db.select().from(categoryRules)).toEqual([]);
+      });
+
+      it('refuses a category, the family scope and an invalid counterpart, all or nothing', async () => {
+        const bobAccount = await createAccount(bob, await personal(bob));
+        const bobEntry = await add(bob, {
+          ...entry(bobAccount, 'income', 50000),
+          workspaceId: await personal(bob),
+        });
+        const sameKind = await add(ann, entry(savings, 'expense', 50000));
+        const ownAccount = await add(ann, entry(account, 'income', 50000));
+        const personalIds = await categoryIds(ann, annPersonal);
+
+        for (const bad of [
+          {
+            ...transferItem(ids.toSavings, manual.id),
+            categoryId: personalIds.get('shopping'),
+          },
+          { ...transferItem(ids.toSavings, manual.id), scope: 'family' },
+        ]) {
+          expect((await confirm(ann, [bad])).status).toBe(400);
+        }
+        for (const bad of [
+          [transferItem(ids.toSavings, bobEntry.id)],
+          [transferItem(ids.toSavings, sameKind.id)],
+          [transferItem(ids.toSavings, ownAccount.id)],
+          [transferItem(ids.toSavings, crypto.randomUUID())],
+          [transferItem(ids.again, ids.fromMain)],
+          [
+            transferItem(ids.again, ids.fromMain),
+            { transactionId: ids.fromMain, scope: 'personal', categoryId: null },
+          ],
+          [transferItem(ids.toSavings, manual.id), transferItem(ids.again, manual.id)],
+        ]) {
+          const response = await confirm(ann, bad);
+          expect(response.status).toBe(422);
+          expect(await errorCode(response)).toBe('INVALID_TRANSFER');
+        }
+        expect(await history(ann, '?reviewStatus=pending_review')).toHaveLength(5);
+        expect((await stored(manual.id)).transferId).toBeNull();
+      });
     });
 
     it('confirms rows as family or personal and learns the categories', async () => {

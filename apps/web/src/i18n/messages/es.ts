@@ -709,6 +709,7 @@ export const es = {
       confirm: 'Publicar {count, plural, one {# fila} other {# filas}}',
       confirming: 'Publicando…',
       confirmed: '{count, plural, one {# fila publicada} other {# filas publicadas}}.',
+      transferChosen: 'Personal, sin categoría: es una transferencia',
     },
   },
   dashboard: {

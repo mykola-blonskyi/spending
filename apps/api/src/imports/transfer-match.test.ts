@@ -129,4 +129,13 @@ describe('suggestTransfers', () => {
     ];
     expect(suggestTransfers([row('a')], candidates, '', noRates)).toEqual([]);
   });
+
+  it('reports a pair of two imported rows on both, each row in one pair only', () => {
+    const imported = [row('a'), income('b')];
+    const confirmed = row('c', { accountId: 'cash' });
+    expect(suggestTransfers(imported, [confirmed, ...imported], '', noRates)).toEqual([
+      { transactionId: 'a', counterpartId: 'b', reason: 'counterpart' },
+      { transactionId: 'b', counterpartId: 'a', reason: 'counterpart' },
+    ]);
+  });
 });

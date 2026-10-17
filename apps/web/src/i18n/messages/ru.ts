@@ -717,6 +717,7 @@ export const ru = {
       confirming: 'Публикуем…',
       confirmed:
         '{count, plural, one {# строка опубликована} few {# строки опубликованы} many {# строк опубликовано} other {# строк опубликовано}}.',
+      transferChosen: 'Личное, без категории: это перевод',
     },
   },
   dashboard: {

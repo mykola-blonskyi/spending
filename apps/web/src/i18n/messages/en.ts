@@ -688,6 +688,7 @@ export const en = {
       confirm: 'Publish {count, plural, one {# row} other {# rows}}',
       confirming: 'Publishing…',
       confirmed: '{count, plural, one {# row published} other {# rows published}}.',
+      transferChosen: 'Personal, no category: it is a transfer',
     },
   },
   dashboard: {
