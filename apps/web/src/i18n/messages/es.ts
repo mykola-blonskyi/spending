@@ -213,7 +213,7 @@ export const es = {
       description: 'Trae movimientos desde un extracto bancario.',
       emptyTitle: 'Aún no hay importaciones',
       emptyDescription:
-        'Sube un extracto CSV o XLSX de tu banco para añadir muchos movimientos a la vez.',
+        'Sube un extracto CSV, XLSX o PDF de tu banco para añadir muchos movimientos a la vez.',
     },
     family: {
       title: 'Familia',
@@ -543,7 +543,7 @@ export const es = {
     offlineTitle: 'Las importaciones anteriores necesitan conexión',
     offlineDescription: 'Se guardan en el servidor. Vuelve a conectarte para verlas.',
     newTitle: 'Importar un extracto',
-    newDescription: 'Sube un CSV o XLSX de tu banco, revisa cómo se leen sus columnas e impórtalo.',
+    newDescription: 'Sube un CSV, XLSX o PDF de tu banco, revisa cómo se leen sus columnas e impórtalo.',
     account: 'Cuenta',
     accountHint:
       'Los movimientos van a esta cuenta y usan su moneda salvo que el archivo indique otra.',

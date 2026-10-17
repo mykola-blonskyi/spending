@@ -203,7 +203,7 @@ export const en = {
       description: 'Bring in transactions from a bank statement.',
       emptyTitle: 'No imports yet',
       emptyDescription:
-        'Upload a CSV or XLSX statement from your bank to add many transactions at once.',
+        'Upload a CSV, XLSX or PDF statement from your bank to add many transactions at once.',
     },
     family: {
       title: 'Family',
@@ -527,7 +527,7 @@ export const en = {
     offlineDescription: 'They are kept on the server. Reconnect to see them.',
     newTitle: 'Import a statement',
     newDescription:
-      'Upload a CSV or XLSX from your bank, check how its columns are read, then import.',
+      'Upload a CSV, XLSX or PDF from your bank, check how its columns are read, then import.',
     account: 'Account',
     accountHint: 'Entries go into this account and use its currency unless the file names one.',
     noAccountsTitle: 'Create an account first',
