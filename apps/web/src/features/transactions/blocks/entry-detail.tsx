@@ -281,11 +281,11 @@ export function EntryDetail({ id, onBack }: { id: string; onBack?: () => void })
                 <h2 className="flex items-center gap-2 text-[18px] font-semibold tracking-tight">
                   <span className="truncate">{row.title}</span>
                   <AuthorBadge entry={row} className="max-w-[45%] text-xs text-muted-foreground" />
-                  <SyncMarker sync={row.sync} className="shrink-0" />
                 </h2>
                 {row.subtitle && (
                   <p className="truncate text-[13px] text-muted-foreground">{row.subtitle}</p>
                 )}
+                <SyncMarker sync={row.sync} className="flex" />
               </div>
             </div>
             <div className="mt-6">

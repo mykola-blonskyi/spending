@@ -70,11 +70,11 @@ export function CalmRow({
         <span className="flex min-w-0 items-center gap-2">
           <span className="truncate text-sm font-medium">{row.title}</span>
           <AuthorBadge entry={row} className="max-w-[45%] text-xs text-muted-foreground" />
-          <SyncMarker sync={row.sync} className="shrink-0" />
         </span>
         {row.subtitle && (
           <span className="truncate text-xs text-muted-foreground">{row.subtitle}</span>
         )}
+        <SyncMarker sync={row.sync} />
       </span>
       <EntryAmount row={row} className="text-sm font-medium" />
     </Link>
