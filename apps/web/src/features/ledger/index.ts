@@ -1,4 +1,4 @@
-export { CATEGORY_ICON_NAMES, CATEGORY_ICONS, categoryIcon } from './category-icons';
+export { CATEGORY_ICON_NAMES, categoryIcon } from './category-icons';
 export {
   categoryView,
   type CategoryView,

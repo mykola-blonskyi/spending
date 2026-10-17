@@ -5,7 +5,7 @@ import { type Actor, CurrentActor } from '../common/actor';
 import { profilePatchSchema, profileSchema } from './profile';
 import { UsersService } from './users.service';
 
-export class ProfileDto extends createZodDto(profileSchema) {}
+class ProfileDto extends createZodDto(profileSchema) {}
 class UpdateProfileDto extends createZodDto(profilePatchSchema) {}
 
 @Controller('v1/me')

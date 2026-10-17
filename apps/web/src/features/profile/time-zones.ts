@@ -1,6 +1,6 @@
 type Zone = { id: string; label: string };
 
-export function browserTimeZone(): string {
+function browserTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }
 

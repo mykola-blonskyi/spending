@@ -23,4 +23,4 @@ export { MasterDetail } from './master-detail';
 export { SyncFailure, SyncMarker } from './sync-marker';
 export { TransferButton } from './transfer-action';
 export { DayNets, TotalsLine } from './totals-line';
-export { ConversionNote, ConversionUnavailable, EntryAmount } from './entry-amount';
+export { ConversionNote, EntryAmount } from './entry-amount';

@@ -23,7 +23,7 @@ export const importBodySchema = z.strictObject({
 });
 export type ImportBody = z.infer<typeof importBodySchema>;
 
-export const importBatchViewSchema = z
+const importBatchViewSchema = z
   .object({
     id: z.uuid(),
     accountId: z.uuid().nullable(),

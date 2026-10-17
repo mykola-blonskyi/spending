@@ -213,7 +213,7 @@ export const foldBankCategory = (text: string) => words(text).join(' ');
 /** The learned-rule key of a folded bank category; the prefix keeps it apart from merchant keys. */
 export const bankCategoryKey = (folded: string) => `bank:${folded}`;
 
-export type CategoryRef = Readonly<{ id: string; kind: EntryKind }>;
+type CategoryRef = Readonly<{ id: string; kind: EntryKind }>;
 
 /** What one workspace offers the categorizer: learned rules and its default categories. */
 export type CategoryCatalog = Readonly<{

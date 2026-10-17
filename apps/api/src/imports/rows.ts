@@ -18,7 +18,7 @@ export const REJECT_REASONS = [
   'EXTERNAL_ID_TOO_LONG',
   'DUPLICATE_IN_FILE_EXTERNAL_ID',
 ] as const;
-export type RejectReason = (typeof REJECT_REASONS)[number];
+type RejectReason = (typeof REJECT_REASONS)[number];
 export type RejectedRow = Readonly<{ line: number; reason: RejectReason }>;
 
 /**

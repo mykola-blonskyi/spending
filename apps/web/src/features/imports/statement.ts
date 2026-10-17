@@ -21,7 +21,7 @@ const XLSX_LIMITS = {
 /** `line` is the 1-based file line (CSV), sheet row (XLSX) or transaction (PDF) the row starts on. */
 export type Row = { line: number; cells: string[] };
 
-export type StatementFormat =
+type StatementFormat =
   { kind: 'csv'; encoding: Encoding; delimiter: Delimiter } | { kind: 'xlsx' } | { kind: 'pdf' };
 
 export type ParsedStatement = {

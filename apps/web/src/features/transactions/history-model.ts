@@ -85,7 +85,7 @@ export function fxLabels(fx: Fx, locale: string, ecb: string) {
  * How a row stands for a transfer (BR-37): `side` is one account's side, `whole` is the
  * transfer in one row, with the receiving side's amount when both sides are here.
  */
-export type RowTransfer =
+type RowTransfer =
   | Readonly<{ view: 'side' }>
   | Readonly<{ view: 'whole'; into: Readonly<{ amountMinor: number; currency: string }> | null }>;
 
@@ -262,7 +262,7 @@ export type DayItem = Readonly<{
 /** Where a row sits in its day, so card layouts can draw one bordered card per day. */
 export type RowPosition = 'first' | 'middle' | 'last' | 'only';
 
-export type EntryItem = Readonly<{
+type EntryItem = Readonly<{
   type: 'entry';
   key: string;
   row: EntryRow;

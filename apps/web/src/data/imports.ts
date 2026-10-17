@@ -8,7 +8,6 @@ export type ImportBody = Schemas['ImportDto'];
 export type ImportRow = ImportBody['rows'][number];
 export type ImportResult = Schemas['ImportResultDto_Output'];
 export type ImportBatch = Schemas['ImportBatchView_Output'];
-export type RejectReason = ImportResult['rejected'][number]['reason'];
 export type UndoResult = Schemas['UndoResultDto_Output'];
 export type ReviewItem = Schemas['ReviewListDto_Output']['items'][number];
 export type ConfirmItem = Schemas['ConfirmDto']['items'][number];

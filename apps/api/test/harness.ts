@@ -43,7 +43,7 @@ export async function resetData(db: Db): Promise<void> {
 }
 
 export const SESSION_COOKIE = '__Host-spending_session';
-export const LOGIN_COOKIE = '__Host-spending_login';
+const LOGIN_COOKIE = '__Host-spending_login';
 
 let ipCounter = 0;
 /** A fresh client IP per call, so per-IP auth budgets never couple unrelated tests. */

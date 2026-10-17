@@ -34,7 +34,7 @@ export function userFlushLock(userId: string, locks: LockManager | undefined): F
   return (run) => locks.request(name, run);
 }
 
-export const WRITE_DEBOUNCE_MS = 500;
+const WRITE_DEBOUNCE_MS = 500;
 
 export const HEARTBEAT_MS = 60_000;
 

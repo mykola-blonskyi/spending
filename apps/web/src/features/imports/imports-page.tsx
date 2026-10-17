@@ -15,7 +15,7 @@ import { Button } from '@shared/ui/button';
 import { Card } from '@shared/ui/card';
 import { useHasFamily, useImportBatches, useReviewQueue, useUndoImport } from './imports';
 
-export const NEW_IMPORT_PATH = '/imports/new';
+const NEW_IMPORT_PATH = '/imports/new';
 export const REVIEW_PATH = '/imports/review';
 
 function ReviewBanner({ count }: { count: number }) {

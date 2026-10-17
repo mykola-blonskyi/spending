@@ -6,7 +6,7 @@ import type { Row } from './statement';
 
 export type Encoding = 'utf-8' | 'windows-1252';
 export type Delimiter = ';' | ',' | '\t';
-export const DELIMITERS: readonly Delimiter[] = [';', ',', '\t'];
+const DELIMITERS: readonly Delimiter[] = [';', ',', '\t'];
 
 /** UTF-8 when the bytes are valid UTF-8 (the BOM is dropped), else Windows-1252. */
 export function decodeStatement(bytes: ArrayBuffer): { text: string; encoding: Encoding } {

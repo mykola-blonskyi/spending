@@ -19,7 +19,7 @@ export type RefreshOutcome =
   | { kind: 'unavailable' };
 
 /** Only `invalid_grant` proves the grant is gone; anything else may be a provider outage. */
-export function classifyRefreshError(error: unknown): 'revoked' | 'unavailable' {
+function classifyRefreshError(error: unknown): 'revoked' | 'unavailable' {
   return error instanceof oidc.ResponseBodyError && error.error === 'invalid_grant'
     ? 'revoked'
     : 'unavailable';

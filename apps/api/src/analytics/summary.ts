@@ -2,15 +2,15 @@ import { z } from 'zod';
 import { addDays, daysBetween, daysInMonth } from '../common/dates';
 import { calendarDateSchema, ENTRY_KINDS, type EntryKind } from '../ledger/views';
 
-export const GRANULARITIES = ['day', 'week', 'month'] as const;
+const GRANULARITIES = ['day', 'week', 'month'] as const;
 export type Granularity = (typeof GRANULARITIES)[number];
 
 /** Ten years of months is the longest period one request may span. */
-export const MAX_PERIOD_DAYS = 3660;
+const MAX_PERIOD_DAYS = 3660;
 
 export type Period = Readonly<{ from: string; to: string }>;
 
-export const lengthInDays = (period: Period) => daysBetween(period.from, period.to) + 1;
+const lengthInDays = (period: Period) => daysBetween(period.from, period.to) + 1;
 
 /** Daily up to a month, weekly up to a quarter, monthly beyond. */
 export function granularityOf(period: Period): Granularity {
@@ -41,7 +41,7 @@ export function previousPeriod(period: Period): Period {
 }
 
 /** The bucket a date falls in: the day, its ISO week's Monday or its month's first day, never before `from`. */
-export function bucketOf(date: string, granularity: Granularity, from: string): string {
+function bucketOf(date: string, granularity: Granularity, from: string): string {
   const start =
     granularity === 'day'
       ? date
@@ -184,7 +184,7 @@ export function seriesOf(rows: readonly SumRow[], period: Period, granularity: G
   return [...series.values()];
 }
 
-export const SCOPES = ['personal', 'family', 'all'] as const;
+const SCOPES = ['personal', 'family', 'all'] as const;
 
 export const summaryQuerySchema = z
   .strictObject({

@@ -1,7 +1,7 @@
 import { addDays, daysBetween, daysInMonth } from '../common/dates';
 
 export const FREQUENCIES = ['daily', 'weekly', 'monthly', 'yearly'] as const;
-export type Frequency = (typeof FREQUENCIES)[number];
+type Frequency = (typeof FREQUENCIES)[number];
 
 export type Schedule = Readonly<{
   frequency: Frequency;

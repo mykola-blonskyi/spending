@@ -13,7 +13,7 @@ import { workspacesExport } from '../workspaces/export-section';
  * The JSON export's sections, in document order. A module with data of its own adds its section
  * here; the export schema, the OpenAPI document and the reader follow from this list.
  */
-export const EXPORT_SECTIONS = {
+const EXPORT_SECTIONS = {
   user: profileExport,
   workspaces: workspacesExport,
   accounts: accountsExport,

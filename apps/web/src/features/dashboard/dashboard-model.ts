@@ -12,7 +12,7 @@ export const DASHBOARD_SCOPES = ['all', 'personal', 'family'] as const;
 export type DashboardScope = (typeof DASHBOARD_SCOPES)[number];
 
 /** The API refuses longer periods. */
-export const MAX_PERIOD_DAYS = 3660;
+const MAX_PERIOD_DAYS = 3660;
 
 const MONTHS: Record<Exclude<PeriodKind, 'custom'>, number> = { month: 1, quarter: 3, year: 12 };
 const DAY_MS = 86_400_000;

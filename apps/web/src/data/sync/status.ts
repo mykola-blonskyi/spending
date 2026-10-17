@@ -25,8 +25,8 @@ export function deriveSyncStatus(
   return { state: 'synced' };
 }
 
-export const SYNCING_DELAY_MS = 300;
-export const SYNCED_HOLD_MS = 600;
+const SYNCING_DELAY_MS = 300;
+const SYNCED_HOLD_MS = 600;
 
 /**
  * How long the badge waits before showing `next` in place of `shown`, which has been on screen

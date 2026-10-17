@@ -19,7 +19,7 @@ import {
   type TransferPeer,
 } from '../ledger/rules';
 
-export const PUSH_MAX = 200;
+const PUSH_MAX = 200;
 
 export const transactionInputSchema = z.strictObject({
   id: z.uuid(),
@@ -51,7 +51,7 @@ const deleteMutation = z.strictObject({
   transactionId: z.uuid(),
   baseVersion: z.int().min(1),
 });
-export const mutationSchema = z.discriminatedUnion('type', [upsertMutation, deleteMutation]);
+const mutationSchema = z.discriminatedUnion('type', [upsertMutation, deleteMutation]);
 export type Mutation = z.infer<typeof mutationSchema>;
 
 export const pushBodySchema = z.strictObject({

@@ -15,7 +15,7 @@ async function readBody(response: Response): Promise<unknown> {
   }
 }
 
-export const apiMiddleware: Middleware = {
+const apiMiddleware: Middleware = {
   onRequest({ request }) {
     const token = getCsrfToken();
     if (!token || !UNSAFE_METHODS.has(request.method)) return undefined;
