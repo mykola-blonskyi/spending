@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { sequentialIds, serverRow, syncedState } from './fixtures';
+import { PERSONAL, sequentialIds, serverRow, syncedState } from './fixtures';
 import { queueOrder } from './model';
 import { reducePush } from './push';
 import { localEntries } from './query';
-import { deleteEntry, editEntry, markTransfer, unmarkTransfer } from './transfer';
+import { deleteEntry, editEntry, markTransfer, recordTransfer, unmarkTransfer } from './transfer';
 
 const now = '2026-10-15T12:00:00.000Z';
 const out = serverRow({
@@ -35,6 +35,57 @@ describe('transfer reducers (BR-37)', () => {
       { id: 'in', base: 4, transferId: 'tr-1', transferOutside: false, categoryId: null },
     ]);
     expect(localEntries(marked).map((e) => e.transferId)).toEqual(['tr-1', 'tr-1']);
+  });
+
+  it('records a new transfer as two queued upserts, each side in its own account currency', () => {
+    const recorded = recordTransfer(
+      syncedState(),
+      {
+        workspaceId: PERSONAL.id,
+        occurredOn: '2026-10-14',
+        description: 'Top up',
+        note: '',
+        from: { accountId: 'card', amountMinor: 10_000, currency: 'EUR' },
+        to: { accountId: 'uah', amountMinor: 450_000, currency: 'UAH' },
+      },
+      'tr-1',
+      now,
+      sequentialIds(),
+    );
+    const queued = queueOrder(recorded).map((m) => [m.baseVersion, m.change]);
+    const side = { workspaceId: PERSONAL.id, occurredOn: '2026-10-14', description: 'Top up' };
+    const link = { categoryId: null, transferId: 'tr-1', transferOutside: false };
+    expect(queued).toEqual([
+      [
+        null,
+        {
+          type: 'transaction.upsert',
+          transaction: expect.objectContaining({
+            ...side,
+            ...link,
+            kind: 'expense',
+            accountId: 'card',
+            amountMinor: 10_000,
+            currency: 'EUR',
+          }),
+        },
+      ],
+      [
+        null,
+        {
+          type: 'transaction.upsert',
+          transaction: expect.objectContaining({
+            ...side,
+            ...link,
+            kind: 'income',
+            accountId: 'uah',
+            amountMinor: 450_000,
+            currency: 'UAH',
+          }),
+        },
+      ],
+    ]);
+    expect(localEntries(recorded).map((e) => e.transferId)).toEqual(['tr-1', 'tr-1']);
   });
 
   it('marks one entry as a transfer to an own account outside the app', () => {

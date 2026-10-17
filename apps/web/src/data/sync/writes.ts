@@ -7,6 +7,8 @@ import {
   deleteEntry,
   editEntry,
   markTransfer as markSides,
+  recordTransfer as recordSides,
+  type TransferDraft,
   unmarkTransfer as unmarkSides,
 } from './transfer';
 import { postResolution } from './transport';
@@ -25,6 +27,17 @@ export async function recordTransaction(
   const row = { ...draft, id, createdAt: now.toISOString() };
   await store.commit((state) => applyLocalChange(state, { type: 'upsert', row }, newId));
   return id;
+}
+
+/** Records both sides of a new transfer in one local commit; resolves with the transfer's ID. */
+export async function recordTransfer(
+  store: LocalStore,
+  draft: TransferDraft,
+  now: Date = new Date(),
+): Promise<string> {
+  const transferId = newId();
+  await store.commit((state) => recordSides(state, draft, transferId, now.toISOString(), newId));
+  return transferId;
 }
 
 export async function updateTransaction(

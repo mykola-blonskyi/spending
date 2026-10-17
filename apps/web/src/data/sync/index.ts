@@ -11,6 +11,7 @@ export {
   useLocalTransactions,
   useMarkTransfer,
   useRecordTransaction,
+  useRecordTransfer,
   useSyncNow,
   useResolveConflict,
   useSyncStatus,
@@ -31,3 +32,4 @@ export {
 } from './model';
 export { type EntrySync, type Fx, type TransactionEntry, type TransactionFilter } from './query';
 export type { TransactionDraft } from './writes';
+export type { TransferDraft } from './transfer';
