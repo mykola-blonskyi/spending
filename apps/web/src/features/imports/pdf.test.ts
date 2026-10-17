@@ -218,6 +218,20 @@ describe('readPdf', () => {
     expect(await readPdf(pdf(pages))).toEqual({ problem: 'PDF_TOO_MANY_PAGES' });
   });
 
+  it('reads the table of a page that also holds a giant glyph', async () => {
+    const at = (x: number, y: number, str: string, size = 10) => ({ x, y, size, str });
+    const page = [
+      ...['Date', 'Description', 'Amount'].map((label, i) => at(50 + i * 150, 700, label)),
+      ...['01/09/2026', 'Coffee', '-3,40'].map((cell, i) => at(50 + i * 150, 680, cell)),
+      at(50, 100, 'x', 1e9),
+    ];
+    const result = await readPdf(pdf([page]));
+    expect('problem' in result || result.map((row) => row.cells.slice(0, 3))).toEqual([
+      ['Date', 'Description', 'Amount'],
+      ['01/09/2026', 'Coffee', '-3,40'],
+    ]);
+  });
+
   it('finds no rows in a text PDF without a statement table', async () => {
     const page = [{ x: 50, y: 700, size: 12, str: 'Dear customer, see you soon.' }];
     expect(await readPdf(pdf([page]))).toEqual([]);

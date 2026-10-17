@@ -34,10 +34,19 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,woff2}'],
+        // pdf.js (~1.7 MB) loads only when someone opens a PDF, then stays cached for offline use.
+        globIgnores: ['assets/pdf-*.js', 'assets/pdf.worker*.js'],
         navigateFallback: 'index.html',
         // API and auth responses are private and live: never served from or stored in the cache.
         navigateFallbackDenylist: [/^\/api\//],
-        runtimeCaching: [],
+        runtimeCaching: [
+          {
+            urlPattern: /\/assets\/pdf(-|\.worker).*\.js$/,
+            handler: 'CacheFirst',
+            // Hashed names: entries of older releases are evicted, not revalidated.
+            options: { cacheName: 'pdfjs', expiration: { maxEntries: 6 } },
+          },
+        ],
       },
     }),
   ],

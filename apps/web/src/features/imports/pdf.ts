@@ -179,9 +179,9 @@ function headerColumns(items: readonly TextItem[]): Column[] {
  * text is left-, right- or centre-aligned under its header, but never crosses the gutter.
  */
 function columnEdges(columns: readonly Column[], lines: readonly Line[]): number[] {
-  const width = Math.ceil(
-    Math.max(0, ...lines.flatMap((line) => line.items.map((item) => item.x + item.w))) + 1,
-  );
+  // 14,400 units is the largest PDF page: a giant glyph must not size the array to gigabytes.
+  const right = Math.max(0, ...lines.flatMap((line) => line.items.map((item) => item.x + item.w)));
+  const width = Math.ceil(Math.min(14_400, right) + 1);
   const coverage = new Array<number>(width).fill(0);
   for (const line of lines) {
     if (isSeparator(line)) continue;

@@ -1,5 +1,5 @@
 import { Wallet } from 'lucide-react';
-import { useId, useMemo, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import type { ImportResult } from '@data/imports';
 import { type Account, useAccounts, useWorkspaces } from '@data/sync';
@@ -464,6 +464,7 @@ export function NewImportPage() {
   const [problem, setProblem] = useState<StatementFailure | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
+  const reading = useRef<File | undefined>(undefined);
 
   const personal = workspaces.items.find((w) => w.kind === 'personal');
   const usable = useMemo(
@@ -535,8 +536,11 @@ export function NewImportPage() {
     setLoaded(null);
     setProblem(null);
     setFileName(file?.name ?? null);
+    reading.current = file;
     if (!file) return;
     const parsed = await parseStatement(file);
+    // A PDF reads for seconds: a file chosen meanwhile wins.
+    if (reading.current !== file) return;
     if (!parsed.ok) return setProblem(parsed);
     const { statement } = parsed;
     const { headers } = statement;
