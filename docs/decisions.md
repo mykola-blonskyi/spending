@@ -382,5 +382,8 @@ so a mark made elsewhere turns a stale edit into a conflict.
 
 **Consequences.** Each side commits on its own, so between two pushes, or when one side
 conflicts, a pair can be half linked; that side is already out of the totals and the conflict is
-resolved like any other. Deleting both sides, the combined history row, import undo and exports
-(#108) and the entry form type (#109) build on the same two columns without a migration.
+resolved like any other. Deleting both sides, the shared date and note, the combined history row,
+import undo and exports (#108) and the entry form type (#109) build on the same two columns
+without a migration: a delete or edit queues one ordinary mutation per side in one local commit,
+the combined row is built on the device from the sides it holds, and import undo sets
+`transferOutside` on a side whose partner it deleted, which bumps its version so devices pull it.

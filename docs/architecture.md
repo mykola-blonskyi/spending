@@ -227,8 +227,10 @@ edited through REST and arrive through pull like transactions.
 - **Transfers (BR-37, ADR-016).** An upsert carries `transferId` and `transferOutside`. Both are
   optional on the wire: a client older than transfers (a queued mutation, a tab open across a
   deploy) leaves them out, and the row keeps its mark. The server checks the other live rows with
-  the same `transferId`. The web writes both sides of a mark or unmark in one IndexedDB commit
-  (`data/sync/transfer.ts`), as two queued upserts.
+  the same `transferId`. The web writes both sides of a mark, unmark, delete or date/note edit in
+  one IndexedDB commit (`data/sync/transfer.ts`), one queued mutation per side. History builds the
+  combined transfer row on the device (`features/transactions/history-model.ts`). Import undo
+  sets `transferOutside` on a live side whose partner it tombstoned.
 - **Account references (BR-3).** A viewer who cannot see a row's account receives
   `accountId: null`. Sending that null back in an upsert keeps the author's account. Only the
   author may choose an account from their own personal workspace.

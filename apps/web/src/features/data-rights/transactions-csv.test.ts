@@ -49,6 +49,8 @@ describe('transactionsCsv', () => {
       note: '',
       source: 'manual',
       author: { userId: 'u', displayName: 'Ann' },
+      transferId: null,
+      transferOutside: false,
       ...patch,
     }) as Row;
   const documentOf = (...transactions: Row[]) =>
@@ -72,14 +74,14 @@ describe('transactionsCsv', () => {
 
   it('writes the headers through the resolver, in the fixed order', () => {
     expect(lines()).toEqual([
-      'H:date,H:kind,H:amount,H:currency,H:eurAmount,H:fxRate,H:fxRateDate,H:scope,H:workspace,H:account,H:category,H:description,H:note,H:source,H:author',
+      'H:date,H:kind,H:amount,H:currency,H:eurAmount,H:fxRate,H:fxRateDate,H:scope,H:workspace,H:account,H:category,H:description,H:note,H:source,H:author,H:transfer',
       '',
     ]);
   });
 
   it('quotes an account with a comma and quotes, and a multi-line note', () => {
     expect(lines(row({ accountId: 'a', note: 'a,b\n"c"' }))[1]).toBe(
-      `2026-10-01,expense,1.50,EUR,1.50,,,personal,Home,"Visa, ""gold""",,d,"a,b\n""c""",manual,Ann`,
+      `2026-10-01,expense,1.50,EUR,1.50,,,personal,Home,"Visa, ""gold""",,d,"a,b\n""c""",manual,Ann,`,
     );
   });
 
@@ -110,6 +112,12 @@ describe('transactionsCsv', () => {
 
   it('labels a former member', () => {
     expect(cells(row({ author: { userId: null, displayName: null } }))[14]).toBe('Former member');
+  });
+
+  it('marks a transfer side with its shared id and a one-sided transfer as outside', () => {
+    expect(cells(row({ transferId: 'tr-1' }))[15]).toBe('tr-1');
+    expect(cells(row({ transferId: 'tr-2', transferOutside: true }))[15]).toBe('outside');
+    expect(cells(row())[15]).toBe('');
   });
 
   it('skips rows pending review', () => {

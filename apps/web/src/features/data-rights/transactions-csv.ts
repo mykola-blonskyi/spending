@@ -32,6 +32,7 @@ const COLUMNS = [
   'note',
   'source',
   'author',
+  'transfer',
 ] as const;
 export type CsvColumn = (typeof COLUMNS)[number];
 
@@ -44,7 +45,8 @@ type Names = {
 /**
  * The confirmed transactions of an export as CSV (BR-31), one row each, oldest first. Amounts are
  * unsigned major units ("kind" carries the sign, BR-13). Names resolve through the export's own
- * sections, so an account the actor cannot see stays empty (BR-3).
+ * sections, so an account the actor cannot see stays empty (BR-3). "transfer" is the id both sides
+ * of a transfer share, or `outside` for a one-sided transfer (BR-37).
  */
 export function transactionsCsv(document: DataExport, names: Names): string {
   const workspaces = new Map(document.workspaces.map((w) => [w.id, w.name ?? '']));
@@ -71,6 +73,7 @@ export function transactionsCsv(document: DataExport, names: Names): string {
         t.note,
         t.source,
         t.author.userId === null ? names.formerMember : (t.author.displayName ?? ''),
+        t.transferOutside ? 'outside' : (t.transferId ?? ''),
       ]),
     );
   }

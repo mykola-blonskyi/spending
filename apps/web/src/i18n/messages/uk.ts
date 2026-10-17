@@ -251,6 +251,9 @@ export const uk = {
     deleteTitle: 'Видалити цю операцію?',
     deleteDescription:
       'Вона зникне з історії одразу, а із сервера — під час наступної синхронізації.',
+    deleteTransferTitle: 'Видалити цей переказ?',
+    deleteTransferDescription:
+      'Обидві його частини зникнуть з історії одразу, а із сервера — під час наступної синхронізації.',
     discard: 'Скасувати зміну',
     discardTitle: 'Скасувати цю зміну?',
     discardDescription:
@@ -493,6 +496,7 @@ export const uk = {
           note: 'Нотатка',
           source: 'Джерело',
           author: 'Автор',
+          transfer: 'Переказ',
         },
       },
       delete: {

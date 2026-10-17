@@ -124,7 +124,13 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   entries, transfers included, are its movement. Marking and "not a transfer" are ordinary sync
   upserts, one per side, so they work offline and a stale side becomes a normal conflict (BR-19)
   while the other side applies. "Not a transfer" returns every side to income or expense
-  without a category. Deleting a family turns a transfer whose sides land in two personal
+  without a category. Deleting either side deletes both after one confirmation, and changing the
+  date or note of a side changes both; amount, account and description stay per side. Each is one
+  local commit of ordinary mutations, one per side. The full history shows a transfer as one row
+  ("monobank → PrivatBank, 50 000 ₴", the amount that arrived beside it when it differs); a
+  history filtered by account shows that account's side, and a side whose partner is not on the
+  device shows alone. Undoing an import (BR-30) that held one side turns the other side into a
+  one-sided transfer. Deleting a family turns a transfer whose sides land in two personal
   workspaces into two one-sided transfers, and a side whose partner is deleted with the family
   (its author left the app) into a one-sided transfer.
 
@@ -199,7 +205,8 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   ones are kept and reported. Deleting a single imported transaction keeps its key, so a
   re-import does not bring it back, even after an undo. A row counts as edited when its `version`
   is above 1 (any user-visible change, including review confirmation) or it left the personal
-  workspace. Only the importer can undo; repeating an undo changes nothing. Undo reports the deleted
+  workspace. A live transfer side whose partner the undo deleted becomes a one-sided transfer
+  (BR-37). Only the importer can undo; repeating an undo changes nothing. Undo reports the deleted
   and kept counts as they are when it runs, so a manual deletion made in between can change what
   a repeat reports.
 - **BR-36.** A statement is read in the browser; only the mapped cells of transaction rows are
@@ -227,7 +234,9 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   family row or rule using another member's personal account shows `accountId: null` (BR-3). The
   CSV is built on the device from the JSON export: confirmed transactions only, headers and
   category/account names in the chosen language, amounts in unsigned major units with "." as
-  decimal separator; cells a spreadsheet would run as formulas get a leading `'`.
+  decimal separator; cells a spreadsheet would run as formulas get a leading `'`. Transfers are
+  marked: JSON rows carry `transferId` and `transferOutside`, and the CSV's last column holds the
+  transfer id both sides share, or `outside` for a one-sided transfer (BR-37).
 - **BR-32.** Deleting an account requires typing `DELETE MY DATA` (`400 CONFIRMATION_MISMATCH`
   otherwise). An owner of a family with other members must transfer ownership or delete the
   family first (`409 FAMILY_OWNER_MUST_TRANSFER`); a sole owner's family is deleted as in BR-11.

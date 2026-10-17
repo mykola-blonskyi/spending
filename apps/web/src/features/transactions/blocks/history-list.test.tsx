@@ -26,6 +26,7 @@ function history(count: number): HistoryItem[] {
         dayLabel: String,
         uncategorized: '',
         transfer: '',
+        outside: '',
       },
     ),
   );

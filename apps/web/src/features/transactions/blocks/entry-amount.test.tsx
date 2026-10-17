@@ -30,6 +30,7 @@ const row = (patch: Partial<TransactionEntry>) =>
       dayLabel: String,
       uncategorized: '',
       transfer: '',
+      outside: '',
     },
   );
 const usd = row({ id: 'usd', currency: 'USD', amountMinor: 1085, baseAmountMinor: 1000, fx });

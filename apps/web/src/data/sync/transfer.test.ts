@@ -3,7 +3,7 @@ import { sequentialIds, serverRow, syncedState } from './fixtures';
 import { queueOrder } from './model';
 import { reducePush } from './push';
 import { localEntries } from './query';
-import { markTransfer, unmarkTransfer } from './transfer';
+import { deleteEntry, editEntry, markTransfer, unmarkTransfer } from './transfer';
 
 const now = '2026-10-15T12:00:00.000Z';
 const out = serverRow({
@@ -94,6 +94,58 @@ describe('transfer reducers (BR-37)', () => {
     expect(localEntries(next)).toMatchObject([
       { id: 'out', transferId: null, amountMinor: 999, sync: { state: 'conflict' } },
       { id: 'in', transferId: 'tr-1', sync: { state: 'synced' } },
+    ]);
+  });
+
+  const linked = () =>
+    syncedState(
+      { ...out, categoryId: null, transferId: 'tr-1' },
+      { ...into, transferId: 'tr-1' },
+      serverRow({ id: 'other' }),
+    );
+  const changes = (state: ReturnType<typeof syncedState>) =>
+    queueOrder(state).map((m) => [m.transactionId, m.change.type]);
+
+  it('deletes both sides of a transfer, one delete each', () => {
+    const deleted = deleteEntry(linked(), 'in', sequentialIds());
+    expect(changes(deleted)).toEqual([
+      ['out', 'transaction.delete'],
+      ['in', 'transaction.delete'],
+    ]);
+    expect(localEntries(deleted).map((e) => e.id)).toEqual(['other']);
+    expect(changes(deleteEntry(linked(), 'other', sequentialIds()))).toEqual([
+      ['other', 'transaction.delete'],
+    ]);
+  });
+
+  it('gives the other side the edited date and note, keeping its own amount and text', () => {
+    const state = linked();
+    const row = {
+      ...localEntries(state).find((e) => e.id === 'out')!,
+      occurredOn: '2026-10-01',
+      note: 'rent pot',
+      amountMinor: 5100,
+      description: 'To savings',
+    };
+    const edited = editEntry(state, row, 2, sequentialIds());
+    expect(changes(edited)).toEqual([
+      ['out', 'transaction.upsert'],
+      ['in', 'transaction.upsert'],
+    ]);
+    expect(localEntries(edited).find((e) => e.id === 'in')).toMatchObject({
+      occurredOn: '2026-10-01',
+      note: 'rent pot',
+      amountMinor: into.amountMinor,
+      description: into.description,
+      accountId: 'savings',
+    });
+  });
+
+  it('leaves the other side alone when the date and note did not change', () => {
+    const state = linked();
+    const row = { ...localEntries(state).find((e) => e.id === 'out')!, amountMinor: 5100 };
+    expect(changes(editEntry(state, row, 2, sequentialIds()))).toEqual([
+      ['out', 'transaction.upsert'],
     ]);
   });
 });

@@ -40,7 +40,8 @@ export function ConversionUnavailable({
 
 /**
  * A history row's amount: EUR first (BR-15), then the original amount with the rate, or the
- * original amount with the "conversion unavailable" marker.
+ * original amount with the "conversion unavailable" marker. A whole transfer shows what left and,
+ * when it differs, what arrived, unsigned: it is neither income nor spending (BR-37).
  */
 export function EntryAmount({
   row,
@@ -58,17 +59,36 @@ export function EntryAmount({
 }) {
   const t = useTranslations('history');
   const { locale } = useSharedLocale();
-  const { conversion } = row;
+  const { conversion, transfer } = row;
+  const column = cn(
+    'flex shrink-0 flex-col gap-0.5',
+    align === 'end' ? 'items-end text-right' : 'items-start',
+  );
+  if (transfer?.view === 'whole') {
+    const { into } = transfer;
+    const differs =
+      into && (into.currency !== row.currency || into.amountMinor !== row.amountMinor);
+    return (
+      <span className={column}>
+        <MoneyText amountMinor={row.amountMinor} currency={row.currency} className={className} />
+        {differs && (
+          <span
+            className={cn(
+              'text-xs whitespace-nowrap text-muted-foreground tabular',
+              secondaryClassName,
+            )}
+          >
+            → {formatMoney(into.amountMinor, into.currency, locale)}
+          </span>
+        )}
+      </span>
+    );
+  }
   const sign = row.kind === 'expense' ? -1 : 1;
   const converted = conversion.state === 'converted';
   const fx = converted ? fxLabels(conversion.fx, locale, t('sourceEcb')) : null;
   return (
-    <span
-      className={cn(
-        'flex shrink-0 flex-col gap-0.5',
-        align === 'end' ? 'items-end text-right' : 'items-start',
-      )}
-    >
+    <span className={column}>
       <MoneyText
         amountMinor={sign * (converted ? conversion.baseAmountMinor : row.amountMinor)}
         currency={converted ? 'EUR' : row.currency}

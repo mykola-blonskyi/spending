@@ -157,7 +157,9 @@ export function CardsEntryView({ form, className }: { form: EntryForm; className
         >
           {form.canDiscard && <DiscardButton onConfirm={() => void form.discard()} />}
           {form.canDelete && form.entryId && <TransferButton id={form.entryId} />}
-          {form.canDelete && <DeleteButton onConfirm={() => void form.remove()} />}
+          {form.canDelete && (
+            <DeleteButton transfer={form.isTransfer} onConfirm={() => void form.remove()} />
+          )}
         </SaveBar>
       </form>
     </div>

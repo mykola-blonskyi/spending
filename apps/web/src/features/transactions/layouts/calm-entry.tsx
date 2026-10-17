@@ -55,7 +55,9 @@ export function CalmEntryView({ form }: { form: EntryForm }) {
           <SaveBar form={form}>
             {form.canDiscard && <DiscardButton onConfirm={() => void form.discard()} />}
             {form.canDelete && form.entryId && <TransferButton id={form.entryId} />}
-            {form.canDelete && <DeleteButton onConfirm={() => void form.remove()} />}
+            {form.canDelete && (
+              <DeleteButton transfer={form.isTransfer} onConfirm={() => void form.remove()} />
+            )}
           </SaveBar>
         </form>
       ) : (
