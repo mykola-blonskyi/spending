@@ -265,6 +265,15 @@ export const uk = {
     decimalSeparator: 'Десятковий роздільник',
     saveHint: 'Спершу зберігається на цьому пристрої, потім синхронізується.',
     transferNoCategory: 'Переказ не має категорії.',
+    transfer: 'Переказ',
+    fromAccount: 'З рахунку',
+    toAccount: 'На рахунок',
+    chooseAccount: 'Оберіть рахунок',
+    received: 'Надійшло, {currency}',
+    receivedInvalid: 'Введіть суму, що надійшла, наприклад 12,50.',
+    accountsRequired: 'Оберіть рахунок, з якого пішли гроші, і рахунок, на який вони надійшли.',
+    accountsSame: 'Оберіть два різні рахунки.',
+    transferNeedsAccounts: 'Для переказу потрібні два рахунки в цьому просторі.',
   },
   syncCenter: {
     conflictsTitle: 'Потребує перевірки',
@@ -335,6 +344,7 @@ export const uk = {
     journal: {
       expense: '{date} витрачено {amount} на {category}, {where}, з рахунку {account}.',
       income: '{date} надійшло {amount} як {category}, від {where}, на рахунок {account}.',
+      transfer: '{date} переказано {amount} з рахунку {account} на рахунок {toAccount}, {where}.',
     },
   },
   transfer: {

@@ -15,12 +15,13 @@ import {
   DiscardButton,
   EntryStatus,
   NoteField,
+  ReceivedInput,
   TransferButton,
 } from '../blocks';
-import type { EntryKind } from '../form-model';
+import type { FormKind } from '../form-model';
 import { type EntryForm, useEntryForm } from '../use-entry-form';
 
-type Panel = 'date' | 'category' | 'where' | 'account' | 'note';
+type Panel = 'date' | 'category' | 'where' | 'account' | 'toAccount' | 'note';
 
 const ring =
   'outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background';
@@ -72,7 +73,7 @@ function Pills<T extends string>({
 }: {
   label: string;
   value: T;
-  items: readonly { value: T; label: string }[];
+  items: readonly { value: T; label: string; disabled?: boolean }[];
   onChange: (value: T) => void;
 }) {
   return (
@@ -83,9 +84,10 @@ function Pills<T extends string>({
           type="button"
           role="radio"
           aria-checked={item.value === value}
+          disabled={item.disabled}
           onClick={() => onChange(item.value)}
           className={cn(
-            'flex h-10 min-w-11 items-center justify-center rounded-full px-3 text-[13px] transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.97]',
+            'flex h-10 min-w-11 items-center justify-center rounded-full px-3 text-[13px] transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50',
             item.value === value
               ? 'bg-accent font-medium text-accent-foreground'
               : 'text-muted-foreground hover:text-foreground',
@@ -173,8 +175,13 @@ function Sentence({
   const amountId = useId();
   const { values } = form;
   const invalid = form.errors.amount === 'invalid';
-  const category = form.categories.find((item) => item.id === values.categoryId);
+  const { category } = form;
+  const transfer = values.kind === 'transfer';
   const account = form.accounts.find((item) => item.id === values.accountId);
+  const toAccount =
+    values.kind === 'transfer'
+      ? form.accounts.find((item) => item.id === values.toAccountId)
+      : undefined;
   const chip = (panel: Panel, label: string | undefined, fallback: string) => (
     <Chip
       open={open === panel}
@@ -218,7 +225,12 @@ function Sentence({
           ),
           category: chip('category', category?.name, t('transactionForm.category')),
           where: chip('where', values.description, t('transactionForm.description')),
-          account: chip('account', account?.name, t('transactionForm.noAccount')),
+          account: chip(
+            'account',
+            account?.name,
+            t(transfer ? 'transactionForm.fromAccount' : 'transactionForm.noAccount'),
+          ),
+          toAccount: chip('toAccount', toAccount?.name, t('transactionForm.toAccount')),
         })}
       </p>
       {invalid && (
@@ -226,6 +238,16 @@ function Sentence({
           {t('transactionForm.amountInvalid')}
         </p>
       )}
+      {form.errors.accounts && (
+        <p className="mt-2 text-sm text-destructive">
+          {t(
+            form.errors.accounts === 'same'
+              ? 'transactionForm.accountsSame'
+              : 'transactionForm.accountsRequired',
+          )}
+        </p>
+      )}
+      <ReceivedInput form={form} className="mt-4 max-w-xs" />
       <ConversionNote conversion={form.conversion} className="mt-2" />
     </div>
   );
@@ -238,10 +260,21 @@ export function JournalEntryView({ form }: { form: EntryForm }) {
   const [open, setOpen] = useState<Panel | null>('category');
   const toggle = (panel: Panel) => setOpen((current) => (current === panel ? null : panel));
   const page = form.mode === 'edit' ? 'editTransaction' : 'addTransaction';
-  const kinds: readonly { value: EntryKind; label: string }[] = [
+  const transferBlocked = form.transferOffered && form.transferBlocked;
+  const kinds: readonly { value: FormKind; label: string; disabled?: boolean }[] = [
     { value: 'expense', label: t('transactionForm.expense') },
     { value: 'income', label: t('transactionForm.income') },
+    ...(form.transferOffered
+      ? [
+          {
+            value: 'transfer' as const,
+            label: t('transactionForm.transfer'),
+            disabled: transferBlocked,
+          },
+        ]
+      : []),
   ];
+  const { values } = form;
   const scopes: readonly { value: Scope; label: string }[] = [
     { value: 'personal', label: t('family.scope.personal') },
     { value: 'family', label: t('family.scope.family') },
@@ -263,17 +296,25 @@ export function JournalEntryView({ form }: { form: EntryForm }) {
             )}
             <Pills
               label={t('transactionForm.kind')}
-              value={form.values.kind}
+              value={values.kind}
               items={kinds}
               onChange={form.setKind}
             />
-            <Pills
-              label={t('transactionForm.currency')}
-              value={form.values.currency}
-              items={form.currencies.map((currency) => ({ value: currency, label: currency }))}
-              onChange={(currency) => form.set('currency', currency)}
-            />
+            {/* A transfer's currency is its from-account's. */}
+            {values.kind !== 'transfer' && (
+              <Pills
+                label={t('transactionForm.currency')}
+                value={values.currency}
+                items={form.currencies.map((currency) => ({ value: currency, label: currency }))}
+                onChange={(currency) => form.set('currency', currency)}
+              />
+            )}
           </div>
+          {transferBlocked && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              {t('transactionForm.transferNeedsAccounts')}
+            </p>
+          )}
 
           <div className="mt-8">
             <Sentence form={form} open={open} toggle={toggle} panelIdPrefix={base} />
@@ -305,22 +346,42 @@ export function JournalEntryView({ form }: { form: EntryForm }) {
 
           {open && (
             <div id={`${base}-${open}`} className="mt-4 border-t pt-4">
-              {open === 'category' && (
+              {open === 'category' &&
+                (values.kind === 'transfer' ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t('transactionForm.transferNoCategory')}
+                  </p>
+                ) : (
+                  <Options
+                    label={t('transactionForm.category')}
+                    value={values.categoryId}
+                    items={form.categories.map((category) => ({
+                      value: category.id,
+                      label: category.name,
+                      icon: <category.Icon aria-hidden className="size-4" strokeWidth={1.8} />,
+                    }))}
+                    onPick={(id) => form.setCategory(id === values.categoryId ? null : id)}
+                  />
+                ))}
+              {open === 'toAccount' && values.kind === 'transfer' && (
                 <Options
-                  label={t('transactionForm.category')}
-                  value={form.values.categoryId}
-                  items={form.categories.map((category) => ({
-                    value: category.id,
-                    label: category.name,
-                    icon: <category.Icon aria-hidden className="size-4" strokeWidth={1.8} />,
+                  label={t('transactionForm.toAccount')}
+                  value={values.toAccountId}
+                  items={form.accounts.map((account) => ({
+                    value: account.id,
+                    label: `${account.name} · ${account.currency}`,
                   }))}
-                  onPick={(id) => form.set('categoryId', id === form.values.categoryId ? null : id)}
+                  onPick={form.setToAccount}
                 />
               )}
               {open === 'account' && (
                 <Options
-                  label={t('transactionForm.account')}
-                  value={form.values.accountId}
+                  label={t(
+                    values.kind === 'transfer'
+                      ? 'transactionForm.fromAccount'
+                      : 'transactionForm.account',
+                  )}
+                  value={values.accountId}
                   items={form.accounts.map((account) => ({
                     value: account.id,
                     label: `${account.name} · ${account.currency}`,

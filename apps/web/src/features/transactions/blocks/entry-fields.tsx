@@ -10,12 +10,13 @@ import { Label } from '@shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui/select';
 import { Textarea } from '@shared/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from '@shared/ui/toggle-group';
-import type { EntryKind } from '../form-model';
+import type { FormKind } from '../form-model';
 import type { EntryForm } from '../use-entry-form';
 import { CategoryBadge } from './category-badge';
 import { ConversionNote } from './entry-amount';
 
-const KINDS: readonly EntryKind[] = ['expense', 'income'];
+const KINDS: readonly FormKind[] = ['expense', 'income'];
+const isKind = (value: string): value is FormKind => [...KINDS, 'transfer'].includes(value);
 const NONE = 'none';
 const selectTrigger = 'h-11 w-full';
 
@@ -74,24 +75,40 @@ export function KindToggle({
   form: EntryForm;
   className?: string;
   itemClassName?: string;
-  renderLabel?: (kind: EntryKind, label: string) => ReactNode;
+  renderLabel?: (kind: FormKind, label: string) => ReactNode;
 }) {
   const t = useTranslations('transactionForm');
+  const reasonId = useId();
+  const kinds = form.transferOffered ? [...KINDS, 'transfer' as const] : KINDS;
+  const blocked = form.transferOffered && form.transferBlocked;
   return (
-    <ToggleGroup
-      type="single"
-      spacing={1}
-      aria-label={t('kind')}
-      value={form.values.kind}
-      onValueChange={(kind) => (kind === 'income' || kind === 'expense') && form.setKind(kind)}
-      className={cn('w-full', className)}
-    >
-      {KINDS.map((kind) => (
-        <ToggleGroupItem key={kind} value={kind} className={cn('h-11 flex-1', itemClassName)}>
-          {renderLabel(kind, t(kind))}
-        </ToggleGroupItem>
-      ))}
-    </ToggleGroup>
+    <div className="flex flex-col gap-1.5">
+      <ToggleGroup
+        type="single"
+        spacing={1}
+        aria-label={t('kind')}
+        value={form.values.kind}
+        onValueChange={(kind) => isKind(kind) && form.setKind(kind)}
+        className={cn('w-full', className)}
+      >
+        {kinds.map((kind) => (
+          <ToggleGroupItem
+            key={kind}
+            value={kind}
+            disabled={kind === 'transfer' && blocked}
+            aria-describedby={kind === 'transfer' && blocked ? reasonId : undefined}
+            className={cn('h-11 flex-1', itemClassName)}
+          >
+            {renderLabel(kind, t(kind))}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+      {blocked && (
+        <p id={reasonId} className="text-xs text-muted-foreground">
+          {t('transferNeedsAccounts')}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -167,7 +184,8 @@ export function CategoryPicker({
 }) {
   const t = useTranslations('transactionForm');
   const labelId = useId();
-  if (form.isTransfer) {
+  const { values } = form;
+  if (form.isTransfer || values.kind === 'transfer') {
     return <p className="text-sm text-muted-foreground">{t('transferNoCategory')}</p>;
   }
   return (
@@ -179,8 +197,8 @@ export function CategoryPicker({
         type="single"
         spacing={2}
         aria-labelledby={labelId}
-        value={form.values.categoryId ?? ''}
-        onValueChange={(next) => form.set('categoryId', next || null)}
+        value={values.categoryId ?? ''}
+        onValueChange={(next) => form.setCategory(next || null)}
         className={cn('grid w-full grid-cols-4 gap-2', className)}
       >
         {form.categories.map((category) => (
@@ -201,7 +219,8 @@ export function CategoryPicker({
   );
 }
 
-export function AccountSelect({
+/** What arrived on a transfer's to-account, asked only when its currency differs. */
+export function ReceivedInput({
   form,
   className,
   labelClassName,
@@ -210,6 +229,117 @@ export function AccountSelect({
 }: { form: EntryForm } & FieldStyle) {
   const t = useTranslations('transactionForm');
   const id = useId();
+  const currency = form.transfer.receivedCurrency;
+  if (form.values.kind !== 'transfer' || !currency) return null;
+  const invalid = form.errors.received === 'invalid';
+  return (
+    <Field
+      id={id}
+      label={t('received', { currency })}
+      className={className}
+      labelClassName={labelClassName}
+      icon={icon}
+    >
+      <Input
+        id={id}
+        inputMode="decimal"
+        autoComplete="off"
+        placeholder="0"
+        value={form.values.received}
+        aria-invalid={invalid || undefined}
+        aria-describedby={invalid ? `${id}-error` : undefined}
+        onChange={(event) => form.setReceived(event.target.value)}
+        className={cn('h-11 tabular', controlClassName)}
+      />
+      {invalid && (
+        <p id={`${id}-error`} className="text-sm text-destructive">
+          {t('receivedInvalid')}
+        </p>
+      )}
+    </Field>
+  );
+}
+
+function AccountChoice({
+  label,
+  value,
+  onChange,
+  accounts,
+  error,
+  className,
+  labelClassName,
+  controlClassName,
+  icon,
+}: {
+  label: string;
+  value: string | null;
+  onChange: (id: string | null) => void;
+  accounts: EntryForm['accounts'];
+  error?: string | undefined;
+} & FieldStyle) {
+  const t = useTranslations('transactionForm');
+  const id = useId();
+  return (
+    <Field id={id} label={label} className={className} labelClassName={labelClassName} icon={icon}>
+      <Select value={value ?? ''} onValueChange={(next) => onChange(next || null)}>
+        <SelectTrigger
+          id={id}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-error` : undefined}
+          className={cn(selectTrigger, controlClassName)}
+        >
+          <SelectValue placeholder={t('chooseAccount')} />
+        </SelectTrigger>
+        <SelectContent>
+          {accounts.map((account) => (
+            <SelectItem key={account.id} value={account.id}>
+              {account.name} · {account.currency}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {error && (
+        <p id={`${id}-error`} className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+    </Field>
+  );
+}
+
+/**
+ * The entry's account; for a transfer, the from-account, the to-account and, across currencies,
+ * the amount that arrived, so every layout gets them where it places the account.
+ */
+export function AccountSelect({ form, ...style }: { form: EntryForm } & FieldStyle) {
+  const t = useTranslations('transactionForm');
+  const id = useId();
+  const { className, labelClassName, controlClassName, icon } = style;
+  const { values } = form;
+  if (values.kind === 'transfer') {
+    const { accounts } = form.errors;
+    const error = accounts && t(accounts === 'same' ? 'accountsSame' : 'accountsRequired');
+    return (
+      <>
+        <AccountChoice
+          label={t('fromAccount')}
+          value={values.accountId}
+          onChange={form.setAccount}
+          accounts={form.accounts}
+          {...style}
+        />
+        <AccountChoice
+          label={t('toAccount')}
+          value={values.toAccountId}
+          onChange={form.setToAccount}
+          accounts={form.accounts}
+          error={error}
+          {...style}
+        />
+        <ReceivedInput form={form} {...style} />
+      </>
+    );
+  }
   return (
     <Field
       id={id}
@@ -255,7 +385,12 @@ export function CurrencySelect({
       labelClassName={labelClassName}
       icon={icon}
     >
-      <Select value={form.values.currency} onValueChange={(value) => form.set('currency', value)}>
+      {/* A transfer's currency is its from-account's. */}
+      <Select
+        value={form.values.currency}
+        disabled={form.values.kind === 'transfer'}
+        onValueChange={(value) => form.set('currency', value)}
+      >
         <SelectTrigger id={id} className={cn(selectTrigger, controlClassName)}>
           <SelectValue />
         </SelectTrigger>

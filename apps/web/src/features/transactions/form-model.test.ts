@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { parseAmount } from '@shared/format';
-import { type FormValues, type KeypadKey, pressKey, validate, valuesFromDraft } from './form-model';
+import {
+  type EntryValues,
+  type KeypadKey,
+  pressKey,
+  type TransferValues,
+  validate,
+  valuesFromDraft,
+  withKind,
+} from './form-model';
 
-const values: FormValues = {
+const values: EntryValues = {
   kind: 'expense',
   amount: '12,50',
   currency: 'EUR',
@@ -13,11 +21,19 @@ const values: FormValues = {
   note: ' oat milk ',
 };
 
+const accounts = [
+  { id: 'acc-1', workspaceId: 'ws-1', currency: 'EUR' },
+  { id: 'acc-2', workspaceId: 'ws-1', currency: 'EUR' },
+  { id: 'acc-uah', workspaceId: 'ws-1', currency: 'UAH' },
+  { id: 'acc-jpy', workspaceId: 'ws-1', currency: 'JPY' },
+  { id: 'acc-family', workspaceId: 'ws-2', currency: 'EUR' },
+];
+
 describe('validate', () => {
   it('builds trimmed draft fields when the amount parses', () => {
-    expect(validate(values, 2)).toEqual({
+    expect(validate(values, accounts)).toEqual({
       errors: {},
-      draftFields: {
+      draft: {
         kind: 'expense',
         amountMinor: 1250,
         currency: 'EUR',
@@ -31,15 +47,80 @@ describe('validate', () => {
   });
 
   it.each([[''], ['0'], ['1.234']])('has no draft for the amount %j', (amount) => {
-    expect(validate({ ...values, amount }, 2)).toEqual({
+    expect(validate({ ...values, amount }, accounts)).toEqual({
       errors: { amount: 'invalid' },
-      draftFields: null,
+      draft: null,
     });
   });
 
   it('judges precision by the currency exponent', () => {
-    expect(validate({ ...values, amount: '12.5' }, 0).draftFields).toBeNull();
-    expect(validate({ ...values, amount: '1.234' }, 3).draftFields?.amountMinor).toBe(1234);
+    expect(validate({ ...values, amount: '12.5', currency: 'JPY' }, accounts).draft).toBeNull();
+    expect(validate({ ...values, amount: '1.234', currency: 'BHD' }, accounts).draft).toMatchObject(
+      { amountMinor: 1234 },
+    );
+  });
+});
+
+describe('validate a transfer (BR-37)', () => {
+  const transfer: TransferValues = {
+    ...withKind(values, 'transfer'),
+    kind: 'transfer',
+    toAccountId: 'acc-2',
+    received: '',
+  };
+
+  it('keeps what both kinds share and drops the category', () => {
+    const switched = withKind({ ...values, categoryId: 'cat-1' }, 'transfer');
+    expect(switched).toEqual({ ...transfer, toAccountId: null });
+    expect(withKind(switched, 'income')).toEqual({ ...values, kind: 'income' });
+  });
+
+  it('sends and receives the same amount between accounts of one currency', () => {
+    expect(validate({ ...transfer, received: '99' }, accounts)).toEqual({
+      errors: {},
+      draft: {
+        kind: 'transfer',
+        occurredOn: '2026-10-14',
+        description: 'Coffee',
+        note: 'oat milk',
+        from: { accountId: 'acc-1', amountMinor: 1250, currency: 'EUR' },
+        to: { accountId: 'acc-2', amountMinor: 1250, currency: 'EUR' },
+      },
+    });
+  });
+
+  it('stores what arrived across currencies, in the to-account exponent', () => {
+    const cross = { ...transfer, toAccountId: 'acc-uah' };
+    expect(validate({ ...cross, received: '540,25' }, accounts).draft).toMatchObject({
+      from: { amountMinor: 1250, currency: 'EUR' },
+      to: { accountId: 'acc-uah', amountMinor: 54_025, currency: 'UAH' },
+    });
+    expect(validate({ ...cross, received: '' }, accounts)).toEqual({
+      errors: { received: 'invalid' },
+      draft: null,
+    });
+    expect(
+      validate({ ...transfer, toAccountId: 'acc-jpy', received: '1.5' }, accounts).errors,
+    ).toEqual({ received: 'invalid' });
+  });
+
+  it.each([
+    ['no to-account', { toAccountId: null }, 'required'],
+    ['no from-account', { accountId: null }, 'required'],
+    ['another workspace', { toAccountId: 'acc-family' }, 'required'],
+    ['the same account', { toAccountId: 'acc-1' }, 'same'],
+  ] as const)('needs two different accounts of one workspace: %s', (_, patch, error) => {
+    expect(validate({ ...transfer, ...patch }, accounts)).toEqual({
+      errors: { accounts: error },
+      draft: null,
+    });
+  });
+
+  it('needs a positive amount', () => {
+    expect(validate({ ...transfer, amount: '0' }, accounts)).toEqual({
+      errors: { amount: 'invalid' },
+      draft: null,
+    });
   });
 });
 

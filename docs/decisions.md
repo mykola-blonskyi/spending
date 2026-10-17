@@ -387,3 +387,5 @@ import undo and exports (#108) and the entry form type (#109) build on the same 
 without a migration: a delete or edit queues one ordinary mutation per side in one local commit,
 the combined row is built on the device from the sides it holds, and import undo sets
 `transferOutside` on a side whose partner it deleted, which bumps its version so devices pull it.
+The entry form's Transfer type exists only in the form: saving it queues two new sides, an
+expense and an income, in one local commit, so the wire and the server see two ordinary upserts.

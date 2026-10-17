@@ -10,6 +10,7 @@ export {
   DiscardButton,
   KindToggle,
   NoteField,
+  ReceivedInput,
   SaveBar,
   ScopeChoice,
 } from './entry-fields';

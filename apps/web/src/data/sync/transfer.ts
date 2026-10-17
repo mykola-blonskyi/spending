@@ -56,6 +56,47 @@ export function markTransfer(
   return setSides(state, ids, { transferId, transferOutside: !counterpartId }, newMutationId);
 }
 
+export type TransferSide = Readonly<{ accountId: string; amountMinor: number; currency: string }>;
+
+export type TransferDraft = Readonly<{
+  workspaceId: string;
+  occurredOn: string;
+  description: string;
+  note: string;
+  from: TransferSide;
+  to: TransferSide;
+}>;
+
+/** A new transfer: an expense side on `from` and an income side on `to`, one upsert each (BR-37). */
+export function recordTransfer(
+  state: LocalState,
+  draft: TransferDraft,
+  transferId: string,
+  createdAt: string,
+  newId: () => string,
+): LocalState {
+  const { from, to, ...shared } = draft;
+  const side = (
+    kind: LocalTransaction['kind'],
+    { accountId, amountMinor, currency }: TransferSide,
+  ) => ({
+    ...shared,
+    id: newId(),
+    kind,
+    accountId,
+    amountMinor,
+    currency,
+    categoryId: null,
+    transferId,
+    transferOutside: false,
+    createdAt,
+  });
+  return [side('expense', from), side('income', to)].reduce(
+    (next, row) => applyLocalChange(next, { type: 'upsert', row }, newId),
+    state,
+  );
+}
+
 /** Every side of the entry's transfer, or just the entry when it is not one. */
 function sidesOf(state: LocalState, id: string): string[] {
   const transferId = currentRow(state, id)?.transferId;

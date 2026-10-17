@@ -1,4 +1,4 @@
-import { Check, Minus, Plus } from 'lucide-react';
+import { ArrowLeftRight, Check, Minus, Plus } from 'lucide-react';
 import { useTranslations } from '@i18n/index';
 import { PageHeader } from '@shared/components';
 import { cn } from '@shared/lib/utils';
@@ -43,7 +43,7 @@ export function PlayfulEntryView({ form }: { form: EntryForm }) {
           <ScopeChoice form={form} />
           <KindToggle
             form={form}
-            className="grid grid-cols-2 gap-3"
+            className="grid auto-cols-fr grid-flow-col gap-3"
             itemClassName="h-14 rounded-2xl border bg-card text-[15px] font-bold text-muted-foreground transition-[box-shadow,color,transform] duration-150 ease-out hover:bg-card active:scale-[0.97] data-[state=on]:border-transparent data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:ring-[3px] data-[state=on]:ring-primary"
             renderLabel={(kind, label) => (
               <>
@@ -51,16 +51,14 @@ export function PlayfulEntryView({ form }: { form: EntryForm }) {
                   aria-hidden
                   className={cn(
                     'flex size-8 items-center justify-center rounded-lg',
-                    kind === 'expense'
-                      ? '-rotate-3 bg-expense/15 text-expense'
-                      : 'rotate-3 bg-income/15 text-income',
+                    kind === 'expense' && '-rotate-3 bg-expense/15 text-expense',
+                    kind === 'income' && 'rotate-3 bg-income/15 text-income',
+                    kind === 'transfer' && 'bg-muted text-muted-foreground',
                   )}
                 >
-                  {kind === 'expense' ? (
-                    <Minus className="size-4" strokeWidth={2.6} />
-                  ) : (
-                    <Plus className="size-4" strokeWidth={2.6} />
-                  )}
+                  {kind === 'expense' && <Minus className="size-4" strokeWidth={2.6} />}
+                  {kind === 'income' && <Plus className="size-4" strokeWidth={2.6} />}
+                  {kind === 'transfer' && <ArrowLeftRight className="size-4" strokeWidth={2.6} />}
                 </span>
                 {label}
               </>

@@ -28,11 +28,13 @@ import {
 } from './query';
 import { deriveSyncStatus, smoothingDelay } from './status';
 import type { LocalStore } from './store';
+import type { TransferDraft } from './transfer';
 import {
   deleteTransaction,
   discardChange,
   markTransfer,
   recordTransaction,
+  recordTransfer,
   resolveConflict,
   type TransactionDraft,
   unmarkTransfer,
@@ -200,6 +202,8 @@ function useWriter<A extends unknown[], R>(
 
 export const useRecordTransaction = (): ((draft: TransactionDraft) => Promise<string>) =>
   useWriter(recordTransaction);
+export const useRecordTransfer = (): ((draft: TransferDraft) => Promise<string>) =>
+  useWriter(recordTransfer);
 export const useUpdateTransaction = (): ((
   id: string,
   draft: TransactionDraft,

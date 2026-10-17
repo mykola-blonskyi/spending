@@ -8,6 +8,7 @@ import {
   useLocalDataStatus,
   useLocalTransaction,
   useRecordTransaction,
+  useRecordTransfer,
   useUpdateTransaction,
   useWorkspaces,
 } from '@data/sync';
@@ -18,12 +19,15 @@ import { useTranslations } from '@i18n/index';
 import { COMMON_CURRENCIES, currencyExponent, decimalSeparator, todayIn } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import {
-  type EntryKind,
+  type FormKind,
   type FormValues,
   type KeypadKey,
   pressKey,
+  type SharedKey,
+  transferSides,
   validate,
   valuesFromDraft,
+  withKind,
 } from './form-model';
 import { conversionOf } from './history-model';
 
@@ -68,6 +72,7 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
   const accounts = useAccounts();
   const categoryViews = useCategoryViews();
   const record = useRecordTransaction();
+  const recordTransfer = useRecordTransfer();
   const update = useUpdateTransaction();
   const removeEntry = useRemoveEntry();
   const discardEntry = useDiscardEntry();
@@ -126,41 +131,54 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
     setEdited({ ...ours, version: settledVersion });
   }
   const typed = ours ? ours.values : initial;
-  const change = (patch: Partial<FormValues>) =>
+  const change = (next: (values: FormValues) => FormValues) =>
     setEdited((current) =>
       current && current.for === key
-        ? { ...current, values: { ...current.values, ...patch } }
-        : { for: key, values: { ...initial, ...patch }, version: settledVersion },
+        ? { ...current, values: next(current.values) }
+        : { for: key, values: next(initial), version: settledVersion },
     );
 
   // A transfer has no category (BR-37), so a transfer's form offers none.
   const categories = categoryViews.items.filter(
     (category) =>
       transferId === null &&
+      typed.kind !== 'transfer' &&
       category.workspaceId === workspaceId &&
       category.kind === typed.kind &&
       (!category.archived || category.id === typed.categoryId),
   );
-  const workspaceAccounts = accounts.items.filter(
-    (account) =>
-      (account.workspaceId === workspaceId || (own && account.workspaceId === personal?.id)) &&
-      (account.archivedAt === null || account.id === typed.accountId),
+  const activeAccounts = accounts.items.filter(
+    (account) => account.archivedAt === null || account.id === typed.accountId,
   );
+  // Both sides of a transfer are in the entry's own workspace (BR-37).
+  const transferAccounts = activeAccounts.filter((account) => account.workspaceId === workspaceId);
+  const workspaceAccounts =
+    typed.kind === 'transfer'
+      ? transferAccounts
+      : activeAccounts.filter(
+          (account) =>
+            account.workspaceId === workspaceId || (own && account.workspaceId === personal?.id),
+        );
+  const offered = (id: string | null, items: readonly { id: string }[]) =>
+    items.some((item) => item.id === id) ? id : null;
   // A pick the current scope or kind no longer offers is dropped; everything else typed stays.
-  const values: FormValues = {
-    ...typed,
-    accountId: workspaceAccounts.some((account) => account.id === typed.accountId)
-      ? typed.accountId
-      : null,
-    categoryId: categories.some((category) => category.id === typed.categoryId)
-      ? typed.categoryId
-      : null,
-  };
+  const values: FormValues =
+    typed.kind === 'transfer'
+      ? {
+          ...typed,
+          accountId: offered(typed.accountId, workspaceAccounts),
+          toAccountId: offered(typed.toAccountId, workspaceAccounts),
+        }
+      : {
+          ...typed,
+          accountId: offered(typed.accountId, workspaceAccounts),
+          categoryId: offered(typed.categoryId, categories),
+        };
 
   const [attempted, setAttempted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const exponent = currencyExponent(values.currency);
-  const errors = attempted ? validate(values, exponent).errors : {};
+  const errors = attempted ? validate(values, workspaceAccounts).errors : {};
 
   const currencies = [
     ...new Set([
@@ -185,46 +203,77 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
     today,
     values,
     errors,
-    set: <K extends keyof FormValues>(key: K, value: FormValues[K]) => change({ [key]: value }),
-    setKind: (kind: EntryKind) => change({ kind }),
+    set: <K extends SharedKey>(key: K, value: FormValues[K]) =>
+      change((current) => ({ ...current, [key]: value })),
+    setKind: (kind: FormKind) => change((current) => withKind(current, kind)),
+    setCategory: (categoryId: string | null) =>
+      change((current) => (current.kind === 'transfer' ? current : { ...current, categoryId })),
+    /** Recording a new entry may record a transfer instead; it needs two accounts in the space. */
+    transferOffered: mode === 'new',
+    transferBlocked: transferAccounts.length < 2,
+    transfer: transferSides(values, workspaceAccounts),
+    setToAccount: (toAccountId: string | null) =>
+      change((current) => (current.kind === 'transfer' ? { ...current, toAccountId } : current)),
+    setReceived: (received: string) =>
+      change((current) => (current.kind === 'transfer' ? { ...current, received } : current)),
     scope,
     /** Family members choose where a new entry goes (BR-12). */
     scopeOffered: mode === 'new' && family !== undefined,
-    setScope,
+    setScope: (next: Scope) => {
+      setScope(next);
+      const target = (next === 'family' && family ? family : personal)?.id;
+      // A space with fewer than two accounts cannot hold a transfer, so the form falls back.
+      if (activeAccounts.filter((account) => account.workspaceId === target).length < 2)
+        change((current) => (current.kind === 'transfer' ? withKind(current, 'expense') : current));
+    },
     setAccount: (accountId: string | null) => {
       const account = accounts.items.find((item) => item.id === accountId);
-      change({ accountId: account?.id ?? null, ...(account && { currency: account.currency }) });
+      change((current) => ({
+        ...current,
+        accountId: account?.id ?? null,
+        ...(account && { currency: account.currency }),
+      }));
     },
     amount: {
       display: values.amount ? values.amount.replace(/[.,]/, separator) : '0',
       exponent,
       separator,
-      press: (key: KeypadKey) => change({ amount: pressKey(values.amount, key, exponent) }),
+      press: (key: KeypadKey) =>
+        change((current) => ({ ...current, amount: pressKey(values.amount, key, exponent) })),
     },
     conversion,
     isTransfer: transferId !== null,
     categories,
+    category:
+      values.kind === 'transfer'
+        ? undefined
+        : categories.find((category) => category.id === values.categoryId),
     accounts: workspaceAccounts,
     currencies,
     submitting,
     submit: async (event?: FormEvent) => {
       event?.preventDefault();
       setAttempted(true);
-      const { draftFields } = validate(values, exponent);
-      if (!draftFields || !workspaceId || submitting) return;
+      const { draft: fields } = validate(values, workspaceAccounts);
+      if (!fields || !workspaceId || submitting) return;
       setSubmitting(true);
       try {
-        const draft = {
-          ...draftFields,
-          workspaceId,
-          transferId,
-          transferOutside: stored.entry?.transferOutside ?? false,
-        };
-        if (entryId) {
-          await update(entryId, draft, ours?.version);
-          // Later saves build on this one, whose base is now on the queue.
-          setEdited((current) => current && { ...current, version: null });
-        } else await record(draft);
+        if (fields.kind === 'transfer') {
+          const { kind: _kind, ...transfer } = fields;
+          await recordTransfer({ ...transfer, workspaceId });
+        } else {
+          const draft = {
+            ...fields,
+            workspaceId,
+            transferId,
+            transferOutside: stored.entry?.transferOutside ?? false,
+          };
+          if (entryId) {
+            await update(entryId, draft, ours?.version);
+            // Later saves build on this one, whose base is now on the queue.
+            setEdited((current) => current && { ...current, version: null });
+          } else await record(draft);
+        }
         if (onSaved) onSaved();
         else await navigate(HISTORY_PATH);
       } catch {
