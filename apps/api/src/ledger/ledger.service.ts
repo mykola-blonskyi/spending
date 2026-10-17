@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, inArray, isNull, ne, notExists, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, isNull, ne, notExists, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { z } from 'zod';
 import { ApiError } from '../common/errors';
@@ -10,7 +10,15 @@ import {
   ledgerTransaction,
   type Tx,
 } from '../database/database.module';
-import { accounts, categories, transactions, users, workspaces } from '../database/schema';
+import {
+  accounts,
+  categories,
+  recurringRules,
+  syncTombstones,
+  transactions,
+  users,
+  workspaces,
+} from '../database/schema';
 import { AccessPolicy } from '../workspaces/access-policy';
 import {
   type AccountView,
@@ -185,6 +193,39 @@ export class LedgerService {
         .where(eq(accounts.id, id))
         .returning(accountColumns);
       return toView(row!);
+    });
+  }
+
+  /**
+   * BR-41. Only an account with no live entry and no recurring rule; the tombstone takes it off
+   * every device. Under the ledger lock, so no push can attach an entry between check and delete.
+   */
+  deleteAccount(actorId: string, id: string): Promise<void> {
+    return this.write(async (tx) => {
+      const [current] = await tx
+        .select({ workspaceId: accounts.workspaceId })
+        .from(accounts)
+        .where(eq(accounts.id, id));
+      if (!current) throw new ApiError('NOT_FOUND');
+      await this.policy.requireMember(actorId, current.workspaceId, tx);
+      const [entries] = await tx
+        .select({ n: count() })
+        .from(transactions)
+        .where(and(eq(transactions.accountId, id), isNull(transactions.deletedAt)));
+      const [rules] = await tx
+        .select({ n: count() })
+        .from(recurringRules)
+        .where(eq(recurringRules.accountId, id));
+      if (entries!.n > 0 || rules!.n > 0) {
+        throw new ApiError('ACCOUNT_IN_USE', 'The account has entries or recurring rules', [
+          { path: 'entries', issue: String(entries!.n) },
+          { path: 'recurringRules', issue: String(rules!.n) },
+        ]);
+      }
+      await tx.delete(accounts).where(eq(accounts.id, id));
+      await tx
+        .insert(syncTombstones)
+        .values({ workspaceId: current.workspaceId, transactionId: id });
     });
   }
 

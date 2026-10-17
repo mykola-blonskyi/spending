@@ -8,6 +8,7 @@ import {
   Scale,
   Wallet,
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useId, useMemo, useState } from 'react';
 import {
   type Account,
@@ -18,6 +19,7 @@ import {
   useOpeningForBalance,
   useWorkspaces,
 } from '@data/sync';
+import { rulesQuery } from '@data/recurring';
 import { useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
 import {
@@ -330,6 +332,7 @@ function AccountRow({
   onSetBalance,
   onArchive,
   onRestore,
+  onDelete,
 }: {
   account: Account;
   balance: AccountBalance | undefined;
@@ -339,6 +342,7 @@ function AccountRow({
   onSetBalance: () => void;
   onArchive: () => void;
   onRestore: () => void;
+  onDelete: (() => void) | undefined;
 }) {
   const t = useTranslations('ledger');
   const Icon = KIND_ICONS[account.kind];
@@ -388,6 +392,7 @@ function AccountRow({
         onEdit={onEdit}
         onArchive={onArchive}
         onRestore={onRestore}
+        {...(onDelete && { onDelete })}
       />
     </li>
   );
@@ -397,6 +402,7 @@ export function AccountsPage() {
   const t = useTranslations('ledger');
   const pages = useTranslations('pages.accounts');
   const states = useTranslations('states');
+  const actions = useTranslations('actions');
   const status = useLocalDataStatus();
   const online = useOnlineStatus();
   const accounts = useAccounts();
@@ -408,6 +414,19 @@ export function AccountsPage() {
   const [balanceOf, setBalanceOf] = useState<Account | null>(null);
   const [toArchive, setToArchive] = useState<Account | null>(null);
   const toArchiveBalance = toArchive ? (balances.get(toArchive.id)?.balanceMinor ?? 0) : 0;
+  const [toDelete, setToDelete] = useState<Account | null>(null);
+  const rules = useQuery(rulesQuery).data ?? [];
+  // What this device sees using an account; the server re-checks (BR-41).
+  const usage = (account: Account) => ({
+    entries: balances.get(account.id)?.entries ?? 0,
+    rules: rules.filter((rule) => rule.accountId === account.id).length,
+  });
+  const inUse = (used: { entries: number; rules: number }) => used.entries + used.rules > 0;
+  const toDeleteUsage = toDelete ? usage(toDelete) : { entries: 0, rules: 0 };
+  const toDeleteInUse = inUse(toDeleteUsage);
+  const toDeleteBalance = toDelete
+    ? (balances.get(toDelete.id)?.balanceMinor ?? toDelete.openingBalanceMinor)
+    : 0;
 
   const scopes = useMemo(
     () =>
@@ -459,6 +478,11 @@ export function AccountsPage() {
       onSetBalance={() => setBalanceOf(account)}
       onArchive={() => setToArchive(account)}
       onRestore={() => void admin.archive(account.id, false)}
+      onDelete={
+        account.archivedAt !== null && inUse(usage(account))
+          ? undefined
+          : () => setToDelete(account)
+      }
     />
   );
 
@@ -548,6 +572,40 @@ export function AccountsPage() {
         onConfirm={() => {
           if (toArchive) void admin.archive(toArchive.id, true);
           setToArchive(null);
+        }}
+      />
+      <ConfirmDialog
+        open={toDelete !== null}
+        onOpenChange={(open) => !open && setToDelete(null)}
+        title={t(toDeleteInUse ? 'accounts.inUseTitle' : 'accounts.deleteTitle', {
+          name: toDelete?.name ?? '',
+        })}
+        description={[
+          toDelete &&
+            toDeleteBalance !== 0 &&
+            t('accounts.archiveBalance', {
+              amount: formatMoney(toDeleteBalance, toDelete.currency, locale),
+            }),
+          toDeleteInUse
+            ? t('accounts.inUseDescription', {
+                reason: [
+                  toDeleteUsage.entries > 0 &&
+                    t('accounts.inUseEntries', { count: toDeleteUsage.entries }),
+                  toDeleteUsage.rules > 0 &&
+                    t('accounts.inUseRules', { count: toDeleteUsage.rules }),
+                ]
+                  .filter(Boolean)
+                  .join(', '),
+              })
+            : t('accounts.deleteDescription'),
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        confirmLabel={toDeleteInUse ? t('accounts.archiveConfirm') : actions('delete')}
+        onConfirm={() => {
+          if (toDelete && toDeleteInUse) void admin.archive(toDelete.id, true);
+          else if (toDelete) void admin.remove(toDelete.id);
+          setToDelete(null);
         }}
       />
     </div>

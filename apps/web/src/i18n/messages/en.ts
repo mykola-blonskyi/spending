@@ -407,6 +407,7 @@ export const en = {
     editLabel: 'Edit {name}',
     archiveLabel: 'Archive {name}',
     restoreLabel: 'Restore {name}',
+    deleteLabel: 'Delete {name}',
     family: 'Family',
     personal: 'Personal',
     workspace: 'Where it belongs',
@@ -437,6 +438,13 @@ export const en = {
       archiveDescription:
         'It disappears from the pickers for new transactions. Past transactions keep it, and you can restore it any time.',
       archiveConfirm: 'Archive',
+      deleteTitle: 'Delete the account {name}?',
+      deleteDescription: 'This cannot be undone.',
+      inUseTitle: '{name} is in use',
+      inUseDescription:
+        'An account with entries or recurring rules cannot be deleted ({reason}). Archive it instead: it leaves the pickers and keeps its history.',
+      inUseEntries: '{count, plural, one {# entry} other {# entries}}',
+      inUseRules: '{count, plural, one {# recurring rule} other {# recurring rules}}',
       kinds: {
         cash: 'Cash',
         bank: 'Bank account',
@@ -996,6 +1004,8 @@ export const en = {
     VALIDATION_FAILED: 'Some details are not valid. Check the highlighted fields.',
     CONFLICT: 'This was changed somewhere else. Review the latest version.',
     NAME_TAKEN: 'That name is already used. Pick another one.',
+    ACCOUNT_IN_USE:
+      'This account has entries or recurring rules now, so it cannot be deleted. Archive it instead.',
     RATE_LIMITED: 'Too many attempts. Wait a moment and try again.',
     PAYLOAD_TOO_LARGE: 'This file is too large to upload.',
     UNAVAILABLE: 'The service is temporarily unavailable. Try again shortly.',

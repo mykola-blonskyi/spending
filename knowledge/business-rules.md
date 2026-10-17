@@ -135,6 +135,14 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   archived accounts show their balance outside the totals, and archiving an account that still
   holds money warns first. History filtered by one account shows its current balance, whatever
   the period.
+- **BR-41.** An account can be deleted only when nothing uses it: no live entry (rows awaiting
+  review count) and no recurring rule. Deleted entries and import batches do not block it; their
+  link to the account becomes empty. Any member of the account's workspace may delete it, online
+  only, as with archiving. The server re-checks under the ledger lock and refuses a used account
+  with `409 ACCOUNT_IN_USE` (details carry the entry and rule counts). An account in use is
+  archived instead: the dialog names why and offers Archive. Deleting writes a `sync_tombstones`
+  row for the account, so every device drops it on its next pull. Deleting asks first and warns
+  when the opening balance is not zero.
 - **BR-21.** Pending-review transactions are excluded from history, totals and budgets until they
   are confirmed.
 

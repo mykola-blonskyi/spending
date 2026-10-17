@@ -251,6 +251,9 @@ edited through REST and arrive through pull like transactions.
   of the row touch only `transactions`, so they never reach the old workspace (BR-2). A tombstone
   is skipped for a viewer who can see the row live again. Family deletion writes none, because
   the workspace and its tombstones are deleted with it.
+- **Account deletion.** `DELETE /accounts/:id` (BR-41) deletes an unused account and writes a
+  `sync_tombstones` row with the account's id. It arrives in `transactions` like any tombstone;
+  the client drops the account (and the no-op entry) with that id.
 - **Client duties.** Drop local rows of workspaces missing from `workspaces` (BR-17). An entry
   there with a pending change stays, its latest change failed with the client-only code
   `NO_ACCESS` until the user discards it. When a new workspace id appears (the user joined a
@@ -387,7 +390,7 @@ period just before, with deltas (current minus previous). Budget progress comes 
 Every error is `{ error: { code, message, details? } }` with a stable `code` from
 `apps/api/src/common/errors.ts`, which the web app localizes. Codes outside the generic HTTP set:
 `SESSION_REVOKED`, `CSRF_FAILED`, `CONFIRMATION_MISMATCH` (400), `FAMILY_EXISTS` (409),
-`OWNER_CANNOT_LEAVE` (409), `NAME_TAKEN` (409), `REVIEW_REQUIRED` (409), `MUTATION_ID_REUSED`
+`OWNER_CANNOT_LEAVE` (409), `NAME_TAKEN` (409), `ACCOUNT_IN_USE` (409), `REVIEW_REQUIRED` (409), `MUTATION_ID_REUSED`
 (409), `INVITATION_INVALID` (410), `INVALID_ACCOUNT` (422), `INVALID_CATEGORY` (422), `INVALID_TRANSFER` (422), `CURRENCY_MISMATCH` (422). Sync push
 reports rejections per mutation with the same codes instead of an HTTP error. A database
 statement or lock timeout is `503 UNAVAILABLE`, safe to retry. A workspace the actor does not belong to

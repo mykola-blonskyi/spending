@@ -3,7 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@data/api-error';
-import { updateAccount } from '@data/ledger';
+import { deleteAccount, updateAccount } from '@data/ledger';
 import { createQueryClient } from '@data/query-client';
 import { I18nProvider } from '@i18n/index';
 import { useAccountsAdmin } from './use-ledger-mutations';
@@ -13,6 +13,7 @@ vi.mock('sonner', () => ({ toast: { error: vi.fn() } }));
 vi.mock('@data/ledger', () => ({
   createAccount: vi.fn(),
   updateAccount: vi.fn(),
+  deleteAccount: vi.fn(),
   createCategory: vi.fn(),
   updateCategory: vi.fn(),
 }));
@@ -72,5 +73,22 @@ describe('useAccountsAdmin', () => {
     expect(saved).toBe(false);
     expect(refresh).not.toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalledWith('That name is already used. Pick another one.');
+  });
+
+  it('names why the server refused to delete an account (BR-41)', async () => {
+    vi.mocked(deleteAccount).mockRejectedValue(
+      new ApiError({ status: 409, code: 'ACCOUNT_IN_USE', message: 'in use' }),
+    );
+    const { result } = renderHook(() => useAccountsAdmin(), { wrapper });
+
+    let deleted: boolean | undefined;
+    await act(async () => {
+      deleted = await result.current.remove('a-1');
+    });
+
+    expect(deleted).toBe(false);
+    expect(toast.error).toHaveBeenCalledWith(
+      'This account has entries or recurring rules now, so it cannot be deleted. Archive it instead.',
+    );
   });
 });

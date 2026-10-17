@@ -110,6 +110,8 @@ Records that a transaction left a workspace (its author moved it), so that works
 pull a tombstone for it: `(workspaceId, transactionId)` primary key, `revision` (from the global
 change sequence, assigned at the move), `deletedAt`. A repeated move refreshes the row. Later edits
 of the transaction never touch it (BR-2).
+A deleted account leaves the same kind of row, its id in `transactionId`, so every member drops it
+(BR-41).
 
 ## SyncConflict
 

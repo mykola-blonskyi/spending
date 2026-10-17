@@ -424,6 +424,7 @@ export const es = {
     editLabel: 'Editar {name}',
     archiveLabel: 'Archivar {name}',
     restoreLabel: 'Restaurar {name}',
+    deleteLabel: 'Eliminar {name}',
     family: 'Familia',
     personal: 'Personal',
     workspace: 'A qué pertenece',
@@ -455,6 +456,13 @@ export const es = {
       archiveDescription:
         'Dejará de aparecer al crear movimientos nuevos. Los anteriores la conservan y puedes restaurarla cuando quieras.',
       archiveConfirm: 'Archivar',
+      deleteTitle: '¿Eliminar la cuenta {name}?',
+      deleteDescription: 'No se puede deshacer.',
+      inUseTitle: '{name} está en uso',
+      inUseDescription:
+        'Una cuenta con movimientos o pagos recurrentes no se puede eliminar ({reason}). Archívala: deja de aparecer al elegir cuenta y conserva su historial.',
+      inUseEntries: '{count, plural, one {# movimiento} other {# movimientos}}',
+      inUseRules: '{count, plural, one {# pago recurrente} other {# pagos recurrentes}}',
       kinds: {
         cash: 'Efectivo',
         bank: 'Cuenta bancaria',
@@ -1029,6 +1037,8 @@ export const es = {
     VALIDATION_FAILED: 'Algunos datos no son válidos. Revisa los campos marcados.',
     CONFLICT: 'Esto se ha modificado en otro lugar. Revisa la versión más reciente.',
     NAME_TAKEN: 'Ese nombre ya está en uso. Elige otro.',
+    ACCOUNT_IN_USE:
+      'Esta cuenta ya tiene movimientos o pagos recurrentes, así que no se puede eliminar. Archívala.',
     RATE_LIMITED: 'Demasiados intentos. Espera un momento y vuelve a intentarlo.',
     PAYLOAD_TOO_LARGE: 'El archivo es demasiado grande para subirlo.',
     UNAVAILABLE: 'El servicio no está disponible temporalmente. Inténtalo de nuevo en breve.',

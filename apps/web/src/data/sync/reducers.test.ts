@@ -86,6 +86,29 @@ describe('reducePull', () => {
     expect([...state.transactions.keys()]).toEqual(['b']);
   });
 
+  it('drops an account on its tombstone (BR-41)', () => {
+    const account = (id: string) => ({
+      id,
+      workspaceId: PERSONAL.id,
+      name: id,
+      kind: 'cash' as const,
+      currency: 'EUR',
+      openingBalanceMinor: 0,
+      openingOn: null,
+      archivedAt: null,
+      revision: 1,
+      createdAt: now,
+      updatedAt: now,
+    });
+    const first = reducePull(
+      emptyLocalState(),
+      page({ accounts: [account('acc-1'), account('acc-2')] }),
+      now,
+    );
+    const { state } = reducePull(first.state, page({ transactions: [tombstone('acc-1')] }), now);
+    expect([...state.accounts.keys()]).toEqual(['acc-2']);
+  });
+
   it('replaces conflicts with the full open list', () => {
     const conflict = {
       id: 'c-1',

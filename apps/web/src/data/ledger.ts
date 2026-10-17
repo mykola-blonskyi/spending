@@ -18,6 +18,10 @@ export async function updateAccount(id: string, body: AccountPatch): Promise<Acc
   );
 }
 
+export async function deleteAccount(id: string): Promise<void> {
+  await api.DELETE('/api/v1/accounts/{id}', { params: { path: { id } } });
+}
+
 export async function createCategory(body: CategoryCreate): Promise<Category> {
   return present((await api.POST('/api/v1/categories', { body })).data);
 }
