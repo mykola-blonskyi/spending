@@ -1,4 +1,4 @@
-import type { TransactionDraft } from '@data/sync';
+import type { Account, TransactionDraft, TransferDraft } from '@data/sync';
 import {
   currencyExponent,
   MAX_AMOUNT_MINOR,
@@ -7,48 +7,117 @@ import {
 } from '@shared/format';
 
 export type EntryKind = TransactionDraft['kind'];
+/** A transfer exists only in the form; it is saved as an expense side and an income side (BR-37). */
+export type FormKind = EntryKind | 'transfer';
 
-export type FormValues = Readonly<{
-  kind: EntryKind;
+type SharedValues = {
   /** What the user typed or tapped, "12", "12.5" or "12,50"; parsed only on save. */
   amount: string;
   currency: string;
   occurredOn: string;
+  /** A transfer's from-account, whose currency `currency` follows. */
   accountId: string | null;
-  categoryId: string | null;
   description: string;
   note: string;
-}>;
+};
 
-export type FormErrors = Readonly<{ amount?: 'invalid' }>;
+export type EntryValues = Readonly<SharedValues & { kind: EntryKind; categoryId: string | null }>;
+export type TransferValues = Readonly<
+  SharedValues & {
+    kind: 'transfer';
+    toAccountId: string | null;
+    /** The amount that arrived, asked only when the two accounts' currencies differ. */
+    received: string;
+  }
+>;
+export type FormValues = EntryValues | TransferValues;
+export type SharedKey = keyof SharedValues;
+
+export type FormErrors = Readonly<{
+  amount?: 'invalid';
+  received?: 'invalid';
+  accounts?: 'required' | 'same';
+}>;
 
 /** Everything a draft needs except the workspace and transfer mark, which the form keeps. */
 export type DraftFields = Omit<TransactionDraft, 'workspaceId' | 'transferId' | 'transferOutside'>;
+export type FormDraft = DraftFields | ({ kind: 'transfer' } & Omit<TransferDraft, 'workspaceId'>);
 
-/** A draft exists exactly when there are no errors. */
+type AccountRef = Pick<Account, 'id' | 'workspaceId' | 'currency'>;
+
+/** Moves the typed values to another kind, keeping what both kinds share. */
+export function withKind(values: FormValues, kind: FormKind): FormValues {
+  const { amount, currency, occurredOn, accountId, description, note } = values;
+  const shared = { amount, currency, occurredOn, accountId, description, note };
+  if (kind === 'transfer') {
+    return values.kind === 'transfer'
+      ? values
+      : { ...shared, kind, toAccountId: null, received: '' };
+  }
+  return { ...shared, kind, categoryId: values.kind === 'transfer' ? null : values.categoryId };
+}
+
+/** The other account of a transfer and the currency of what arrived when it differs. */
+export function transferSides(
+  values: FormValues,
+  accounts: readonly AccountRef[],
+): { from: AccountRef | undefined; to: AccountRef | undefined; receivedCurrency: string | null } {
+  if (values.kind !== 'transfer') return { from: undefined, to: undefined, receivedCurrency: null };
+  const from = accounts.find((account) => account.id === values.accountId);
+  const to = accounts.find(
+    (account) => account.id === values.toAccountId && account.workspaceId === from?.workspaceId,
+  );
+  const receivedCurrency = from && to && from.currency !== to.currency ? to.currency : null;
+  return { from, to, receivedCurrency };
+}
+
+/**
+ * A draft exists exactly when there are no errors. A transfer needs two different accounts of
+ * one workspace (`accounts` are those the form offers) and, across currencies, what arrived.
+ */
 export function validate(
   values: FormValues,
-  exponent: number,
-): { errors: FormErrors; draftFields: DraftFields | null } {
-  const amountMinor = parseAmount(values.amount, exponent);
-  if (amountMinor === null) return { errors: { amount: 'invalid' }, draftFields: null };
+  accounts: readonly AccountRef[],
+): { errors: FormErrors; draft: FormDraft | null } {
+  const description = values.description.trim();
+  const note = values.note.trim();
+  if (values.kind !== 'transfer') {
+    const amountMinor = parseAmount(values.amount, currencyExponent(values.currency));
+    if (amountMinor === null) return { errors: { amount: 'invalid' }, draft: null };
+    const { kind, currency, occurredOn, accountId, categoryId } = values;
+    return {
+      errors: {},
+      draft: { kind, amountMinor, currency, occurredOn, accountId, categoryId, description, note },
+    };
+  }
+  const { from, to, receivedCurrency } = transferSides(values, accounts);
+  const sent = parseAmount(values.amount, currencyExponent(from?.currency ?? values.currency));
+  const received = receivedCurrency
+    ? parseAmount(values.received, currencyExponent(receivedCurrency))
+    : sent;
+  const errors: FormErrors = {
+    ...(sent === null && { amount: 'invalid' }),
+    ...(receivedCurrency && received === null && { received: 'invalid' }),
+    ...(!from || !to ? { accounts: 'required' } : from.id === to.id && { accounts: 'same' }),
+  };
+  if (!from || !to || sent === null || received === null || Object.keys(errors).length > 0) {
+    return { errors, draft: null };
+  }
   return {
-    errors: {},
-    draftFields: {
-      kind: values.kind,
-      amountMinor,
-      currency: values.currency,
+    errors,
+    draft: {
+      kind: 'transfer',
       occurredOn: values.occurredOn,
-      accountId: values.accountId,
-      categoryId: values.categoryId,
-      description: values.description.trim(),
-      note: values.note.trim(),
+      description,
+      note,
+      from: { accountId: from.id, amountMinor: sent, currency: from.currency },
+      to: { accountId: to.id, amountMinor: received, currency: to.currency },
     },
   };
 }
 
 /** The stored entry as form values, its amount written with the locale's `separator`. */
-export function valuesFromDraft(draft: TransactionDraft, separator: string): FormValues {
+export function valuesFromDraft(draft: TransactionDraft, separator: string): EntryValues {
   return {
     kind: draft.kind,
     amount: minorToDecimalString(draft.amountMinor, currencyExponent(draft.currency)).replace(

@@ -252,6 +252,15 @@ export const en = {
     decimalSeparator: 'Decimal separator',
     saveHint: 'Saved on this device first, then synced.',
     transferNoCategory: 'A transfer has no category.',
+    transfer: 'Transfer',
+    fromAccount: 'From account',
+    toAccount: 'To account',
+    chooseAccount: 'Choose an account',
+    received: 'Received, {currency}',
+    receivedInvalid: 'Enter the amount that arrived, such as 12.50.',
+    accountsRequired: 'Choose the account the money left and the one it arrived in.',
+    accountsSame: 'Choose two different accounts.',
+    transferNeedsAccounts: 'A transfer needs two accounts in this space.',
   },
   syncCenter: {
     conflictsTitle: 'Needs review',
@@ -321,6 +330,7 @@ export const en = {
     journal: {
       expense: '{date} I spent {amount} on {category} at {where} from {account}.',
       income: '{date} I received {amount} as {category} from {where} into {account}.',
+      transfer: '{date} I moved {amount} from {account} to {toAccount}, {where}.',
     },
   },
   transfer: {

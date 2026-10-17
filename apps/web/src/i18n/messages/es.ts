@@ -265,6 +265,15 @@ export const es = {
     decimalSeparator: 'Separador decimal',
     saveHint: 'Se guarda primero en este dispositivo y luego se sincroniza.',
     transferNoCategory: 'Una transferencia no tiene categoría.',
+    transfer: 'Transferencia',
+    fromAccount: 'Cuenta de origen',
+    toAccount: 'Cuenta de destino',
+    chooseAccount: 'Elige una cuenta',
+    received: 'Recibido, {currency}',
+    receivedInvalid: 'Introduce el importe que llegó, por ejemplo 12,50.',
+    accountsRequired: 'Elige la cuenta de la que salió el dinero y la cuenta a la que llegó.',
+    accountsSame: 'Elige dos cuentas distintas.',
+    transferNeedsAccounts: 'Una transferencia necesita dos cuentas en este espacio.',
   },
   syncCenter: {
     conflictsTitle: 'Por revisar',
@@ -335,6 +344,7 @@ export const es = {
     journal: {
       expense: '{date} gasté {amount} en {category}, en {where}, con {account}.',
       income: '{date} recibí {amount} como {category}, de {where}, en {account}.',
+      transfer: '{date} transferí {amount} de {account} a {toAccount}, {where}.',
     },
   },
   transfer: {

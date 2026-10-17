@@ -35,7 +35,7 @@ export function BentoEntryView({ form }: { form: EntryForm }) {
   const page = form.mode === 'edit' ? 'editTransaction' : 'addTransaction';
   const { values } = form;
   const minor = parseAmount(values.amount, currencyExponent(values.currency));
-  const category = form.categories.find((item) => item.id === values.categoryId);
+  const { category } = form;
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-3 lg:gap-4">

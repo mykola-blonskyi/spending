@@ -1,4 +1,4 @@
-import { ArrowDownRight, ArrowUpRight, Calendar, Wallet } from 'lucide-react';
+import { ArrowDownRight, ArrowLeftRight, ArrowUpRight, Calendar, Wallet } from 'lucide-react';
 import { useTranslations } from '@i18n/index';
 import { PageHeader } from '@shared/components';
 import {
@@ -44,11 +44,9 @@ export function SoftEntryView({ form }: { form: EntryForm }) {
             itemClassName="h-full rounded-full text-[15px] font-semibold text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-transparent active:scale-[0.97] data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary"
             renderLabel={(kind, label) => (
               <>
-                {kind === 'expense' ? (
-                  <ArrowDownRight aria-hidden className="size-[18px]" />
-                ) : (
-                  <ArrowUpRight aria-hidden className="size-[18px]" />
-                )}
+                {kind === 'expense' && <ArrowDownRight aria-hidden className="size-[18px]" />}
+                {kind === 'income' && <ArrowUpRight aria-hidden className="size-[18px]" />}
+                {kind === 'transfer' && <ArrowLeftRight aria-hidden className="size-[18px]" />}
                 {label}
               </>
             )}

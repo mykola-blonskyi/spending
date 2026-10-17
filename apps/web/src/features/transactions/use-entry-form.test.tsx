@@ -53,13 +53,13 @@ describe('useEntryForm', () => {
 
   it('drops a category of the other kind and adopts the account currency', () => {
     const { result } = setup('/transactions/new');
-    act(() => result.current.set('categoryId', 'cat-groceries'));
+    act(() => result.current.setCategory('cat-groceries'));
     act(() => result.current.setKind('income'));
-    expect(result.current.values.categoryId).toBeNull();
+    expect(result.current.values).toMatchObject({ categoryId: null });
     expect(result.current.categories.map((c) => c.name)).toEqual(['Salary']);
-    act(() => result.current.set('categoryId', 'cat-salary'));
+    act(() => result.current.setCategory('cat-salary'));
     act(() => result.current.setKind('income'));
-    expect(result.current.values.categoryId).toBe('cat-salary');
+    expect(result.current.values).toMatchObject({ categoryId: 'cat-salary' });
 
     act(() => result.current.setAccount('acc-usd'));
     expect(result.current.values).toMatchObject({ accountId: 'acc-usd', currency: 'USD' });

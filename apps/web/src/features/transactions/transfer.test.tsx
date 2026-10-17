@@ -1,6 +1,7 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ComponentType } from 'react';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { serverRow, syncedState } from '@data/sync/fixtures';
 import { type LocalState, queueOrder } from '@data/sync/model';
 import { testSession } from '@data/testing';
@@ -50,6 +51,13 @@ const editScreen = (state: LocalState, id: string) => {
   });
   return data;
 };
+
+beforeAll(() => {
+  // Radix Select opens on pointer events jsdom does not implement.
+  Element.prototype.hasPointerCapture = () => false;
+  Element.prototype.releasePointerCapture = () => {};
+  Element.prototype.scrollIntoView = () => {};
+});
 
 beforeEach(() => {
   vi.stubGlobal('matchMedia', () => ({
@@ -165,4 +173,112 @@ describe('the transfer action (BR-37)', () => {
       expect(screen.queryByRole('link', { name: /From card/ })).toBeNull();
     },
   );
+});
+
+const newScreen = (state: LocalState, Entry: ComponentType = CalmEntry) => {
+  const data = fakeLocalData(state);
+  const { location } = renderTransactionScreen(<Entry />, {
+    data: data.value,
+    path: '/transactions/new',
+    route: '/transactions/new',
+  });
+  return { data, location };
+};
+
+/** A select in most layouts, a chip that opens its options in the journal. */
+async function pick(field: string, option: string) {
+  const select = screen.queryByRole('combobox', { name: field });
+  if (select) {
+    await userEvent.click(select);
+    await userEvent.click(
+      within(await screen.findByRole('listbox')).getByRole('option', { name: option }),
+    );
+    return;
+  }
+  await userEvent.click(screen.getByRole('button', { name: field }));
+  const options = screen.getByRole('radiogroup', { name: field });
+  await userEvent.click(within(options).getByRole('radio', { name: option }));
+}
+
+const queued = (state: LocalState) =>
+  queueOrder(state).map((m) =>
+    m.change.type === 'transaction.upsert' ? m.change.transaction : null,
+  );
+
+describe('recording a transfer in the entry form (BR-37)', () => {
+  it.each(Object.entries(TRANSACTION_SCREENS))(
+    'records both sides in the %s layout',
+    async (_, { entry: Entry }) => {
+      const { data, location } = newScreen(ledger(), Entry);
+      await userEvent.click(screen.getByRole('radio', { name: 'Transfer' }));
+      expect(screen.queryByRole('radiogroup', { name: 'Category' })).toBeNull();
+      fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '300' } });
+      await pick('From account', 'Card · EUR');
+      await pick('To account', 'Savings · EUR');
+      expect(screen.queryByLabelText(/Received/)).toBeNull();
+      await userEvent.click(screen.getByRole('button', { name: /^Save/ }));
+
+      await waitFor(() => expect(location()).toBe('/transactions'));
+      const [out, into] = queued(data.current());
+      const side = {
+        amountMinor: 30_000,
+        currency: 'EUR',
+        categoryId: null,
+        transferOutside: false,
+      };
+      expect(out).toMatchObject({ ...side, kind: 'expense', accountId: 'acc-card' });
+      expect(into).toMatchObject({ ...side, kind: 'income', accountId: 'acc-savings' });
+      expect(out?.transferId).toEqual(expect.any(String));
+      expect(into?.transferId).toBe(out?.transferId);
+    },
+  );
+
+  it('asks what arrived when the currencies differ, labelled with its currency', async () => {
+    const state = ledger();
+    const { data } = newScreen({
+      ...state,
+      accounts: new Map([
+        ...state.accounts,
+        ['acc-uah', account({ id: 'acc-uah', name: 'Hryvnia', currency: 'UAH' })],
+      ]),
+    });
+    await userEvent.click(screen.getByRole('radio', { name: 'Transfer' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '100' } });
+    await pick('From account', 'Card · EUR');
+    await pick('To account', 'Hryvnia · UAH');
+    await userEvent.click(screen.getByRole('button', { name: /^Save/ }));
+    expect(await screen.findByText('Enter the amount that arrived, such as 12.50.')).toBeVisible();
+
+    fireEvent.change(screen.getByLabelText('Received, UAH'), { target: { value: '4500' } });
+    await userEvent.click(screen.getByRole('button', { name: /^Save/ }));
+    await waitFor(() => expect(data.current().mutations.size).toBe(2));
+    expect(queued(data.current())).toMatchObject([
+      { kind: 'expense', accountId: 'acc-card', amountMinor: 10_000, currency: 'EUR' },
+      { kind: 'income', accountId: 'acc-uah', amountMinor: 450_000, currency: 'UAH' },
+    ]);
+  });
+
+  it('refuses one account on both sides', async () => {
+    const { data } = newScreen(ledger());
+    await userEvent.click(screen.getByRole('radio', { name: 'Transfer' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '5' } });
+    await pick('From account', 'Card · EUR');
+    await pick('To account', 'Card · EUR');
+    await userEvent.click(screen.getByRole('button', { name: /^Save/ }));
+    expect(await screen.findByText('Choose two different accounts.')).toBeVisible();
+    expect(data.current().mutations.size).toBe(0);
+  });
+
+  it('offers no transfer with fewer than two accounts in the space, and says why', () => {
+    newScreen({ ...ledger(), accounts: new Map([['acc-card', account()]]) });
+    const option = screen.getByRole('radio', { name: 'Transfer' });
+    expect(option).toBeDisabled();
+    expect(option).toHaveAccessibleDescription('A transfer needs two accounts in this space.');
+  });
+
+  it('keeps the entry form when editing a side', () => {
+    editScreen(ledger({ ...out, categoryId: null, transferId: 'tr-1' }), 'out');
+    expect(screen.getByRole('radio', { name: 'Expense' })).toBeChecked();
+    expect(screen.queryByRole('radio', { name: 'Transfer' })).toBeNull();
+  });
 });

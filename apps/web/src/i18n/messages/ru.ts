@@ -267,6 +267,15 @@ export const ru = {
     decimalSeparator: 'Десятичный разделитель',
     saveHint: 'Сначала сохраняется на этом устройстве, затем синхронизируется.',
     transferNoCategory: 'У перевода нет категории.',
+    transfer: 'Перевод',
+    fromAccount: 'Со счёта',
+    toAccount: 'На счёт',
+    chooseAccount: 'Выберите счёт',
+    received: 'Поступило, {currency}',
+    receivedInvalid: 'Введите сумму, которая поступила, например 12,50.',
+    accountsRequired: 'Выберите счёт, с которого ушли деньги, и счёт, на который они поступили.',
+    accountsSame: 'Выберите два разных счёта.',
+    transferNeedsAccounts: 'Для перевода нужны два счёта в этом пространстве.',
   },
   syncCenter: {
     conflictsTitle: 'Требует проверки',
@@ -337,6 +346,7 @@ export const ru = {
     journal: {
       expense: '{date} потрачено {amount} на {category}, {where}, со счёта {account}.',
       income: '{date} получено {amount} как {category}, от {where}, на счёт {account}.',
+      transfer: '{date} переведено {amount} со счёта {account} на счёт {toAccount}, {where}.',
     },
   },
   transfer: {
