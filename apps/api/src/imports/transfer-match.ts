@@ -64,7 +64,8 @@ function looksOwn(description: string, name: readonly string[]): boolean {
 /**
  * BR-38. Each imported row paired with an entry of the opposite kind on another account within
  * three days (equal amount, or within 3% in EUR at the rate of the imported row's date), each
- * candidate used once, nearest date then nearest amount first. A row left unpaired whose
+ * row in at most one pair, nearest date then nearest amount first. A candidate may itself be an
+ * imported row (two rows awaiting review); that pair is reported on both. A row left unpaired whose
  * description has a transfer phrase or every word of the user's name is a one-sided suggestion.
  */
 export function suggestTransfers(
@@ -92,12 +93,14 @@ export function suggestTransfers(
     });
   });
   pairs.sort((a, b) => a.days - b.days || a.gap - b.gap);
+  const importedIds = new Set(imported.map((row) => row.id));
   const counterparts = new Map<string, string>();
   const used = new Set<string>();
   for (const { row, other } of pairs) {
-    if (counterparts.has(row.id) || used.has(other.id)) continue;
+    if (used.has(row.id) || used.has(other.id)) continue;
     counterparts.set(row.id, other.id);
-    used.add(other.id);
+    if (importedIds.has(other.id)) counterparts.set(other.id, row.id);
+    used.add(row.id).add(other.id);
   }
   const name = words(ownName);
   return imported.flatMap((row): TransferSuggestion[] => {
