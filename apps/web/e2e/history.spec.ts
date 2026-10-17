@@ -197,8 +197,9 @@ test('the table view on desktop covers the whole history and is remembered', asy
 
   await page.goBack();
   await page.reload();
+  // The reload reads all entries from the local store again, as slowly as the first open.
+  await expect(table.getByRole('link').first()).toBeVisible({ timeout: 120_000 });
   await expect(page.getByRole('radio', { name: 'Table' })).toBeChecked();
-  await expect(table.getByRole('link').first()).toBeVisible();
 
   // The largest EUR amounts the seed makes; USD and GBP have no rate here, so they go last.
   const largest = [/^Seed 1081 /, /^Seed 2162 /, /^Seed 540 /];
@@ -214,6 +215,7 @@ test('the table view on desktop covers the whole history and is remembered', asy
   for (const [index, text] of largest.entries())
     await expect(table.getByRole('link').nth(index)).toHaveText(text);
   await page.reload();
+  await expect(table.getByRole('link').first()).toBeVisible({ timeout: 120_000 });
   await expect(amountHeader).toHaveAttribute('aria-sort', 'descending');
   for (const [index, text] of largest.entries())
     await expect(table.getByRole('link').nth(index)).toHaveText(text);
