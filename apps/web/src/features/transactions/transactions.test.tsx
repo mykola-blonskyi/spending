@@ -92,6 +92,46 @@ describe.each(Object.entries(TRANSACTION_SCREENS))('the %s entry screen', (_, { 
     expect(screen.getByLabelText('Amount')).toHaveFocus();
   });
 
+  it('locks the currency to the picked account and frees it without one (BR-39)', async () => {
+    open(
+      { ...ledger, accounts: new Map([['acc-card', account({ currency: 'USD' })]]) },
+      '/transactions/new',
+    );
+    const select = screen.queryByRole('combobox', { name: 'Account' });
+    const choose = async (name: string) => {
+      if (select) {
+        await userEvent.click(select);
+        await userEvent.click(
+          within(await screen.findByRole('listbox')).getByRole('option', { name }),
+        );
+      } else {
+        // The journal picks its account from chips; picking the chosen one again clears it.
+        if (!screen.queryByRole('radiogroup', { name: 'Account' })) {
+          await userEvent.click(screen.getByRole('button', { name: /^(No account|Card)$/ }));
+        }
+        await userEvent.click(
+          within(screen.getByRole('radiogroup', { name: 'Account' })).getByRole('radio', {
+            name: 'Card · USD',
+          }),
+        );
+      }
+    };
+    const currency = () =>
+      screen.queryByRole('combobox', { name: 'Currency', hidden: true }) ??
+      within(screen.getByRole('radiogroup', { name: 'Currency' })).getByRole('radio', {
+        name: 'USD',
+      });
+
+    await choose('Card');
+    expect(currency()).toBeDisabled();
+    expect(currency()).toHaveTextContent('USD');
+    expect(screen.getByText('Account currency')).toBeInTheDocument();
+
+    await choose('No account');
+    expect(currency()).toBeEnabled();
+    expect(screen.queryByText('Account currency')).toBeNull();
+  });
+
   it('says why the server rejected a change', () => {
     const edited = applyLocalChange(
       ledger,

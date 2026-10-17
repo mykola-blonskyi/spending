@@ -201,7 +201,10 @@ export class RecurringService {
   private async checkTemplate(
     tx: Tx,
     actorId: string,
-    rule: Pick<Rule, 'workspaceId' | 'kind' | 'accountId' | 'categoryId' | 'createdBy'>,
+    rule: Pick<
+      Rule,
+      'workspaceId' | 'kind' | 'currency' | 'accountId' | 'categoryId' | 'createdBy'
+    >,
     current: Rule | null,
   ): Promise<void> {
     const references = await loadReferenceFacts(tx, [rule.accountId], [rule.categoryId]);

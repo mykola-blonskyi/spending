@@ -241,6 +241,7 @@ export const es = {
     amount: 'Importe',
     amountInvalid: 'Introduce un importe mayor que cero, por ejemplo 12.50.',
     currency: 'Moneda',
+    accountCurrency: 'Moneda de la cuenta',
     date: 'Fecha',
     account: 'Cuenta',
     noAccount: 'Sin cuenta',
@@ -698,6 +699,7 @@ export const es = {
       INVALID_DATE: 'No se pudo leer la fecha',
       INVALID_AMOUNT: 'No se pudo leer el importe, es cero o es demasiado grande',
       INVALID_CURRENCY: 'Código de moneda desconocido',
+      CURRENCY_MISMATCH: 'La moneda no coincide con la de la cuenta',
       DESCRIPTION_TOO_LONG: 'El concepto supera los 200 caracteres',
       EXTERNAL_ID_TOO_LONG: 'La referencia supera los 100 caracteres',
       DUPLICATE_IN_FILE_EXTERNAL_ID: 'La referencia ya aparece antes en este archivo',
@@ -763,7 +765,7 @@ export const es = {
       title: 'Totales',
       income: 'Ingresos',
       expense: 'Gastos',
-      balance: 'Saldo',
+      net: 'Neto del periodo',
       change: '{amount} frente al periodo anterior',
       comparedWith: 'Comparación: {period}',
     },
@@ -1020,6 +1022,8 @@ export const es = {
     INVALID_CATEGORY: 'Esta categoría está archivada o no encaja con este tipo. Elige otra.',
     INVALID_TRANSFER:
       'Este movimiento no puede ser un lado de esa transferencia. Vuelve a marcarlo.',
+    CURRENCY_MISMATCH:
+      'Un movimiento con cuenta debe estar en la moneda de esa cuenta. Cambia la cuenta o la moneda.',
     REVIEW_REQUIRED:
       'Este movimiento espera revisión en una importación y aún no se puede cambiar.',
     MUTATION_ID_REUSED: 'No hemos podido asociar este cambio a tu cuenta. Vuelve a hacerlo.',

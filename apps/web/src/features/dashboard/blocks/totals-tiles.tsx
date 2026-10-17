@@ -9,10 +9,10 @@ import { Section } from './section';
 const TOTALS = [
   { key: 'income', minor: 'incomeMinor' },
   { key: 'expense', minor: 'expenseMinor' },
-  { key: 'balance', minor: 'balanceMinor' },
+  { key: 'net', minor: 'balanceMinor' },
 ] as const;
 
-/** Income, expenses and balance in EUR, each with its change since the previous period. */
+/** Income, expenses and period net in EUR, each with its change since the previous period. */
 export function TotalsTiles({
   dashboard: { summary, period },
   className,
@@ -37,7 +37,7 @@ export function TotalsTiles({
               <MoneyText
                 amountMinor={summary.totals[minor]}
                 currency="EUR"
-                colored={key === 'balance'}
+                colored={key === 'net'}
               />
             </dd>
             {previous && (

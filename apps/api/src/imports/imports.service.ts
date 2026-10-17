@@ -330,6 +330,7 @@ export class ImportsService {
         .select({
           id: transactions.id,
           kind: transactions.kind,
+          currency: transactions.currency,
           accountId: transactions.accountId,
           description: transactions.description,
           categoryId: transactions.categoryId,
@@ -357,6 +358,7 @@ export class ImportsService {
         const error = referenceError({
           workspaceId: target,
           kind: row.kind,
+          currency: row.currency,
           accountId: null,
           categoryId: item.categoryId,
           current: { accountId: null, categoryId: row.categoryId },

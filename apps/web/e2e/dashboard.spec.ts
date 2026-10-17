@@ -75,8 +75,8 @@ test('seeded entries add up on the overview, compared with the month before', as
   await expect(tile('Income')).toContainText('+€3,000.00 vs previous period');
   await expect(tile('Expenses')).toContainText('€70.00');
   await expect(tile('Expenses')).toContainText('+€40.00 vs previous period');
-  await expect(tile('Balance')).toContainText('€2,930.00');
-  await expect(tile('Balance')).toContainText('+€2,960.00 vs previous period');
+  await expect(tile('Period net')).toContainText('€2,930.00');
+  await expect(tile('Period net')).toContainText('+€2,960.00 vs previous period');
 
   const groceriesRow = page
     .getByRole('region', { name: 'By category' })

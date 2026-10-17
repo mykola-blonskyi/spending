@@ -1374,7 +1374,7 @@ export interface components {
             rejected: {
                 line: number;
                 /** @enum {string} */
-                reason: "INVALID_DATE" | "INVALID_AMOUNT" | "INVALID_CURRENCY" | "DESCRIPTION_TOO_LONG" | "EXTERNAL_ID_TOO_LONG" | "DUPLICATE_IN_FILE_EXTERNAL_ID";
+                reason: "INVALID_DATE" | "INVALID_AMOUNT" | "INVALID_CURRENCY" | "CURRENCY_MISMATCH" | "DESCRIPTION_TOO_LONG" | "EXTERNAL_ID_TOO_LONG" | "DUPLICATE_IN_FILE_EXTERNAL_ID";
             }[];
         };
         BatchListDto_Output: {

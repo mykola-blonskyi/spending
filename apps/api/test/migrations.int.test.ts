@@ -4,7 +4,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { Client } from 'pg';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { runMigrations } from '../src/database/migrate';
-import { categories, workspaces } from '../src/database/schema';
+import { accounts, categories, transactions, workspaces } from '../src/database/schema';
 import { testDatabaseUrl } from './env';
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
 import {
@@ -99,5 +99,30 @@ describe('migrations', () => {
       systemKey: 'groceries',
     });
     await expect(replay(t, '0010_stored_names_nullable.sql')).rejects.toThrow(/share a system_key/);
+  });
+
+  it('0013 refuses an entry in a currency other than its account’s (BR-39)', async () => {
+    const { personal } = await workspacesOf(t, ann);
+    const [card] = await t.db
+      .insert(accounts)
+      .values({ workspaceId: personal, name: 'Card', kind: 'card', currency: 'USD' })
+      .returning();
+    const entry = {
+      workspaceId: personal,
+      kind: 'expense' as const,
+      amountMinor: 1250,
+      currency: 'EUR',
+      baseAmountMinor: 1250,
+      occurredOn: '2026-10-01',
+    };
+    await t.db.insert(transactions).values({ ...entry, id: crypto.randomUUID(), accountId: null });
+    await replay(t, '0013_entry_account_currency.sql');
+
+    await t.db
+      .insert(transactions)
+      .values({ ...entry, id: crypto.randomUUID(), accountId: card!.id });
+    await expect(replay(t, '0013_entry_account_currency.sql')).rejects.toMatchObject({
+      cause: { message: expect.stringMatching(/^1 live transactions or recurring rules differ/) },
+    });
   });
 });

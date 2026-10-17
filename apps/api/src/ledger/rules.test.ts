@@ -15,12 +15,13 @@ const input = {
 const referenceFacts = (overrides: Partial<ReferenceFacts>): ReferenceFacts => ({
   workspaceId: 'family',
   kind: 'expense',
+  currency: 'EUR',
   accountId: 'acc',
   categoryId: 'cat',
   current: null,
   isAuthor: true,
   authorPersonalWorkspaceId: 'personal',
-  account: { workspaceId: 'family', archived: false },
+  account: { workspaceId: 'family', archived: false, currency: 'EUR' },
   category: { workspaceId: 'family', kind: 'expense', archived: false },
   ...overrides,
 });
@@ -29,13 +30,15 @@ describe('referenceError', () => {
   it('accepts references of the workspace, or the creator’s own account (BR-3)', () => {
     expect(referenceError(referenceFacts({}))).toBeNull();
     expect(
-      referenceError(referenceFacts({ account: { workspaceId: 'personal', archived: false } })),
+      referenceError(
+        referenceFacts({ account: { workspaceId: 'personal', archived: false, currency: 'EUR' } }),
+      ),
     ).toBeNull();
     expect(referenceError(referenceFacts({ accountId: null, categoryId: null }))).toBeNull();
   });
 
   it('lets only the creator pick a personal account; others may keep it', () => {
-    const personal = { workspaceId: 'personal', archived: false };
+    const personal = { workspaceId: 'personal', archived: false, currency: 'EUR' };
     expect(referenceError(referenceFacts({ isAuthor: false, account: personal }))).toBe(
       'INVALID_ACCOUNT',
     );
@@ -49,7 +52,9 @@ describe('referenceError', () => {
       ),
     ).toBeNull();
     expect(
-      referenceError(referenceFacts({ account: { workspaceId: 'other', archived: false } })),
+      referenceError(
+        referenceFacts({ account: { workspaceId: 'other', archived: false, currency: 'EUR' } }),
+      ),
     ).toBe('INVALID_ACCOUNT');
     expect(referenceError(referenceFacts({ account: null }))).toBe('INVALID_ACCOUNT');
   });
@@ -66,7 +71,7 @@ describe('referenceError', () => {
 
   it('allows archived references only when already used', () => {
     const archived = {
-      account: { workspaceId: 'family', archived: true },
+      account: { workspaceId: 'family', archived: true, currency: 'EUR' },
       category: { workspaceId: 'family', kind: 'expense' as const, archived: true },
     };
     expect(referenceError(referenceFacts({ ...archived }))).toBe('INVALID_ACCOUNT');
@@ -78,6 +83,11 @@ describe('referenceError', () => {
         referenceFacts({ ...archived, current: { accountId: 'acc', categoryId: 'cat' } }),
       ),
     ).toBeNull();
+  });
+
+  it('refuses an entry in a currency other than its account’s (BR-39)', () => {
+    expect(referenceError(referenceFacts({ currency: 'USD' }))).toBe('CURRENCY_MISMATCH');
+    expect(referenceError(referenceFacts({ currency: 'USD', accountId: null }))).toBeNull();
   });
 });
 

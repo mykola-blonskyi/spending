@@ -385,6 +385,7 @@ export function CurrencySelect({
 }: { form: EntryForm } & FieldStyle) {
   const t = useTranslations('transactionForm');
   const id = useId();
+  const fromAccount = form.values.accountId !== null;
   return (
     <Field
       id={id}
@@ -393,13 +394,17 @@ export function CurrencySelect({
       labelClassName={labelClassName}
       icon={icon}
     >
-      {/* A transfer's currency is its from-account's. */}
+      {/* An entry with an account is in its currency (BR-39), a transfer in its from-account's. */}
       <Select
         value={form.values.currency}
-        disabled={form.values.kind === 'transfer'}
+        disabled={fromAccount || form.values.kind === 'transfer'}
         onValueChange={(value) => form.set('currency', value)}
       >
-        <SelectTrigger id={id} className={cn(selectTrigger, controlClassName)}>
+        <SelectTrigger
+          id={id}
+          aria-describedby={fromAccount ? `${id}-hint` : undefined}
+          className={cn(selectTrigger, controlClassName)}
+        >
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -410,6 +415,11 @@ export function CurrencySelect({
           ))}
         </SelectContent>
       </Select>
+      {fromAccount && (
+        <p id={`${id}-hint`} className="text-xs text-muted-foreground">
+          {t('accountCurrency')}
+        </p>
+      )}
     </Field>
   );
 }

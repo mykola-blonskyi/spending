@@ -112,7 +112,7 @@ test('the acceptance walk: from sign-in to sign-out across two people', async ({
     totals.locator('div').filter({ has: page.getByText(name, { exact: true }) });
   await expect(tile('Income')).toContainText('€1,500.00');
   await expect(tile('Expenses')).toContainText('€134.17');
-  await expect(tile('Balance')).toContainText('€1,365.83');
+  await expect(tile('Period net')).toContainText('€1,365.83');
   await page
     .getByRole('radiogroup', { name: 'Whose money' })
     .getByRole('radio', { name: 'Family' })

@@ -18,6 +18,7 @@ export const REJECT_REASONS = [
   'INVALID_DATE',
   'INVALID_AMOUNT',
   'INVALID_CURRENCY',
+  'CURRENCY_MISMATCH',
   'DESCRIPTION_TOO_LONG',
   'EXTERNAL_ID_TOO_LONG',
   'DUPLICATE_IN_FILE_EXTERNAL_ID',
@@ -66,6 +67,7 @@ function checkRow(input: ImportRowInput, accountCurrency: CurrencyCode): Checked
   if (!amountMinorSchema.safeParse(Math.abs(amount)).success) return { reason: 'INVALID_AMOUNT' };
   const currency = input.currency === undefined ? accountCurrency : parseCurrency(input.currency);
   if (!currency) return { reason: 'INVALID_CURRENCY' };
+  if (currency !== accountCurrency) return { reason: 'CURRENCY_MISMATCH' };
   const description = input.description.trim();
   if (description.length > DESCRIPTION_MAX) return { reason: 'DESCRIPTION_TOO_LONG' };
   const externalId = input.externalId?.trim() || null;

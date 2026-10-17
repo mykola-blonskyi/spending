@@ -92,6 +92,13 @@
       "when": 1792243469082,
       "tag": "0012_db_integrity",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792270331092,
+      "tag": "0013_entry_account_currency",
+      "breakpoints": true
     }
   ]
 }

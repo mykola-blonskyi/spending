@@ -61,7 +61,7 @@ test('a move between own accounts marked as a transfer leaves the overview total
   tile = await september(page);
   await expect(tile('Income')).toContainText('€2,000.00');
   await expect(tile('Expenses')).toContainText('€50.00');
-  await expect(tile('Balance')).toContainText('€1,950.00');
+  await expect(tile('Period net')).toContainText('€1,950.00');
 });
 
 test('a transfer is one history row, its side under an account filter, and deletes as a whole', async ({
@@ -180,7 +180,7 @@ test('a transfer recorded in the entry form is one history row and leaves the to
   const tile = await september(page);
   await expect(tile('Income')).toContainText('€2,000.00');
   await expect(tile('Expenses')).toContainText('€50.00');
-  await expect(tile('Balance')).toContainText('€1,950.00');
+  await expect(tile('Period net')).toContainText('€1,950.00');
 
   await expect
     .poll(async () =>

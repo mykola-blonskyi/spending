@@ -69,6 +69,7 @@ describe('isApiErrorCode', () => {
     expect(isApiErrorCode('NETWORK')).toBe(true);
     expect(isApiErrorCode('INVALID_CATEGORY')).toBe(true);
     expect(isApiErrorCode('INVALID_ACCOUNT')).toBe(true);
+    expect(isApiErrorCode('CURRENCY_MISMATCH')).toBe(true);
     expect(isApiErrorCode('nope')).toBe(false);
     expect(isApiErrorCode(5)).toBe(false);
   });

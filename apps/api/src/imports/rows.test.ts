@@ -14,7 +14,7 @@ const row = (extra: Partial<ImportRowInput> = {}): ImportRowInput => ({
 describe('validateRows', () => {
   it('takes the kind from the sign and defaults the currency to the account', () => {
     const { valid, rejected } = validateRows(
-      [row(), row({ line: 3, amountMinor: 250000, currency: 'USD', externalId: ' X1 ' })],
+      [row(), row({ line: 3, amountMinor: 250000, currency: 'EUR', externalId: ' X1 ' })],
       EUR,
     );
     expect(rejected).toEqual([]);
@@ -33,7 +33,7 @@ describe('validateRows', () => {
         occurredOn: '2026-10-01',
         kind: 'income',
         amountMinor: 250000,
-        currency: 'USD',
+        currency: 'EUR',
         description: 'MERCADONA',
         externalId: 'X1',
       },
@@ -50,6 +50,7 @@ describe('validateRows', () => {
     ['an amount above the BR-13 cap', { amountMinor: -(10 ** 12 + 1) }, 'INVALID_AMOUNT'],
     ['an unknown currency', { currency: 'ZZZ' }, 'INVALID_CURRENCY'],
     ['a lowercase currency', { currency: 'eur' }, 'INVALID_CURRENCY'],
+    ['a currency other than the account’s (BR-39)', { currency: 'USD' }, 'CURRENCY_MISMATCH'],
     ['a long description', { description: 'x'.repeat(201) }, 'DESCRIPTION_TOO_LONG'],
     ['a long provider id', { externalId: 'x'.repeat(101) }, 'EXTERNAL_ID_TOO_LONG'],
   ] as const)('rejects %s', (_name, extra, reason) => {

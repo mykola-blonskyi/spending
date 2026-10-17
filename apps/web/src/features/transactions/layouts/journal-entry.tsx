@@ -303,16 +303,25 @@ export function JournalEntry() {
                 onChange={form.setKind}
               />
             )}
-            {/* A transfer's currency is its from-account's. */}
+            {/* A transfer's currency is its from-account's; an entry's, its account's (BR-39). */}
             {values.kind !== 'transfer' && (
               <Pills
                 label={t('transactionForm.currency')}
                 value={values.currency}
-                items={form.currencies.map((currency) => ({ value: currency, label: currency }))}
+                items={form.currencies.map((currency) => ({
+                  value: currency,
+                  label: currency,
+                  disabled: values.accountId !== null,
+                }))}
                 onChange={(currency) => form.set('currency', currency)}
               />
             )}
           </div>
+          {values.kind !== 'transfer' && values.accountId !== null && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              {t('transactionForm.accountCurrency')}
+            </p>
+          )}
           {transferBlocked && (
             <p className="mt-2 text-xs text-muted-foreground">
               {t('transactionForm.transferNeedsAccounts')}
@@ -389,7 +398,11 @@ export function JournalEntry() {
                     value: account.id,
                     label: `${account.name} · ${account.currency}`,
                   }))}
-                  onPick={form.setAccount}
+                  onPick={(id) =>
+                    form.setAccount(
+                      id === values.accountId && values.kind !== 'transfer' ? null : id,
+                    )
+                  }
                 />
               )}
               {open === 'date' && <DateField form={form} />}
