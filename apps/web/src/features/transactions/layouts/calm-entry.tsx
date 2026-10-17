@@ -14,6 +14,7 @@ import {
   NoteField,
   SaveBar,
   ScopeChoice,
+  SyncFailure,
   TransferButton,
 } from '../blocks';
 import { type EntryForm, useEntryForm } from '../use-entry-form';
@@ -31,6 +32,7 @@ export function CalmEntryView({ form }: { form: EntryForm }) {
           noValidate
           className="flex flex-col gap-6"
         >
+          <SyncFailure sync={form.sync} />
           <ScopeChoice form={form} />
           <KindToggle
             form={form}

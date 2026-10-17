@@ -16,6 +16,7 @@ import {
   EntryStatus,
   NoteField,
   ReceivedInput,
+  SyncFailure,
   TransferButton,
 } from '../blocks';
 import type { FormKind } from '../form-model';
@@ -285,6 +286,7 @@ export function JournalEntryView({ form }: { form: EntryForm }) {
       <PageHeader title={t(`pages.${page}.title`)} />
       {form.status === 'ready' ? (
         <form onSubmit={(event) => void form.submit(event)} noValidate className="flex flex-col">
+          <SyncFailure sync={form.sync} className="mb-6" />
           <div className="flex flex-wrap gap-2">
             {form.scopeOffered && (
               <Pills

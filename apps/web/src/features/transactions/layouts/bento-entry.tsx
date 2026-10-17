@@ -17,6 +17,7 @@ import {
   KindToggle,
   NoteField,
   ScopeChoice,
+  SyncFailure,
   TransferButton,
 } from '../blocks';
 import { type EntryForm, useEntryForm } from '../use-entry-form';
@@ -46,6 +47,7 @@ export function BentoEntryView({ form }: { form: EntryForm }) {
           noValidate
           className="grid grid-cols-2 gap-3 lg:grid-cols-4"
         >
+          <SyncFailure sync={form.sync} className="col-span-2 lg:col-span-4" />
           <Tile className="relative col-span-2 lg:col-span-4">
             <span
               aria-hidden

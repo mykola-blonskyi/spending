@@ -28,7 +28,7 @@ import {
 } from './entry-fields';
 import { ConversionNote, EntryAmount } from './entry-amount';
 import { EntryStatus } from './history-status';
-import { SyncMarker } from './sync-marker';
+import { SyncFailure, SyncMarker } from './sync-marker';
 import { TransferButton } from './transfer-action';
 
 /** The category glyph in its color on a muted square (the split view's icon treatment). */
@@ -68,6 +68,7 @@ export function CompactEntryForm({ form, footer }: { form: EntryForm; footer?: R
       noValidate
       className="flex flex-col gap-5 text-sm"
     >
+      <SyncFailure sync={form.sync} />
       <div className="grid grid-cols-[1fr_7rem] items-end gap-4">
         <AmountInput
           form={form}

@@ -292,6 +292,7 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
     entryId,
     canDelete: mode === 'edit' && status === 'ready',
     remove: () => (entryId ? removeEntry(entryId) : Promise.resolve()),
+    sync: stored.entry?.sync ?? null,
     canDiscard: status === 'ready' && stored.entry?.sync.state === 'failed',
     discard: () => (entryId ? discardEntry(entryId) : Promise.resolve()),
   };
