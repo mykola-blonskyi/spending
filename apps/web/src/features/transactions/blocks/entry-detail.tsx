@@ -60,6 +60,25 @@ export function CategoryGlyph({
 const label = 'text-[13px] font-medium text-muted-foreground';
 const select = 'lg:h-9';
 
+/** Discard, transfer and delete for the entry being edited, each shown only when it applies. */
+export function EntryActions({ form, className }: { form: EntryForm; className?: string }) {
+  return (
+    <>
+      {form.canDiscard && (
+        <DiscardButton onConfirm={() => void form.discard()} className={className} />
+      )}
+      {form.canDelete && form.entryId && <TransferButton id={form.entryId} className={className} />}
+      {form.canDelete && (
+        <DeleteButton
+          transfer={form.isTransfer}
+          onConfirm={() => void form.remove()}
+          className={className}
+        />
+      )}
+    </>
+  );
+}
+
 /** Every entry field at desktop-form density; shared by the split entry and the detail pane. */
 export function CompactEntryForm({ form, footer }: { form: EntryForm; footer?: ReactNode }) {
   return (

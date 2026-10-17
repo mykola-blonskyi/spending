@@ -10,14 +10,12 @@ import { Button } from '@shared/ui/button';
 import {
   ConversionNote,
   DateField,
-  DeleteButton,
   DescriptionField,
-  DiscardButton,
+  EntryActions,
   EntryStatus,
   NoteField,
   ReceivedInput,
   SyncFailure,
-  TransferButton,
 } from '../blocks';
 import type { FormKind } from '../form-model';
 import { type EntryForm, useEntryForm } from '../use-entry-form';
@@ -255,7 +253,8 @@ function Sentence({
 }
 
 /** Journal entry: the form told as one sentence, each blank a chip that opens its options below. */
-export function JournalEntryView({ form }: { form: EntryForm }) {
+export function JournalEntry() {
+  const form = useEntryForm();
   const t = useTranslations();
   const base = useId();
   const [open, setOpen] = useState<Panel | null>('category');
@@ -407,19 +406,7 @@ export function JournalEntryView({ form }: { form: EntryForm }) {
             >
               {t('transactionForm.save')}
             </Button>
-            {form.canDiscard && (
-              <DiscardButton onConfirm={() => void form.discard()} className="h-12 rounded-full" />
-            )}
-            {form.canDelete && form.entryId && (
-              <TransferButton id={form.entryId} className="h-12 rounded-full" />
-            )}
-            {form.canDelete && (
-              <DeleteButton
-                transfer={form.isTransfer}
-                onConfirm={() => void form.remove()}
-                className="h-12 rounded-full"
-              />
-            )}
+            <EntryActions form={form} className="h-12 rounded-full" />
             <p className="text-center text-xs text-muted-foreground sm:text-left">
               {t('transactionForm.saveHint')}
             </p>
@@ -430,8 +417,4 @@ export function JournalEntryView({ form }: { form: EntryForm }) {
       )}
     </div>
   );
-}
-
-export function JournalEntry() {
-  return <JournalEntryView form={useEntryForm()} />;
 }

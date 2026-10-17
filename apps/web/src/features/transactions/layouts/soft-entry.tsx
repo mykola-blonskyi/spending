@@ -7,18 +7,16 @@ import {
   CategoryPicker,
   CurrencySelect,
   DateField,
-  DeleteButton,
   DescriptionField,
-  DiscardButton,
+  EntryActions,
   EntryStatus,
   KindToggle,
   NoteField,
   SaveBar,
   ScopeChoice,
   SyncFailure,
-  TransferButton,
 } from '../blocks';
-import { type EntryForm, useEntryForm } from '../use-entry-form';
+import { useEntryForm } from '../use-entry-form';
 
 const card = 'shadow-[0_1px_2px_color-mix(in_oklch,var(--foreground)_4%,transparent)]';
 const label = 'text-[13px] text-muted-foreground';
@@ -26,7 +24,8 @@ const field =
   'h-14 rounded-2xl border-transparent bg-card pl-12 text-[15px] font-medium shadow-none md:text-[15px] dark:bg-card';
 
 /** Soft entry: pill kind tabs, a big amount card, pill category chips, two icon fields. */
-export function SoftEntryView({ form }: { form: EntryForm }) {
+export function SoftEntry() {
+  const form = useEntryForm();
   const t = useTranslations('pages');
   const page = form.mode === 'edit' ? 'editTransaction' : 'addTransaction';
   return (
@@ -113,19 +112,7 @@ export function SoftEntryView({ form }: { form: EntryForm }) {
           />
 
           <SaveBar form={form} buttonClassName="h-14 rounded-full text-[17px] font-semibold">
-            {form.canDiscard && (
-              <DiscardButton onConfirm={() => void form.discard()} className="h-12 rounded-full" />
-            )}
-            {form.canDelete && form.entryId && (
-              <TransferButton id={form.entryId} className="h-12 rounded-full" />
-            )}
-            {form.canDelete && (
-              <DeleteButton
-                transfer={form.isTransfer}
-                onConfirm={() => void form.remove()}
-                className="h-12 rounded-full"
-              />
-            )}
+            <EntryActions form={form} className="h-12 rounded-full" />
           </SaveBar>
         </form>
       ) : (
@@ -133,8 +120,4 @@ export function SoftEntryView({ form }: { form: EntryForm }) {
       )}
     </div>
   );
-}
-
-export function SoftEntry() {
-  return <SoftEntryView form={useEntryForm()} />;
 }

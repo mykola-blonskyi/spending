@@ -9,23 +9,22 @@ import {
   CategoryPicker,
   CurrencySelect,
   DateField,
-  DeleteButton,
   DescriptionField,
-  DiscardButton,
+  EntryActions,
   EntryStatus,
   KindToggle,
   NoteField,
   SaveBar,
   ScopeChoice,
   SyncFailure,
-  TransferButton,
 } from '../blocks';
-import { type EntryForm, useEntryForm } from '../use-entry-form';
+import { useEntryForm } from '../use-entry-form';
 
 const field = 'h-14 rounded-2xl border-input/50 bg-card shadow-none dark:bg-card';
 
 /** Playful entry: sticker kind buttons, a huge amount, a sticker category grid. */
-export function PlayfulEntryView({ form }: { form: EntryForm }) {
+export function PlayfulEntry() {
+  const form = useEntryForm();
   const t = useTranslations('pages');
   const page = form.mode === 'edit' ? 'editTransaction' : 'addTransaction';
   return (
@@ -117,19 +116,7 @@ export function PlayfulEntryView({ form }: { form: EntryForm }) {
           />
 
           <SaveBar form={form} buttonClassName="h-14 rounded-2xl text-base font-bold">
-            {form.canDiscard && (
-              <DiscardButton onConfirm={() => void form.discard()} className="h-12 rounded-2xl" />
-            )}
-            {form.canDelete && form.entryId && (
-              <TransferButton id={form.entryId} className="h-12 rounded-2xl" />
-            )}
-            {form.canDelete && (
-              <DeleteButton
-                transfer={form.isTransfer}
-                onConfirm={() => void form.remove()}
-                className="h-12 rounded-2xl"
-              />
-            )}
+            <EntryActions form={form} className="h-12 rounded-2xl" />
           </SaveBar>
         </form>
       ) : (
@@ -137,8 +124,4 @@ export function PlayfulEntryView({ form }: { form: EntryForm }) {
       )}
     </div>
   );
-}
-
-export function PlayfulEntry() {
-  return <PlayfulEntryView form={useEntryForm()} />;
 }
