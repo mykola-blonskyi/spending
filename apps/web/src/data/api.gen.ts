@@ -302,7 +302,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["LedgerController_deleteAccount"];
         options?: never;
         head?: never;
         patch: operations["LedgerController_updateAccount"];
@@ -2171,6 +2171,25 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AccountDto_Output"];
                 };
+            };
+        };
+    };
+    LedgerController_deleteAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

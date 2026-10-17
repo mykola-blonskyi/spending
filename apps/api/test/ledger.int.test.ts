@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { addDays } from '../src/common/dates';
-import { fxRates, transactions } from '../src/database/schema';
+import { fxRates, importBatches, recurringRules, transactions } from '../src/database/schema';
 import { FX_RATE_SOURCE, type FxRateSource } from '../src/ledger/fx/fx-source';
 import { FxService } from '../src/ledger/fx/fx.service';
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
@@ -230,6 +230,152 @@ describe('ledger', () => {
           })
         ).status,
       ).toBe(400);
+    });
+
+    it('deletes an unused account, also an archived one, on every device (BR-41)', async () => {
+      const create = async (name: string) =>
+        (
+          await json<{ id: string }>(
+            await as(t, ann, '/v1/accounts', {
+              method: 'POST',
+              body: { workspaceId: family, name, kind: 'cash', currency: 'EUR' },
+            }),
+            201,
+          )
+        ).id;
+      const [wallet, jar] = [await create('Wallet'), await create('Jar')];
+      const pull = async (cursor: number) =>
+        json<{ accounts: { id: string }[]; transactions: { id: string }[]; cursor: number }>(
+          await as(t, bob, `/v1/sync/pull?cursor=${cursor}`),
+          200,
+        );
+      const before = await pull(0);
+      expect(before.accounts.map((a) => a.id)).toEqual(expect.arrayContaining([wallet, jar]));
+
+      expect((await as(t, bob, `/v1/accounts/${wallet}`, { method: 'DELETE' })).status).toBe(204);
+      await as(t, ann, `/v1/accounts/${jar}`, { method: 'PATCH', body: { archived: true } });
+      expect((await as(t, ann, `/v1/accounts/${jar}`, { method: 'DELETE' })).status).toBe(204);
+
+      const after = await pull(before.cursor);
+      expect(after.transactions).toEqual([
+        {
+          id: wallet,
+          workspaceId: family,
+          deletedAt: expect.any(String),
+          revision: expect.any(Number),
+        },
+        {
+          id: jar,
+          workspaceId: family,
+          deletedAt: expect.any(String),
+          revision: expect.any(Number),
+        },
+      ]);
+      expect(after.accounts).toEqual([]);
+      const { accounts } = await json<{ accounts: { id: string }[] }>(
+        await as(t, bob, '/v1/accounts'),
+        200,
+      );
+      expect(accounts.map((a) => a.id).filter((id) => id === wallet || id === jar)).toEqual([]);
+      expect((await as(t, ann, `/v1/accounts/${wallet}`, { method: 'DELETE' })).status).toBe(404);
+
+      const { id: annCash } = await json<{ id: string }>(
+        await as(t, ann, '/v1/accounts', {
+          method: 'POST',
+          body: { workspaceId: annPersonal, name: 'Cash', kind: 'cash', currency: 'EUR' },
+        }),
+        201,
+      );
+      expect((await as(t, bob, `/v1/accounts/${annCash}`, { method: 'DELETE' })).status).toBe(404);
+    });
+
+    it('refuses to delete an account with live entries or recurring rules (BR-41)', async () => {
+      const create = async (name: string) =>
+        (
+          await json<{ id: string }>(
+            await as(t, ann, '/v1/accounts', {
+              method: 'POST',
+              body: { workspaceId: annPersonal, name, kind: 'bank', currency: 'EUR' },
+            }),
+            201,
+          )
+        ).id;
+      const remove = (id: string) => as(t, ann, `/v1/accounts/${id}`, { method: 'DELETE' });
+      const refused = async (id: string, entries: number, rules: number) => {
+        const body = await json<{ error: { code: string; details: unknown } }>(
+          await remove(id),
+          409,
+        );
+        expect(body.error).toMatchObject({
+          code: 'ACCOUNT_IN_USE',
+          details: [
+            { path: 'entries', issue: String(entries) },
+            { path: 'recurringRules', issue: String(rules) },
+          ],
+        });
+      };
+
+      const live = await create('Live');
+      await push(ann, { accountId: live }, { accountId: live });
+      await refused(live, 2, 0);
+
+      const review = await create('Review');
+      const [pending] = await push(ann, { accountId: review });
+      await t.db
+        .update(transactions)
+        .set({ reviewStatus: 'pending_review' })
+        .where(eq(transactions.id, pending!.id));
+      await refused(review, 1, 0);
+
+      const ruled = await create('Ruled');
+      await t.db.insert(recurringRules).values({
+        workspaceId: annPersonal,
+        createdBy: ann.userId,
+        kind: 'expense',
+        amountMinor: 500,
+        currency: 'EUR',
+        accountId: ruled,
+        frequency: 'monthly',
+        startsOn: '2030-01-01',
+        timezone: 'Europe/Madrid',
+      });
+      await refused(ruled, 0, 1);
+
+      const history = await create('History');
+      const [gone] = await push(ann, { accountId: history });
+      await as(t, ann, '/v1/sync/push', {
+        method: 'POST',
+        body: {
+          mutations: [
+            {
+              mutationId: crypto.randomUUID(),
+              type: 'transaction.delete',
+              transactionId: gone!.id,
+              baseVersion: gone!.version,
+            },
+          ],
+        },
+      });
+      const [batch] = await t.db
+        .insert(importBatches)
+        .values({
+          workspaceId: annPersonal,
+          userId: ann.userId,
+          accountId: history,
+          fileName: 'statement.csv',
+          mapping: {},
+          rowCount: 1,
+          importedCount: 1,
+          duplicateCount: 0,
+          rejectedCount: 0,
+          rejected: [],
+        })
+        .returning({ id: importBatches.id });
+      expect((await remove(history)).status).toBe(204);
+      const [entry] = await t.db.select().from(transactions).where(eq(transactions.id, gone!.id));
+      expect(entry).toMatchObject({ accountId: null, deletedAt: expect.any(Date) });
+      const [kept] = await t.db.select().from(importBatches).where(eq(importBatches.id, batch!.id));
+      expect(kept!.accountId).toBeNull();
     });
 
     it('does not write a PATCH that changes nothing', async () => {

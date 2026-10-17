@@ -480,7 +480,7 @@ export const syncEpoch = pgTable(
  * once, at the move's revision; later edits of the row elsewhere never touch it (BR-2). The row
  * lives on in another workspace, so `transaction_id` has no foreign key. `revision` comes from
  * the `sync_tombstone_stamp` trigger (migration 0004), under the ledger lock like every
- * synced table.
+ * synced table. A deleted account leaves one too, with its id as `transaction_id` (BR-41).
  */
 export const syncTombstones = pgTable(
   'sync_tombstones',

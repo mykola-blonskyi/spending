@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Inject,
   Param,
   ParseUUIDPipe,
@@ -9,7 +11,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiBody, ApiNoContentResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { createZodDto, ZodResponse } from 'nestjs-zod';
 import { z } from 'zod';
 import { type Actor, CurrentActor } from '../common/actor';
@@ -64,6 +66,14 @@ export class LedgerController {
     @Body() body: UpdateAccountDto,
   ) {
     return this.ledger.updateAccount(actor.userId, id, body);
+  }
+
+  @Delete('accounts/:id')
+  @HttpCode(204)
+  @ApiNoContentResponse()
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  deleteAccount(@CurrentActor() actor: Actor, @Param('id', ParseUUIDPipe) id: string) {
+    return this.ledger.deleteAccount(actor.userId, id);
   }
 
   @Get('categories')

@@ -615,6 +615,28 @@
         "tags": [
           "Ledger"
         ]
+      },
+      "delete": {
+        "operationId": "LedgerController_deleteAccount",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Ledger"
+        ]
       }
     },
     "/api/v1/categories": {
