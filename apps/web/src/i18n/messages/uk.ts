@@ -776,6 +776,7 @@ export const uk = {
       spent: 'Витрачено {amount}',
       received: 'Отримано {amount}',
     },
+    emptyPeriod: { title: 'За {period} нічого не записано.', add: 'Додати', import: 'Імпортувати' },
     offlineTitle: 'Для огляду потрібне зʼєднання',
     offlineDescription: 'Підсумки й графіки надходять із сервера. Підключіться, щоб їх побачити.',
   },

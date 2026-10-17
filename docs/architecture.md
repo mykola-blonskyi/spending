@@ -97,7 +97,9 @@ each category with its previous-period amount; `useDashboard` owns the period an
 `/analytics/summary` and `/budgets` (budgets of the chosen month, otherwise this month), refetching
 both after the first completed sync and each one that moved the cursor (`useRefreshOnSync`). `blocks/` are self-titled sections (totals, trend,
 categories, budgets via `BudgetProgress`, unconverted amounts); `layouts/<layout>-dashboard.tsx`
-only arrange them, under the same ESLint rule, and hybrid uses the bento one. Charts are plain SVG
+only arrange them, under the same ESLint rule, and hybrid uses the bento one. A period with no
+income, no expenses and nothing unconverted gets one line under the controls ("Nothing recorded
+in October 2026.") with Add and Import links (`DashboardStatus`); the tiles stay. Charts are plain SVG
 in theme tokens; the trend has a table under "Show as a table" and category bars carry their
 figures as text.
 

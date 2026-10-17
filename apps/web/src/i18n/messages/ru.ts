@@ -780,6 +780,11 @@ export const ru = {
       spent: 'Потрачено {amount}',
       received: 'Получено {amount}',
     },
+    emptyPeriod: {
+      title: 'За {period} ничего не записано.',
+      add: 'Добавить',
+      import: 'Импортировать',
+    },
     offlineTitle: 'Для обзора нужно подключение',
     offlineDescription: 'Итоги и графики приходят с сервера. Подключитесь, чтобы их увидеть.',
   },

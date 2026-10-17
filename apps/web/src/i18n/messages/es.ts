@@ -774,6 +774,11 @@ export const es = {
       spent: 'Gastado {amount}',
       received: 'Recibido {amount}',
     },
+    emptyPeriod: {
+      title: 'No hay nada registrado en {period}.',
+      add: 'Añadir',
+      import: 'Importar',
+    },
     offlineTitle: 'El resumen necesita conexión',
     offlineDescription: 'Los totales y gráficos vienen del servidor. Conéctate para verlos.',
   },
