@@ -1,12 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import {
-  categoryRules,
-  fxRates,
-  importBatches,
-  importHints,
-  transactions,
-} from '../src/database/schema';
+import { categoryRules, fxRates, importBatches, transactions } from '../src/database/schema';
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
 import {
   as,
@@ -33,7 +27,7 @@ type Row = {
 };
 type ImportResult = {
   batch: { id: string; importedCount: number; duplicateCount: number; rejectedCount: number };
-  imported: { count: number; transactionIds: string[] };
+  imported: { count: number; transactionIds: string[]; bankCategories: Record<string, string> };
   duplicates: number;
   rejected: { line: number; reason: string }[];
 };
@@ -111,6 +105,8 @@ describe('imports', () => {
     );
     return results[0]!;
   }
+  const learn = (s: Session, items: unknown[]) =>
+    as(t, s, '/v1/imports/learn', { method: 'POST', body: { items } });
   const remove = (s: Session, view: View) =>
     push(s, { type: 'transaction.delete', transactionId: view.id, baseVersion: view.version });
   const edit = (s: Session, view: View, fields: Record<string, unknown>) =>
@@ -387,30 +383,45 @@ describe('imports', () => {
       expect(rows.get('Silpo')!.categoryId).toBe(ids.get('groceries'));
       expect(rows.get('Nothing')!.categoryId).toBeNull();
       expect(rows.get('Silpo')).not.toHaveProperty('mcc');
+      expect(await t.db.select().from(categoryRules)).toEqual([]);
       for (const bad of [{ mcc: '541' }, { mcc: 'abcd' }, { bankCategory: 'x'.repeat(101) }]) {
         expect((await post(ann, [row(2, bad)])).status).toBe(400);
       }
     });
 
-    it('learns a correction on the bank category and applies it to other merchants', async () => {
+    it('learns the bank category only while the import is open, never from history', async () => {
       const ids = await categoryIds(ann, annPersonal);
       const bankCategory = 'Комуналка та Інтернет';
-      await importRows(ann, [row(2, { description: 'Provider One', bankCategory })]);
+      const result = await importRows(ann, [row(2, { description: 'Provider One', bankCategory })]);
+      const id = result.imported.transactionIds[0]!;
+      expect(result.imported.bankCategories).toEqual({ [id]: bankCategory });
       const imported = (await history(ann))[0]!;
       expect(imported.categoryId).toBe(ids.get('utilities'));
       expect((await edit(ann, imported, { categoryId: ids.get('housing') })).status).toBe(
         'applied',
       );
-      expect((await t.db.select().from(categoryRules)).map((r) => r.merchantKey).sort()).toEqual([
-        'bank:комуналка та інтернет',
-        'provider one',
-      ]);
+      const keys = async () =>
+        (await t.db.select().from(categoryRules)).map((r) => r.merchantKey).sort();
+      expect(await keys()).toEqual(['provider one']);
 
+      const item = { transactionId: id, categoryId: ids.get('housing'), bankCategory };
+      expect((await learn(ann, [item])).status).toBe(204);
+      expect(await keys()).toEqual(['bank:комуналка та інтернет', 'provider one']);
       await importRows(ann, [
         row(2, { description: 'Other Provider', bankCategory, occurredOn: '2026-10-05' }),
       ]);
       expect((await byDescription(ann)).get('Other Provider')!.categoryId).toBe(ids.get('housing'));
-      expect(await t.db.select().from(importHints)).toHaveLength(2);
+    });
+
+    it('learns from the import screen only for own imported rows and matching categories', async () => {
+      const ids = await categoryIds(ann, annPersonal);
+      const { imported } = await importRows(ann, [row(2, { bankCategory: 'Кафе' })]);
+      const transactionId = imported.transactionIds[0]!;
+      const item = { transactionId, categoryId: ids.get('dining'), bankCategory: 'Кафе' };
+      expect((await learn(ann, [{ ...item, bankCategory: 'x'.repeat(101) }])).status).toBe(400);
+      expect((await learn(ann, [{ ...item, categoryId: ids.get('salary') }])).status).toBe(422);
+      expect((await learn(bob, [item])).status).toBe(404);
+      expect(await t.db.select().from(categoryRules)).toEqual([]);
     });
 
     it('does not learn from manual rows or unchanged categories', async () => {
@@ -592,6 +603,7 @@ describe('imports', () => {
           transactionId: imported.transactionIds[0]!,
           scope: 'personal',
           categoryId: ids.get('entertainment'),
+          bankCategory: 'Кафе',
         },
       ]);
       expect((await t.db.select().from(categoryRules)).map((r) => r.merchantKey)).toContain(

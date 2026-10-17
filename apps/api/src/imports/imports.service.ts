@@ -4,19 +4,20 @@ import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { ApiError } from '../common/errors';
 import { type CurrencyCode } from '../common/money';
 import { DB, type Db, ledgerTransaction, type Tx } from '../database/database.module';
-import { accounts, categories, importBatches, importHints, transactions } from '../database/schema';
+import { accounts, categories, importBatches, transactions } from '../database/schema';
 import { convert, type RateQuote } from '../ledger/fx/conversion';
 import { FxService } from '../ledger/fx/fx.service';
 import { LedgerService, selectViewRows } from '../ledger/ledger.service';
 import { toLedgerRow, type TransactionView } from '../ledger/views';
 import { AccessPolicy } from '../workspaces/access-policy';
-import { categorize, foldBankCategory } from './categorize';
-import { learnCategoryRules, loadBankCategories, loadCatalog } from './category-rules';
+import { categorize } from './categorize';
+import { learnCategoryRules, loadCatalog } from './category-rules';
 import { importHashes } from './dedupe';
 import { validateRows } from './rows';
 import {
   batchColumns,
   type ConfirmItem,
+  type LearnItem,
   type ImportBatchView,
   type ImportBody,
   type importResultSchema,
@@ -74,8 +75,7 @@ export class ImportsService {
       const bankCategories = new Map<string, string>();
       for (const [index, row] of valid.entries()) {
         const id = crypto.randomUUID();
-        const bankCategory = foldBankCategory(row.bankCategory ?? '');
-        if (bankCategory) bankCategories.set(id, bankCategory);
+        if (row.bankCategory) bankCategories.set(id, row.bankCategory);
         values.push({
           id,
           workspaceId,
@@ -112,13 +112,6 @@ export class ImportsService {
           .returning({ id: transactions.id });
         transactionIds.push(...inserted.map((r) => r.id));
       }
-      const hints = transactionIds.flatMap((transactionId) => {
-        const bankCategory = bankCategories.get(transactionId);
-        return bankCategory ? [{ transactionId, bankCategory }] : [];
-      });
-      for (let i = 0; i < hints.length; i += INSERT_CHUNK) {
-        await tx.insert(importHints).values(hints.slice(i, i + INSERT_CHUNK));
-      }
       const duplicates = valid.length - transactionIds.length;
       const [stored] = await tx
         .update(importBatches)
@@ -127,7 +120,16 @@ export class ImportsService {
         .returning(batchColumns);
       return {
         batch: toBatchView(stored!),
-        imported: { count: transactionIds.length, transactionIds },
+        imported: {
+          count: transactionIds.length,
+          transactionIds,
+          bankCategories: Object.fromEntries(
+            transactionIds.flatMap((id) => {
+              const bankCategory = bankCategories.get(id);
+              return bankCategory ? [[id, bankCategory]] : [];
+            }),
+          ),
+        },
         duplicates,
         rejected,
       };
@@ -208,16 +210,10 @@ export class ImportsService {
           desc(transactions.id),
         );
       const visible = new Set([personalId, ...(family ? [family.workspaceId] : [])]);
-      const bankCategories = await loadBankCategories(
-        tx,
-        rows.map((row) => row.id),
-      );
       return rows.map((row) => ({
         transaction: toLedgerRow(row, visible) as TransactionView,
         familyCategoryId: familyCatalog
-          ? categorize(row.description, row.kind, familyCatalog, {
-              bankCategory: bankCategories.get(row.id),
-            })
+          ? categorize(row.description, row.kind, familyCatalog)
           : null,
       }));
     });
@@ -285,6 +281,7 @@ export class ImportsService {
           description: row.description,
           workspaceId: target,
           categoryId: item.categoryId,
+          bankCategory: item.bankCategory,
         };
       });
       const values = sql.join(
@@ -296,17 +293,67 @@ export class ImportsService {
         set workspace_id = v.workspace_id, category_id = v.category_id, review_status = 'confirmed'
         from (values ${values}) as v(id, workspace_id, category_id)
         where t.id = v.id`);
-      const bankCategories = await loadBankCategories(tx, ids);
       await learnCategoryRules(
         tx,
-        confirmed.flatMap(({ id, workspaceId, description, categoryId }) =>
-          categoryId
-            ? [{ workspaceId, description, categoryId, bankCategory: bankCategories.get(id) }]
-            : [],
+        confirmed.flatMap(({ categoryId, ...rule }) =>
+          categoryId ? [{ ...rule, categoryId }] : [],
         ),
       );
       const views = await this.ledger.ledgerRows(tx, actorId, ids);
       return ids.map((id) => views.get(id) as TransactionView);
+    });
+  }
+
+  /**
+   * BR-29. Categories chosen on the import summary, with the bank category only the browser
+   * still holds: each becomes a bank-category rule. The description rule comes with the sync push.
+   */
+  learn(actorId: string, items: readonly LearnItem[]): Promise<void> {
+    return this.db.transaction(async (tx) => {
+      const personalId = await this.policy.personalWorkspaceId(actorId, tx);
+      const rows = await tx
+        .select({ id: transactions.id, kind: transactions.kind })
+        .from(transactions)
+        .where(
+          and(
+            inArray(
+              transactions.id,
+              items.map((i) => i.transactionId),
+            ),
+            eq(transactions.workspaceId, personalId),
+            eq(transactions.createdBy, actorId),
+            eq(transactions.source, 'import'),
+            isNull(transactions.deletedAt),
+          ),
+        );
+      const found = await tx
+        .select({ id: categories.id, kind: categories.kind })
+        .from(categories)
+        .where(
+          and(
+            inArray(
+              categories.id,
+              items.map((i) => i.categoryId),
+            ),
+            eq(categories.workspaceId, personalId),
+            isNull(categories.archivedAt),
+          ),
+        );
+      const kindOf = new Map(rows.map((r) => [r.id, r.kind]));
+      const categoryKind = new Map(found.map((c) => [c.id, c.kind]));
+      for (const item of items) {
+        const kind = kindOf.get(item.transactionId);
+        if (!kind) throw new ApiError('NOT_FOUND');
+        if (categoryKind.get(item.categoryId) !== kind) throw new ApiError('INVALID_CATEGORY');
+      }
+      await learnCategoryRules(
+        tx,
+        items.map(({ categoryId, bankCategory }) => ({
+          workspaceId: personalId,
+          categoryId,
+          bankCategory,
+        })),
+      );
     });
   }
 

@@ -150,7 +150,7 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   mapping before anything is written. The server re-validates every row and reports rejected rows
   with a reason code. The optional hints `bankCategory` (at most 100 characters) and `mcc` (four
   digits) are checked on the whole request: a malformed hint is a 400, so the client sends only
-  well-formed ones.
+  well-formed ones. Neither hint is ever stored (BR-29).
 - **BR-27.** The dedupe key is the provider transaction ID when mapped. Otherwise it is
   SHA-256 of account, date, amount, currency, normalized description, and the ordinal of that
   identical tuple within the file. Re-importing the same statement adds nothing. Two identical
@@ -168,15 +168,17 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   built-in words for the bank category text; the built-in keyword rules on the description; else
   the category stays empty. Only categories of the row's kind qualify, and archived ones are
   skipped. Confirming or changing the category of an imported row (sync push or review
-  confirmation) updates the learned rules of the row's workspace: one for the merchant key and,
-  when the row came with a bank category, one for the bank category. The merchant key is the first
-  three words of the stored description, folded to lowercase without accents, with dates, card
-  masks, numbers and bank boilerplate ("compra", "tarjeta", "recibo") removed. The bank category
-  key is `bank:` plus all folded words of the bank category. The bank category (PrivatBank) and
-  the MCC (monobank) are hints: the MCC is never kept, and the folded bank category is kept per
-  imported transaction (`import_hints`, never shown or synced) only so that a later category
-  choice can teach the rule above. The MCC table covers groceries, dining, transport, utilities,
-  subscriptions, health, shopping, travel, entertainment and education.
+  confirmation) updates the learned rule of the row's workspace for the merchant key. The merchant
+  key is the first three words of the stored description, folded to lowercase without accents,
+  with dates, card masks, numbers and bank boilerplate ("compra", "tarjeta", "recibo") removed.
+  The bank category (PrivatBank) and the MCC (monobank) are hints and are never stored, on the
+  server or on the device. A bank-category rule (key `bank:` plus all folded words of the bank
+  category) is learned only during the import session: the browser keeps each imported row's bank
+  category in memory and sends it with a category chosen on the import summary or the review
+  confirmation. A later correction from history, or after a reload, learns only the merchant key.
+  The family suggestion on the review uses the description only. The MCC is never learned; its
+  fixed table covers groceries, dining, transport, utilities, subscriptions, health, shopping,
+  travel, entertainment and education.
 - **BR-30.** Undoing an import batch deletes (tombstones) its transactions that were not edited
   after import and clears their dedupe keys, so the same statement can be imported again. Edited
   ones are kept and reported. Deleting a single imported transaction keeps its key, so a

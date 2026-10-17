@@ -5,8 +5,10 @@ import { amountMinorSchema, calendarDateSchema, type EntryKind } from '../ledger
 export const IMPORT_ROWS_MAX = 5000;
 const DESCRIPTION_MAX = 200;
 const EXTERNAL_ID_MAX = 100;
-const BANK_CATEGORY_MAX = 100;
 export const MAPPING_MAX_BYTES = 4096;
+
+/** BR-29: the bank's own category text, sent by the browser and never stored. */
+export const bankCategorySchema = z.string().max(100);
 
 export const REJECT_REASONS = [
   'INVALID_DATE',
@@ -31,7 +33,7 @@ export const importRowSchema = z.strictObject({
   description: z.string(),
   externalId: z.string().optional(),
   // Category hints (BR-29): validated here, so a bad value fails the request, not one row.
-  bankCategory: z.string().max(BANK_CATEGORY_MAX).optional(),
+  bankCategory: bankCategorySchema.optional(),
   mcc: z
     .string()
     .regex(/^\d{4}$/)

@@ -24,7 +24,7 @@ import {
 } from '@shared/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@shared/ui/toggle-group';
 import { CategorySelect } from './category-select';
-import { useConfirmReview, useHasFamily, useReviewQueue } from './imports';
+import { bankCategoryOf, useConfirmReview, useHasFamily, useReviewQueue } from './imports';
 import { bulkCategoryChoice, type Choice, type Scope } from './review-choice';
 
 const SCOPES: readonly Scope[] = ['personal', 'family'];
@@ -125,7 +125,14 @@ export function ReviewPage() {
     });
   };
   const publish = () => {
-    const body = chosen.map((item) => ({ transactionId: item.transaction.id, ...choiceOf(item) }));
+    const body = chosen.map((item) => {
+      const bankCategory = bankCategoryOf(item.transaction.id);
+      return {
+        transactionId: item.transaction.id,
+        ...choiceOf(item),
+        ...(bankCategory && { bankCategory }),
+      };
+    });
     confirm.mutate(body, {
       onSuccess: (published) => {
         toast.success(t('imports.review.confirmed', { count: published.length }));

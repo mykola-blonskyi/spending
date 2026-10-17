@@ -399,6 +399,16 @@ test('the bank category suggests a default category', async ({ page, signInAs, d
     'Київводоканал',
     'Невідома крамниця',
   ]);
+
+  // A choice made on the summary teaches the bank category too; nothing keeps it after.
+  await categoryOf(page, 'Невідома крамниця').click();
+  await page.getByRole('option', { name: 'Shopping' }).click();
+  await expect
+    .poll(() => db.categoryRules(ann.email))
+    .toEqual([
+      { merchant_key: 'bank:різне', category: 'shopping' },
+      { merchant_key: 'невідома крамниця', category: 'shopping' },
+    ]);
 });
 
 test('a legacy .xls is refused, rows without an amount are skipped, a mapping is remembered', async ({

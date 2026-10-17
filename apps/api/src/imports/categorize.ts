@@ -207,7 +207,7 @@ export function merchantKey(description: string): string {
     .join(' ');
 }
 
-/** The bank category as stored and matched: folded words, '' when none. */
+/** The bank category as matched: folded words, '' when none. */
 export const foldBankCategory = (text: string) => words(text).join(' ');
 
 /** The learned-rule key of a folded bank category; the prefix keeps it apart from merchant keys. */

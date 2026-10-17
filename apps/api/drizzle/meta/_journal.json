@@ -78,13 +78,6 @@
       "when": 1792181128198,
       "tag": "0010_stored_names_nullable",
       "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1792194533309,
-      "tag": "0011_import_hints",
-      "breakpoints": true
     }
   ]
 }

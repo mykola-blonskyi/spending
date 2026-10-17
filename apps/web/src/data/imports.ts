@@ -12,6 +12,7 @@ export type RejectReason = ImportResult['rejected'][number]['reason'];
 export type UndoResult = Schemas['UndoResultDto_Output'];
 export type ReviewItem = Schemas['ReviewListDto_Output']['items'][number];
 export type ConfirmItem = Schemas['ConfirmDto']['items'][number];
+export type LearnItem = Schemas['LearnDto']['items'][number];
 
 export const importBatchesQuery = queryOptions({
   queryKey: ['imports'],
@@ -36,4 +37,8 @@ export async function undoImport(id: string): Promise<UndoResult> {
 export async function confirmReview(items: ConfirmItem[]) {
   return present((await api.POST('/api/v1/imports/review/confirm', { body: { items } })).data)
     .transactions;
+}
+
+export async function learnCategories(items: LearnItem[]): Promise<void> {
+  await api.POST('/api/v1/imports/learn', { body: { items } });
 }
