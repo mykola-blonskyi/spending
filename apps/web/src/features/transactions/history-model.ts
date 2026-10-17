@@ -97,6 +97,8 @@ export type EntryRow = Readonly<
     title: string;
     /** Category and account, without repeating a category the title already shows. */
     subtitle: string;
+    /** As entered; a whole transfer takes the first side's that has one. */
+    description: string;
     category: CategoryView | undefined;
     accountName: string | undefined;
     occurredOn: string;
@@ -133,6 +135,7 @@ export function toEntryRow(entry: TransactionEntry, context: RowContext): EntryR
     href: `/transactions/${entry.id}`,
     title,
     subtitle: [group === title ? undefined : group, accountName].filter(Boolean).join(' · '),
+    description: entry.description,
     category,
     accountName,
     occurredOn: entry.occurredOn,
@@ -159,10 +162,12 @@ function toTransferRow(sides: readonly TransactionEntry[], context: RowContext):
       ? ((side.accountId && context.accounts.get(side.accountId)?.name) ?? '—')
       : context.outside;
   const first = sides[0]!;
+  const description = out?.description || into?.description || '';
   return {
     ...toEntryRow(main, context),
     title: `${name(out)} → ${name(into)}`,
-    subtitle: [context.transfer, out?.description || into?.description].filter(Boolean).join(' · '),
+    subtitle: [context.transfer, description].filter(Boolean).join(' · '),
+    description,
     occurredOn: first.occurredOn,
     dateLabel: context.dayLabel(first.occurredOn),
     sync: sides.find((side) => side.sync.state !== 'synced')?.sync ?? main.sync,
@@ -303,6 +308,53 @@ export function groupByDay(
     start = end;
   }
   return items;
+}
+
+export const TABLE_COLUMNS = [
+  'date',
+  'description',
+  'category',
+  'account',
+  'amount',
+  'who',
+  'sync',
+] as const;
+
+export type TableColumn = (typeof TABLE_COLUMNS)[number];
+
+/** The history table's columns in order; "who" only for a family member. */
+export function tableColumns(family: boolean): TableColumn[] {
+  return TABLE_COLUMNS.filter((column) => family || column !== 'who');
+}
+
+/** A history table row: the entry row plus the text of its text columns. */
+export type TableRow = Readonly<{
+  row: EntryRow;
+  date: string;
+  description: string;
+  category: string;
+  account: string;
+}>;
+
+/** The history's rows without the day headers, in the same order (newest first). */
+export function toTableRows(
+  items: readonly HistoryItem[],
+  labels: Pick<RowContext, 'uncategorized' | 'transfer'>,
+): TableRow[] {
+  return items.flatMap((item) => {
+    if (item.type === 'day') return [];
+    const { row } = item;
+    return [
+      {
+        row,
+        date: row.dateLabel,
+        description: row.description,
+        category: row.transfer ? labels.transfer : (row.category?.name ?? labels.uncategorized),
+        // A whole transfer's title is its route, "Card → Savings".
+        account: (row.transfer?.view === 'whole' ? row.title : row.accountName) ?? '',
+      },
+    ];
+  });
 }
 
 /**

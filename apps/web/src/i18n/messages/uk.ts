@@ -334,6 +334,20 @@ export const uk = {
     convertedTo: 'Конвертовано в {amount} за курсом {rate} ({source}, {date})',
     originalAmount: 'Початкова сума',
     eurAmount: 'Сума в євро',
+    view: {
+      label: 'Вигляд',
+      rows: 'Рядки',
+      table: 'Таблиця',
+    },
+    columns: {
+      date: 'Дата',
+      description: 'Опис',
+      category: 'Категорія',
+      account: 'Рахунок',
+      amount: 'Сума',
+      who: 'Хто',
+      sync: 'Синхронізація',
+    },
     detail: {
       label: 'Вибрана операція',
       count:

@@ -337,6 +337,20 @@ export const ru = {
     convertedTo: 'Конвертировано в {amount} по курсу {rate} ({source}, {date})',
     originalAmount: 'Исходная сумма',
     eurAmount: 'Сумма в евро',
+    view: {
+      label: 'Вид',
+      rows: 'Строки',
+      table: 'Таблица',
+    },
+    columns: {
+      date: 'Дата',
+      description: 'Описание',
+      category: 'Категория',
+      account: 'Счёт',
+      amount: 'Сумма',
+      who: 'Кто',
+      sync: 'Синхронизация',
+    },
     detail: {
       label: 'Выбранная операция',
       count:

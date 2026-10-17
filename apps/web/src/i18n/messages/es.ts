@@ -336,6 +336,20 @@ export const es = {
     convertedTo: 'Convertido a {amount} al tipo {rate} ({source}, {date})',
     originalAmount: 'Importe original',
     eurAmount: 'Importe en euros',
+    view: {
+      label: 'Vista',
+      rows: 'Filas',
+      table: 'Tabla',
+    },
+    columns: {
+      date: 'Fecha',
+      description: 'Descripción',
+      category: 'Categoría',
+      account: 'Cuenta',
+      amount: 'Importe',
+      who: 'Quién',
+      sync: 'Sincronización',
+    },
     detail: {
       label: 'Movimiento seleccionado',
       count: '{count, plural, one {# movimiento} other {# movimientos}}',

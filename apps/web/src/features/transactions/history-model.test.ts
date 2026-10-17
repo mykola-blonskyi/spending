@@ -11,9 +11,11 @@ import {
   groupByDay,
   type RowContext,
   summarize,
+  tableColumns,
   toEntryRow,
   toHistoryRows,
   toQuery,
+  toTableRows,
   transferCandidates,
 } from './history-model';
 
@@ -278,6 +280,97 @@ describe('transfers (BR-37)', () => {
       other('linked', { transferId: 'tr-9' }),
     ]);
     expect(candidates.map((c) => c.id)).toEqual(['exact', 'close', 'far']);
+  });
+});
+
+describe('the history table', () => {
+  const labels = { uncategorized: 'Uncategorized', transfer: 'Transfer' };
+  const out = entry({
+    id: 'out',
+    accountId: card.id,
+    transferId: 'tr-1',
+    description: '',
+    occurredOn: '2026-10-15',
+  });
+  const into = entry({
+    id: 'in',
+    kind: 'income',
+    accountId: savings.id,
+    transferId: 'tr-1',
+    description: 'From card',
+    occurredOn: '2026-10-15',
+  });
+  const bread = entry({
+    id: 'bread',
+    description: 'Bread',
+    categoryId: groceries.id,
+    accountId: card.id,
+    occurredOn: '2026-10-14',
+  });
+  const bare = entry({ id: 'bare', description: '', occurredOn: '2026-10-13' });
+  const table = (combine: boolean) =>
+    toTableRows(
+      groupByDay(toHistoryRows([out, into, bread, bare], context, combine), context.dayLabel),
+      labels,
+    ).map(({ row, ...cells }) => ({ id: row.id, ...cells }));
+
+  it('shows "who" only to a family member', () => {
+    expect(tableColumns(false)).toEqual([
+      'date',
+      'description',
+      'category',
+      'account',
+      'amount',
+      'sync',
+    ]);
+    expect(tableColumns(true)).toEqual([
+      'date',
+      'description',
+      'category',
+      'account',
+      'amount',
+      'who',
+      'sync',
+    ]);
+  });
+
+  it('lists the rows newest first, without day headers, a transfer as one row', () => {
+    expect(table(true)).toEqual([
+      {
+        id: 'out',
+        date: 'day 2026-10-15',
+        description: 'From card',
+        category: 'Transfer',
+        account: 'Card → Savings',
+      },
+      {
+        id: 'bread',
+        date: 'day 2026-10-14',
+        description: 'Bread',
+        category: 'Groceries',
+        account: 'Card',
+      },
+      {
+        id: 'bare',
+        date: 'day 2026-10-13',
+        description: '',
+        category: 'Uncategorized',
+        account: '',
+      },
+    ]);
+  });
+
+  it("shows each side's own account with an account filter", () => {
+    expect(table(false).slice(0, 2)).toEqual([
+      { id: 'out', date: 'day 2026-10-15', description: '', category: 'Transfer', account: 'Card' },
+      {
+        id: 'in',
+        date: 'day 2026-10-15',
+        description: 'From card',
+        category: 'Transfer',
+        account: 'Savings',
+      },
+    ]);
   });
 });
 
