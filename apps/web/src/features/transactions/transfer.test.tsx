@@ -6,6 +6,7 @@ import { type LocalState, queueOrder } from '@data/sync/model';
 import { testSession } from '@data/testing';
 import { CalmEntry } from './layouts/calm-entry';
 import { CalmHistory } from './layouts/calm-history';
+import { TRANSACTION_SCREENS } from './layouts/screens';
 import { account, category, fakeLocalData, renderTransactionScreen } from './test-helpers';
 
 vi.mock('@features/auth', () => ({ useSession: () => testSession() }));
@@ -144,4 +145,24 @@ describe('the transfer action (BR-37)', () => {
     expect(screen.getAllByRole('link')).toHaveLength(2);
     expect(screen.getByText('Spent').nextSibling).toHaveTextContent('€2.50');
   });
+
+  it.each(Object.entries(TRANSACTION_SCREENS))(
+    'shows a transfer as one row in the %s layout',
+    (_, { history: History }) => {
+      renderTransactionScreen(<History />, {
+        data: fakeLocalData(
+          ledger(
+            { ...out, categoryId: null, transferId: 'tr-1' },
+            { ...into, transferId: 'tr-1', amountMinor: 29_900 },
+          ),
+        ).value,
+        path: '/transactions',
+        route: '/transactions',
+      });
+      const row = screen.getByRole('link', { name: /Card → Savings/ });
+      expect(row).toHaveTextContent('€300.00');
+      expect(row).toHaveTextContent('→ €299.00');
+      expect(screen.queryByRole('link', { name: /From card/ })).toBeNull();
+    },
+  );
 });
