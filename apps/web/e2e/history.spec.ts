@@ -72,8 +72,13 @@ test('a 5,000-entry history scrolls in its own box with a bounded DOM, on deskto
     await page.setViewportSize(viewport);
     await scrollTo(page, 0);
     expect(await items(page).count()).toBeLessThan(DOM_BUDGET);
-    const box = (await scroller(page).boundingBox())!;
-    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+    // The box re-measures on resize, a frame after the viewport changes.
+    await expect
+      .poll(async () => {
+        const box = (await scroller(page).boundingBox())!;
+        return box.y + box.height;
+      })
+      .toBeLessThanOrEqual(viewport.height);
 
     await scrollTo(page, 0.5);
     await expect.poll(() => scrollTop(page)).toBeGreaterThan(1000);
@@ -93,7 +98,11 @@ test('a 5,000-entry history scrolls in its own box with a bounded DOM, on deskto
 
     // A row focused below the box's bottom edge scrolls into view inside the box.
     await scrollTo(page, 0);
-    const below = rows(page).last();
+    await expect.poll(() => scrollTop(page)).toBe(0);
+    await expect(rows(page).first()).toBeInViewport();
+    // Pinned by its link: `.last()` would follow the virtualizer to whichever row it draws last.
+    const href = await rows(page).last().getAttribute('href');
+    const below = list(page).locator(`a[href="${href}"]`);
     await expect(below).not.toBeInViewport();
     await below.focus();
     await expect(below).toBeInViewport();
