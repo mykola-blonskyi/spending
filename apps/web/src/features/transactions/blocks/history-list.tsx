@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslations } from '@i18n/index';
-import { useIsDesktop } from '@shared/lib/media';
+import { useWidth } from '@shared/lib/media';
 import { cn } from '@shared/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '@shared/ui/toggle-group';
 import type { DayItem, EntryRow, HistoryItem, RowPosition } from '../history-model';
@@ -19,7 +19,12 @@ export type HistoryListProps = {
   renderDay: (day: DayItem) => ReactNode;
   renderEntry: (row: EntryRow, position: RowPosition, selected: boolean) => ReactNode;
   className?: string;
+  /** Whether the table fits, from a parent whose width does not follow the list's (master-detail). */
+  wide?: boolean;
 };
+
+/** Below this list width the table's columns cannot be read, so the rows stay. */
+export const TABLE_MIN_WIDTH = 600;
 
 const DEFAULT_ESTIMATE = { day: 40, entry: 64 };
 
@@ -82,19 +87,19 @@ function ViewSwitch({ view, className }: { view: HistoryView; className?: string
 }
 
 /**
- * History rows under day headers. On desktop a switch above swaps them for the flat history
- * table; the choice is kept on the device.
+ * History rows under day headers. When the list is wide enough for the table, a switch above
+ * swaps them for the flat history table; the choice is kept on the device.
  */
 export function HistoryList(props: HistoryListProps) {
-  const desktop = useIsDesktop();
+  const [measure, width] = useWidth<HTMLDivElement>();
   const view = useHistoryView();
-  if (!desktop) return <Rows {...props} />;
+  const wide = props.wide ?? width >= TABLE_MIN_WIDTH;
   const self = props.scroll === 'self';
   return (
-    <div className={cn(self && 'flex h-full flex-col')}>
-      <ViewSwitch view={view} className={self ? 'px-4 py-2' : 'pb-2'} />
+    <div ref={measure} className={cn(self && 'flex h-full flex-col')}>
+      {wide && <ViewSwitch view={view} className={self ? 'px-4 py-2' : 'pb-2'} />}
       <div className={cn(self && 'min-h-0 flex-1')}>
-        {view === 'table' ? (
+        {wide && view === 'table' ? (
           <HistoryTable key="table" {...props} />
         ) : (
           <Rows key="rows" {...props} />

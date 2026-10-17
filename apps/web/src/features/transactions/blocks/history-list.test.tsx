@@ -38,17 +38,8 @@ function history(count: number): HistoryItem[] {
   );
 }
 
-function setDesktop(matches: boolean) {
-  vi.stubGlobal('matchMedia', () => ({
-    matches,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-  }));
-}
-
 beforeEach(() => {
   localStorage.clear();
-  setDesktop(false);
   // jsdom lays nothing out; every element reports one row's height.
   vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(600);
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
@@ -91,7 +82,9 @@ describe('HistoryList', () => {
   it.each(['window', 'self'] as const)(
     'keeps the DOM bounded for 5,000 entries in the table (%s scroll)',
     (scroll) => {
-      setDesktop(true);
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+        DOMRect.fromRect({ width: 1200, height: ROW }),
+      );
       localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify({ view: 'table' }));
       renderTransactionScreen(
         <div style={{ height: 600 }}>

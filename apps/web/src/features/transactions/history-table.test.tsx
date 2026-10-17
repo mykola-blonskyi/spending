@@ -51,14 +51,18 @@ function setDesktop(matches: boolean) {
   }));
 }
 
+/** jsdom lays nothing out: every element reports this width and one row's height. */
+function setWidth(width: number) {
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+    DOMRect.fromRect({ width, height: 44 }),
+  );
+}
+
 beforeEach(() => {
   localStorage.clear();
   setDesktop(true);
-  // jsdom lays nothing out; give the virtualized lists a viewport so they render rows.
   vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(800);
-  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
-    DOMRect.fromRect({ width: 900, height: 44 }),
-  );
+  setWidth(1200);
 });
 afterEach(() => vi.restoreAllMocks());
 
@@ -76,16 +80,33 @@ describe.each(Object.entries(TRANSACTION_SCREENS))(
         route: '/transactions/:id?',
       });
 
-    it('offers the switch on desktop only', () => {
-      setDesktop(false);
-      const phone = open();
+    it('offers the switch only where the list is wide enough for the table', () => {
+      setWidth(500);
+      const narrow = open();
       expect(rowsChoice()).toBeNull();
-      phone.unmount();
-      setDesktop(true);
+      narrow.unmount();
+      setWidth(1200);
       open();
       expect(rowsChoice()).toBeChecked();
       expect(screen.getByRole('radio', { name: 'Table' })).not.toBeChecked();
       expect(screen.queryByRole('table')).toBeNull();
+    });
+
+    it('keeps the rows on a narrow list while the table stays the stored choice', () => {
+      localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify({ view: 'table' }));
+      setWidth(500);
+      open();
+      expect(screen.getByRole('list', { name: 'Transactions' })).toBeInTheDocument();
+      expect(screen.queryByRole('table')).toBeNull();
+      expect(JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY)!)).toEqual({ view: 'table' });
+    });
+
+    it('shows rows on a phone', () => {
+      setDesktop(false);
+      setWidth(375);
+      open();
+      expect(rowsChoice()).toBeNull();
+      expect(screen.getByRole('list', { name: 'Transactions' })).toBeInTheDocument();
     });
 
     it('shows the columns, a transfer as one row, and remembers the choice', async () => {

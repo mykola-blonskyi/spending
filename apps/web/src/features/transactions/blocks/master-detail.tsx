@@ -3,14 +3,17 @@ import type { ComponentProps, ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { useTranslations } from '@i18n/index';
 import { EmptyState } from '@shared/components';
-import { useIsDesktop } from '@shared/lib/media';
+import { useIsDesktop, useWidth } from '@shared/lib/media';
 import { cn } from '@shared/lib/utils';
 import { useHistoryView } from '../history-view';
 import type { History } from '../use-history';
 import { HISTORY_PATH } from '../use-entry-form';
 import { EntryDetail } from './entry-detail';
-import { HistoryList } from './history-list';
+import { HistoryList, TABLE_MIN_WIDTH } from './history-list';
 import { HistoryStatus } from './history-status';
+
+/** The entry pane's width beside the table. */
+const DETAIL_WIDTH = 400;
 
 type ListProps = ComponentProps<typeof HistoryList>;
 
@@ -48,6 +51,9 @@ export function MasterDetail({
   const t = useTranslations();
   const desktop = useIsDesktop();
   const view = useHistoryView();
+  // From the whole grid, not the list column: the column widens once the table shows.
+  const [measure, width] = useWidth<HTMLDivElement>();
+  const wide = desktop && width - DETAIL_WIDTH >= TABLE_MIN_WIDTH;
   const navigate = useNavigate();
   const { selectedId } = history;
 
@@ -67,6 +73,7 @@ export function MasterDetail({
             items={history.items}
             label={t('pages.transactions.title')}
             scroll={desktop ? scroll : 'window'}
+            wide={wide}
             estimate={estimate}
             selectedId={selectedId}
             renderDay={renderDay}
@@ -80,10 +87,13 @@ export function MasterDetail({
 
   return (
     <div
+      ref={measure}
       className={cn(
         'grid',
         // The table needs the width; the selected entry keeps a phone-sized pane beside it.
-        view === 'table' ? 'grid-cols-[minmax(0,1fr)_400px]' : 'grid-cols-[380px_minmax(0,1fr)]',
+        wide && view === 'table'
+          ? 'grid-cols-[minmax(0,1fr)_400px]'
+          : 'grid-cols-[380px_minmax(0,1fr)]',
         className,
       )}
     >

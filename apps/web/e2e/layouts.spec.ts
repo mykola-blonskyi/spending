@@ -159,3 +159,25 @@ test('split layout: the list stays mounted and bounded while the pane edits and 
   await expect(row(page, /Pane edited entry/)).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'No matching transactions' })).toBeVisible();
 });
+
+test('the table is offered only where the list is wide enough for it', async ({
+  page,
+  signInAs,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signInAs('ann');
+  await seedEntries(page, 5);
+  const table = page.getByRole('radio', { name: 'Table' });
+
+  await chooseLayout(page, 'split');
+  await page.goto('/transactions');
+  await table.click();
+  await expect(page.getByRole('table', { name: 'Transactions' })).toBeVisible();
+
+  // The card stack keeps a phone-wide column on desktop: rows, though the table is still chosen.
+  await chooseLayout(page, 'cards');
+  await page.goto('/transactions');
+  await expect(row(page, /Seed 1 /)).toBeVisible();
+  await expect(table).toHaveCount(0);
+  await expect(page.getByRole('table')).toHaveCount(0);
+});
