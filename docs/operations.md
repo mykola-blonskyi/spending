@@ -279,9 +279,13 @@ Not done yet, each worth adding later:
    variable `APP_URL=https://spending.blonskyi.dev`. Required reviewers are free on a public
    repository but optional; green CI on `main` is already the gate.
 
-9. Deploy once (next section) and sign in.
+9. **Notifications.** Coolify → Notifications: set up a channel (email, Telegram, Discord, ...)
+   and select Deployment Failure, Resource status changes, Restart limit reached and Server
+   unreachable. "Resource status changes" is how a failed backup reaches you.
 
-10. **Slow-query log.** The shared instance has `log_min_duration_statement = -1`, so a query
+10. Deploy once (next section) and sign in.
+
+11. **Slow-query log.** The shared instance has `log_min_duration_statement = -1`, so a query
     that turns slow as data grows (or a stalled sync) goes unnoticed. As the superuser, once:
 
     ```sql
@@ -456,7 +460,13 @@ origin's headers for this host only: Caching → Cache Rules → Create rule, Ho
 - Each dump is checked with `pg_restore --list` before it is kept; a daily dump must also list
   the `transactions` table data. A corrupt, empty or wrong-database dump is
   discarded and the run fails: `predeploy-backup` stops the deploy, and for the daily dump the
-  container turns unhealthy once the last good one is older than 26 hours. `DATABASE_URL` may
+  container turns unhealthy once the last good one is older than 26 hours.
+- A failed daily run (at 03:00 or at start) is logged, and an hour later the `backup` container
+  exits 1. `restart: unless-stopped` starts it again, which sends Coolify's "Resource restarted"
+  notification, and the start retries the dump (a `daily.failed` marker in the volume forces it).
+  While the failure lasts that is one alert and one retry per hour; the hour's wait also covers a
+  configuration error, so the container never restarts faster. A good run removes the marker and
+  the daily loop continues. `scripts/backup.test.sh` covers these paths. `DATABASE_URL` may
   carry `?sslmode=...` (passed as `PGSSLMODE`); any other query parameter is refused.
 - The volume is on the VPS disk only unless the optional off-host copy is configured. When
   `BACKUP_OFFSITE_REMOTE` is set on the Coolify resource, the `backup` container also copies each
@@ -539,7 +549,9 @@ restored database has been in use for a while.
 - Container logs and status: the Coolify resource page (`api` logs are JSON lines).
 - Health: `/api/health` (process up) and `/api/health/ready` (database reachable), also used by
   the container health checks and the Deploy workflow.
-- Backups: the `backup` container's health and log lines.
+- Backups: the `backup` container's health and log lines. Coolify does not notify on an
+  unhealthy container, so a failed daily run restarts the container instead (Backups and
+  restore), which it does notify on.
 - The web access log redacts invitation tokens, `returnTo` values and the OIDC callback query
   (`code`, `state`). The nginx error log does not: when the API is unreachable it names the
   request line, so a failed `/invite/<token>` or callback request shows its secrets there. Accepted
