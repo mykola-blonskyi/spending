@@ -277,6 +277,10 @@ export const uk = {
   },
   syncCenter: {
     conflictsTitle: 'Потребує перевірки',
+    failedTitle:
+      '{count, plural, one {# зміна не синхронізована} few {# зміни не синхронізовані} many {# змін не синхронізовано} other {# зміни не синхронізовано}}',
+    failedDescription:
+      'Сервер їх не прийняв. Відкрийте операцію, щоб виправити її або скасувати зміну.',
     review: 'Перевірити',
     reviewLabel: 'Перевірити {name}',
     untitled: 'Операція без опису',

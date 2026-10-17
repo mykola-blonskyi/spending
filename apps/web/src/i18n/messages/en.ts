@@ -264,6 +264,8 @@ export const en = {
   },
   syncCenter: {
     conflictsTitle: 'Needs review',
+    failedTitle: '{count, plural, one {# change not synced} other {# changes not synced}}',
+    failedDescription: 'The server refused these. Open an entry to fix it or discard the change.',
     review: 'Review',
     reviewLabel: 'Review {name}',
     untitled: 'Untitled entry',

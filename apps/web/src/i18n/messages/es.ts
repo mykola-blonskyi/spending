@@ -277,6 +277,9 @@ export const es = {
   },
   syncCenter: {
     conflictsTitle: 'Por revisar',
+    failedTitle: '{count, plural, one {# cambio sin sincronizar} other {# cambios sin sincronizar}}',
+    failedDescription:
+      'El servidor los ha rechazado. Abre un movimiento para corregirlo o descartar el cambio.',
     review: 'Revisar',
     reviewLabel: 'Revisar {name}',
     untitled: 'Movimiento sin descripción',

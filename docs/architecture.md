@@ -163,7 +163,9 @@ stored lucide icon name to a curated icon set (`category-icons.ts`).
   quick sync never flickers. The badge is a polite live region.
 - **Conflicts.** The server keeps its row and records the client's version (BR-19); history
   shows the server row marked "Needs review", so totals count it once. The sync center (`/sync`,
-  reached from the badge) lists open conflicts. Its review dialog shows both versions side by
+  reached from the badge) lists open conflicts, then the entries whose change the server refused
+  (with the reason) and those still waiting to be sent, each linking to the entry; it says
+  everything is in sync only when no conflict or unsent change is left. The conflict review dialog shows both versions side by
   side, highlights the differing fields and names them in its description, so a screen reader
   announces them. A deletion on either side is shown as "Deleted" and offers only keep server or
   keep mine; otherwise each differing field can be picked (amount and currency together; a

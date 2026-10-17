@@ -271,7 +271,7 @@ export type EntryItem = Readonly<{
 
 export type HistoryItem = DayItem | EntryItem;
 
-function positionOf(index: number, count: number): RowPosition {
+export function positionOf(index: number, count: number): RowPosition {
   if (count === 1) return 'only';
   if (index === 0) return 'first';
   return index === count - 1 ? 'last' : 'middle';
