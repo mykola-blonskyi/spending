@@ -388,7 +388,7 @@ test('the bank category suggests a default category', async ({ page, signInAs, d
   await createAccount(page, 'Privat UAH', 'UAH');
   await page.goto('/imports/new');
   await page.getByLabel('Statement file').setInputFiles(fixture('privatbank-hints.xlsx'));
-  await expect(page.getByLabel('Bank category (suggestion only)')).toHaveText(/Категорія/);
+  await expect(page.getByLabel('Statement category (suggestion only)')).toHaveText(/Категорія/);
   const body = importBody(page);
   await page.getByRole('button', { name: 'Import 2 rows' }).click();
   await expect(page.getByRole('heading', { name: 'Import finished' })).toBeVisible();

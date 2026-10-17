@@ -534,7 +534,7 @@ export const en = {
       currency: 'Currency',
       card: 'Card',
       balance: 'Balance',
-      bankCategory: 'Bank category (suggestion only)',
+      bankCategory: 'Statement category (suggestion only)',
       mcc: 'MCC (suggestion only)',
     },
     notMapped: 'Not in this file',
