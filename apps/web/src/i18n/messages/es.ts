@@ -329,6 +329,7 @@ export const es = {
     conversionUnavailable: 'Conversión no disponible',
     conversionUnavailableHint:
       'El BCE aún no ha publicado el tipo de cambio de esta fecha. El importe en euros aparecerá cuando lo haga.',
+    balanceNow: 'Saldo actual',
     notConverted: 'Sin convertir',
     rate: 'Tipo de cambio',
     rateDate: 'Fecha del tipo de cambio',
@@ -435,6 +436,15 @@ export const es = {
       kind: 'Tipo',
       currency: 'Moneda',
       currencyLocked: 'La moneda no se puede cambiar una vez creada la cuenta.',
+      openingBalance: 'Saldo inicial',
+      openingBalanceHint:
+        'Lo que tenía la cuenta en la fecha de apertura. Una deuda empieza con un signo menos.',
+      openingBalanceInvalid: 'Introduce un importe como 1000 o -250,50.',
+      openingOn: 'Fecha de apertura',
+      total: 'Total',
+      uncounted:
+        '{count, plural, one {# movimiento anterior a la fecha de apertura no se cuenta} other {# movimientos anteriores a la fecha de apertura no se cuentan}}',
+      archiveBalance: 'Todavía hay {amount} en esta cuenta.',
       archiveTitle: '¿Archivar «{name}»?',
       archiveDescription:
         'Dejará de aparecer al crear movimientos nuevos. Los anteriores la conservan y puedes restaurarla cuando quieras.',

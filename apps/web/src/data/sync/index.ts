@@ -1,4 +1,5 @@
 export {
+  useAccountBalances,
   useAccounts,
   useCategories,
   useConflicts,
@@ -31,6 +32,12 @@ export {
   type TransactionInput,
   type Workspace,
 } from './model';
-export { type EntrySync, type Fx, type TransactionEntry, type TransactionFilter } from './query';
+export {
+  type AccountBalance,
+  type EntrySync,
+  type Fx,
+  type TransactionEntry,
+  type TransactionFilter,
+} from './query';
 export type { TransactionDraft } from './writes';
 export type { TransferDraft } from './transfer';

@@ -2099,6 +2099,12 @@
         ],
         "additionalProperties": false
       },
+      "OpeningOn_Output": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
       "ArchivedAt_Output": {
         "anyOf": [
           {
@@ -2145,6 +2151,14 @@
                 "currency": {
                   "type": "string"
                 },
+                "openingBalanceMinor": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "openingOn": {
+                  "$ref": "#/components/schemas/OpeningOn_Output"
+                },
                 "archivedAt": {
                   "$ref": "#/components/schemas/ArchivedAt_Output"
                 },
@@ -2170,6 +2184,8 @@
                 "name",
                 "kind",
                 "currency",
+                "openingBalanceMinor",
+                "openingOn",
                 "archivedAt",
                 "revision",
                 "createdAt",
@@ -2183,6 +2199,12 @@
           "accounts"
         ],
         "additionalProperties": false
+      },
+      "OpeningOnInput": {
+        "type": [
+          "string",
+          "null"
+        ]
       },
       "CreateAccountDto": {
         "type": "object",
@@ -2209,6 +2231,14 @@
           },
           "currency": {
             "type": "string"
+          },
+          "openingBalanceMinor": {
+            "type": "integer",
+            "minimum": -1000000000000,
+            "maximum": 1000000000000
+          },
+          "openingOn": {
+            "$ref": "#/components/schemas/OpeningOnInput"
           }
         },
         "required": [
@@ -2248,6 +2278,14 @@
           "currency": {
             "type": "string"
           },
+          "openingBalanceMinor": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "openingOn": {
+            "$ref": "#/components/schemas/OpeningOn_Output"
+          },
           "archivedAt": {
             "$ref": "#/components/schemas/ArchivedAt_Output"
           },
@@ -2273,6 +2311,8 @@
           "name",
           "kind",
           "currency",
+          "openingBalanceMinor",
+          "openingOn",
           "archivedAt",
           "revision",
           "createdAt",
@@ -2297,6 +2337,14 @@
               "savings",
               "other"
             ]
+          },
+          "openingBalanceMinor": {
+            "type": "integer",
+            "minimum": -1000000000000,
+            "maximum": 1000000000000
+          },
+          "openingOn": {
+            "$ref": "#/components/schemas/OpeningOnInput"
           },
           "archived": {
             "type": "boolean"
@@ -3138,6 +3186,14 @@
                 "currency": {
                   "type": "string"
                 },
+                "openingBalanceMinor": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "openingOn": {
+                  "$ref": "#/components/schemas/OpeningOn_Output"
+                },
                 "archivedAt": {
                   "$ref": "#/components/schemas/ArchivedAt_Output"
                 },
@@ -3163,6 +3219,8 @@
                 "name",
                 "kind",
                 "currency",
+                "openingBalanceMinor",
+                "openingOn",
                 "archivedAt",
                 "revision",
                 "createdAt",
@@ -3776,6 +3834,12 @@
           "null"
         ]
       },
+      "OpeningOn": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
       "ArchivedAt": {
         "anyOf": [
           {
@@ -4206,6 +4270,14 @@
                 "currency": {
                   "type": "string"
                 },
+                "openingBalanceMinor": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "openingOn": {
+                  "$ref": "#/components/schemas/OpeningOn"
+                },
                 "archivedAt": {
                   "$ref": "#/components/schemas/ArchivedAt"
                 },
@@ -4231,6 +4303,8 @@
                 "name",
                 "kind",
                 "currency",
+                "openingBalanceMinor",
+                "openingOn",
                 "archivedAt",
                 "revision",
                 "createdAt",

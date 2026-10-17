@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { clearLocalUserData } from '../local-data';
 import { createQueryClient } from '../query-client';
 import { localRow } from './fixtures';
-import { queueOrder } from './model';
+import { type Account, queueOrder } from './model';
 import {
   acquireLocalStore,
   databaseName,
@@ -41,6 +41,29 @@ describe('LocalStore', () => {
     expect(bobAgain.state.transactions.size).toBe(0);
     annAgain.close();
     bobAgain.close();
+  });
+
+  it('reads an account cached without opening fields as having no opening balance', async () => {
+    const store = await LocalStore.open('ann');
+    const cached = {
+      id: 'acc-1',
+      workspaceId: 'ws-1',
+      name: 'Card',
+      kind: 'card',
+      currency: 'EUR',
+    };
+    await store.commit((state) => ({
+      ...state,
+      accounts: new Map([['acc-1', cached as unknown as Account]]),
+    }));
+    store.close();
+
+    const reopened = await LocalStore.open('ann');
+    expect(reopened.state.accounts.get('acc-1')).toMatchObject({
+      openingBalanceMinor: 0,
+      openingOn: null,
+    });
+    reopened.close();
   });
 
   it('persists the overlay and its queued mutation together', async () => {

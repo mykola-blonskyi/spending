@@ -153,7 +153,7 @@ export function CalmToolbar({ history }: { history: History }) {
         <ActiveChips chips={history.chips} />
       </div>
 
-      <TotalsLine totals={history.totals} />
+      <TotalsLine totals={history.totals} balance={history.balance} />
     </>
   );
 }

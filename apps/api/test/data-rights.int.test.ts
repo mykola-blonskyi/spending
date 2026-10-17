@@ -155,6 +155,13 @@ describe('data rights', () => {
       const annCard = await account(ann, annPersonal, 'Ann card');
       const joint = await account(ann, family, 'Joint');
       const bobCard = await account(bob, bobPersonal, 'Bob card');
+      await json(
+        await as(t, ann, `/v1/accounts/${joint}`, {
+          method: 'PATCH',
+          body: { openingBalanceMinor: -25000, openingOn: '2026-03-01' },
+        }),
+        200,
+      );
       const [annRow, annFamilyRow, deletedRow] = await push(
         ann,
         { description: 'ann private', accountId: annCard },
@@ -247,6 +254,10 @@ describe('data rights', () => {
         ['family', 'owner', 2],
       ]);
       expect(annExport.accounts.map((a) => a.id).sort()).toEqual([annCard, joint].sort());
+      expect(annExport.accounts.find((a) => a.id === joint)).toMatchObject({
+        openingBalanceMinor: -25000,
+        openingOn: '2026-03-01',
+      });
       expect(new Set(annExport.categories.map((c) => c.workspaceId))).toEqual(
         new Set([annPersonal, family]),
       );

@@ -1,6 +1,12 @@
 import { useCallback, useDeferredValue, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
-import { useAccounts, useInitialSync, useLocalDataStatus, useLocalTransactions } from '@data/sync';
+import {
+  useAccountBalances,
+  useAccounts,
+  useInitialSync,
+  useLocalDataStatus,
+  useLocalTransactions,
+} from '@data/sync';
 import { useCategoryViews } from '@features/ledger';
 import { useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
@@ -72,6 +78,13 @@ export function useHistory() {
   );
   const items = useMemo(() => groupByDay(rows, context.dayLabel), [rows, context.dayLabel]);
   const totals = useMemo(() => summarize(rows), [rows]);
+  const balances = useAccountBalances();
+  const filteredAccount = context.accounts.get(accountId);
+  const balanceMinor = balances.get(accountId)?.balanceMinor;
+  const balance =
+    filteredAccount && balanceMinor !== undefined
+      ? { amountMinor: balanceMinor, currency: filteredAccount.currency }
+      : null;
 
   const status: HistoryStatus =
     localStatus === 'unavailable'
@@ -151,6 +164,7 @@ export function useHistory() {
     loaded: initialSync.loaded,
     items,
     totals,
+    balance,
     selectedId,
   };
 }

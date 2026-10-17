@@ -46,8 +46,10 @@ export function useAccountsAdmin() {
   return {
     isPending,
     create: (input: AccountCreate) => run(() => createAccount(input)),
-    update: (id: string, patch: Pick<AccountPatch, 'name' | 'kind'>) =>
-      run(() => updateAccount(id, patch)),
+    update: (
+      id: string,
+      patch: Pick<AccountPatch, 'name' | 'kind' | 'openingBalanceMinor' | 'openingOn'>,
+    ) => run(() => updateAccount(id, patch)),
     archive: (id: string, archived: boolean) => run(() => updateAccount(id, { archived })),
   };
 }

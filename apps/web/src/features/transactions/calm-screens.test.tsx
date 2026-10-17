@@ -12,11 +12,15 @@ vi.mock('@features/auth', () => ({ useSession: () => testSession() }));
 
 const state = {
   ...syncedState(serverRow({ categoryId: 'cat-groceries', accountId: 'acc-card' })),
-  accounts: new Map([['acc-card', account()]]),
+  accounts: new Map([['acc-card', account({ openingBalanceMinor: 100000 })]]),
   categories: new Map([['cat-groceries', category()]]),
 };
 
 beforeEach(() => {
+  // Radix Select opens on pointer events jsdom does not implement.
+  Element.prototype.hasPointerCapture = () => false;
+  Element.prototype.releasePointerCapture = () => {};
+  Element.prototype.scrollIntoView = () => {};
   // jsdom lays nothing out; give the history's scroll box a height so it renders rows.
   vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(800);
   vi.stubGlobal('matchMedia', () => ({
@@ -56,5 +60,24 @@ describe('calm screens', () => {
     expect(row).toHaveAttribute('href', '/transactions/tx-1');
     expect(row).toHaveTextContent('Groceries · Card');
     expect(row).toHaveTextContent('-€12.50');
+  });
+
+  it('shows the filtered account’s balance now, whatever the period', async () => {
+    renderTransactionScreen(<CalmHistory />, {
+      data: fakeLocalData(state).value,
+      path: '/transactions',
+      route: '/transactions',
+    });
+    expect(screen.queryByText('Balance now')).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open filters' }));
+    await userEvent.click(screen.getByRole('combobox', { name: 'Account' }));
+    await userEvent.click(
+      within(await screen.findByRole('listbox')).getByRole('option', { name: 'Card' }),
+    );
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: '2026-10-15' } });
+
+    expect(screen.queryByRole('link', { name: /Coffee/ })).not.toBeInTheDocument();
+    expect(screen.getByText('Balance now').parentElement).toHaveTextContent('€987.50');
   });
 });

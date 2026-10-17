@@ -155,7 +155,7 @@ export function SoftHistory() {
         <ActiveChips chips={history.chips} chipClassName="h-11 px-4 text-[15px]" />
       </div>
 
-      <TotalsLine totals={history.totals} />
+      <TotalsLine totals={history.totals} balance={history.balance} />
       <HistoryStatus status={history.status} loaded={history.loaded} />
       {history.status === 'ready' && (
         <HistoryList

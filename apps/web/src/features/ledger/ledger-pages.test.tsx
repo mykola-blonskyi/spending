@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Account, Category, Workspace } from '@data/sync';
@@ -17,6 +17,7 @@ const local = vi.hoisted(() => ({
   accounts: [] as unknown[],
   categories: [] as unknown[],
   workspaces: [] as unknown[],
+  balances: new Map<string, { balanceMinor: number; uncounted: number }>(),
 }));
 
 vi.mock('./use-ledger-mutations', () => ({
@@ -30,8 +31,10 @@ vi.mock('@data/sync', () => {
     useAccounts: () => list(local.accounts),
     useCategories: () => list(local.categories),
     useWorkspaces: () => list(local.workspaces),
+    useAccountBalances: () => local.balances,
   };
 });
+vi.mock('@features/profile', () => ({ useProfile: () => ({ timezone: 'UTC' }) }));
 
 const PERSONAL: Workspace = { id: 'ws-1', kind: 'personal', name: 'Ann', role: 'owner' };
 const stamp = { revision: 1, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' };
@@ -41,6 +44,8 @@ const account = (patch: Partial<Account>): Account => ({
   name: 'Cash',
   kind: 'cash',
   currency: 'EUR',
+  openingBalanceMinor: 0,
+  openingOn: null,
   archivedAt: null,
   ...stamp,
   ...patch,
@@ -72,6 +77,7 @@ beforeEach(() => {
   admin.archive.mockResolvedValue(true);
   local.status = 'ready';
   local.workspaces = [PERSONAL];
+  local.balances = new Map();
   local.accounts = [
     account({}),
     account({ id: 'a-2', name: 'Old card', kind: 'card', archivedAt: '2026-02-01T00:00:00Z' }),
@@ -108,6 +114,8 @@ describe('AccountsPage', () => {
       name: 'Savings jar',
       kind: 'bank',
       currency: 'EUR',
+      openingBalanceMinor: 0,
+      openingOn: null,
     });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
@@ -121,7 +129,12 @@ describe('AccountsPage', () => {
 
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
 
-    expect(admin.update).toHaveBeenCalledWith('a-1', { name: 'Cash', kind: 'cash' });
+    expect(admin.update).toHaveBeenCalledWith('a-1', {
+      name: 'Cash',
+      kind: 'cash',
+      openingBalanceMinor: 0,
+      openingOn: null,
+    });
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
@@ -131,6 +144,70 @@ describe('AccountsPage', () => {
     expect(admin.archive).not.toHaveBeenCalled();
     await userEvent.click(screen.getByRole('button', { name: 'Archive' }));
     expect(admin.archive).toHaveBeenCalledWith('a-1', true);
+  });
+
+  it('shows each balance, red when negative, and per-currency totals of active accounts', () => {
+    local.accounts = [
+      account({}),
+      account({ id: 'a-3', name: 'Loan', currency: 'EUR' }),
+      account({ id: 'a-4', name: 'Hryvnia', currency: 'UAH' }),
+      account({ id: 'a-2', name: 'Old card', archivedAt: '2026-02-01T00:00:00Z' }),
+    ];
+    local.balances = new Map([
+      ['a-1', { balanceMinor: 500000, uncounted: 2 }],
+      ['a-3', { balanceMinor: -70000, uncounted: 0 }],
+      ['a-4', { balanceMinor: 5200000, uncounted: 0 }],
+      ['a-2', { balanceMinor: 99900, uncounted: 0 }],
+    ]);
+    renderPage(<AccountsPage />);
+
+    const total = screen.getByText('Total').parentElement!;
+    expect(total).toHaveTextContent('€4,300.00·UAH 52,000.00');
+    expect(screen.getAllByText('-€700.00')[0]!.parentElement).toHaveClass('text-expense');
+    expect(
+      screen.getByText('2 entries before the opening date are not counted'),
+    ).toBeInTheDocument();
+    const archive = screen.getByText('Archived (1)').closest('details')!;
+    expect(archive).not.toHaveAttribute('open');
+    expect(archive).toHaveTextContent('€999.00');
+  });
+
+  it('warns before archiving an account that still holds money', async () => {
+    local.balances = new Map([['a-1', { balanceMinor: 12550, uncounted: 0 }]]);
+    renderPage(<AccountsPage />);
+    await userEvent.click(screen.getByRole('button', { name: 'Archive Cash' }));
+    expect(screen.getByRole('alertdialog')).toHaveTextContent(
+      'There is still €125.50 on this account.',
+    );
+  });
+
+  it('asks for the opening date only with a non-zero balance, refusing what is not an amount', async () => {
+    renderPage(<AccountsPage />);
+    await userEvent.click(screen.getByRole('button', { name: 'Edit Cash' }));
+    const dialog = screen.getByRole('dialog', { name: 'Edit account' });
+    const opening = within(dialog).getByLabelText('Opening balance');
+    expect(within(dialog).queryByLabelText('Opening date')).not.toBeInTheDocument();
+    await userEvent.type(opening, '0,00');
+    expect(within(dialog).queryByLabelText('Opening date')).not.toBeInTheDocument();
+    await userEvent.clear(opening);
+
+    await userEvent.type(opening, '12abc');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    expect(within(dialog).getByText(/Enter an amount such as/)).toBeInTheDocument();
+    expect(admin.update).not.toHaveBeenCalled();
+
+    await userEvent.clear(opening);
+    await userEvent.type(opening, '-250,50');
+    fireEvent.change(within(dialog).getByLabelText('Opening date'), {
+      target: { value: '2026-03-01' },
+    });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    expect(admin.update).toHaveBeenCalledWith('a-1', {
+      name: 'Cash',
+      kind: 'cash',
+      openingBalanceMinor: -25050,
+      openingOn: '2026-03-01',
+    });
   });
 
   it('offers the family choice only with a family workspace', async () => {
