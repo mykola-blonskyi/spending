@@ -186,7 +186,7 @@ const DATE = /\b\d{1,4}[/.-]\d{1,2}(?:[/.-]\d{2,4})?\b/g;
  * Café Pepe 12/10" gives ["compra", "tarj", "cafe", "pepe"]). Asterisks separate tokens, and a
  * token with a digit goes whole, which removes masks, references and store numbers alike.
  */
-function words(description: string): string[] {
+export function words(description: string): string[] {
   return description
     .normalize('NFKD')
     .replace(/\p{M}/gu, '')

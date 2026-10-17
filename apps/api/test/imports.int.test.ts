@@ -27,7 +27,12 @@ type Row = {
 };
 type ImportResult = {
   batch: { id: string; importedCount: number; duplicateCount: number; rejectedCount: number };
-  imported: { count: number; transactionIds: string[]; bankCategories: Record<string, string> };
+  imported: {
+    count: number;
+    transactionIds: string[];
+    bankCategories: Record<string, string>;
+    transferSuggestions: { transactionId: string; counterpartId: string | null; reason: string }[];
+  };
   duplicates: number;
   rejected: { line: number; reason: string }[];
 };
@@ -464,6 +469,44 @@ describe('imports', () => {
     });
   });
 
+  describe('transfer suggestions (BR-38)', () => {
+    it('suggests the other side and transfer phrases in the response and stores nothing', async () => {
+      const savings = await createAccount(ann, annPersonal, 'Savings');
+      const other = {
+        id: crypto.randomUUID(),
+        workspaceId: annPersonal,
+        kind: 'income',
+        amountMinor: 50000,
+        currency: 'EUR',
+        occurredOn: '2026-10-02',
+        accountId: savings,
+        categoryId: null,
+        description: 'From BBVA',
+        note: '',
+      };
+      await push(ann, { type: 'transaction.upsert', baseVersion: null, transaction: other });
+      const statement = [
+        row(2, { amountMinor: -50000, description: 'To savings' }),
+        row(3, { amountMinor: -2000, description: 'TRASPASO A CUENTA' }),
+        row(4),
+      ];
+      const { imported } = await importRows(ann, statement);
+      const [toSavings, traspaso] = imported.transactionIds;
+      expect(imported.transferSuggestions).toEqual([
+        { transactionId: toSavings, counterpartId: other.id, reason: 'counterpart' },
+        { transactionId: traspaso, counterpartId: null, reason: 'keyword' },
+      ]);
+      const stored = await t.db
+        .select({ transferId: transactions.transferId, outside: transactions.transferOutside })
+        .from(transactions);
+      expect(stored).toHaveLength(4);
+      expect(stored.every((r) => r.transferId === null && !r.outside)).toBe(true);
+
+      const again = await importRows(ann, statement);
+      expect(again.imported.transferSuggestions).toEqual([]);
+    });
+  });
+
   describe('history and undo (BR-30)', () => {
     type Undo = { batch: { id: string; undoneAt: string | null }; deleted: number; kept: number };
     const undo = (s: Session, id: string) => as(t, s, `/v1/imports/${id}/undo`, { method: 'POST' });
@@ -550,6 +593,11 @@ describe('imports', () => {
       });
       expect(mercadona.familyCategoryId).toBe(familyIds.get('groceries'));
       expect((await json<Review>(await as(t, bob, '/v1/imports/review'), 200)).items).toEqual([]);
+    });
+
+    it('suggests no transfers while the rows wait for review (BR-38)', async () => {
+      const { imported } = await importRows(ann, [row(2, { description: 'TRASPASO A CUENTA' })]);
+      expect(imported.transferSuggestions).toEqual([]);
     });
 
     it('confirms rows as family or personal and learns the categories', async () => {

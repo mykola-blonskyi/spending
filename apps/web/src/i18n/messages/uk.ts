@@ -657,6 +657,15 @@ export const uk = {
       importNextCard: 'Імпортувати картку {card}',
       openHistory: 'Відкрити історію',
     },
+    suggestions: {
+      title: 'Схоже на переказ',
+      hint: 'Гроші між власними рахунками — не дохід і не витрата. Нічого не повʼяжеться, доки ви не підтвердите.',
+      item: 'Можливий переказ: {description}',
+      otherSide: 'Інша сторона: {account}, {date}',
+      confirm: 'Підтвердити',
+      dismiss: 'Відхилити',
+      confirmAll: 'Підтвердити всі',
+    },
     reasons: {
       INVALID_DATE: 'Не вдалося прочитати дату',
       INVALID_AMOUNT: 'Не вдалося прочитати суму, вона нульова або завелика',

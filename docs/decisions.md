@@ -389,3 +389,7 @@ the combined row is built on the device from the sides it holds, and import undo
 `transferOutside` on a side whose partner it deleted, which bumps its version so devices pull it.
 The entry form's Transfer type exists only in the form: saving it queues two new sides, an
 expense and an income, in one local commit, so the wire and the server see two ordinary upserts.
+Import suggestions (#110, BR-38) add no column either: the server computes them while it holds
+the import's ledger transaction, from one candidate query and the rates it already loads, and
+returns them in the import response. The browser shows them only on that import's summary, and
+confirming one is the ordinary mark, so a reload or another device simply has no suggestions.

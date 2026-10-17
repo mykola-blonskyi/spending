@@ -225,6 +225,17 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   plus its amount is a warning, not a rejection. Known bank layouts are recognized by their
   header row; otherwise the last mapping used for the same header row is remembered on the
   device.
+- **BR-38.** An import suggests transfers (BR-37); it never links one by itself. An imported row
+  is paired with a live, confirmed, non-transfer entry of the opposite kind on another account of
+  the same workspace dated within 3 days: the same amount in the same currency, or amounts within
+  3% of the imported row in EUR at the ECB rate (BR-14) of the imported row's date across
+  currencies. Each entry is paired at most once, the nearest date first, then the nearest amount.
+  A row left unpaired is suggested as a one-sided transfer when its folded description holds a
+  transfer phrase (`TRANSFER_KEYWORDS` in `imports/transfer-match.ts`: Ukrainian, Russian,
+  English, Spanish) or every word of the user's name, a name of at least two words. Suggestions
+  come with the import response, are never stored, and live in the open import summary; there
+  the user confirms each (or all) as an ordinary mark, or dismisses it. A row awaiting review
+  (BR-28) gets none, since it cannot be marked until it is confirmed.
 
 ## Data rights
 

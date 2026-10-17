@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { z } from 'zod';
-import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, between, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
+import { addDays } from '../common/dates';
 import { ApiError } from '../common/errors';
 import { type CurrencyCode } from '../common/money';
 import { DB, type Db, ledgerTransaction, type Tx } from '../database/database.module';
-import { accounts, categories, importBatches, transactions } from '../database/schema';
+import { accounts, categories, importBatches, transactions, users } from '../database/schema';
 import { convert, type RateQuote } from '../ledger/fx/conversion';
 import { FxService } from '../ledger/fx/fx.service';
 import { LedgerService, selectViewRows } from '../ledger/ledger.service';
@@ -14,6 +15,7 @@ import { categorize } from './categorize';
 import { learnCategoryRules, loadCatalog } from './category-rules';
 import { importHashes } from './dedupe';
 import { validateRows } from './rows';
+import { type MatchRow, suggestTransfers, TRANSFER_WINDOW_DAYS } from './transfer-match';
 import {
   batchColumns,
   type ConfirmItem,
@@ -112,6 +114,19 @@ export class ImportsService {
           .returning({ id: transactions.id });
         transactionIds.push(...inserted.map((r) => r.id));
       }
+      const insertedIds = new Set(transactionIds);
+      // BR-38: a row waiting for review cannot be marked yet (REVIEW_REQUIRED), so only confirmed ones.
+      const transferSuggestions =
+        reviewStatus === 'confirmed'
+          ? await this.transferSuggestions(
+              tx,
+              actorId,
+              workspaceId,
+              account.id,
+              values.filter((value) => insertedIds.has(value.id)),
+              quotes,
+            )
+          : [];
       const duplicates = valid.length - transactionIds.length;
       const [stored] = await tx
         .update(importBatches)
@@ -129,6 +144,7 @@ export class ImportsService {
               return bankCategory ? [[id, bankCategory]] : [];
             }),
           ),
+          transferSuggestions,
         },
         duplicates,
         rejected,
@@ -371,6 +387,62 @@ export class ImportsService {
         })),
       );
     });
+  }
+
+  /**
+   * BR-38. Candidates are the live, confirmed, non-transfer entries on the workspace's other
+   * accounts around the imported dates, read with one query; rates come per currency as for the
+   * import itself.
+   */
+  private async transferSuggestions(
+    tx: Tx,
+    actorId: string,
+    workspaceId: string,
+    accountId: string,
+    imported: readonly MatchRow[],
+    quotes: Map<CurrencyCode, Map<string, RateQuote | null>>,
+  ) {
+    if (imported.length === 0) return [];
+    const dates = imported.map((row) => row.occurredOn).sort();
+    const candidates = await tx
+      .select({
+        id: transactions.id,
+        kind: transactions.kind,
+        amountMinor: transactions.amountMinor,
+        currency: transactions.currency,
+        occurredOn: transactions.occurredOn,
+        accountId: transactions.accountId,
+        description: transactions.description,
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.workspaceId, workspaceId),
+          ne(transactions.accountId, accountId),
+          isNull(transactions.deletedAt),
+          isNull(transactions.transferId),
+          eq(transactions.reviewStatus, 'confirmed'),
+          between(
+            transactions.occurredOn,
+            addDays(dates[0]!, -TRANSFER_WINDOW_DAYS),
+            addDays(dates.at(-1)!, TRANSFER_WINDOW_DAYS),
+          ),
+        ),
+      )
+      .orderBy(transactions.occurredOn, transactions.id);
+    for (const currency of new Set(candidates.map((row) => row.currency as CurrencyCode))) {
+      if (!quotes.has(currency)) quotes.set(currency, await this.fx.quotes(tx, currency, dates));
+    }
+    const [user] = await tx
+      .select({ displayName: users.displayName })
+      .from(users)
+      .where(eq(users.id, actorId));
+    return suggestTransfers(
+      imported,
+      candidates.map((row) => ({ ...row, currency: row.currency as CurrencyCode })),
+      user?.displayName ?? '',
+      (currency, date) => quotes.get(currency)?.get(date) ?? null,
+    );
   }
 
   /** The target must be a live account of the actor's personal workspace. */

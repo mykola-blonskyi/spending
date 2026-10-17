@@ -47,6 +47,14 @@ export const importResultSchema = z.object({
     transactionIds: z.array(z.uuid()),
     /** The bank category of each imported row that had one, for the browser to send back. */
     bankCategories: z.record(z.uuid(), z.string()),
+    /** BR-38: rows that look like own transfers, for the user to confirm. Never stored. */
+    transferSuggestions: z.array(
+      z.object({
+        transactionId: z.uuid(),
+        counterpartId: z.uuid().nullable(),
+        reason: z.enum(['keyword', 'counterpart']),
+      }),
+    ),
   }),
   duplicates: z.int(),
   rejected: z.array(rejectedRowSchema),

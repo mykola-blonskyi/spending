@@ -655,6 +655,15 @@ export const es = {
       importNextCard: 'Importar la tarjeta {card}',
       openHistory: 'Abrir el historial',
     },
+    suggestions: {
+      title: 'Parece una transferencia',
+      hint: 'El dinero entre tus propias cuentas no es ni ingreso ni gasto. No se vincula nada hasta que lo confirmes.',
+      item: 'Posible transferencia: {description}',
+      otherSide: 'Otro lado: {account}, {date}',
+      confirm: 'Confirmar',
+      dismiss: 'Descartar',
+      confirmAll: 'Confirmar todas',
+    },
     reasons: {
       INVALID_DATE: 'No se pudo leer la fecha',
       INVALID_AMOUNT: 'No se pudo leer el importe, es cero o es demasiado grande',

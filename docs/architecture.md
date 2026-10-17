@@ -283,6 +283,14 @@ A new format only needs a reader that returns rows and a branch in `statement.ts
 The server receives the normalized rows and the mapping (column indexes, formats, file kind) and
 validates them as before.
 
+**Transfer suggestions (BR-38).** For confirmed imports, `ImportsService.create` loads the live,
+confirmed, non-transfer entries on the workspace's other accounts within 3 days of the batch in
+one query, the rates of their currencies on the imported dates, and the user's display name, and
+calls the pure `imports/transfer-match.ts`. The result, `imported.transferSuggestions`
+(`{ transactionId, counterpartId | null, reason }`), is returned and never stored. The summary
+(`features/imports/transfer-suggestions.tsx`) shows the ones still open on the device and confirms
+through `markTransfer`, so a confirmation queues like any mark and works offline.
+
 ## Analytics
 
 `GET /analytics/summary?from=&to=&scope=personal|family|all&compare=previous|none` (defaults

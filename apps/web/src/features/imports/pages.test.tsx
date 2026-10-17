@@ -1,17 +1,20 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ImportResult } from '@data/imports';
 import {
+  type Account,
   type Category,
   type TransactionEntry,
   useLocalTransactions,
+  useMarkTransfer,
   useSyncStatus,
   useWorkspaces,
   type Workspace,
 } from '@data/sync';
 import { I18nProvider } from '@i18n/index';
 import { ImportSummary } from './import-summary';
+import { TransferSuggestions } from './transfer-suggestions';
 import { useHasFamily, useReviewQueue } from './imports';
 import { bulkCategoryChoice } from './review-choice';
 import { ReviewPage } from './review-page';
@@ -24,6 +27,11 @@ vi.mock(import('@data/sync'), async (importOriginal) => ({
   useLocalTransactions: vi.fn(),
   useSyncStatus: vi.fn(() => null),
   useUpdateTransaction: vi.fn(),
+  useAccounts: vi.fn(() => ({
+    ready: true,
+    items: [{ id: 'savings', name: 'Savings' } as Account],
+  })),
+  useMarkTransfer: vi.fn(),
 }));
 vi.mock('./imports', () => ({
   useHasFamily: vi.fn(),
@@ -77,7 +85,7 @@ describe('bulkCategoryChoice', () => {
 describe('ImportSummary', () => {
   const result = {
     batch: { fileName: 'bank.csv' },
-    imported: { count: 2, transactionIds: ['t1', 't2'] },
+    imported: { count: 2, transactionIds: ['t1', 't2'], transferSuggestions: [] },
     duplicates: 0,
     rejected: [],
   } as unknown as ImportResult;
@@ -114,5 +122,60 @@ describe('ImportSummary', () => {
     vi.mocked(useLocalTransactions).mockReturnValue({ ready: true, items: [] });
     summary();
     expect(screen.getByRole('heading', { name: 'Import finished' })).toHaveFocus();
+  });
+});
+
+describe('TransferSuggestions', () => {
+  const entry = (id: string, extra: Partial<TransactionEntry> = {}) =>
+    ({
+      id,
+      workspaceId: 'w1',
+      kind: 'expense',
+      amountMinor: 50_000,
+      currency: 'EUR',
+      occurredOn: '2026-10-10',
+      accountId: 'card',
+      description: id,
+      transferId: null,
+      ...extra,
+    }) as TransactionEntry;
+  const suggestions = [
+    { transactionId: 'out', counterpartId: 'in', reason: 'counterpart' },
+    { transactionId: 'own', counterpartId: null, reason: 'keyword' },
+    { transactionId: 'marked', counterpartId: null, reason: 'keyword' },
+    { transactionId: 'gone', counterpartId: 'taken', reason: 'counterpart' },
+  ] as const;
+
+  it('offers each open suggestion, confirms it as a transfer and dismisses it', async () => {
+    const mark = vi.fn(async () => {});
+    vi.mocked(useMarkTransfer).mockReturnValue(mark);
+    vi.mocked(useLocalTransactions).mockReturnValue({
+      ready: true,
+      items: [
+        entry('out'),
+        entry('in', { kind: 'income', accountId: 'savings', occurredOn: '2026-10-11' }),
+        entry('own'),
+        entry('marked', { transferId: 'x' }),
+        entry('gone'),
+        entry('taken', { kind: 'income', accountId: 'savings', transferId: 'y' }),
+      ],
+    });
+    ui(<TransferSuggestions suggestions={suggestions} />);
+    const items = screen.getAllByRole('listitem');
+    expect(items.map((item) => item.getAttribute('aria-label'))).toEqual([
+      'Suggested transfer: out',
+      'Suggested transfer: own',
+    ]);
+    expect(items[0]).toHaveTextContent('Other side: Savings, Oct 11, 2026');
+    expect(items[1]).toHaveTextContent('Own account outside the app');
+
+    fireEvent.click(within(items[0]!).getByRole('button', { name: 'Confirm' }));
+    expect(mark).toHaveBeenCalledWith('out', 'in');
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm all' }));
+    await vi.waitFor(() => expect(mark).toHaveBeenLastCalledWith('own', null));
+
+    fireEvent.click(within(items[1]!).getByRole('button', { name: 'Dismiss' }));
+    expect(screen.getAllByRole('listitem')).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Confirm all' })).not.toBeInTheDocument();
   });
 });
