@@ -173,13 +173,22 @@ test('the table view on desktop covers the whole history and is remembered', asy
   await expect(tableRows.first()).toBeVisible();
   expect(await tableRows.count()).toBeLessThan(DOM_BUDGET);
 
+  // The table scrolls in its own box under the controls; the page stays put.
+  const scroller = table.locator('.overflow-y-auto');
+  const box = await scroller.boundingBox();
+  expect(box!.y + box!.height).toBeLessThanOrEqual(900);
+  const scrollTable = (fraction: number) =>
+    scroller.evaluate((el, f) => el.scrollTo(0, (el.scrollHeight - el.clientHeight) * f), fraction);
   await expect(async () => {
-    await scrollTo(page, 1);
+    await scrollTable(1);
     await expect(tableRows.last()).toContainText('Seed 4996', { timeout: 1000 });
   }).toPass({ timeout: 30_000 });
   expect(await tableRows.count()).toBeLessThan(DOM_BUDGET);
+  expect(await scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(100_000);
+  expect(await page.evaluate(() => scrollY)).toBe(0);
+  await expect(table.getByRole('button', { name: 'Date', exact: true })).toBeInViewport();
 
-  await scrollTo(page, 0);
+  await scrollTable(0);
   const newest = table.getByRole('link').first();
   await expect(newest).toHaveText('Seed 5 Salary');
   await newest.press('Enter');
@@ -188,8 +197,28 @@ test('the table view on desktop covers the whole history and is remembered', asy
 
   await page.goBack();
   await page.reload();
+  // The reload reads all entries from the local store again, as slowly as the first open.
+  await expect(table.getByRole('link').first()).toBeVisible({ timeout: 120_000 });
   await expect(page.getByRole('radio', { name: 'Table' })).toBeChecked();
-  await expect(table.getByRole('link').first()).toBeVisible();
+
+  // The largest EUR amounts the seed makes; USD and GBP have no rate here, so they go last.
+  const largest = [/^Seed 1081 /, /^Seed 2162 /, /^Seed 540 /];
+  const sortByAmount = table.getByRole('button', { name: 'Amount', exact: true });
+  const amountHeader = table
+    .getByRole('columnheader')
+    .filter({ has: page.getByRole('button', { name: 'Amount', exact: true }) });
+  await scrollTable(0.5);
+  await expect.poll(() => scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(1000);
+  await sortByAmount.click();
+  await expect(amountHeader).toHaveAttribute('aria-sort', 'descending');
+  expect(await scroller.evaluate((el) => el.scrollTop)).toBe(0);
+  for (const [index, text] of largest.entries())
+    await expect(table.getByRole('link').nth(index)).toHaveText(text);
+  await page.reload();
+  await expect(table.getByRole('link').first()).toBeVisible({ timeout: 120_000 });
+  await expect(amountHeader).toHaveAttribute('aria-sort', 'descending');
+  for (const [index, text] of largest.entries())
+    await expect(table.getByRole('link').nth(index)).toHaveText(text);
 
   await page.setViewportSize({ width: 375, height: 812 });
   await expect(page.getByRole('radio', { name: 'Table' })).toHaveCount(0);

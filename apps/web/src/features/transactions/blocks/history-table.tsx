@@ -1,16 +1,23 @@
-import { type CSSProperties, useMemo } from 'react';
+import { ArrowDown, ArrowUp } from 'lucide-react';
+import { type CSSProperties, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { useWorkspaces } from '@data/sync';
 import { AuthorBadge } from '@features/family';
 import { useTranslations } from '@i18n/index';
+import { useSharedLocale } from '@shared/lib/locale-context';
 import { cn } from '@shared/lib/utils';
 import {
   type HistoryItem,
+  isSortColumn,
+  nextSort,
+  sortTableRows,
   type TableColumn,
   type TableRow,
+  type TableSort,
   tableColumns,
   toTableRows,
 } from '../history-model';
+import { setTableSort, useTableSort } from '../history-view';
 import { EntryAmount } from './entry-amount';
 import { SyncMarker } from './sync-marker';
 import { VirtualList } from './virtual-list';
@@ -18,6 +25,7 @@ import { VirtualList } from './virtual-list';
 type HistoryTableProps = {
   items: readonly HistoryItem[];
   label: string;
+  /** The table scrolls itself either way: `self` fills its parent, `window` the viewport below. */
   scroll?: 'window' | 'self';
   selectedId?: string | undefined;
   className?: string;
@@ -25,7 +33,7 @@ type HistoryTableProps = {
 
 // Every row is its own grid, so tracks never size to content: they line up across rows.
 const TRACKS: Record<TableColumn, string> = {
-  date: 'minmax(4rem,0.8fr)',
+  date: 'minmax(5.75rem,0.8fr)',
   description: 'minmax(4rem,2fr)',
   category: 'minmax(3rem,1fr)',
   account: 'minmax(3rem,1.1fr)',
@@ -35,6 +43,27 @@ const TRACKS: Record<TableColumn, string> = {
 };
 
 const ROW_ESTIMATE = 45;
+const MIN_HEIGHT = '20rem';
+const BOTTOM_GAP = '1rem';
+
+/**
+ * Where `ref`'s box starts on the page, so a table in a page that scrolls can fill the viewport
+ * below the controls: the shells are not viewport-high flex columns. Measured again when `items`
+ * change (filter chips and totals above it) and on resize.
+ */
+function usePageTop<T extends HTMLElement>(measure: boolean, items: unknown) {
+  const ref = useRef<T>(null);
+  const [top, setTop] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    if (!measure) return;
+    const update = () =>
+      setTop(Math.round((ref.current?.getBoundingClientRect().top ?? 0) + window.scrollY));
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [measure, items]);
+  return [ref, measure ? top : null] as const;
+}
 
 function Cell({
   row,
@@ -75,9 +104,42 @@ function Cell({
   }
 }
 
+function Header({ column, sort }: { column: TableColumn; sort: TableSort }) {
+  const t = useTranslations();
+  if (!isSortColumn(column))
+    return (
+      <span role="columnheader" className="truncate">
+        {t(`history.columns.${column}`)}
+      </span>
+    );
+  const active = sort.column === column;
+  const Arrow = sort.direction === 'asc' ? ArrowUp : ArrowDown;
+  return (
+    <span
+      role="columnheader"
+      aria-sort={active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : undefined}
+      className={cn('flex min-w-0', column === 'amount' && 'justify-end')}
+    >
+      <button
+        type="button"
+        title={t(`history.sort.${column}`)}
+        onClick={() => setTableSort(nextSort(sort, column))}
+        className={cn(
+          'flex min-w-0 items-center gap-1 rounded-sm outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60',
+          active && 'text-foreground',
+        )}
+      >
+        <span className="truncate">{t(`history.columns.${column}`)}</span>
+        {active && <Arrow aria-hidden className="size-3.5 shrink-0" />}
+      </button>
+    </span>
+  );
+}
+
 /**
- * The history as one flat table, newest first, on the same virtualizer as the rows. Each row is
- * a link to what the layout opens for an entry; the link's area covers the whole row.
+ * The history as one flat table, in the sort last chosen on the device (newest first until then),
+ * on the same virtualizer as the rows. Each row is a link to what the layout opens for an entry;
+ * the link's area covers the whole row.
  */
 export function HistoryTable({
   items,
@@ -87,55 +149,66 @@ export function HistoryTable({
   className,
 }: HistoryTableProps) {
   const t = useTranslations();
+  const { locale } = useSharedLocale();
+  const sort = useTableSort();
   const workspaces = useWorkspaces();
   const family = workspaces.items.some((workspace) => workspace.kind === 'family');
   const columns = tableColumns(family);
   const rows = useMemo(
     () =>
-      toTableRows(items, {
-        uncategorized: t('pages.transactions.uncategorized'),
-        transfer: t('transfer.label'),
-      }),
-    [items, t],
+      sortTableRows(
+        toTableRows(items, {
+          uncategorized: t('pages.transactions.uncategorized'),
+          transfer: t('transfer.label'),
+        }),
+        sort,
+        locale,
+      ),
+    [items, t, sort, locale],
   );
   const grid = 'grid grid-cols-(--history-columns) items-center gap-x-2 px-3';
   const style = {
     '--history-columns': columns.map((column) => TRACKS[column]).join(' '),
   } as CSSProperties;
+  const [box, top] = usePageTop<HTMLDivElement>(scroll === 'window', items);
 
   return (
     <div
+      ref={box}
       role="table"
       aria-label={label}
       aria-rowcount={rows.length + 1}
       style={style}
-      className={cn('text-sm', scroll === 'self' && 'flex h-full flex-col', className)}
+      className={cn('text-sm', scroll === 'self' && 'h-full', className)}
     >
-      <div role="rowgroup" className={cn(scroll === 'self' && 'shrink-0')}>
-        <div
-          role="row"
-          aria-rowindex={1}
-          className={cn(grid, 'h-9 border-b text-xs font-medium text-muted-foreground')}
-        >
-          {columns.map((column) => (
-            <span
-              key={column}
-              role="columnheader"
-              className={cn('truncate', column === 'amount' && 'text-right')}
-            >
-              {t(`history.columns.${column}`)}
-            </span>
-          ))}
-        </div>
-      </div>
-      <div className={cn(scroll === 'self' && 'min-h-0 flex-1')}>
-        <VirtualList
-          items={rows}
-          scroll={scroll}
-          estimateSize={() => ROW_ESTIMATE}
-          getItemKey={(index) => rows[index]!.row.id}
-        >
-          {(virtualizer) => (
+      {/* A new sort starts at the top of the list, in a fresh scroller. */}
+      <VirtualList
+        key={`${sort.column}-${sort.direction}`}
+        items={rows}
+        scroll="self"
+        estimateSize={() => ROW_ESTIMATE}
+        getItemKey={(index) => rows[index]!.row.id}
+        // The header row is sticky inside the scroller, so a focused row scrolls in below it.
+        className="scroll-pt-9"
+        style={
+          top === null
+            ? undefined
+            : { maxHeight: `max(${MIN_HEIGHT}, calc(100dvh - ${top}px - ${BOTTOM_GAP}))` }
+        }
+      >
+        {(virtualizer) => (
+          <>
+            <div role="rowgroup" className="sticky top-0 z-10 bg-background">
+              <div
+                role="row"
+                aria-rowindex={1}
+                className={cn(grid, 'h-9 border-b text-xs font-medium text-muted-foreground')}
+              >
+                {columns.map((column) => (
+                  <Header key={column} column={column} sort={sort} />
+                ))}
+              </div>
+            </div>
             <div
               role="rowgroup"
               className="relative"
@@ -156,9 +229,7 @@ export function HistoryTable({
                       'absolute inset-x-0 top-0 min-h-11 border-b py-1.5 transition-colors duration-150',
                       selected ? 'bg-accent text-accent-foreground' : 'hover:bg-muted/60',
                     )}
-                    style={{
-                      transform: `translateY(${virtual.start - virtualizer.options.scrollMargin}px)`,
-                    }}
+                    style={{ transform: `translateY(${virtual.start}px)` }}
                   >
                     {columns.map((column) => (
                       <div key={column} role="cell" className="flex min-w-0">
@@ -169,9 +240,9 @@ export function HistoryTable({
                 );
               })}
             </div>
-          )}
-        </VirtualList>
-      </div>
+          </>
+        )}
+      </VirtualList>
     </div>
   );
 }

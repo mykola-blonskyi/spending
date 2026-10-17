@@ -333,6 +333,12 @@ export const en = {
       who: 'Who',
       sync: 'Sync',
     },
+    sort: {
+      date: 'Sort by date',
+      amount: 'Sort by amount',
+      category: 'Sort by category',
+      account: 'Sort by account',
+    },
     detail: {
       label: 'Selected transaction',
       count: '{count, plural, one {# transaction} other {# transactions}}',

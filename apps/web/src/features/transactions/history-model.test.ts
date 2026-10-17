@@ -8,8 +8,11 @@ import {
   clearFilter,
   dayNets,
   EMPTY_FILTERS,
+  DEFAULT_TABLE_SORT,
   groupByDay,
+  nextSort,
   type RowContext,
+  sortTableRows,
   summarize,
   tableColumns,
   toEntryRow,
@@ -371,6 +374,135 @@ describe('the history table', () => {
         account: 'Savings',
       },
     ]);
+  });
+});
+
+describe('sorting the history table', () => {
+  const labels = { uncategorized: 'Uncategorized', transfer: 'Transfer' };
+  // Newest first, as the history holds them: "late" and "early" share a day.
+  const entries = [
+    entry({ id: 'late', occurredOn: '2026-10-15', amountMinor: 300, baseAmountMinor: 300 }),
+    entry({ id: 'early', occurredOn: '2026-10-15', amountMinor: 900, baseAmountMinor: 900 }),
+    entry({ id: 'usd', occurredOn: '2026-10-14', ...usd }),
+    entry({ id: 'chf', occurredOn: '2026-10-13', ...chf }),
+    entry({ id: 'income', kind: 'income', occurredOn: '2026-10-12', amountMinor: 300 }),
+    entry({ id: 'unsent', occurredOn: '2026-10-11', ...chf, version: null }),
+  ];
+  const rows = toTableRows(
+    groupByDay(toHistoryRows(entries, context, true), context.dayLabel),
+    labels,
+  );
+  const sorted = (column: 'date' | 'amount', direction: 'asc' | 'desc') =>
+    sortTableRows(rows, { column, direction }, 'en').map(({ row }) => row.id);
+
+  it('is newest first by default, the order the history holds', () => {
+    expect(sortTableRows(rows, DEFAULT_TABLE_SORT, 'en')).toEqual(rows);
+  });
+
+  it('by date oldest first is the exact reverse, ties included', () => {
+    expect(sorted('date', 'asc')).toEqual(['unsent', 'income', 'chf', 'usd', 'early', 'late']);
+  });
+
+  it('by amount uses the EUR amount, unconverted entries last in both directions', () => {
+    expect(sorted('amount', 'desc')).toEqual(['usd', 'early', 'late', 'income', 'chf', 'unsent']);
+    expect(sorted('amount', 'asc')).toEqual(['late', 'income', 'early', 'usd', 'chf', 'unsent']);
+  });
+
+  it('breaks ties newest first in both directions', () => {
+    const ties = ['late', 'income'];
+    expect(sorted('amount', 'desc').filter((id) => ties.includes(id))).toEqual(ties);
+    expect(sorted('amount', 'asc').filter((id) => ties.includes(id))).toEqual(ties);
+  });
+
+  describe('by name', () => {
+    const named = (id: string, name: string): CategoryView => ({ ...groceries, id, name });
+    const epargne = { id: 'acc-epargne', name: 'épargne' } as Account;
+    const byName: RowContext = {
+      ...context,
+      categories: new Map(
+        [named('food', 'Їжа'), named('pharmacy', 'Аптека'), named('home', 'Дім')].map((c) => [
+          c.id,
+          c,
+        ]),
+      ),
+      accounts: new Map([card, savings, epargne].map((a) => [a.id, a])),
+    };
+    const ledger = [
+      entry({ id: 'bare', occurredOn: '2026-10-16', accountId: card.id }),
+      entry({ id: 'out', transferId: 'tr', occurredOn: '2026-10-15', accountId: card.id }),
+      entry({
+        id: 'in',
+        kind: 'income',
+        transferId: 'tr',
+        occurredOn: '2026-10-15',
+        accountId: savings.id,
+      }),
+      entry({ id: 'food', categoryId: 'food', occurredOn: '2026-10-14', accountId: epargne.id }),
+      entry({ id: 'home', categoryId: 'home', occurredOn: '2026-10-13' }),
+      entry({ id: 'pharmacy', categoryId: 'pharmacy', occurredOn: '2026-10-12' }),
+      entry({ id: 'bare-old', occurredOn: '2026-10-11', accountId: savings.id }),
+    ];
+    const table = toTableRows(
+      groupByDay(toHistoryRows(ledger, byName, true), byName.dayLabel),
+      labels,
+    );
+    const order = (column: 'category' | 'account', direction: 'asc' | 'desc', locale: string) =>
+      sortTableRows(table, { column, direction }, locale).map(({ row }) => row.id);
+
+    it('by category follows the language, with Uncategorized then transfers last', () => {
+      expect(order('category', 'asc', 'uk')).toEqual([
+        'pharmacy',
+        'home',
+        'food',
+        'bare',
+        'bare-old',
+        'out',
+      ]);
+      expect(order('category', 'desc', 'uk')).toEqual([
+        'food',
+        'home',
+        'pharmacy',
+        'bare',
+        'bare-old',
+        'out',
+      ]);
+    });
+
+    it('by account follows the language, a transfer by its route, no account last', () => {
+      expect(order('account', 'asc', 'en')).toEqual([
+        'bare',
+        'out',
+        'food',
+        'bare-old',
+        'home',
+        'pharmacy',
+      ]);
+      expect(order('account', 'desc', 'en')).toEqual([
+        'bare-old',
+        'food',
+        'out',
+        'bare',
+        'home',
+        'pharmacy',
+      ]);
+    });
+  });
+
+  it('flips the active column and starts another in its first direction', () => {
+    expect(nextSort(DEFAULT_TABLE_SORT, 'date')).toEqual({ column: 'date', direction: 'asc' });
+    expect(nextSort(DEFAULT_TABLE_SORT, 'amount')).toEqual({ column: 'amount', direction: 'desc' });
+    expect(nextSort(DEFAULT_TABLE_SORT, 'category')).toEqual({
+      column: 'category',
+      direction: 'asc',
+    });
+    expect(nextSort(DEFAULT_TABLE_SORT, 'account')).toEqual({
+      column: 'account',
+      direction: 'asc',
+    });
+    expect(nextSort({ column: 'amount', direction: 'desc' }, 'amount')).toEqual({
+      column: 'amount',
+      direction: 'asc',
+    });
   });
 });
 
