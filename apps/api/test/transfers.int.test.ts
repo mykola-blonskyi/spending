@@ -230,6 +230,25 @@ describe('transfers (BR-37)', () => {
     expect(await codes(crossSpace!, { transferId: other })).toBe('INVALID_TRANSFER');
   });
 
+  it('refuses a third side, the same kind and another space in the database too', async () => {
+    const [out, into, , food] = await seed();
+    const [familyRow] = await pushNew(t, ann, [{ workspaceId: family, kind: 'income' }]);
+    const transferId = crypto.randomUUID();
+    await link([out!, into!], transferId);
+    const mark = (id: string, patch: { transferId: string; transferOutside?: boolean }) =>
+      t.db
+        .update(transactions)
+        .set({ categoryId: null, ...patch })
+        .where(eq(transactions.id, id));
+
+    await expect(mark(food!.id, { transferId })).rejects.toThrow();
+    await expect(mark(out!.id, { transferId, transferOutside: true })).rejects.toThrow();
+    const other = crypto.randomUUID();
+    await mark(food!.id, { transferId: other });
+    await expect(mark(familyRow!.id, { transferId: other })).rejects.toThrow();
+    await expect(mark(out!.id, { transferId: other })).rejects.toThrow();
+  });
+
   it('keeps the mark when a client older than transfers edits a side', async () => {
     const [out, into] = await seed();
     const [linked] = await link([out!, into!]);
@@ -300,6 +319,7 @@ describe('transfers (BR-37)', () => {
         .update(transactions)
         .set({ transferId, categoryId: null })
         .where(eq(transactions.importBatchId, batch.id));
+      await tx.execute(sql`set constraints transactions_transfer_shape immediate`);
       await tx.execute(sql`alter table transactions enable trigger transactions_version`);
     });
     const [manual] = await pushNew(t, ann, [
@@ -361,12 +381,9 @@ describe('transfers (BR-37)', () => {
     const transferId = crypto.randomUUID();
     await t.db
       .update(transactions)
-      .set({ transferId })
-      .where(sql`${transactions.id} in (${annSide!.id}, ${bobSide!.id})`);
-    await t.db
-      .update(transactions)
-      .set({ deletedAt: sql`now()` })
+      .set({ transferId, deletedAt: sql`now()` })
       .where(eq(transactions.id, bobSide!.id));
+    await t.db.update(transactions).set({ transferId }).where(eq(transactions.id, annSide!.id));
     const before = await t.db
       .select()
       .from(transactions)

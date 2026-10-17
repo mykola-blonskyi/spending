@@ -199,6 +199,23 @@ describe('schema invariants', () => {
         }),
       ),
     ).toBe('sync_conflicts_resolution_ck');
+    expect(
+      await violated(
+        t.db.insert(categories).values({
+          workspaceId: workspace.id,
+          name: null,
+          kind: 'expense',
+          color: 'c',
+          icon: 'i',
+        }),
+      ),
+    ).toBe('categories_named_or_default_ck');
+    expect(
+      await violated(t.db.insert(workspaces).values({ kind: 'family', ownerId: user.id })),
+    ).toBe('workspaces_family_named_ck');
+    expect(await violated(t.db.delete(users).where(eq(users.id, user.id)))).toBe(
+      'workspaces_owner_id_users_id_fk',
+    );
   });
 
   it('requires a conversion unless the rate is genuinely missing', async () => {

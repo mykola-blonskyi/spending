@@ -368,7 +368,9 @@ constraint enforces the missing category. Analytics filter `transferId is null`;
 filter, because a transfer has no category. Marking and unmarking are ordinary
 `transaction.upsert` mutations, one per side, queued together in one local commit. The server
 validates each side against the other live sides (same workspace, opposite kind, at most two,
-one-sided alone) and answers `INVALID_TRANSFER` otherwise. Version bumps include both columns,
+one-sided alone) and answers `INVALID_TRANSFER` otherwise. A deferred constraint trigger
+(`transactions_transfer_shape`, migration 0012) checks the same shape at commit for every writer,
+direct SQL included; every app writer holds the ledger lock, so the check never races. Version bumps include both columns,
 so a mark made elsewhere turns a stale edit into a conflict.
 
 **Alternatives.**

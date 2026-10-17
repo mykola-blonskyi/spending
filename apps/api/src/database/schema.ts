@@ -137,13 +137,17 @@ export const workspaces = pgTable(
     kind: workspaceKindEnum('kind').notNull(),
     /** Null for a personal workspace: the UI names it in the user's language. */
     name: text('name'),
+    // Restrict: a family must be released (BR-11) before its owner can be deleted.
     ownerId: uuid('owner_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+      .references(() => users.id, { onDelete: 'restrict' }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [unique('workspaces_id_kind_uq').on(t.id, t.kind)],
+  (t) => [
+    unique('workspaces_id_kind_uq').on(t.id, t.kind),
+    check('workspaces_family_named_ck', sql`${t.kind} = 'personal' or ${t.name} is not null`),
+  ],
 );
 
 export const memberships = pgTable(
@@ -256,6 +260,10 @@ export const categories = pgTable(
       .on(t.workspaceId, t.systemKey)
       .where(sql`${t.systemKey} is not null`),
     index('categories_revision_idx').on(t.revision),
+    check(
+      'categories_named_or_default_ck',
+      sql`${t.name} is not null or ${t.systemKey} is not null`,
+    ),
   ],
 );
 
