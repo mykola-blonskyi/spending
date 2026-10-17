@@ -1,8 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { and, eq, sql } from 'drizzle-orm';
+import { Client } from 'pg';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { runMigrations } from '../src/database/migrate';
 import { categories, workspaces } from '../src/database/schema';
+import { testDatabaseUrl } from './env';
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
 import {
   loginAs,
@@ -41,6 +44,21 @@ describe('migrations', () => {
     await t.app.close();
     await provider.close();
   });
+
+  it('gives up on a held lock instead of queueing every query behind it', async () => {
+    const holder = new Client({ connectionString: testDatabaseUrl });
+    await holder.connect();
+    try {
+      await holder.query('begin');
+      await holder.query('lock table drizzle.__drizzle_migrations in access exclusive mode');
+      await expect(runMigrations(testDatabaseUrl)).rejects.toMatchObject({
+        cause: { code: '55P03' },
+      });
+    } finally {
+      await holder.query('rollback');
+      await holder.end();
+    }
+  }, 20_000);
 
   it('0010 drops the seeded English names and keeps the ones users set', async () => {
     const { personal } = await workspacesOf(t, ann);

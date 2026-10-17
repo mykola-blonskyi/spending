@@ -133,7 +133,10 @@ for it to be healthy before `web`. Compose recreates both `web` and `api`, so th
 unavailable while the backup and migration run, typically a few seconds. If the dump or a
 migration fails, the deploy fails and the whole site stays down until a later deploy succeeds.
 That is deliberate (fail-closed): new code never runs against an old schema, and nothing runs
-without a fresh dump. Fix forward or revert and redeploy (see Rollback).
+without a fresh dump. Fix forward or revert and redeploy (see Rollback). The migration session sets
+`lock_timeout` to 10 s: if a lock it needs is still held, for example by an old `api` container
+that still serves, the migration fails instead of queueing every query on that table behind it.
+Rerun the deploy.
 
 `SOURCE_COMMIT` is provided by Coolify (the commit it built) through the `.env` it attaches to
 every service, and `/api/health` reports it as `version`, so the Deploy workflow can confirm the
