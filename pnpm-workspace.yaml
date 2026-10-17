@@ -8,3 +8,6 @@ allowBuilds:
 # pdf.js renders to a canvas in Node with it; the app only reads text in the browser.
 ignoredOptionalDependencies:
   - '@napi-rs/canvas'
+# GHSA-r3ph-w7gj-g6xm in js-yaml 5.0.0-5.4.0, via @nestjs/swagger. Drop once it requires >=5.4.1.
+overrides:
+  'js-yaml@>=5.0.0 <5.4.1': ^5.4.1
