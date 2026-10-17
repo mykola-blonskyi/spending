@@ -2100,6 +2100,14 @@
                 "currency": {
                   "type": "string"
                 },
+                "openingBalanceMinor": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "openingOn": {
+                  "type": "string"
+                },
                 "archivedAt": {
                   "$ref": "#/components/schemas/ArchivedAt_Output"
                 },
@@ -2125,6 +2133,8 @@
                 "name",
                 "kind",
                 "currency",
+                "openingBalanceMinor",
+                "openingOn",
                 "archivedAt",
                 "revision",
                 "createdAt",
@@ -2163,6 +2173,14 @@
             ]
           },
           "currency": {
+            "type": "string"
+          },
+          "openingBalanceMinor": {
+            "type": "integer",
+            "minimum": -1000000000000,
+            "maximum": 1000000000000
+          },
+          "openingOn": {
             "type": "string"
           }
         },
@@ -2203,6 +2221,14 @@
           "currency": {
             "type": "string"
           },
+          "openingBalanceMinor": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "openingOn": {
+            "type": "string"
+          },
           "archivedAt": {
             "$ref": "#/components/schemas/ArchivedAt_Output"
           },
@@ -2228,6 +2254,8 @@
           "name",
           "kind",
           "currency",
+          "openingBalanceMinor",
+          "openingOn",
           "archivedAt",
           "revision",
           "createdAt",
@@ -2252,6 +2280,14 @@
               "savings",
               "other"
             ]
+          },
+          "openingBalanceMinor": {
+            "type": "integer",
+            "minimum": -1000000000000,
+            "maximum": 1000000000000
+          },
+          "openingOn": {
+            "type": "string"
           },
           "archived": {
             "type": "boolean"
@@ -3093,6 +3129,14 @@
                 "currency": {
                   "type": "string"
                 },
+                "openingBalanceMinor": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "openingOn": {
+                  "type": "string"
+                },
                 "archivedAt": {
                   "$ref": "#/components/schemas/ArchivedAt_Output"
                 },
@@ -3118,6 +3162,8 @@
                 "name",
                 "kind",
                 "currency",
+                "openingBalanceMinor",
+                "openingOn",
                 "archivedAt",
                 "revision",
                 "createdAt",
@@ -4161,6 +4207,14 @@
                 "currency": {
                   "type": "string"
                 },
+                "openingBalanceMinor": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "openingOn": {
+                  "type": "string"
+                },
                 "archivedAt": {
                   "$ref": "#/components/schemas/ArchivedAt"
                 },
@@ -4186,6 +4240,8 @@
                 "name",
                 "kind",
                 "currency",
+                "openingBalanceMinor",
+                "openingOn",
                 "archivedAt",
                 "revision",
                 "createdAt",

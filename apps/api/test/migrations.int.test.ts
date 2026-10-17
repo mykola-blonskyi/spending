@@ -125,4 +125,27 @@ describe('migrations', () => {
       cause: { message: expect.stringMatching(/^1 live transactions or recurring rules differ/) },
     });
   });
+
+  it('0014 opens an existing account on its creation day and bumps its revision (BR-40)', async () => {
+    const { personal } = await workspacesOf(t, ann);
+    const [card] = await t.db
+      .insert(accounts)
+      .values({
+        workspaceId: personal,
+        name: 'Card',
+        kind: 'card',
+        currency: 'EUR',
+        createdAt: new Date('2025-03-04T23:30:00Z'),
+      })
+      .returning();
+    const text = readFileSync(
+      resolve(__dirname, '../drizzle/0014_account_opening_balance.sql'),
+      'utf8',
+    );
+    await t.db.execute(sql.raw(text.split('--> statement-breakpoint').at(-1)!));
+
+    const [after] = await t.db.select().from(accounts).where(eq(accounts.id, card!.id));
+    expect(after).toMatchObject({ openingOn: '2025-03-04', openingBalanceMinor: 0 });
+    expect(after!.revision).toBeGreaterThan(card!.revision);
+  });
 });

@@ -761,6 +761,8 @@ export interface components {
                 /** @enum {string} */
                 kind: "cash" | "bank" | "card" | "savings" | "other";
                 currency: string;
+                openingBalanceMinor: number;
+                openingOn: string;
                 archivedAt: components["schemas"]["ArchivedAt_Output"];
                 revision: number;
                 /** Format: date-time */
@@ -776,6 +778,8 @@ export interface components {
             /** @enum {string} */
             kind: "cash" | "bank" | "card" | "savings" | "other";
             currency: string;
+            openingBalanceMinor?: number;
+            openingOn?: string;
         };
         AccountDto_Output: {
             /** Format: uuid */
@@ -786,6 +790,8 @@ export interface components {
             /** @enum {string} */
             kind: "cash" | "bank" | "card" | "savings" | "other";
             currency: string;
+            openingBalanceMinor: number;
+            openingOn: string;
             archivedAt: components["schemas"]["ArchivedAt_Output"];
             revision: number;
             /** Format: date-time */
@@ -797,6 +803,8 @@ export interface components {
             name?: string;
             /** @enum {string} */
             kind?: "cash" | "bank" | "card" | "savings" | "other";
+            openingBalanceMinor?: number;
+            openingOn?: string;
             archived?: boolean;
         };
         SystemKey_Output: string | null;
@@ -981,6 +989,8 @@ export interface components {
                 /** @enum {string} */
                 kind: "cash" | "bank" | "card" | "savings" | "other";
                 currency: string;
+                openingBalanceMinor: number;
+                openingOn: string;
                 archivedAt: components["schemas"]["ArchivedAt_Output"];
                 revision: number;
                 /** Format: date-time */
@@ -1197,6 +1207,8 @@ export interface components {
                 /** @enum {string} */
                 kind: "cash" | "bank" | "card" | "savings" | "other";
                 currency: string;
+                openingBalanceMinor: number;
+                openingOn: string;
                 archivedAt: components["schemas"]["ArchivedAt"];
                 revision: number;
                 /** Format: date-time */

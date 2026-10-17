@@ -16,6 +16,8 @@ export const account = (patch: Partial<Account> = {}): Account => ({
   name: 'Card',
   kind: 'card',
   currency: 'EUR',
+  openingBalanceMinor: 0,
+  openingOn: '2026-01-01',
   archivedAt: null,
   ...stamp,
   ...patch,

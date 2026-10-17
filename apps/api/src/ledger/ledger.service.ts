@@ -35,6 +35,8 @@ export const accountColumns = {
   name: accounts.name,
   kind: accounts.kind,
   currency: accounts.currency,
+  openingBalanceMinor: accounts.openingBalanceMinor,
+  openingOn: accounts.openingOn,
   archivedAt: accounts.archivedAt,
   revision: accounts.revision,
   createdAt: accounts.createdAt,

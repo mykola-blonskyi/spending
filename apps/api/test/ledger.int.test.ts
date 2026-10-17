@@ -143,6 +143,85 @@ describe('ledger', () => {
       }
     });
 
+    it('creates, edits and syncs an opening balance and date with the account (BR-40)', async () => {
+      type Account = {
+        id: string;
+        openingBalanceMinor: number;
+        openingOn: string;
+        revision: number;
+      };
+      const plain = await json<Account>(
+        await as(t, ann, '/v1/accounts', {
+          method: 'POST',
+          body: { workspaceId: family, name: 'Cash', kind: 'cash', currency: 'EUR' },
+        }),
+        201,
+      );
+      expect(plain).toMatchObject({
+        openingBalanceMinor: 0,
+        openingOn: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      });
+      const created = await json<Account>(
+        await as(t, ann, '/v1/accounts', {
+          method: 'POST',
+          body: {
+            workspaceId: family,
+            name: 'Savings',
+            kind: 'savings',
+            currency: 'EUR',
+            openingBalanceMinor: -50000,
+            openingOn: '2026-01-15',
+          },
+        }),
+        201,
+      );
+      expect(created).toMatchObject({ openingBalanceMinor: -50000, openingOn: '2026-01-15' });
+      const edited = await json<Account>(
+        await as(t, ann, `/v1/accounts/${created.id}`, {
+          method: 'PATCH',
+          body: { openingBalanceMinor: 100000, openingOn: '2026-02-01' },
+        }),
+        200,
+      );
+      expect(edited).toMatchObject({ openingBalanceMinor: 100000, openingOn: '2026-02-01' });
+      expect(edited.revision).toBeGreaterThan(created.revision);
+
+      const { accounts } = await json<{ accounts: Account[] }>(
+        await as(t, bob, '/v1/sync/pull?cursor=0'),
+        200,
+      );
+      expect(accounts.find((a) => a.id === created.id)).toMatchObject({
+        openingBalanceMinor: 100000,
+        openingOn: '2026-02-01',
+      });
+
+      for (const body of [
+        { openingBalanceMinor: 1.5 },
+        { openingBalanceMinor: '100' },
+        { openingBalanceMinor: 1_000_000_000_001 },
+        { openingOn: '2026-02-30' },
+        { openingOn: '01.02.2026' },
+        { openingOn: null },
+      ]) {
+        const response = await as(t, ann, `/v1/accounts/${created.id}`, { method: 'PATCH', body });
+        expect(response.status).toBe(400);
+      }
+      expect(
+        (
+          await as(t, ann, '/v1/accounts', {
+            method: 'POST',
+            body: {
+              workspaceId: annPersonal,
+              name: 'Bad',
+              kind: 'cash',
+              currency: 'EUR',
+              openingBalanceMinor: 0.25,
+            },
+          })
+        ).status,
+      ).toBe(400);
+    });
+
     it('does not write a PATCH that changes nothing', async () => {
       type Stamped = { id: string; revision: number; updatedAt: string; archivedAt: string | null };
       const patch = async (path: string, body: Record<string, unknown>) =>
