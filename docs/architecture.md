@@ -176,7 +176,8 @@ stored lucide icon name to a curated icon set (`category-icons.ts`).
   which replaces the full conflict list.
 - **Rejected changes.** A `rejected` result keeps the overlay and marks the mutation `failed`
   with its code; history shows "Not synced" with the reason from `errors.<code>` (for a rejected
-  delete, on the server row), and other entries keep syncing. Editing the entry replaces the failed mutation with a fresh one, since the
+  delete, on the server row) and the entry screen repeats the reason above the form, and other
+  entries keep syncing. Editing the entry replaces the failed mutation with a fresh one, since the
   server stores the rejection under the old ID. Discard, on the entry screen or the detail pane,
   drops the failed mutation and the overlay (`discardFailed`): the entry returns to its last
   server row, or leaves the device if the server never had it.
