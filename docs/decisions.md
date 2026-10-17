@@ -308,3 +308,15 @@ Legacy binary `.xls` is refused with a message. Known banks are recognized by th
 **Consequences.** No new dependency. The reader takes formula cells by their cached value and
 skips ZIP64, CRC checks and every sheet but the first; a part over 64 MiB or a sheet over 100
 columns is refused. PDF statements will reuse the same cell table and mapping step.
+
+**Addendum (category hints, #104).** The mapping step has two optional roles, bank category and
+MCC, set by the PrivatBank and monobank presets. Each row carries them as optional request fields,
+used only by BR-29. Neither is stored anywhere, on the server or on the device (#101, decision
+13). The import response echoes each imported row's bank category, and the browser holds it in
+memory for that tab. While the import screens are open, it sends the bank category with the
+user's category choice: per item on the review confirmation, and to `POST /v1/imports/learn` for
+choices on the import summary, since those edits otherwise travel through the sync queue, which
+would persist the hint in the local store. A correction made later, from history, learns only the
+description rule; a lost bank-category rule is cheaper than a stored bank category. The MCC is
+matched against a fixed table and never learned. The amount parser also accepts "грн" and "₴"
+for UAH.

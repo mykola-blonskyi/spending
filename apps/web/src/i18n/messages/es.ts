@@ -551,6 +551,8 @@ export const es = {
       currency: 'Moneda',
       card: 'Tarjeta',
       balance: 'Saldo',
+      bankCategory: 'Categoría del banco (solo sugerencia)',
+      mcc: 'MCC (solo sugerencia)',
     },
     notMapped: 'No está en este archivo',
     amountLayout: 'Columnas del importe',

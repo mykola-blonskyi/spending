@@ -7,6 +7,9 @@ const DESCRIPTION_MAX = 200;
 const EXTERNAL_ID_MAX = 100;
 export const MAPPING_MAX_BYTES = 4096;
 
+/** BR-29: the bank's own category text, sent by the browser and never stored. */
+export const bankCategorySchema = z.string().max(100);
+
 export const REJECT_REASONS = [
   'INVALID_DATE',
   'INVALID_AMOUNT',
@@ -29,6 +32,12 @@ export const importRowSchema = z.strictObject({
   currency: z.string().optional(),
   description: z.string(),
   externalId: z.string().optional(),
+  // Category hints (BR-29): validated here, so a bad value fails the request, not one row.
+  bankCategory: bankCategorySchema.optional(),
+  mcc: z
+    .string()
+    .regex(/^\d{4}$/)
+    .optional(),
 });
 export type ImportRowInput = z.infer<typeof importRowSchema>;
 
@@ -41,6 +50,8 @@ export type NormalizedRow = Readonly<{
   currency: CurrencyCode;
   description: string;
   externalId: string | null;
+  bankCategory?: string;
+  mcc?: string;
 }>;
 
 type Checked = { row: NormalizedRow } | { reason: RejectReason };
@@ -64,6 +75,8 @@ function checkRow(input: ImportRowInput, accountCurrency: CurrencyCode): Checked
       currency,
       description,
       externalId,
+      bankCategory: input.bankCategory,
+      mcc: input.mcc,
     },
   };
 }

@@ -36,7 +36,14 @@ import { Table, Td, Th, Tr } from './table';
 const NONE = 'none';
 const PREVIEW_ROWS = 5;
 const DELIMITER_NAMES = { ';': 'semicolon', ',': 'comma', '\t': 'tab' } as const;
-const OPTIONAL_COLUMNS: readonly (keyof Columns)[] = ['externalId', 'currency', 'card', 'balance'];
+const OPTIONAL_COLUMNS: readonly (keyof Columns)[] = [
+  'externalId',
+  'currency',
+  'card',
+  'balance',
+  'bankCategory',
+  'mcc',
+];
 const ACCEPT = [
   '.csv',
   '.txt',

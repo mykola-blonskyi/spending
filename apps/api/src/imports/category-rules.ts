@@ -1,7 +1,7 @@
 import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 import type { Tx } from '../database/database.module';
 import { categories, categoryRules } from '../database/schema';
-import { type CategoryCatalog, merchantKey } from './categorize';
+import { bankCategoryKey, type CategoryCatalog, foldBankCategory, merchantKey } from './categorize';
 
 /** Learned rules and default categories of one workspace; archived categories are skipped. */
 export async function loadCatalog(tx: Tx, workspaceId: string): Promise<CategoryCatalog> {
@@ -39,13 +39,21 @@ export async function loadCatalog(tx: Tx, workspaceId: string): Promise<Category
  */
 export async function learnCategoryRules(
   tx: Tx,
-  rules: readonly { workspaceId: string; description: string; categoryId: string }[],
+  rules: readonly {
+    workspaceId: string;
+    description?: string;
+    categoryId: string;
+    /** The row's bank category, sent while the import is open: learned as a rule of its own. */
+    bankCategory?: string;
+  }[],
 ): Promise<void> {
   const byKey = new Map<string, { workspaceId: string; merchantKey: string; categoryId: string }>();
-  for (const { workspaceId, description, categoryId } of rules) {
-    const key = merchantKey(description);
-    if (key !== '')
-      byKey.set(`${workspaceId}:${key}`, { workspaceId, merchantKey: key, categoryId });
+  for (const { workspaceId, description, categoryId, bankCategory } of rules) {
+    const folded = foldBankCategory(bankCategory ?? '');
+    for (const key of [merchantKey(description ?? ''), folded ? bankCategoryKey(folded) : '']) {
+      if (key !== '')
+        byKey.set(`${workspaceId}:${key}`, { workspaceId, merchantKey: key, categoryId });
+    }
   }
   if (byKey.size === 0) return;
   // shortcut: one learned rule per merchant regardless of kind, so a refund can replace the expense

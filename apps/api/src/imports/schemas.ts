@@ -2,7 +2,13 @@ import { z } from 'zod';
 import { importBatches } from '../database/schema';
 import { transactionViewSchema } from '../ledger/views';
 import { WORKSPACE_KINDS } from '../workspaces/family';
-import { IMPORT_ROWS_MAX, importRowSchema, MAPPING_MAX_BYTES, REJECT_REASONS } from './rows';
+import {
+  bankCategorySchema,
+  IMPORT_ROWS_MAX,
+  importRowSchema,
+  MAPPING_MAX_BYTES,
+  REJECT_REASONS,
+} from './rows';
 
 export const importBodySchema = z.strictObject({
   accountId: z.uuid(),
@@ -36,7 +42,12 @@ const rejectedRowSchema = z.object({ line: z.int(), reason: z.enum(REJECT_REASON
 
 export const importResultSchema = z.object({
   batch: importBatchViewSchema,
-  imported: z.object({ count: z.int(), transactionIds: z.array(z.uuid()) }),
+  imported: z.object({
+    count: z.int(),
+    transactionIds: z.array(z.uuid()),
+    /** The bank category of each imported row that had one, for the browser to send back. */
+    bankCategories: z.record(z.uuid(), z.string()),
+  }),
   duplicates: z.int(),
   rejected: z.array(rejectedRowSchema),
 });
@@ -66,6 +77,7 @@ export const confirmBodySchema = z.strictObject({
         transactionId: z.uuid(),
         scope: z.enum(WORKSPACE_KINDS),
         categoryId: z.uuid().nullable(),
+        bankCategory: bankCategorySchema.optional(),
       }),
     )
     .min(1)
@@ -76,6 +88,21 @@ export const confirmBodySchema = z.strictObject({
     ),
 });
 export type ConfirmItem = z.infer<typeof confirmBodySchema>['items'][number];
+
+/** BR-29: categories chosen on the import summary, with the bank category the browser still holds. */
+export const learnBodySchema = z.strictObject({
+  items: z
+    .array(
+      z.strictObject({
+        transactionId: z.uuid(),
+        categoryId: z.uuid(),
+        bankCategory: bankCategorySchema,
+      }),
+    )
+    .min(1)
+    .max(500),
+});
+export type LearnItem = z.infer<typeof learnBodySchema>['items'][number];
 
 export const confirmResultSchema = z.object({ transactions: z.array(transactionViewSchema) });
 
