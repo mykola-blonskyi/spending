@@ -266,7 +266,8 @@ Not done yet, each worth adding later:
    - Environment variables: `DATABASE_URL`, `APP_ORIGIN=https://spending.blonskyi.dev`,
      `OIDC_ISSUER=https://login.blonskyi.dev`, `OIDC_CLIENT_ID=spending`, `OIDC_CLIENT_SECRET`,
      `SESSION_ENCRYPTION_KEY`. Each is `${VAR:?}` in the compose file, so a missing one fails
-     the deploy.
+     the deploy. `MIGRATION_DATABASE_URL` is optional until the roles are split
+     (Database roles).
 
 7. **Coolify API token.** Keys & Tokens → new token with only the `deploy` and `read`
    abilities. Do NOT grant `read:sensitive` while the repository is public: Actions logs are
@@ -293,6 +294,113 @@ Not done yet, each worth adding later:
     database. Read the log with `docker logs 3p9qjnulllqn3bcjqokir0wq 2>&1 | grep 'duration:'`.
     Undo with `ALTER DATABASE spending RESET log_min_duration_statement;` and
     `ALTER DATABASE spending RESET log_parameter_max_length;`.
+
+## Database roles
+
+`spending_app` owns the database today and runs both the migrations and the app, so a SQL-level
+compromise of the app could run DDL or `DROP` its tables. The split below gives the schema to a
+`spending_owner` role that only `migrate` uses (`MIGRATION_DATABASE_URL`), and leaves
+`spending_app` with data access only. Until it is done, `MIGRATION_DATABASE_URL` stays unset and
+`migrate` uses `DATABASE_URL`, as before.
+
+What each role needs, from the code:
+
+- The API at runtime: `SELECT`, `INSERT`, `UPDATE`, `DELETE` on the tables, and `USAGE` on the
+  `ledger_revision` sequence (column defaults and the stamp triggers call `nextval`). It runs no
+  DDL, no `TRUNCATE` and no `setval`; the ledger lock is an advisory lock, which needs no
+  privilege. The trigger functions run with the caller's rights and `EXECUTE` stays granted to
+  `PUBLIC`.
+- `pg_dump` in `backup` and `predeploy-backup`: `SELECT` on every table and sequence, including
+  the `drizzle` schema, which it dumps too.
+- Migrations: ownership of both schemas and every object in them. The migrator runs
+  `CREATE SCHEMA IF NOT EXISTS drizzle` on every start, which fails without `CREATE` on the
+  database even when no migration is pending. So once the roles are split, a deploy without
+  `MIGRATION_DATABASE_URL` fails at `migrate`, and the site stays down until it is set.
+- `deploy/after-restore.sql` calls `setval`, which needs `UPDATE` on the sequence, so it runs as
+  the superuser (see Backups and restore).
+
+Split the roles (owner, once). Do steps 1 to 3 without a deploy in between; the running app is
+not affected.
+
+1. Generate a password with `openssl rand -hex 24`, then open psql as the superuser on the
+   `spending` database:
+
+   ```bash
+   ssh blonskyi
+   docker exec -i 3p9qjnulllqn3bcjqokir0wq psql -U postgres -d spending
+   ```
+
+2. Paste this, with the password in place of `<generated>`:
+
+   ```sql
+   \set ON_ERROR_STOP on
+   BEGIN;
+   CREATE ROLE spending_owner LOGIN PASSWORD '<generated>' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;
+   -- Everything spending_app owns here, and the spending database itself, moves to the owner.
+   REASSIGN OWNED BY spending_app TO spending_owner;
+   GRANT CONNECT ON DATABASE spending TO spending_app;
+   GRANT USAGE ON SCHEMA public, drizzle TO spending_app;
+   GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO spending_app;
+   GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO spending_app;
+   GRANT SELECT ON ALL TABLES IN SCHEMA drizzle TO spending_app;
+   GRANT SELECT ON ALL SEQUENCES IN SCHEMA drizzle TO spending_app;
+   ALTER DEFAULT PRIVILEGES FOR ROLE spending_owner IN SCHEMA public
+     GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO spending_app;
+   ALTER DEFAULT PRIVILEGES FOR ROLE spending_owner IN SCHEMA public
+     GRANT USAGE, SELECT ON SEQUENCES TO spending_app;
+   ALTER DEFAULT PRIVILEGES FOR ROLE spending_owner IN SCHEMA drizzle
+     GRANT SELECT ON TABLES TO spending_app;
+   ALTER DEFAULT PRIVILEGES FOR ROLE spending_owner IN SCHEMA drizzle
+     GRANT SELECT ON SEQUENCES TO spending_app;
+   COMMIT;
+   ```
+
+   `REASSIGN OWNED` also hands over any other database `spending_app` owns (a leftover
+   `spending_restore` or `spending_replaced_*`), but not the objects inside them. The default
+   privileges make every table and sequence a later migration creates usable by `spending_app`.
+
+3. Verify, in the same psql session. Both `CREATE` statements must fail with
+   `permission denied`, the owner must be `spending_owner`, and the count must be 0:
+
+   ```sql
+   SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname = 'spending';
+   SELECT count(*) FROM pg_class
+     WHERE relnamespace IN ('public'::regnamespace, 'drizzle'::regnamespace)
+       AND pg_get_userbyid(relowner) = 'spending_app';
+   SET ROLE spending_app;
+   \set ON_ERROR_STOP off
+   CREATE TABLE public.ddl_probe (id int);
+   CREATE SCHEMA ddl_probe;
+   RESET ROLE;
+   ```
+
+4. In Coolify, add `MIGRATION_DATABASE_URL` =
+   `postgres://spending_owner:<generated>@3p9qjnulllqn3bcjqokir0wq:5432/spending` to the
+   resource, then redeploy (Deploying). `DATABASE_URL` stays `spending_app`. Check that the
+   `migrate` container exited 0, `/api/health/ready` answers, and that the next `backup` run
+   logs `wrote daily-...`.
+
+Roll back (owner): remove `MIGRATION_DATABASE_URL` from Coolify, then as the superuser:
+
+```sql
+\set ON_ERROR_STOP on
+BEGIN;
+REASSIGN OWNED BY spending_owner TO spending_app;
+-- Nothing is owned by spending_owner any more; this drops its default privileges and grants.
+DROP OWNED BY spending_owner;
+COMMIT;
+DROP ROLE spending_owner;
+```
+
+`DROP ROLE` fails with "objects in database ..." when `spending_owner` still owns objects
+elsewhere, such as a scratch restore database: connect to each database it names
+(`psql -U postgres -d <name>`), run the `BEGIN` ... `COMMIT` block there, then `DROP ROLE`
+again. Redeploy afterwards.
+
+The runbook was rehearsed on a throwaway local database: migrations up to 0010 as the app role,
+then the split, migration 0011 applied as the owner, the app (sign-in, sync push, family
+invitation, export, recurring generation, mutation pruning) run as `spending_app`, a table
+created later by the owner used by the app, `pg_dump` and the restore below, and the rollback.
 
 ## Deploying
 
@@ -381,27 +489,35 @@ backup container name comes from `docker ps --format '{{.Names}}' | grep '^backu
 
 ```bash
 BACKUP=<backup container name>
+OWNER=spending_owner   # spending_app while the roles are not split (Database roles)
 docker exec "$BACKUP" ls -l /backups/daily /backups/weekly /backups/pre-migrate
 
 docker exec -i 3p9qjnulllqn3bcjqokir0wq psql -U postgres \
-  -c 'CREATE DATABASE spending_restore OWNER spending_app;' \
+  -c "CREATE DATABASE spending_restore OWNER $OWNER;" \
   -c 'REVOKE ALL ON DATABASE spending_restore FROM PUBLIC;' \
+  -c 'GRANT CONNECT ON DATABASE spending_restore TO spending_app;' \
   -c "ALTER DATABASE spending_restore SET log_min_duration_statement = '500ms';" \
   -c 'ALTER DATABASE spending_restore SET log_parameter_max_length = 0;'
 
-# DATABASE_URL is expanded inside the container, so it never reaches your shell history.
-docker exec "$BACKUP" sh -c 'pg_restore --dbname="${DATABASE_URL%/*}/spending_restore" \
-  --no-owner --exit-on-error /backups/daily/daily-YYYY-MM-DD.dump'
+# The superuser restores as $OWNER, so no password is typed and every object belongs to it.
+docker exec "$BACKUP" cat /backups/daily/daily-YYYY-MM-DD.dump |
+  docker exec -i 3p9qjnulllqn3bcjqokir0wq pg_restore -U postgres --dbname=spending_restore \
+    --no-owner --role="$OWNER" --exit-on-error
 
 docker exec -i 3p9qjnulllqn3bcjqokir0wq psql -U postgres -d spending_restore \
   -c '\dt' -c 'SELECT count(*) FROM drizzle.__drizzle_migrations;' \
   -c 'SELECT count(*) FROM transactions;'
 
 # Required. Moves ledger_revision past every device cursor and sets a new sync epoch, so every
-# device drops what it cached and pulls the restored data from 0 (BR-35).
-docker exec "$BACKUP" sh -c 'psql "${DATABASE_URL%/*}/spending_restore" -v ON_ERROR_STOP=1 \
-  -f /usr/local/share/spending/after-restore.sql'
+# device drops what it cached and pulls the restored data from 0 (BR-35). It calls setval, which
+# spending_app may not, so the superuser runs it.
+docker exec "$BACKUP" cat /usr/local/share/spending/after-restore.sql |
+  docker exec -i 3p9qjnulllqn3bcjqokir0wq psql -U postgres -d spending_restore -v ON_ERROR_STOP=1
 ```
+
+With split roles, also run the `GRANT` and `ALTER DEFAULT PRIVILEGES` statements of Database
+roles step 2 in `spending_restore` (`psql -U postgres -d spending_restore`). A dump taken before
+the split carries none, and default privileges belong to each database. They are idempotent.
 
 `after-restore.sql` lives in `deploy/` and ships in the backup image. A dump older than migration
 0009 has no `sync_epoch` table; the script skips the epoch and the redeploy's migration creates a

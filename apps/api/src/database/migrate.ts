@@ -13,8 +13,13 @@ export async function runMigrations(databaseUrl: string): Promise<void> {
   }
 }
 
+/** The schema owner's URL when the roles are split (docs/operations.md), else the app's. */
+export function migrationDatabaseUrl(env: NodeJS.ProcessEnv): string | undefined {
+  return env.MIGRATION_DATABASE_URL || env.DATABASE_URL;
+}
+
 if (require.main === module) {
-  const url = process.env.DATABASE_URL;
+  const url = migrationDatabaseUrl(process.env);
   if (!url) throw new Error('DATABASE_URL is required');
   runMigrations(url).catch((error: unknown) => {
     process.stderr.write(
