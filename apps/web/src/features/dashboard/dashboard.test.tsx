@@ -118,6 +118,30 @@ describe('dashboard', () => {
     expect(analyticsCalls()).toEqual([{ ...summary.period, scope: 'all', compare: 'previous' }]);
   });
 
+  it('shows no change against a previous period with nothing in it', async () => {
+    get.mockImplementation((async (path: string) =>
+      path === '/api/v1/analytics/summary'
+        ? {
+            data: {
+              ...summary,
+              previous: {
+                ...summary.previous!,
+                totals: { incomeMinor: 0, expenseMinor: 0, balanceMinor: 0 },
+                byCategory: [],
+                deltas: summary.totals,
+              },
+            },
+          }
+        : { data: { budgets: [] } }) as never);
+    renderScreen();
+    const totals = await screen.findByRole('region', { name: 'Totals' });
+    expect(totals).toHaveTextContent('Income€3,000.00');
+    expect(totals).not.toHaveTextContent(/vs previous period|Compared with/);
+    expect(screen.getByRole('region', { name: 'By category' })).not.toHaveTextContent(
+      'vs previous period',
+    );
+  });
+
   it('asks for the quarter, steps back and refuses a reversed custom range', async () => {
     renderScreen();
     await screen.findByRole('region', { name: 'Totals' });

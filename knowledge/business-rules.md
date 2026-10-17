@@ -74,7 +74,8 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   Analytics count only confirmed, non-deleted rows of the actor's workspaces in the chosen scope
   (personal, family or both). The comparison period is the previous calendar month for exactly one
   calendar month, the previous calendar year for exactly one calendar year, otherwise the
-  equal-length period right before. Categories are never merged across scopes: same-named personal
+  equal-length period right before; against one with no income and no expenses the dashboard
+  shows no change, since every change would be the whole total. Categories are never merged across scopes: same-named personal
   and family categories stay separate rows in "all".
 
 ## Ledger, history and sync
