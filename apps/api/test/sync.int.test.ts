@@ -216,6 +216,55 @@ describe('sync', () => {
     expect((await serverRow(gone.id)).deletedAt).not.toBeNull();
   });
 
+  it('prunes resolved conflicts after 180 days and keeps open ones', async () => {
+    const conflicted = async () => {
+      const tx = draft(annPersonal);
+      await push(ann, upsert(tx));
+      await push(ann, upsert({ ...tx, amountMinor: 2000 }, 1));
+      const [conflict] = await push(ann, upsert({ ...tx, description: 'Local' }, 1));
+      return conflict!.conflictId!;
+    };
+    const [old, recent, open] = [await conflicted(), await conflicted(), await conflicted()];
+    for (const id of [old, recent]) {
+      await as(t, ann, `/v1/sync/conflicts/${id}/resolve`, {
+        method: 'POST',
+        body: { resolution: 'server' },
+      });
+    }
+    await t.db.execute(
+      sql`update sync_conflicts set created_at = now() - interval '200 days',
+            resolved_at = now() - interval '181 days' where id = ${old}`,
+    );
+    await t.db.execute(
+      sql`update sync_conflicts set created_at = now() - interval '200 days' where id = ${open}`,
+    );
+
+    expect(await t.app.get(SyncService).pruneResolvedConflicts()).toBe(1);
+    expect((await t.db.select().from(syncConflicts)).map((c) => c.id).sort()).toEqual(
+      [recent, open].sort(),
+    );
+  });
+
+  it('budgets pushes per user by mutation count, not by request', async () => {
+    const pushStatus = (s: Session, mutations: unknown[]) =>
+      as(t, s, '/v1/sync/push', { method: 'POST', body: { mutations } }).then((r) => r.status);
+    const queue = Array.from({ length: 300 }, () => upsert(draft(annPersonal)));
+    expect(await pushStatus(ann, queue.slice(0, 200))).toBe(200);
+    expect(await pushStatus(ann, queue.slice(200))).toBe(200);
+    const invalid = Array<unknown>(200).fill({});
+    for (let used = 300; used < 1900; used += 200) {
+      expect(await pushStatus(ann, invalid)).toBe(400);
+    }
+    expect(await pushStatus(ann, invalid.slice(0, 100))).toBe(400);
+
+    const late = upsert(draft(annPersonal));
+    expect(await pushStatus(ann, [late])).toBe(429);
+    expect(
+      await t.db.select().from(transactions).where(eq(transactions.id, late.transaction.id)),
+    ).toEqual([]);
+    expect(await pushStatus(bob, [upsert(draft(bobPersonal))])).toBe(200);
+  });
+
   it('stops applying a push once its client has gone', async () => {
     const slow = sql.raw(`create function zz_slow() returns trigger language plpgsql as $$
       begin perform pg_sleep(0.05); return new; end $$;

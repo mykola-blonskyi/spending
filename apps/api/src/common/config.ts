@@ -23,6 +23,8 @@ const configSchema = z
     COOKIE_SECURE: booleanFlag.default(true),
     // Commit of the running build, set by Coolify; the deploy check compares it with the SHA.
     SOURCE_COMMIT: z.string().min(1).default('unknown'),
+    // Each sync mutation holds the ledger lock, so a push costs its mutation count.
+    SYNC_MUTATIONS_PER_MINUTE: z.coerce.number().int().min(1).default(2000),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV !== 'production') return;
@@ -51,6 +53,7 @@ export type AppConfig = Readonly<{
   sessionEncryptionKey: Buffer;
   cookieSecure: boolean;
   version: string;
+  syncMutationsPerMinute: number;
 }>;
 
 export function parseConfig(env: Record<string, string | undefined>): AppConfig {
@@ -75,6 +78,7 @@ export function parseConfig(env: Record<string, string | undefined>): AppConfig 
     sessionEncryptionKey: data.SESSION_ENCRYPTION_KEY,
     cookieSecure: data.COOKIE_SECURE,
     version: data.SOURCE_COMMIT,
+    syncMutationsPerMinute: data.SYNC_MUTATIONS_PER_MINUTE,
   };
 }
 
