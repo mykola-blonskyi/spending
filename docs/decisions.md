@@ -393,3 +393,10 @@ Import suggestions (#110, BR-38) add no column either: the server computes them 
 the import's ledger transaction, from one candidate query and the rates it already loads, and
 returns them in the import response. The browser shows them only on that import's summary, and
 confirming one is the ordinary mark, so a reload or another device simply has no suggestions.
+Rows awaiting review (#117) cannot be marked through sync, so the review list computes the same
+suggestions on each read and the review confirmation links them: one request sets the shared
+`transferId` on the pending sides and on a confirmed counterpart in one ledger transaction, and
+the version bump sends the counterpart to devices. It is the one place where the server writes
+both sides at once; it needs no new conflict, because sync refuses edits of pending rows
+(`REVIEW_REQUIRED`) and a stale edit of the confirmed side meets the bumped version like any other
+server change.

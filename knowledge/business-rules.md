@@ -182,8 +182,8 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   repeated within one file rejects the later rows (`DUPLICATE_IN_FILE_EXTERNAL_ID`).
 - **BR-28.** For a user without a family, imported rows are confirmed immediately in the personal
   workspace and auto-categorized. For a user with a family, they are `pending_review` until the
-  user confirms category and scope for each row. They wait in the importer's personal workspace
-  with the personal category suggestion. Confirming moves a family row to the family workspace
+  user confirms category and scope for each row, or marks it a transfer (BR-38). They wait in the
+  importer's personal workspace with the personal category suggestion. Confirming moves a family row to the family workspace
   with its account kept (BR-3); the category must belong to the target workspace (BR-4). One
   confirmation request is all or nothing.
 - **BR-29.** Auto-categorization tries, in order: the user's learned CategoryRule for the merchant
@@ -235,7 +235,15 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   English, Spanish) or every word of the user's name, a name of at least two words. Suggestions
   come with the import response, are never stored, and live in the open import summary; there
   the user confirms each (or all) as an ordinary mark, or dismisses it. A row awaiting review
-  (BR-28) gets none, since it cannot be marked until it is confirmed.
+  (BR-28) gets none in the import response, since it cannot be marked; the review list suggests
+  them instead, among the confirmed entries of the personal workspace and the other rows awaiting
+  review, each row in at most one pair, a pair of two pending rows shown on both. Choosing
+  Transfer on the review confirms the row in the personal workspace without a category and links
+  it in the same request: to a confirmed entry, to the other pending side confirmed with it (the
+  review selects Transfer on both), or as a one-sided transfer. A category, the family scope, or
+  a counterpart that is not a live non-transfer entry of the personal workspace on another account
+  of the opposite kind, confirmed or confirmed in the same request and pointing back, is refused.
+  A transfer learns no category rule (BR-29).
 
 ## Data rights
 
