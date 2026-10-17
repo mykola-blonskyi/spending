@@ -8,8 +8,11 @@ import {
   clearFilter,
   dayNets,
   EMPTY_FILTERS,
+  DEFAULT_TABLE_SORT,
   groupByDay,
+  nextSort,
   type RowContext,
+  sortTableRows,
   summarize,
   tableColumns,
   toEntryRow,
@@ -371,6 +374,53 @@ describe('the history table', () => {
         account: 'Savings',
       },
     ]);
+  });
+});
+
+describe('sorting the history table', () => {
+  const labels = { uncategorized: 'Uncategorized', transfer: 'Transfer' };
+  // Newest first, as the history holds them: "late" and "early" share a day.
+  const entries = [
+    entry({ id: 'late', occurredOn: '2026-10-15', amountMinor: 300, baseAmountMinor: 300 }),
+    entry({ id: 'early', occurredOn: '2026-10-15', amountMinor: 900, baseAmountMinor: 900 }),
+    entry({ id: 'usd', occurredOn: '2026-10-14', ...usd }),
+    entry({ id: 'chf', occurredOn: '2026-10-13', ...chf }),
+    entry({ id: 'income', kind: 'income', occurredOn: '2026-10-12', amountMinor: 300 }),
+    entry({ id: 'unsent', occurredOn: '2026-10-11', ...chf, version: null }),
+  ];
+  const rows = toTableRows(
+    groupByDay(toHistoryRows(entries, context, true), context.dayLabel),
+    labels,
+  );
+  const sorted = (column: 'date' | 'amount', direction: 'asc' | 'desc') =>
+    sortTableRows(rows, { column, direction }, 'en').map(({ row }) => row.id);
+
+  it('is newest first by default, the order the history holds', () => {
+    expect(sortTableRows(rows, DEFAULT_TABLE_SORT, 'en')).toEqual(rows);
+  });
+
+  it('by date oldest first is the exact reverse, ties included', () => {
+    expect(sorted('date', 'asc')).toEqual(['unsent', 'income', 'chf', 'usd', 'early', 'late']);
+  });
+
+  it('by amount uses the EUR amount, unconverted entries last in both directions', () => {
+    expect(sorted('amount', 'desc')).toEqual(['usd', 'early', 'late', 'income', 'chf', 'unsent']);
+    expect(sorted('amount', 'asc')).toEqual(['late', 'income', 'early', 'usd', 'chf', 'unsent']);
+  });
+
+  it('breaks ties newest first in both directions', () => {
+    const ties = ['late', 'income'];
+    expect(sorted('amount', 'desc').filter((id) => ties.includes(id))).toEqual(ties);
+    expect(sorted('amount', 'asc').filter((id) => ties.includes(id))).toEqual(ties);
+  });
+
+  it('flips the active column and starts another in its first direction', () => {
+    expect(nextSort(DEFAULT_TABLE_SORT, 'date')).toEqual({ column: 'date', direction: 'asc' });
+    expect(nextSort(DEFAULT_TABLE_SORT, 'amount')).toEqual({ column: 'amount', direction: 'desc' });
+    expect(nextSort({ column: 'amount', direction: 'desc' }, 'amount')).toEqual({
+      column: 'amount',
+      direction: 'asc',
+    });
   });
 });
 

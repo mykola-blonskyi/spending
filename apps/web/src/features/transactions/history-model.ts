@@ -357,6 +357,73 @@ export function toTableRows(
   });
 }
 
+export type SortDirection = 'asc' | 'desc';
+
+type Indexed = Readonly<{ row: TableRow; index: number }>;
+
+/** How a column orders rows ascending; a row of a higher `rank` goes after in both directions. */
+type SortKey = Readonly<{
+  first: SortDirection;
+  rank?: (row: TableRow) => number;
+  compare: (a: Indexed, b: Indexed, collator: Intl.Collator) => number;
+}>;
+
+/** The amount in EUR, at the conversion the totals use; null while there is none (BR-14). */
+function baseMagnitude({ row }: TableRow): number | null {
+  const { conversion } = row;
+  if (conversion.state === 'same') return Math.abs(row.amountMinor);
+  return conversion.state === 'converted' ? Math.abs(conversion.baseAmountMinor) : null;
+}
+
+// Rows arrive newest first by date, then by creation, so their index breaks a date's ties.
+const newestFirst = (a: Indexed, b: Indexed) =>
+  b.row.row.occurredOn.localeCompare(a.row.row.occurredOn) || a.index - b.index;
+
+const SORT_KEYS = {
+  date: { first: 'desc', compare: (a, b) => newestFirst(b, a) },
+  amount: {
+    first: 'desc',
+    rank: (row) => (baseMagnitude(row) === null ? 1 : 0),
+    compare: (a, b) => (baseMagnitude(a.row) ?? 0) - (baseMagnitude(b.row) ?? 0),
+  },
+} satisfies Record<string, SortKey>;
+
+export type SortColumn = keyof typeof SORT_KEYS;
+
+export type TableSort = Readonly<{ column: SortColumn; direction: SortDirection }>;
+
+export const DEFAULT_TABLE_SORT: TableSort = { column: 'date', direction: 'desc' };
+
+export function isSortColumn(column: string): column is SortColumn {
+  return Object.hasOwn(SORT_KEYS, column);
+}
+
+/** The active column flips its direction; another column starts in its own first direction. */
+export function nextSort(sort: TableSort, column: SortColumn): TableSort {
+  if (sort.column === column)
+    return { column, direction: sort.direction === 'asc' ? 'desc' : 'asc' };
+  return { column, direction: SORT_KEYS[column].first };
+}
+
+/** The table rows in `sort` order; ties keep the newest-first order of `rows`. */
+export function sortTableRows(
+  rows: readonly TableRow[],
+  sort: TableSort,
+  locale: string,
+): TableRow[] {
+  const key: SortKey = SORT_KEYS[sort.column];
+  const rank = key.rank ?? (() => 0);
+  const sign = sort.direction === 'asc' ? 1 : -1;
+  const collator = new Intl.Collator(locale);
+  return rows
+    .map((row, index) => ({ row, index }))
+    .sort(
+      (a, b) =>
+        rank(a.row) - rank(b.row) || sign * key.compare(a, b, collator) || newestFirst(a, b),
+    )
+    .map(({ row }) => row);
+}
+
 /**
  * Entries that can be the other side of `entry`'s transfer: same workspace, opposite kind, another
  * account, not a transfer yet (BR-37). Nearest date first, then nearest amount.

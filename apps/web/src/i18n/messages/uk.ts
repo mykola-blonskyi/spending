@@ -348,6 +348,10 @@ export const uk = {
       who: 'Хто',
       sync: 'Синхронізація',
     },
+    sort: {
+      date: 'Сортувати за датою',
+      amount: 'Сортувати за сумою',
+    },
     detail: {
       label: 'Вибрана операція',
       count:

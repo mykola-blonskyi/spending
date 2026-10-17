@@ -1,16 +1,23 @@
+import { ArrowDown, ArrowUp } from 'lucide-react';
 import { type CSSProperties, useMemo } from 'react';
 import { Link } from 'react-router';
 import { useWorkspaces } from '@data/sync';
 import { AuthorBadge } from '@features/family';
 import { useTranslations } from '@i18n/index';
+import { useSharedLocale } from '@shared/lib/locale-context';
 import { cn } from '@shared/lib/utils';
 import {
   type HistoryItem,
+  isSortColumn,
+  nextSort,
+  sortTableRows,
   type TableColumn,
   type TableRow,
+  type TableSort,
   tableColumns,
   toTableRows,
 } from '../history-model';
+import { setTableSort, useTableSort } from '../history-view';
 import { EntryAmount } from './entry-amount';
 import { SyncMarker } from './sync-marker';
 import { VirtualList } from './virtual-list';
@@ -75,9 +82,42 @@ function Cell({
   }
 }
 
+function Header({ column, sort }: { column: TableColumn; sort: TableSort }) {
+  const t = useTranslations();
+  if (!isSortColumn(column))
+    return (
+      <span role="columnheader" className="truncate">
+        {t(`history.columns.${column}`)}
+      </span>
+    );
+  const active = sort.column === column;
+  const Arrow = sort.direction === 'asc' ? ArrowUp : ArrowDown;
+  return (
+    <span
+      role="columnheader"
+      aria-sort={active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : undefined}
+      className={cn('flex min-w-0', column === 'amount' && 'justify-end')}
+    >
+      <button
+        type="button"
+        aria-label={t(`history.sort.${column}`)}
+        onClick={() => setTableSort(nextSort(sort, column))}
+        className={cn(
+          'flex min-w-0 items-center gap-1 rounded-sm outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60',
+          active && 'text-foreground',
+        )}
+      >
+        <span className="truncate">{t(`history.columns.${column}`)}</span>
+        {active && <Arrow aria-hidden className="size-3.5 shrink-0" />}
+      </button>
+    </span>
+  );
+}
+
 /**
- * The history as one flat table, newest first, on the same virtualizer as the rows. Each row is
- * a link to what the layout opens for an entry; the link's area covers the whole row.
+ * The history as one flat table, in the sort last chosen on the device (newest first until then),
+ * on the same virtualizer as the rows. Each row is a link to what the layout opens for an entry;
+ * the link's area covers the whole row.
  */
 export function HistoryTable({
   items,
@@ -87,16 +127,22 @@ export function HistoryTable({
   className,
 }: HistoryTableProps) {
   const t = useTranslations();
+  const { locale } = useSharedLocale();
+  const sort = useTableSort();
   const workspaces = useWorkspaces();
   const family = workspaces.items.some((workspace) => workspace.kind === 'family');
   const columns = tableColumns(family);
   const rows = useMemo(
     () =>
-      toTableRows(items, {
-        uncategorized: t('pages.transactions.uncategorized'),
-        transfer: t('transfer.label'),
-      }),
-    [items, t],
+      sortTableRows(
+        toTableRows(items, {
+          uncategorized: t('pages.transactions.uncategorized'),
+          transfer: t('transfer.label'),
+        }),
+        sort,
+        locale,
+      ),
+    [items, t, sort, locale],
   );
   const grid = 'grid grid-cols-(--history-columns) items-center gap-x-2 px-3';
   const style = {
@@ -118,18 +164,14 @@ export function HistoryTable({
           className={cn(grid, 'h-9 border-b text-xs font-medium text-muted-foreground')}
         >
           {columns.map((column) => (
-            <span
-              key={column}
-              role="columnheader"
-              className={cn('truncate', column === 'amount' && 'text-right')}
-            >
-              {t(`history.columns.${column}`)}
-            </span>
+            <Header key={column} column={column} sort={sort} />
           ))}
         </div>
       </div>
       <div className={cn(scroll === 'self' && 'min-h-0 flex-1')}>
+        {/* A new sort starts at the top of the list, in a fresh scroller. */}
         <VirtualList
+          key={`${sort.column}-${sort.direction}`}
           items={rows}
           scroll={scroll}
           estimateSize={() => ROW_ESTIMATE}

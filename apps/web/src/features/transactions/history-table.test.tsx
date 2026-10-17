@@ -135,7 +135,9 @@ describe.each(Object.entries(TRANSACTION_SCREENS))(
       first.unmount();
       open();
       expect(table()).toBeInTheDocument();
-      expect(JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY)!)).toEqual({ view: 'table' });
+      expect(JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY)!)).toMatchObject({
+        view: 'table',
+      });
     });
 
     it('opens what the layout opens for an entry, by click or Enter', async () => {
@@ -149,6 +151,62 @@ describe.each(Object.entries(TRANSACTION_SCREENS))(
       within(table()).getByRole('link', { name: 'To savings' }).focus();
       await userEvent.keyboard('{Enter}');
       expect(location()).toBe('/transactions/out');
+    });
+
+    it('sorts by the date and amount headers, and remembers the sort', async () => {
+      localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify({ view: 'table' }));
+      const amounts = ledger({
+        ...syncedState(
+          serverRow({ id: 'small', description: 'Small', amountMinor: 300, baseAmountMinor: 300 }),
+          serverRow({
+            id: 'big',
+            description: 'Big',
+            amountMinor: 9000,
+            baseAmountMinor: 9000,
+            occurredOn: '2026-01-01',
+          }),
+          serverRow({
+            id: 'usd',
+            description: 'Unconverted',
+            currency: 'USD',
+            amountMinor: 99_000,
+            baseAmountMinor: null,
+            occurredOn: '2026-02-01',
+          }),
+        ),
+      });
+      const descriptions = () =>
+        within(table())
+          .getAllByRole('row')
+          .slice(1)
+          .map((row) => within(row).getAllByRole('cell')[1]!.textContent);
+      const header = (name: string) =>
+        within(table())
+          .getByRole('button', { name: `Sort by ${name}` })
+          .closest('[role="columnheader"]');
+      const first = open(amounts);
+      expect(descriptions()).toEqual(['Small', 'Unconverted', 'Big']);
+      expect(header('date')).toHaveAttribute('aria-sort', 'descending');
+      expect(header('amount')).not.toHaveAttribute('aria-sort');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Sort by amount' }));
+      expect(descriptions()).toEqual(['Big', 'Small', 'Unconverted']);
+      expect(header('amount')).toHaveAttribute('aria-sort', 'descending');
+      expect(header('date')).not.toHaveAttribute('aria-sort');
+
+      screen.getByRole('button', { name: 'Sort by amount' }).focus();
+      await userEvent.keyboard('{Enter}');
+      expect(descriptions()).toEqual(['Small', 'Big', 'Unconverted']);
+      expect(header('amount')).toHaveAttribute('aria-sort', 'ascending');
+
+      first.unmount();
+      open(amounts);
+      expect(descriptions()).toEqual(['Small', 'Big', 'Unconverted']);
+      expect(header('amount')).toHaveAttribute('aria-sort', 'ascending');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Sort by date' }));
+      expect(descriptions()).toEqual(['Small', 'Unconverted', 'Big']);
+      expect(header('date')).toHaveAttribute('aria-sort', 'descending');
     });
 
     it('adds who recorded an entry for a family member', async () => {

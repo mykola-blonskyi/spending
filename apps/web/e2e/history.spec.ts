@@ -191,6 +191,21 @@ test('the table view on desktop covers the whole history and is remembered', asy
   await expect(page.getByRole('radio', { name: 'Table' })).toBeChecked();
   await expect(table.getByRole('link').first()).toBeVisible();
 
+  // The largest EUR amounts the seed makes; USD and GBP have no rate here, so they go last.
+  const largest = [/^Seed 1081 /, /^Seed 2162 /, /^Seed 540 /];
+  const sortByAmount = table.getByRole('button', { name: 'Sort by amount' });
+  const amountHeader = table
+    .getByRole('columnheader')
+    .filter({ has: page.getByRole('button', { name: 'Sort by amount' }) });
+  await sortByAmount.click();
+  await expect(amountHeader).toHaveAttribute('aria-sort', 'descending');
+  for (const [index, text] of largest.entries())
+    await expect(table.getByRole('link').nth(index)).toHaveText(text);
+  await page.reload();
+  await expect(amountHeader).toHaveAttribute('aria-sort', 'descending');
+  for (const [index, text] of largest.entries())
+    await expect(table.getByRole('link').nth(index)).toHaveText(text);
+
   await page.setViewportSize({ width: 375, height: 812 });
   await expect(page.getByRole('radio', { name: 'Table' })).toHaveCount(0);
   await expect(rows(page).first()).toBeVisible();

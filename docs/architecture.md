@@ -89,12 +89,19 @@ window or its own pane; `HistoryList` virtualizes a flat list of day headers and
 `FilterSheet`, `HistoryStatus`, the entry fields, `MasterDetail`, `EntryDetail`). Where the list
 itself is at least 600 px wide (measured with `ResizeObserver`), `HistoryList` puts a rows /
 table switch above it, so every layout that has the room gets it; phones and the card stack's
-narrow column keep the rows, and the stored choice stays for a wider layout. The choice is kept per device in `localStorage` (`spending.history`, read and written in
-try/catch, so the page works without storage). The table (`HistoryTable`) is one block in the
-layout's theme tokens: flat, newest first, the whole history on the same virtualizer, with date,
+narrow column keep the rows, and the stored choice stays for a wider layout. The choice and the
+table's sort are kept per device in `localStorage` as one object (`spending.history`,
+`{view, sort}`, read and written in try/catch and validated on read, so the page works without
+storage and an unknown value falls back to the default). The table (`HistoryTable`) is one block
+in the layout's theme tokens: flat, the whole history on the same virtualizer, with date,
 description, category, account, amount, who (family members only) and sync columns. A transfer
 is one row (BR-37), or its side under an account filter. Each row is a link to what the layout
 opens for an entry; the table uses `role="table"` with `aria-rowcount` and `aria-rowindex`.
+The Date and Amount headers are sort buttons (`aria-sort` on the active one). `sortTableRows`
+orders the rows from a table of sort keys: date newest first by default; amount by the absolute
+EUR amount the totals use (BR-14), entries without one last in both directions. Ties keep the
+newest-first order, and a new sort starts the list at the top. The rows view keeps its day
+order.
 Split and hybrid decide from the whole master-detail width less the 400 px entry pane (not from
 the list column, which widens once the table is shown) and then widen the list beside the pane. `layouts/<layout>-{history,entry}.tsx` are
 presentation only: an ESLint rule bans `@data/*` and `@tanstack/*` there. `layouts/screens.ts`

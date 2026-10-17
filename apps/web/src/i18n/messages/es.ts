@@ -350,6 +350,10 @@ export const es = {
       who: 'Quién',
       sync: 'Sincronización',
     },
+    sort: {
+      date: 'Ordenar por fecha',
+      amount: 'Ordenar por importe',
+    },
     detail: {
       label: 'Movimiento seleccionado',
       count: '{count, plural, one {# movimiento} other {# movimientos}}',

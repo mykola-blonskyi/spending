@@ -1,6 +1,13 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HISTORY_STORAGE_KEY, setHistoryView, useHistoryView } from './history-view';
+import { DEFAULT_TABLE_SORT } from './history-model';
+import {
+  HISTORY_STORAGE_KEY,
+  setHistoryView,
+  setTableSort,
+  useHistoryView,
+  useTableSort,
+} from './history-view';
 
 beforeEach(() => localStorage.clear());
 afterEach(() => vi.restoreAllMocks());
@@ -11,8 +18,36 @@ describe('the history view choice', () => {
     expect(first.result.current).toBe('rows');
     act(() => setHistoryView('table'));
     expect(first.result.current).toBe('table');
-    expect(JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY)!)).toEqual({ view: 'table' });
+    expect(JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY)!)).toEqual({
+      view: 'table',
+      sort: DEFAULT_TABLE_SORT,
+    });
     first.unmount();
+    expect(renderHook(() => useHistoryView()).result.current).toBe('table');
+  });
+
+  it('keeps the table sort next to the view', () => {
+    expect(renderHook(() => useTableSort()).result.current).toEqual(DEFAULT_TABLE_SORT);
+    act(() => setHistoryView('table'));
+    act(() => setTableSort({ column: 'amount', direction: 'asc' }));
+    expect(JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY)!)).toEqual({
+      view: 'table',
+      sort: { column: 'amount', direction: 'asc' },
+    });
+    expect(renderHook(() => useTableSort()).result.current).toEqual({
+      column: 'amount',
+      direction: 'asc',
+    });
+  });
+
+  it.each([
+    { column: 'payee', direction: 'asc' },
+    { column: 'amount', direction: 'up' },
+    'amount',
+    null,
+  ])('falls back to newest first for a stored sort of %j', (sort) => {
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify({ view: 'table', sort }));
+    expect(renderHook(() => useTableSort()).result.current).toEqual(DEFAULT_TABLE_SORT);
     expect(renderHook(() => useHistoryView()).result.current).toBe('table');
   });
 
