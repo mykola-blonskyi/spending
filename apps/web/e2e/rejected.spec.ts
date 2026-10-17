@@ -68,8 +68,19 @@ test('a change rejected for an archived category is shown as failed, fixed and s
   await expect.poll(() => db.transactions(ann.email)).toMatchObject([{ description: 'Bus fare' }]);
   await expect(row(page, 'Bus fare')).not.toContainText('Not synced');
 
-  await row(page, 'Market run').click();
+  await page.setViewportSize({ width: 375, height: 812 });
+  const title = row(page, 'Market run').getByText('Market run', { exact: true });
+  expect(await title.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+  const marker = await row(page, 'Market run').locator('span[data-sync]').boundingBox();
+  const amount = await row(page, 'Market run').getByText('-€12.00').boundingBox();
+  expect(marker!.x + marker!.width).toBeLessThanOrEqual(amount!.x);
+
+  await badge(page).click();
+  const refused = page.getByRole('region', { name: '1 change not synced' });
+  await expect(page.getByText('Everything is in sync')).toHaveCount(0);
+  await refused.getByRole('link', { name: /Market run/ }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Edit transaction');
+  await expect(page.getByRole('alert').filter({ hasText: REJECTED })).toBeVisible();
   await pickCategory(page, 'Dining');
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page).toHaveURL('/transactions');
