@@ -49,9 +49,9 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe('HistoryList', () => {
-  it.each(['window', 'self'] as const)(
-    'keeps the DOM bounded for 5,000 entries (%s scroll)',
-    (scroll) => {
+  it.each([false, true])(
+    'keeps the DOM bounded for 5,000 entries in its own scroll box (fill: %s)',
+    (fill) => {
       const items = history(5000);
       const first = items.find((item) => item.type === 'entry')!.key;
       expect(items.length).toBeGreaterThan(5000);
@@ -59,7 +59,7 @@ describe('HistoryList', () => {
         <div style={{ height: 600 }}>
           <HistoryList
             items={items}
-            scroll={scroll}
+            fill={fill}
             label="Transactions"
             selectedId={first}
             renderDay={(day) => <h2>{day.label}</h2>}
@@ -72,6 +72,7 @@ describe('HistoryList', () => {
         </div>,
       );
       const list = screen.getByRole('list', { name: 'Transactions' });
+      expect(list.parentElement).toHaveClass('overflow-y-auto');
       const rendered = list.querySelectorAll('li').length;
       expect(rendered).toBeGreaterThan(0);
       expect(rendered).toBeLessThan(60);
@@ -79,9 +80,9 @@ describe('HistoryList', () => {
     },
   );
 
-  it.each(['window', 'self'] as const)(
-    'keeps the DOM bounded for 5,000 entries in the table (%s scroll)',
-    (scroll) => {
+  it.each([false, true])(
+    'keeps the DOM bounded for 5,000 entries in the table (fill: %s)',
+    (fill) => {
       vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
         DOMRect.fromRect({ width: 1200, height: ROW }),
       );
@@ -90,7 +91,7 @@ describe('HistoryList', () => {
         <div style={{ height: 600 }}>
           <HistoryList
             items={history(5000)}
-            scroll={scroll}
+            fill={fill}
             label="Transactions"
             renderDay={() => null}
             renderEntry={() => null}

@@ -11,8 +11,8 @@ import { VirtualList } from './virtual-list';
 export type HistoryListProps = {
   items: readonly HistoryItem[];
   label: string;
-  /** `self` scrolls its own box filling the parent (the split pane); `window` scrolls the page. */
-  scroll?: 'window' | 'self';
+  /** Fill the parent's height (the split pane) instead of the viewport below the list's top. */
+  fill?: boolean;
   /** First-paint guesses in px; real heights are measured. */
   estimate?: { day: number; entry: number };
   selectedId?: string | undefined;
@@ -33,7 +33,7 @@ function Rows(props: HistoryListProps) {
   return (
     <VirtualList
       items={props.items}
-      scroll={props.scroll ?? 'window'}
+      fill={props.fill}
       estimateSize={(index) => (props.items[index]?.type === 'day' ? estimate.day : estimate.entry)}
       getItemKey={(index) => props.items[index]!.key}
     >
@@ -52,7 +52,7 @@ function Rows(props: HistoryListProps) {
                 ref={virtualizer.measureElement}
                 className="absolute inset-x-0 top-0"
                 style={{
-                  transform: `translateY(${virtual.start - virtualizer.options.scrollMargin}px)`,
+                  transform: `translateY(${virtual.start}px)`,
                 }}
               >
                 {item.type === 'day'
@@ -94,11 +94,10 @@ export function HistoryList(props: HistoryListProps) {
   const [measure, width] = useWidth<HTMLDivElement>();
   const view = useHistoryView();
   const wide = props.wide ?? width >= TABLE_MIN_WIDTH;
-  const self = props.scroll === 'self';
   return (
-    <div ref={measure} className={cn(self && 'flex h-full flex-col')}>
-      {wide && <ViewSwitch view={view} className={self ? 'px-4 py-2' : 'pb-2'} />}
-      <div className={cn(self && 'min-h-0 flex-1')}>
+    <div ref={measure} className={cn(props.fill && 'flex h-full flex-col')}>
+      {wide && <ViewSwitch view={view} className={props.fill ? 'px-4 py-2' : 'pb-2'} />}
+      <div className={cn(props.fill && 'min-h-0 flex-1')}>
         {wide && view === 'table' ? (
           <HistoryTable key="table" {...props} />
         ) : (

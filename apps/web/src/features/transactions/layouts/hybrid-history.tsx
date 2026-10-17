@@ -20,7 +20,6 @@ export function HybridHistory() {
           <CalmToolbar history={history} />
         </div>
       }
-      scroll="window"
       estimate={{ day: 44, entry: 61 }}
       renderDay={(day) => <CalmDay day={day} />}
       renderEntry={(row, position, selected) => (

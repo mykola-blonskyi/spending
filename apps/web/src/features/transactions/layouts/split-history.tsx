@@ -188,7 +188,7 @@ export function SplitHistory() {
     <MasterDetail
       history={history}
       header={<Header history={history} />}
-      scroll="self"
+      fill
       estimate={{ day: 32, entry: 56 }}
       renderDay={(day) => <Day day={day} />}
       renderEntry={(row, _position, selected) => <Row row={row} selected={selected} />}
