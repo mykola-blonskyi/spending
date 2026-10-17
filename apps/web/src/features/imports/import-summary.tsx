@@ -23,6 +23,7 @@ import { CategorySelect } from './category-select';
 import { learnBankCategories } from './imports';
 import { REVIEW_PATH } from './imports-page';
 import { Table, Td, Th, Tr } from './table';
+import { TransferSuggestions } from './transfer-suggestions';
 
 /** Checkbox, description, amount; the category sits beside them on wide screens, under them on phones. */
 const ROW =
@@ -48,6 +49,7 @@ function Stat({ label, value, hint }: { label: string; value: number; hint?: str
 function ImportedEntries({ ids }: { ids: readonly string[] }) {
   const t = useTranslations('imports.summary');
   const tf = useTranslations('transactionForm');
+  const tt = useTranslations('transfer');
   const { locale } = useSharedLocale();
   const all = useLocalTransactions(ALL);
   const sync = useSyncStatus();
@@ -61,14 +63,16 @@ function ImportedEntries({ ids }: { ids: readonly string[] }) {
     const wanted = new Set(ids);
     return all.items.filter((entry) => wanted.has(entry.id));
   }, [all.items, ids]);
-  const shown = uncategorizedOnly ? entries.filter((e) => e.categoryId === null) : entries;
+  // A transfer has no category (BR-37), so it never waits for one.
+  const needsCategory = (e: TransactionEntry) => e.categoryId === null && e.transferId === null;
+  const shown = uncategorizedOnly ? entries.filter(needsCategory) : entries;
   const workspaceId = entries[0]?.workspaceId;
   const options = useMemo(
     () => categories.items.filter((c) => c.workspaceId === workspaceId && !c.archived),
     [categories.items, workspaceId],
   );
   const byId = useMemo(() => new Map(options.map((c) => [c.id, c])), [options]);
-  const uncategorized = entries.filter((e) => e.categoryId === null).length;
+  const uncategorized = entries.filter(needsCategory).length;
   const allShownSelected = shown.length > 0 && shown.every((e) => selected.has(e.id));
 
   const saveCategory = (entry: TransactionEntry, categoryId: string | null) =>
@@ -93,7 +97,7 @@ function ImportedEntries({ ids }: { ids: readonly string[] }) {
     const category = bulkCategory ? byId.get(bulkCategory) : undefined;
     const changed = [];
     for (const entry of shown) {
-      if (!selected.has(entry.id)) continue;
+      if (!selected.has(entry.id) || entry.transferId !== null) continue;
       if (category && category.kind !== entry.kind) continue;
       await saveCategory(entry, category?.id ?? null);
       changed.push({ transactionId: entry.id, categoryId: category?.id ?? null });
@@ -198,17 +202,21 @@ function ImportedEntries({ ids }: { ids: readonly string[] }) {
                   className="justify-self-end"
                 />
                 <div className="col-span-2 col-start-2 sm:col-span-1 sm:col-start-auto">
-                  <CategorySelect
-                    value={entry.categoryId}
-                    categories={optionsFor(entry, current)}
-                    onChange={(categoryId) => void setCategory(entry, categoryId)}
-                    label={`${tf('category')}: ${entry.description}`}
-                    noneLabel={t('uncategorized')}
-                    className={cn(
-                      'w-full',
-                      !entry.categoryId && 'border-warning text-warning-foreground',
-                    )}
-                  />
+                  {entry.transferId !== null ? (
+                    <span className="text-muted-foreground">{tt('label')}</span>
+                  ) : (
+                    <CategorySelect
+                      value={entry.categoryId}
+                      categories={optionsFor(entry, current)}
+                      onChange={(categoryId) => void setCategory(entry, categoryId)}
+                      label={`${tf('category')}: ${entry.description}`}
+                      noneLabel={t('uncategorized')}
+                      className={cn(
+                        'w-full',
+                        !entry.categoryId && 'border-warning text-warning-foreground',
+                      )}
+                    />
+                  )}
                 </div>
               </li>
             );
@@ -295,7 +303,10 @@ export function ImportSummary({
             </Button>
           </Card>
         ) : (
-          <ImportedEntries ids={imported.transactionIds} />
+          <>
+            <TransferSuggestions suggestions={imported.transferSuggestions} />
+            <ImportedEntries ids={imported.transactionIds} />
+          </>
         ))}
 
       <div className="flex flex-wrap gap-3">

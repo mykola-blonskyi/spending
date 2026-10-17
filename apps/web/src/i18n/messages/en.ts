@@ -635,6 +635,15 @@ export const en = {
       importNextCard: 'Import card {card}',
       openHistory: 'Open history',
     },
+    suggestions: {
+      title: 'Looks like a transfer',
+      hint: 'Money moved between your own accounts is neither income nor an expense. Nothing is linked until you confirm.',
+      item: 'Suggested transfer: {description}',
+      otherSide: 'Other side: {account}, {date}',
+      confirm: 'Confirm',
+      dismiss: 'Dismiss',
+      confirmAll: 'Confirm all',
+    },
     reasons: {
       INVALID_DATE: 'The date could not be read',
       INVALID_AMOUNT: 'The amount could not be read, is zero, or is too large',

@@ -583,3 +583,53 @@ test.describe('PDF statements', () => {
     );
   });
 });
+
+test('two statements of own accounts suggest the transfer between them, linked on confirm', async ({
+  page,
+  signInAs,
+  db,
+}) => {
+  await signInAs('ann');
+  await createAccount(page, 'Main');
+  await createAccount(page, 'Savings');
+  const importInto = async (account: string, name: string, rows: number) => {
+    await page.goto('/imports/new');
+    await page.getByRole('combobox', { name: 'Account' }).click();
+    await page.getByRole('option', { name: new RegExp(account) }).click();
+    await page.getByLabel('Statement file').setInputFiles(fixture(name));
+    await page.getByLabel('Date format').click();
+    await page.getByRole('option', { name: 'Year-Month-Day' }).click();
+    await page.getByLabel('Decimal separator').click();
+    await page.getByRole('option', { name: 'Dot (12.50)' }).click();
+    await page.getByRole('button', { name: new RegExp(`^Import ${rows} rows?$`) }).click();
+    await expect(page.getByRole('heading', { name: 'Import finished' })).toBeVisible();
+  };
+  const suggestion = (description: string) =>
+    page.getByRole('listitem', { name: `Suggested transfer: ${description}` });
+
+  await importInto('Main', 'transfer-main.csv', 3);
+  // Nothing on Savings yet; the user's own name still hints at a transfer.
+  await expect(suggestion('To Ann Example')).toContainText('Own account outside the app');
+  await expect(suggestion('To savings')).toHaveCount(0);
+  await suggestion('To Ann Example').getByRole('button', { name: 'Dismiss' }).click();
+  await expect(page.getByRole('heading', { name: 'Looks like a transfer' })).toHaveCount(0);
+
+  await importInto('Savings', 'transfer-savings.csv', 1);
+  const pair = suggestion('From main card');
+  await expect(pair).toContainText('Other side: Main, Oct 5, 2026');
+  await pair.getByRole('button', { name: 'Confirm' }).click();
+  await expect(pair).toHaveCount(0);
+  // A transfer has no category, so the summary stops asking for one.
+  await expect(categoryOf(page, 'From main card')).toHaveCount(0);
+
+  await page.getByRole('link', { name: 'Open history' }).click();
+  const transfer = page.getByRole('link', { name: /Main → Savings/ });
+  await expect(transfer).toContainText('€300.00');
+  await expect(page.getByRole('link', { name: /From main card/ })).toHaveCount(0);
+  await expect
+    .poll(async () => {
+      const sides = (await db.transactions(ann.email)).filter((r) => r.transfer_id !== null);
+      return [sides.length, new Set(sides.map((r) => r.transfer_id)).size];
+    })
+    .toEqual([2, 1]);
+});
