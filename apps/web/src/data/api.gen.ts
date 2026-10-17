@@ -750,6 +750,7 @@ export interface components {
             /** @enum {string} */
             state: "pending" | "accepted" | "revoked" | "expired";
         };
+        OpeningOn_Output: string | null;
         ArchivedAt_Output: string | null;
         AccountListDto_Output: {
             accounts: {
@@ -762,7 +763,7 @@ export interface components {
                 kind: "cash" | "bank" | "card" | "savings" | "other";
                 currency: string;
                 openingBalanceMinor: number;
-                openingOn: string;
+                openingOn: components["schemas"]["OpeningOn_Output"];
                 archivedAt: components["schemas"]["ArchivedAt_Output"];
                 revision: number;
                 /** Format: date-time */
@@ -771,6 +772,7 @@ export interface components {
                 updatedAt: string;
             }[];
         };
+        OpeningOnInput: string | null;
         CreateAccountDto: {
             /** Format: uuid */
             workspaceId: string;
@@ -779,7 +781,7 @@ export interface components {
             kind: "cash" | "bank" | "card" | "savings" | "other";
             currency: string;
             openingBalanceMinor?: number;
-            openingOn?: string;
+            openingOn?: components["schemas"]["OpeningOnInput"];
         };
         AccountDto_Output: {
             /** Format: uuid */
@@ -791,7 +793,7 @@ export interface components {
             kind: "cash" | "bank" | "card" | "savings" | "other";
             currency: string;
             openingBalanceMinor: number;
-            openingOn: string;
+            openingOn: components["schemas"]["OpeningOn_Output"];
             archivedAt: components["schemas"]["ArchivedAt_Output"];
             revision: number;
             /** Format: date-time */
@@ -804,7 +806,7 @@ export interface components {
             /** @enum {string} */
             kind?: "cash" | "bank" | "card" | "savings" | "other";
             openingBalanceMinor?: number;
-            openingOn?: string;
+            openingOn?: components["schemas"]["OpeningOnInput"];
             archived?: boolean;
         };
         SystemKey_Output: string | null;
@@ -990,7 +992,7 @@ export interface components {
                 kind: "cash" | "bank" | "card" | "savings" | "other";
                 currency: string;
                 openingBalanceMinor: number;
-                openingOn: string;
+                openingOn: components["schemas"]["OpeningOn_Output"];
                 archivedAt: components["schemas"]["ArchivedAt_Output"];
                 revision: number;
                 /** Format: date-time */
@@ -1118,6 +1120,7 @@ export interface components {
         };
         AvatarUrl: string | null;
         StoredName: string | null;
+        OpeningOn: string | null;
         ArchivedAt: string | null;
         SystemKey: string | null;
         TransactionView: {
@@ -1208,7 +1211,7 @@ export interface components {
                 kind: "cash" | "bank" | "card" | "savings" | "other";
                 currency: string;
                 openingBalanceMinor: number;
-                openingOn: string;
+                openingOn: components["schemas"]["OpeningOn"];
                 archivedAt: components["schemas"]["ArchivedAt"];
                 revision: number;
                 /** Format: date-time */

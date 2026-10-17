@@ -147,7 +147,7 @@ describe('ledger', () => {
       type Account = {
         id: string;
         openingBalanceMinor: number;
-        openingOn: string;
+        openingOn: string | null;
         revision: number;
       };
       const plain = await json<Account>(
@@ -157,10 +157,7 @@ describe('ledger', () => {
         }),
         201,
       );
-      expect(plain).toMatchObject({
-        openingBalanceMinor: 0,
-        openingOn: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
-      });
+      expect(plain).toMatchObject({ openingBalanceMinor: 0, openingOn: null });
       const created = await json<Account>(
         await as(t, ann, '/v1/accounts', {
           method: 'POST',
@@ -195,13 +192,26 @@ describe('ledger', () => {
         openingOn: '2026-02-01',
       });
 
+      const cleared = await json<Account>(
+        await as(t, ann, `/v1/accounts/${created.id}`, {
+          method: 'PATCH',
+          body: { openingBalanceMinor: 0, openingOn: null },
+        }),
+        200,
+      );
+      expect(cleared).toMatchObject({ openingBalanceMinor: 0, openingOn: null });
+
+      const date = '2026-02-01';
       for (const body of [
-        { openingBalanceMinor: 1.5 },
-        { openingBalanceMinor: '100' },
-        { openingBalanceMinor: 1_000_000_000_001 },
-        { openingOn: '2026-02-30' },
-        { openingOn: '01.02.2026' },
-        { openingOn: null },
+        { openingBalanceMinor: 1.5, openingOn: date },
+        { openingBalanceMinor: '100', openingOn: date },
+        { openingBalanceMinor: 1_000_000_000_001, openingOn: date },
+        { openingBalanceMinor: 100, openingOn: '2026-02-30' },
+        { openingBalanceMinor: 100, openingOn: '01.02.2026' },
+        { openingBalanceMinor: 100, openingOn: null },
+        { openingBalanceMinor: 100 },
+        { openingBalanceMinor: 0, openingOn: date },
+        { openingOn: date },
       ]) {
         const response = await as(t, ann, `/v1/accounts/${created.id}`, { method: 'PATCH', body });
         expect(response.status).toBe(400);
@@ -215,7 +225,7 @@ describe('ledger', () => {
               name: 'Bad',
               kind: 'cash',
               currency: 'EUR',
-              openingBalanceMinor: 0.25,
+              openingBalanceMinor: 25000,
             },
           })
         ).status,

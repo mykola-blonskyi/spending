@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 import { E2E_USERS } from './support/env';
-import { createAccount } from './support/seed';
+import { createAccount, pushEntries } from './support/seed';
 
 const ann = E2E_USERS.ann;
 
@@ -96,12 +96,18 @@ test('an opening balance, an income and a transfer in add up to the account bala
   signInAs,
 }) => {
   await signInAs('ann');
-  await createAccount(page, { name: 'Card', kind: 'card', currency: 'EUR' });
+  const card = await createAccount(page, { name: 'Card', kind: 'card', currency: 'EUR' });
+  const lastYear = `${new Date().getFullYear() - 1}-06-01`;
+  await pushEntries(page, [
+    { amountMinor: 5_000, occurredOn: lastYear, description: 'Old fee', accountId: card },
+  ]);
   await page.goto('/accounts');
   await page.getByRole('button', { name: 'Add account' }).click();
   await dialog(page).getByLabel('Name').fill('Savings');
   await pickOption(page, 'Type', 'Savings');
+  await expect(dialog(page).getByLabel('Opening date')).toHaveCount(0);
   await dialog(page).getByLabel('Opening balance').fill('1000');
+  await expect(dialog(page).getByLabel('Opening date')).not.toHaveValue('');
   await dialog(page).getByRole('button', { name: 'Save' }).click();
   await expect(dialog(page)).toBeHidden();
 
@@ -127,7 +133,7 @@ test('an opening balance, an income and a transfer in add up to the account bala
   await expect(page.getByRole('listitem').filter({ hasText: 'Savings' })).toContainText(
     '€1,500.00',
   );
-  await expect(page.getByRole('listitem').filter({ hasText: 'Card' })).toContainText('-€300.00');
+  await expect(page.getByRole('listitem').filter({ hasText: 'Card' })).toContainText('-€350.00');
 
   await page.goto('/transactions');
   await page.getByRole('button', { name: /^Open filters/ }).click();

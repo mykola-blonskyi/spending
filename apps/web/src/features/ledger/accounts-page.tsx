@@ -116,16 +116,21 @@ function AccountDialog({
   const today = todayIn(useProfile().timezone);
   const [openingOn, setOpeningOn] = useState(account?.openingOn ?? today);
   const [openingError, setOpeningError] = useState(false);
+  const openingBalanceMinor = parseOpeningBalance(opening, currencyExponent(currency));
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     const trimmed = name.trim();
     const invalid = trimmed.length < 1 || trimmed.length > 60;
-    const openingBalanceMinor = parseOpeningBalance(opening, currencyExponent(currency));
     setNameError(invalid);
     setOpeningError(openingBalanceMinor === null);
     if (invalid || openingBalanceMinor === null) return;
-    const fields = { name: trimmed, kind, openingBalanceMinor, openingOn };
+    const fields = {
+      name: trimmed,
+      kind,
+      openingBalanceMinor,
+      openingOn: openingBalanceMinor === 0 ? null : openingOn,
+    };
     const saved = account
       ? await admin.update(account.id, fields)
       : await admin.create({ workspaceId, currency, ...fields });
@@ -209,16 +214,18 @@ function AccountDialog({
               onChange={(event) => setOpening(event.target.value)}
             />
           </Field>
-          <Field id={`${base}-opening-on`} label={t('accounts.openingOn')}>
-            <Input
-              id={`${base}-opening-on`}
-              type="date"
-              required
-              className="h-11"
-              value={openingOn}
-              onChange={(event) => event.target.value && setOpeningOn(event.target.value)}
-            />
-          </Field>
+          {openingBalanceMinor !== 0 && (
+            <Field id={`${base}-opening-on`} label={t('accounts.openingOn')}>
+              <Input
+                id={`${base}-opening-on`}
+                type="date"
+                required
+                className="h-11"
+                value={openingOn}
+                onChange={(event) => event.target.value && setOpeningOn(event.target.value)}
+              />
+            </Field>
+          )}
           {!account && workspaces.length > 1 && (
             <Field id={`${base}-workspace`} label={t('workspace')}>
               <Select value={workspaceId} onValueChange={setWorkspaceId}>

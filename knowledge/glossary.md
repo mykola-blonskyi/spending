@@ -18,14 +18,15 @@ An entry with an account is in the account's currency (BR-39).
 ### Account balance
 
 How much money is on an account now, in its currency: the opening balance plus its entries'
-income minus expenses from the opening date on, transfer sides included (BR-40). Computed on the
+income minus expenses from the opening date on (all of them without one), transfer sides
+included (BR-40). Computed on the
 device. Not the period net.
 
 ### Opening balance
 
-What an account held on its opening date, before the first entry the app counts. An account field,
-not an entry, so it never shows up as income (ADR-017). May be negative, for a debt. Defaults to 0
-on the day the account was created.
+What an account held on its opening date, before the first entry the app counts ("I had 3,000 € on
+1 October"). An account field, not an entry, so it never shows up as income (ADR-017). May be
+negative, for a debt. Defaults to 0, with no date: then every entry counts.
 
 ### Period net
 

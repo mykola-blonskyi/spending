@@ -2054,6 +2054,12 @@
         ],
         "additionalProperties": false
       },
+      "OpeningOn_Output": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
       "ArchivedAt_Output": {
         "anyOf": [
           {
@@ -2106,7 +2112,7 @@
                   "maximum": 9007199254740991
                 },
                 "openingOn": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/OpeningOn_Output"
                 },
                 "archivedAt": {
                   "$ref": "#/components/schemas/ArchivedAt_Output"
@@ -2149,6 +2155,12 @@
         ],
         "additionalProperties": false
       },
+      "OpeningOnInput": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
       "CreateAccountDto": {
         "type": "object",
         "properties": {
@@ -2181,7 +2193,7 @@
             "maximum": 1000000000000
           },
           "openingOn": {
-            "type": "string"
+            "$ref": "#/components/schemas/OpeningOnInput"
           }
         },
         "required": [
@@ -2227,7 +2239,7 @@
             "maximum": 9007199254740991
           },
           "openingOn": {
-            "type": "string"
+            "$ref": "#/components/schemas/OpeningOn_Output"
           },
           "archivedAt": {
             "$ref": "#/components/schemas/ArchivedAt_Output"
@@ -2287,7 +2299,7 @@
             "maximum": 1000000000000
           },
           "openingOn": {
-            "type": "string"
+            "$ref": "#/components/schemas/OpeningOnInput"
           },
           "archived": {
             "type": "boolean"
@@ -3135,7 +3147,7 @@
                   "maximum": 9007199254740991
                 },
                 "openingOn": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/OpeningOn_Output"
                 },
                 "archivedAt": {
                   "$ref": "#/components/schemas/ArchivedAt_Output"
@@ -3777,6 +3789,12 @@
           "null"
         ]
       },
+      "OpeningOn": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
       "ArchivedAt": {
         "anyOf": [
           {
@@ -4213,7 +4231,7 @@
                   "maximum": 9007199254740991
                 },
                 "openingOn": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/OpeningOn"
                 },
                 "archivedAt": {
                   "$ref": "#/components/schemas/ArchivedAt"

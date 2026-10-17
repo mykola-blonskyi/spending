@@ -126,26 +126,22 @@ describe('migrations', () => {
     });
   });
 
-  it('0014 opens an existing account on its creation day and bumps its revision (BR-40)', async () => {
+  it('0014 leaves existing accounts without an opening balance and pairs date with balance (BR-40)', async () => {
     const { personal } = await workspacesOf(t, ann);
-    const [card] = await t.db
+    const card = { workspaceId: personal, kind: 'card' as const, currency: 'EUR' };
+    const [plain] = await t.db
       .insert(accounts)
-      .values({
-        workspaceId: personal,
-        name: 'Card',
-        kind: 'card',
-        currency: 'EUR',
-        createdAt: new Date('2025-03-04T23:30:00Z'),
-      })
+      .values({ ...card, name: 'Card' })
       .returning();
-    const text = readFileSync(
-      resolve(__dirname, '../drizzle/0014_account_opening_balance.sql'),
-      'utf8',
-    );
-    await t.db.execute(sql.raw(text.split('--> statement-breakpoint').at(-1)!));
+    expect(plain).toMatchObject({ openingBalanceMinor: 0, openingOn: null });
 
-    const [after] = await t.db.select().from(accounts).where(eq(accounts.id, card!.id));
-    expect(after).toMatchObject({ openingOn: '2025-03-04', openingBalanceMinor: 0 });
-    expect(after!.revision).toBeGreaterThan(card!.revision);
+    for (const opening of [
+      { openingBalanceMinor: 100, openingOn: null },
+      { openingBalanceMinor: 0, openingOn: '2026-01-01' },
+    ]) {
+      await expect(
+        t.db.insert(accounts).values({ ...card, name: crypto.randomUUID(), ...opening }),
+      ).rejects.toMatchObject({ cause: { constraint: 'accounts_opening_on_ck' } });
+    }
   });
 });

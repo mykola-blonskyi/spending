@@ -167,7 +167,11 @@ describe('smoothingDelay', () => {
 });
 
 describe('accountBalance (BR-40)', () => {
-  const savings = { id: 'acc-savings', openingBalanceMinor: 100000, openingOn: '2026-10-01' };
+  const savings: Parameters<typeof accountBalance>[0] = {
+    id: 'acc-savings',
+    openingBalanceMinor: 100000,
+    openingOn: '2026-10-01',
+  };
   const on = (patch: Parameters<typeof serverRow>[0]) =>
     serverRow({ accountId: savings.id, amountMinor: 1000, occurredOn: '2026-10-10', ...patch });
   const balanceOf = (state: LocalState, account = savings) =>
@@ -203,6 +207,14 @@ describe('accountBalance (BR-40)', () => {
       on({ id: 'first', occurredOn: '2026-10-01', amountMinor: 1000 }),
     );
     expect(balanceOf(state)).toEqual({ balanceMinor: 99000, uncounted: 1 });
+  });
+
+  it('counts every entry when the account has no opening date', () => {
+    const state = syncedState(on({ id: 'old', occurredOn: '2020-01-01', amountMinor: 7000 }));
+    expect(balanceOf(state, { ...savings, openingBalanceMinor: 0, openingOn: null })).toEqual({
+      balanceMinor: -7000,
+      uncounted: 0,
+    });
   });
 
   it('goes negative from a negative opening balance', () => {

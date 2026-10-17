@@ -280,8 +280,10 @@ edited through REST and arrive through pull like transactions.
   The entry form locks the currency to the picked account ("Account currency"). A CHECK cannot
   read the account, so migration 0013 only refuses to run on a database that already holds a
   mismatch.
-- **Account balance (BR-40, ADR-017).** An account carries `openingBalanceMinor` and `openingOn`,
-  written through the account endpoints and pulled with it. The web derives each balance with
+- **Account balance (BR-40, ADR-017).** An account carries `openingBalanceMinor` and a nullable
+  `openingOn`, written through the account endpoints and pulled with it; the date is present
+  exactly when the balance is not 0 (zod and the `accounts_opening_on_ck` CHECK). The local store
+  reads an account cached without these fields as 0 and null. The web derives each balance with
   `accountBalance` (`data/sync/query.ts`) from the local records, pending-review rows and
   transfer sides included, through `useAccountBalances()`. The accounts page shows it per account
   with per-currency totals of active accounts, and a history filtered by one account shows

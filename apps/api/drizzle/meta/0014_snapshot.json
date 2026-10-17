@@ -1,5 +1,5 @@
 {
-  "id": "a86152ae-744e-4ddd-9582-01363324e681",
+  "id": "1a5508c6-7af9-4617-9499-2ed5161986a5",
   "prevId": "6bcd09cb-b35b-4cef-a1a6-b8decb180c04",
   "version": "7",
   "dialect": "postgresql",
@@ -51,8 +51,7 @@
           "name": "opening_on",
           "type": "date",
           "primaryKey": false,
-          "notNull": true,
-          "default": "current_date"
+          "notNull": false
         },
         "archived_at": {
           "name": "archived_at",
@@ -152,6 +151,10 @@
         "accounts_opening_balance_ck": {
           "name": "accounts_opening_balance_ck",
           "value": "opening_balance_minor between -1000000000000 and 1000000000000"
+        },
+        "accounts_opening_on_ck": {
+          "name": "accounts_opening_on_ck",
+          "value": "(opening_balance_minor = 0) = (opening_on is null)"
         }
       },
       "isRLSEnabled": false

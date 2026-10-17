@@ -426,12 +426,14 @@ amount. It must work offline, sync like the rest of the account, and leave incom
 categories and budgets as they are.
 
 **Decision.** An account gains `openingBalanceMinor` (integer minor units, may be negative,
-default 0) and `openingOn` (a date, default the creation day; migration 0014 backfills existing
-accounts and so bumps their revisions, which sends the new fields to every device). Both are
+default 0) and `openingOn` (a nullable date, present exactly when the balance is not 0, checked by
+zod and a CHECK). An existing account keeps 0 and null; a device reads an account it cached
+without the fields the same way, so migration 0014 needs no backfill or revision bump. Both are
 edited in the account dialog through the account REST endpoints and pulled with the account. The
 balance is never stored: one pure function on the device (`accountBalance` in
 `data/sync/query.ts`) adds the signed amounts of the account's live local entries from `openingOn`
-on to the opening balance and counts the older ones it leaves out (BR-40).
+on (every entry when it is null) to the opening balance and counts the older ones it leaves out
+(BR-40).
 
 **Alternatives.**
 
@@ -442,7 +444,7 @@ on to the opening balance and counts the older ones it leaves out (BR-40).
   held money before the first recorded entry, which is nearly every account.
 
 **Consequences.** Analytics need no change. Entries before the opening date stop counting
-towards the balance, which is shown as "N entries before the opening date are not counted"; an
-existing account opens on its creation day, so its older imported entries show up there until the
-user moves the date back. Setting the current balance to match the bank (#132) can recompute the
+towards the balance, which is shown as "N entries before the opening date are not counted". An
+account without an opening balance counts its whole history, so existing accounts show the sum of
+their entries until the user enters what they held on a date. Setting the current balance to match the bank (#132) can recompute the
 opening balance without creating an entry.

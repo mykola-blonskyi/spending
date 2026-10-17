@@ -69,8 +69,8 @@ member_left | member_removed | ownership_transferred`
 Where money sits: a card, a bank account, cash.
 
 - `id`, `workspaceId`, `name`, `currency`, `kind` (`cash|bank|card|savings|other`), `archivedAt`.
-- `openingBalanceMinor` (integer, may be negative, default 0) and `openingOn` (date, default the
-  creation day). Its balance is derived on the device, never stored (BR-40, ADR-017).
+- `openingBalanceMinor` (integer, may be negative, default 0) and `openingOn` (nullable date,
+  present exactly when the balance is not 0). Its balance is derived on the device, never stored (BR-40, ADR-017).
 - Names are unique per `(workspaceId, kind)`, like categories. Accounts and categories are archived,
   never deleted.
 

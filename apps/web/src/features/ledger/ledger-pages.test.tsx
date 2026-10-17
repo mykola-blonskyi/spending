@@ -45,7 +45,7 @@ const account = (patch: Partial<Account>): Account => ({
   kind: 'cash',
   currency: 'EUR',
   openingBalanceMinor: 0,
-  openingOn: '2026-01-01',
+  openingOn: null,
   archivedAt: null,
   ...stamp,
   ...patch,
@@ -115,7 +115,7 @@ describe('AccountsPage', () => {
       kind: 'bank',
       currency: 'EUR',
       openingBalanceMinor: 0,
-      openingOn: new Date().toISOString().slice(0, 10),
+      openingOn: null,
     });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
@@ -133,7 +133,7 @@ describe('AccountsPage', () => {
       name: 'Cash',
       kind: 'cash',
       openingBalanceMinor: 0,
-      openingOn: '2026-01-01',
+      openingOn: null,
     });
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
@@ -181,11 +181,15 @@ describe('AccountsPage', () => {
     );
   });
 
-  it('edits the opening balance and date, refusing what is not an amount', async () => {
+  it('asks for the opening date only with a non-zero balance, refusing what is not an amount', async () => {
     renderPage(<AccountsPage />);
     await userEvent.click(screen.getByRole('button', { name: 'Edit Cash' }));
     const dialog = screen.getByRole('dialog', { name: 'Edit account' });
     const opening = within(dialog).getByLabelText('Opening balance');
+    expect(within(dialog).queryByLabelText('Opening date')).not.toBeInTheDocument();
+    await userEvent.type(opening, '0,00');
+    expect(within(dialog).queryByLabelText('Opening date')).not.toBeInTheDocument();
+    await userEvent.clear(opening);
 
     await userEvent.type(opening, '12abc');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));

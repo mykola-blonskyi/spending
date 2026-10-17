@@ -121,11 +121,13 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   A device that pulls a new epoch drops its cached server data and resyncs from the start. Its
   unsent changes are kept and sent again.
 - **BR-40.** An account's balance is its opening balance plus the income minus the expenses of
-  its live entries dated on or after its opening date, in the account's currency (BR-39).
-  Transfer sides count like any entry (BR-37), and rows awaiting review count too. Entries before
-  the opening date are left out, and the account says how many. The opening balance is an integer
-  number of minor units within ±10^12 (BR-13), may be negative and defaults to 0; the opening date
-  defaults to the account's creation day. Both are edited and synced with the account. The balance
+  its live entries dated on or after its opening date, in the account's currency (BR-39); without
+  an opening date every entry counts. Transfer sides count like any entry (BR-37), and rows
+  awaiting review count too. Entries before the opening date are left out, and the account says
+  how many. The opening balance is an integer number of minor units within ±10^12 (BR-13), may be
+  negative and defaults to 0. The opening date is present exactly when the opening balance is not
+  0 (`400` otherwise, and a database CHECK); the dialog asks for it, defaulting to today, only
+  then. Both are edited and synced with the account. The balance
   is computed on the device from the local entries, so it works offline and follows account
   visibility (BR-2). The accounts page totals active accounts per currency, with no EUR total;
   archived accounts show their balance outside the totals, and archiving an account that still
