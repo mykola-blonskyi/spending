@@ -284,3 +284,36 @@ integration test replays pruned creates, updates and deletes to prove it.
 **Consequences.** A device that stays unanswered for over 180 days may see a conflict for its own
 already-applied change, instead of the stored outcome. A rejected outcome is decided again and can
 now succeed if what made it fail was fixed.
+
+## ADR-014: A transfer is two ordinary entries sharing a transfer id
+
+Date: 2026-10-17
+
+**Context.** A move between the user's own accounts shows up as an expense on one account and an
+income on the other, so once both statements are imported it inflates income, spending,
+categories and budgets (#105). Transfers must work offline, keep conflicts and import undo as
+they are, and stay within one workspace (BR-2).
+
+**Decision.** A transaction gains a nullable `transferId`, shared by the two sides, and
+`transferOutside` for a one-sided transfer whose other account is outside the app. Each side
+stays an income or expense entry in its own account's currency, with no category; a check
+constraint enforces the missing category. Analytics filter `transferId is null`; budgets need no
+filter, because a transfer has no category. Marking and unmarking are ordinary
+`transaction.upsert` mutations, one per side, queued together in one local commit. The server
+validates each side against the other live sides (same workspace, opposite kind, at most two,
+one-sided alone) and answers `INVALID_TRANSFER` otherwise. Version bumps include both columns,
+so a mark made elsewhere turns a stale edit into a conflict.
+
+**Alternatives.**
+
+- A `transfers` table referencing both entries: a second synced entity with its own pull,
+  conflicts and tombstones.
+- One `transfer.link` mutation applying both sides in one ledger transaction: atomic, but a stale
+  side needs a new kind of conflict spanning two rows.
+- A third entry kind `transfer`: one row cannot hold two accounts in two currencies, and every
+  income/expense branch would need a third case.
+
+**Consequences.** Each side commits on its own, so between two pushes, or when one side
+conflicts, a pair can be half linked; that side is already out of the totals and the conflict is
+resolved like any other. Deleting both sides, the combined history row, import undo and exports
+(#108) and the entry form type (#109) build on the same two columns without a migration.

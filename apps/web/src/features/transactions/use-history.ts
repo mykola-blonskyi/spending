@@ -26,6 +26,7 @@ export type HistoryStatus =
 /** How rows name their category, account and day. Shared by history and the detail view. */
 export function useRowContext(): RowContext {
   const t = useTranslations('pages.transactions');
+  const transfer = useTranslations('transfer');
   const { locale } = useSharedLocale();
   const categories = useCategoryViews();
   const accounts = useAccounts();
@@ -36,8 +37,9 @@ export function useRowContext(): RowContext {
       accounts: new Map(accounts.items.map((account) => [account.id, account])),
       dayLabel: (date: string) => formatRelativeDay(date, locale, today),
       uncategorized: t('uncategorized'),
+      transfer: transfer('label'),
     }),
-    [categories.byId, accounts.items, locale, today, t],
+    [categories.byId, accounts.items, locale, today, t, transfer],
   );
 }
 

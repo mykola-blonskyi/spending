@@ -79,7 +79,7 @@ export async function seedEntries(page: Page, count: number): Promise<void> {
 export async function createAccount(
   page: Page,
   account: { name: string; kind: 'cash' | 'card'; currency: string },
-): Promise<void> {
+): Promise<string> {
   const session = await (await page.request.get('/api/v1/auth/session')).json();
   const pull = await (await page.request.get('/api/v1/sync/pull?cursor=0&limit=1000')).json();
   const personal = pull.workspaces.find((w: { kind: string }) => w.kind === 'personal');
@@ -88,6 +88,7 @@ export async function createAccount(
     data: { workspaceId: personal.id, ...account },
   });
   if (!created.ok()) throw new Error(`account failed: ${created.status()} ${await created.text()}`);
+  return ((await created.json()) as { id: string }).id;
 }
 
 type Entry = {
@@ -98,6 +99,7 @@ type Entry = {
   /** A default category of the personal workspace, by system key. */
   category?: string;
   description: string;
+  accountId?: string;
 };
 
 /** Pushes exact entries into the signed-in user's personal workspace, as another device would. */

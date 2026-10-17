@@ -1,0 +1,282 @@
+import { eq } from 'drizzle-orm';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { transactions } from '../src/database/schema';
+import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
+import {
+  as,
+  categoriesOf,
+  createFamily,
+  loginAs,
+  type PushedRow,
+  pushNew,
+  resetData,
+  type Session,
+  startTestApp,
+  TEST_CLIENT,
+  type TestApp,
+  workspacesOf,
+} from './harness';
+
+const person = (name: string) => ({ sub: `sub-${name}`, email: `${name}@example.test`, name });
+const people = [person('Ann'), person('Bob')] as const;
+
+type Result = { status: string; code?: string; transaction: PushedRow };
+type Totals = { incomeMinor: number; expenseMinor: number; balanceMinor: number };
+type Summary = {
+  totals: Totals;
+  byCategory: { categoryId: string | null; amountMinor: number }[];
+  series: { bucket: string; incomeMinor: number; expenseMinor: number }[];
+  previous: { totals: Totals; byCategory: { categoryId: string | null }[] };
+};
+
+describe('transfers (BR-36)', () => {
+  let provider: FakeOidc;
+  let t: TestApp;
+  let ann: Session;
+  let bob: Session;
+  let personal: string;
+  let family: string;
+  let groceries: string;
+  let salary: string;
+  let card: string;
+  let savings: string;
+
+  beforeAll(async () => {
+    provider = await startFakeOidc({ users: people, clients: [TEST_CLIENT] });
+    t = await startTestApp({ OIDC_ISSUER: provider.issuer });
+  });
+  beforeEach(async () => {
+    await resetData(t.db);
+    [ann, bob] = await Promise.all([loginAs(t, people[0].sub), loginAs(t, people[1].sub)]);
+    family = await createFamily(t, ann, bob);
+    personal = (await workspacesOf(t, ann)).personal;
+    const categories = await categoriesOf(t, ann, personal);
+    groceries = categories.groceries!;
+    salary = categories.salary!;
+    const account = async (name: string) => {
+      const response = await as(t, ann, '/v1/accounts', {
+        method: 'POST',
+        body: { workspaceId: personal, name, kind: 'card', currency: 'EUR' },
+      });
+      return ((await response.json()) as { id: string }).id;
+    };
+    card = await account('Card');
+    savings = await account('Savings');
+  });
+  afterAll(async () => {
+    await t.app.close();
+    await provider.close();
+  });
+
+  const push = async (s: Session, rows: { row: PushedRow; patch: Record<string, unknown> }[]) => {
+    const mutations = rows.map(({ row, patch }) => ({
+      mutationId: crypto.randomUUID(),
+      type: 'transaction.upsert',
+      baseVersion: row.version,
+      transaction: {
+        id: row.id,
+        workspaceId: row.workspaceId,
+        kind: row.kind,
+        amountMinor: row.amountMinor,
+        currency: row.currency,
+        occurredOn: row.occurredOn,
+        accountId: row.accountId,
+        categoryId: row.categoryId,
+        description: row.description,
+        note: row.note,
+        transferId: row.transferId,
+        transferOutside: row.transferOutside,
+        ...patch,
+      },
+    }));
+    const response = await as(t, s, '/v1/sync/push', { method: 'POST', body: { mutations } });
+    expect(response.status, await response.clone().text()).toBe(200);
+    return ((await response.json()) as { results: Result[] }).results;
+  };
+  const link = (rows: PushedRow[], transferId = crypto.randomUUID()) =>
+    push(
+      ann,
+      rows.map((row) => ({ row, patch: { transferId, categoryId: null } })),
+    );
+  const summary = async (query = '') => {
+    const response = await as(
+      t,
+      ann,
+      `/v1/analytics/summary?from=2026-10-01&to=2026-10-31&compare=previous${query}`,
+    );
+    expect(response.status, await response.clone().text()).toBe(200);
+    return (await response.json()) as Summary;
+  };
+
+  /** A move of 300 € from the card to savings, one salary and one grocery purchase. */
+  const seed = () =>
+    pushNew(t, ann, [
+      { workspaceId: personal, accountId: card, kind: 'expense', amountMinor: 30_000 },
+      { workspaceId: personal, accountId: savings, kind: 'income', amountMinor: 30_000 },
+      {
+        workspaceId: personal,
+        accountId: card,
+        kind: 'income',
+        amountMinor: 200_000,
+        categoryId: salary,
+      },
+      {
+        workspaceId: personal,
+        accountId: card,
+        kind: 'expense',
+        amountMinor: 5_000,
+        categoryId: groceries,
+      },
+      // Last month, for the comparison: a one-sided move to an account outside the app.
+      { workspaceId: personal, accountId: card, amountMinor: 70_000, occurredOn: '2026-09-15' },
+    ]);
+
+  it('links two entries, makes them neither income nor spending, and unlinks them', async () => {
+    const [out, into, , , september] = await seed();
+    const before = await summary();
+    expect(before.totals).toEqual({
+      incomeMinor: 230_000,
+      expenseMinor: 35_000,
+      balanceMinor: 195_000,
+    });
+
+    const transferId = crypto.randomUUID();
+    const linked = await link([out!, into!], transferId);
+    expect(linked.map((r) => r.status)).toEqual(['applied', 'applied']);
+    expect(linked.map((r) => r.transaction)).toMatchObject([
+      { transferId, transferOutside: false, categoryId: null, version: 2 },
+      { transferId, transferOutside: false, categoryId: null, version: 2 },
+    ]);
+    const outside = await push(ann, [
+      { row: september!, patch: { transferId: crypto.randomUUID(), transferOutside: true } },
+    ]);
+    expect(outside[0]).toMatchObject({ status: 'applied', transaction: { transferOutside: true } });
+
+    const after = await summary();
+    expect(after.totals).toEqual({
+      incomeMinor: 200_000,
+      expenseMinor: 5_000,
+      balanceMinor: 195_000,
+    });
+    expect(after.byCategory.map((c) => c.categoryId).sort()).toEqual([groceries, salary].sort());
+    expect(after.series.find((b) => b.bucket === '2026-10-01')).toMatchObject({
+      incomeMinor: 200_000,
+      expenseMinor: 5_000,
+    });
+    expect(after.previous.totals).toEqual({ incomeMinor: 0, expenseMinor: 0, balanceMinor: 0 });
+    expect(after.previous.byCategory).toEqual([]);
+
+    // Balances: each account still holds its side of the move.
+    const accountRows = async (accountId: string) =>
+      (
+        (await (await as(t, ann, `/v1/transactions?accountId=${accountId}`)).json()) as {
+          transactions: { kind: string; amountMinor: number }[];
+        }
+      ).transactions.reduce((sum, r) => sum + (r.kind === 'income' ? 1 : -1) * r.amountMinor, 0);
+    expect(await accountRows(savings)).toBe(30_000);
+    expect(await accountRows(card)).toBe(200_000 - 5_000 - 30_000 - 70_000);
+
+    const unlinked = await push(
+      ann,
+      linked.map((r) => ({ row: r.transaction, patch: { transferId: null } })),
+    );
+    expect(unlinked.map((r) => r.transaction)).toMatchObject([
+      { transferId: null, transferOutside: false, categoryId: null, version: 3 },
+      { transferId: null, transferOutside: false, categoryId: null, version: 3 },
+    ]);
+    expect((await summary()).totals).toEqual({
+      incomeMinor: 230_000,
+      expenseMinor: 35_000,
+      balanceMinor: 195_000,
+    });
+  });
+
+  it('keeps transfers out of budgets', async () => {
+    const [out, into] = await seed();
+    const put = await as(t, ann, '/v1/budgets', {
+      method: 'PUT',
+      body: { workspaceId: personal, categoryId: groceries, amountMinor: 100_000 },
+    });
+    expect(put.status).toBe(200);
+    const spent = async () =>
+      (
+        (await (await as(t, ann, '/v1/budgets?month=2026-10')).json()) as {
+          budgets: { spentMinor: number }[];
+        }
+      ).budgets[0]!.spentMinor;
+    const [grocerySide] = await push(ann, [{ row: out!, patch: { categoryId: groceries } }]);
+    expect(await spent()).toBe(35_000);
+    await link([grocerySide!.transaction, into!]);
+    expect(await spent()).toBe(5_000);
+  });
+
+  it('refuses a category, a third side, the same kind and another space', async () => {
+    const [out, into, wage, food] = await seed();
+    const [familyRow] = await pushNew(t, ann, [{ workspaceId: family, kind: 'income' }]);
+    const transferId = crypto.randomUUID();
+    await link([out!, into!], transferId);
+    const codes = async (row: PushedRow, patch: Record<string, unknown>) =>
+      (await push(ann, [{ row, patch: { transferId, ...patch } }]))[0]!.code;
+
+    expect(await codes(food!, {})).toBe('INVALID_TRANSFER');
+    expect(await codes(familyRow!, {})).toBe('INVALID_TRANSFER');
+    expect(await codes(wage!, { transferId: crypto.randomUUID() })).toBe('INVALID_TRANSFER');
+    const [lone] = await pushNew(t, ann, [{ workspaceId: personal, kind: 'expense' }]);
+    const other = crypto.randomUUID();
+    await push(ann, [{ row: lone!, patch: { transferId: other } }]);
+    const [sameKind] = await pushNew(t, ann, [{ workspaceId: personal, kind: 'expense' }]);
+    expect(await codes(sameKind!, { transferId: other })).toBe('INVALID_TRANSFER');
+    const [crossSpace] = await pushNew(t, ann, [{ workspaceId: family, kind: 'income' }]);
+    expect(await codes(crossSpace!, { transferId: other })).toBe('INVALID_TRANSFER');
+  });
+
+  it('keeps the mark when a client older than transfers edits a side', async () => {
+    const [out, into] = await seed();
+    const [linked] = await link([out!, into!]);
+    const [edited] = await push(ann, [
+      {
+        row: linked!.transaction,
+        patch: { transferId: undefined, transferOutside: undefined, note: 'old tab' },
+      },
+    ]);
+    expect(edited!.transaction).toMatchObject({
+      note: 'old tab',
+      transferId: linked!.transaction.transferId,
+    });
+  });
+
+  it('turns a stale mark into an ordinary conflict', async () => {
+    const [out, into] = await seed();
+    await push(ann, [{ row: out!, patch: { amountMinor: 31_000 } }]);
+    const results = await link([out!, into!]);
+    expect(results.map((r) => r.status)).toEqual(['conflict', 'applied']);
+    const conflicts = (
+      (await (await as(t, ann, '/v1/sync/conflicts')).json()) as {
+        conflicts: { transactionId: string; local: { transferId: string | null } }[];
+      }
+    ).conflicts;
+    expect(conflicts).toMatchObject([
+      { transactionId: out!.id, local: { transferId: expect.any(String) } },
+    ]);
+  });
+
+  it('splits a family transfer whose sides land in two spaces when the family is deleted', async () => {
+    const [annSide] = await pushNew(t, ann, [{ workspaceId: family, kind: 'expense' }]);
+    const [bobSide] = await pushNew(t, bob, [{ workspaceId: family, kind: 'income' }]);
+    const transferId = crypto.randomUUID();
+    await link([annSide!], transferId);
+    await push(bob, [{ row: bobSide!, patch: { transferId } }]);
+    const deleted = await as(t, ann, '/v1/family', {
+      method: 'DELETE',
+      body: { confirmName: 'Home' },
+    });
+    expect(deleted.status, await deleted.clone().text()).toBe(204);
+    const sides = await t.db
+      .select({ transferId: transactions.transferId, outside: transactions.transferOutside })
+      .from(transactions)
+      .where(eq(transactions.amountMinor, 1000));
+    expect(sides).toHaveLength(2);
+    expect(sides.every((side) => side.outside && side.transferId !== transferId)).toBe(true);
+    expect(sides[0]!.transferId).not.toBe(sides[1]!.transferId);
+  });
+});

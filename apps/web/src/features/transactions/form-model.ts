@@ -22,8 +22,8 @@ export type FormValues = Readonly<{
 
 export type FormErrors = Readonly<{ amount?: 'invalid' }>;
 
-/** Everything a draft needs except the workspace, which the form's context decides. */
-export type DraftFields = Omit<TransactionDraft, 'workspaceId'>;
+/** Everything a draft needs except the workspace and transfer mark, which the form keeps. */
+export type DraftFields = Omit<TransactionDraft, 'workspaceId' | 'transferId' | 'transferOutside'>;
 
 /** A draft exists exactly when there are no errors. */
 export function validate(

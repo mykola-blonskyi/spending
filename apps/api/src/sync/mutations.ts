@@ -25,6 +25,10 @@ export const transactionInputSchema = z.strictObject({
   categoryId: z.uuid().nullable(),
   description: z.string().max(200),
   note: z.string().max(2000),
+  // Absent from a client older than transfers (a queued mutation, a tab open across a deploy):
+  // the row keeps its mark (BR-36).
+  transferId: z.uuid().nullable().optional(),
+  transferOutside: z.boolean().optional(),
 });
 export type TransactionInput = z.infer<typeof transactionInputSchema>;
 
@@ -73,7 +77,12 @@ export const pushResponseSchema = z.object({ results: z.array(pushResultSchema) 
 
 export type RejectCode = Extract<
   ErrorCode,
-  'NOT_FOUND' | 'FORBIDDEN' | 'INVALID_ACCOUNT' | 'INVALID_CATEGORY' | 'REVIEW_REQUIRED'
+  | 'NOT_FOUND'
+  | 'FORBIDDEN'
+  | 'INVALID_ACCOUNT'
+  | 'INVALID_CATEGORY'
+  | 'INVALID_TRANSFER'
+  | 'REVIEW_REQUIRED'
 >;
 
 /** The user-visible fields a client writes, as stored. */
@@ -87,6 +96,8 @@ export type IntendedFields = Readonly<{
   categoryId: string | null;
   description: string;
   note: string;
+  transferId: string | null;
+  transferOutside: boolean;
 }>;
 
 export type ExistingRow = IntendedFields &
@@ -152,7 +163,9 @@ export function sameIntent(intended: IntendedFields, row: IntendedFields): boole
     intended.accountId === row.accountId &&
     intended.categoryId === row.categoryId &&
     intended.description === row.description &&
-    intended.note === row.note
+    intended.note === row.note &&
+    intended.transferId === row.transferId &&
+    intended.transferOutside === row.transferOutside
   );
 }
 
@@ -181,7 +194,37 @@ export type UpsertFacts = Readonly<{
   /** The account `intended.accountId` names, or null when there is none or it does not exist. */
   account: AccountFact | null;
   category: CategoryFact | null;
+  /** Other live rows sharing `intended.transferId`. */
+  transferPeers: readonly TransferPeer[];
 }>;
+
+export type TransferPeer = Readonly<{
+  workspaceId: string;
+  kind: EntryKind;
+  transferOutside: boolean;
+}>;
+
+/**
+ * BR-36. A transfer has no category. A one-sided transfer stands alone; a linked side has at most
+ * one other side, of the opposite kind, in the same workspace. Each side is its own upsert, so
+ * the first side of a pair arrives alone and is valid.
+ */
+export function transferError(
+  intended: IntendedFields,
+  peers: readonly TransferPeer[],
+): 'INVALID_TRANSFER' | null {
+  if (intended.transferId === null) return intended.transferOutside ? 'INVALID_TRANSFER' : null;
+  if (intended.categoryId !== null) return 'INVALID_TRANSFER';
+  if (intended.transferOutside) return peers.length === 0 ? null : 'INVALID_TRANSFER';
+  const [peer, ...more] = peers;
+  const fits =
+    !peer ||
+    (more.length === 0 &&
+      !peer.transferOutside &&
+      peer.workspaceId === intended.workspaceId &&
+      peer.kind !== intended.kind);
+  return fits ? null : 'INVALID_TRANSFER';
+}
 
 export type UpsertDecision =
   | { outcome: 'rejected'; code: RejectCode }
@@ -221,6 +264,8 @@ export function decideUpsert(facts: UpsertFacts): UpsertDecision {
     category: facts.category,
   });
   if (referenceCode) return reject(referenceCode);
+  const transferCode = transferError(intended, facts.transferPeers);
+  if (transferCode) return reject(transferCode);
   if (!existing) return { outcome: 'insert' };
   return live && sameIntent(intended, existing) ? { outcome: 'unchanged' } : { outcome: 'update' };
 }

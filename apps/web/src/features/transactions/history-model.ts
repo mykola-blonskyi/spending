@@ -85,7 +85,7 @@ export type EntryRow = Readonly<
   {
     id: string;
     href: string;
-    /** The description, else the category name, else "Uncategorized". */
+    /** The description, else the category name or "Transfer", else "Uncategorized". */
     title: string;
     /** Category and account, without repeating a category the title already shows. */
     subtitle: string;
@@ -99,6 +99,8 @@ export type EntryRow = Readonly<
     currency: string;
     conversion: Conversion;
     sync: EntrySync;
+    /** Neither income nor spending, so it stays out of totals (BR-36). */
+    isTransfer: boolean;
   } & Pick<TransactionEntry, 'scope' | 'author' | 'accountId'>
 >;
 
@@ -107,19 +109,20 @@ export type RowContext = Readonly<{
   accounts: ReadonlyMap<string, Account>;
   dayLabel: (date: string) => string;
   uncategorized: string;
+  transfer: string;
 }>;
 
 export function toEntryRow(entry: TransactionEntry, context: RowContext): EntryRow {
   const category = entry.categoryId ? context.categories.get(entry.categoryId) : undefined;
   const accountName = entry.accountId ? context.accounts.get(entry.accountId)?.name : undefined;
-  const title = entry.description || category?.name || context.uncategorized;
+  const isTransfer = entry.transferId !== null;
+  const group = category?.name ?? (isTransfer ? context.transfer : undefined);
+  const title = entry.description || group || context.uncategorized;
   return {
     id: entry.id,
     href: `/transactions/${entry.id}`,
     title,
-    subtitle: [category?.name === title ? undefined : category?.name, accountName]
-      .filter(Boolean)
-      .join(' · '),
+    subtitle: [group === title ? undefined : group, accountName].filter(Boolean).join(' · '),
     category,
     accountName,
     occurredOn: entry.occurredOn,
@@ -129,6 +132,7 @@ export function toEntryRow(entry: TransactionEntry, context: RowContext): EntryR
     currency: entry.currency,
     conversion: conversionOf(entry),
     sync: entry.sync,
+    isTransfer,
     scope: entry.scope,
     author: entry.author,
     accountId: entry.accountId,
@@ -147,11 +151,15 @@ export type Totals = Readonly<{
 }>;
 
 export function summarize(
-  entries: readonly Pick<EntryRow, 'kind' | 'amountMinor' | 'currency' | 'conversion'>[],
+  entries: readonly Pick<
+    EntryRow,
+    'kind' | 'amountMinor' | 'currency' | 'conversion' | 'isTransfer'
+  >[],
 ): Totals {
   const base = { expense: 0, income: 0 };
   const unconverted = new Map<string, Sums & { currency: string }>();
   for (const entry of entries) {
+    if (entry.isTransfer) continue;
     const { conversion } = entry;
     if (conversion.state === 'pending' || conversion.state === 'unavailable') {
       const sum = unconverted.get(entry.currency) ?? {
@@ -237,4 +245,33 @@ export function groupByDay(
     start = end;
   }
   return items;
+}
+
+/**
+ * Entries that can be the other side of `entry`'s transfer: same workspace, opposite kind, another
+ * account, not a transfer yet (BR-36). Nearest date first, then nearest amount.
+ */
+export function transferCandidates(
+  entry: TransactionEntry,
+  entries: readonly TransactionEntry[],
+  limit = 20,
+): TransactionEntry[] {
+  const days = (date: string) => Date.parse(`${date}T00:00:00Z`) / 86_400_000;
+  const distance = (other: TransactionEntry) => [
+    Math.abs(days(other.occurredOn) - days(entry.occurredOn)),
+    Math.abs(other.amountMinor - entry.amountMinor),
+  ];
+  return entries
+    .filter(
+      (other) =>
+        other.id !== entry.id &&
+        other.workspaceId === entry.workspaceId &&
+        other.kind !== entry.kind &&
+        other.accountId !== entry.accountId &&
+        other.transferId === null,
+    )
+    .map((other) => ({ other, by: distance(other) }))
+    .sort((a, b) => a.by[0]! - b.by[0]! || a.by[1]! - b.by[1]!)
+    .slice(0, limit)
+    .map(({ other }) => other);
 }

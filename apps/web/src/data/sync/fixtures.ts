@@ -28,6 +28,8 @@ export function localRow(patch: Partial<LocalTransaction> = {}): LocalTransactio
     categoryId: null,
     description: 'Coffee',
     note: '',
+    transferId: null,
+    transferOutside: false,
     createdAt: '2026-10-14T09:00:00.000Z',
     ...patch,
   };

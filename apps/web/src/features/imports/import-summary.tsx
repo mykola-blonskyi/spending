@@ -80,6 +80,8 @@ function ImportedEntries({ ids }: { ids: readonly string[] }) {
       categoryId,
       description: entry.description,
       note: entry.note,
+      transferId: null,
+      transferOutside: false,
     });
   const applyBulk = async () => {
     const category = bulkCategory ? byId.get(bulkCategory) : undefined;

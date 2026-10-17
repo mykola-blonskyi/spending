@@ -103,6 +103,10 @@ export const transactionViewSchema = z
     source: z.enum(TRANSACTION_SOURCES),
     reviewStatus: z.enum(REVIEW_STATUSES),
     importBatchId: z.uuid().nullable(),
+    /** Both sides of a transfer share it; null for ordinary income and expense (BR-36). */
+    transferId: z.uuid().nullable(),
+    /** A one-sided transfer: the other side is an own account outside the app. */
+    transferOutside: z.boolean(),
     author: z.object({ userId: z.uuid().nullable(), displayName: z.string().nullable() }),
     version: z.int(),
     revision: z.int(),
@@ -141,6 +145,8 @@ export type TransactionViewRow = Readonly<{
   source: (typeof TRANSACTION_SOURCES)[number];
   reviewStatus: (typeof REVIEW_STATUSES)[number];
   importBatchId: string | null;
+  transferId: string | null;
+  transferOutside: boolean;
   createdBy: string | null;
   authorName: string | null;
   version: number;
@@ -184,6 +190,8 @@ export function toLedgerRow(row: TransactionViewRow, visible: ReadonlySet<string
     source: row.source,
     reviewStatus: row.reviewStatus,
     importBatchId: row.importBatchId,
+    transferId: row.transferId,
+    transferOutside: row.transferOutside,
     author: { userId: row.createdBy, displayName: row.authorName },
     version: row.version,
     revision: row.revision,

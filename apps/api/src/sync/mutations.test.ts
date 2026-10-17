@@ -7,6 +7,7 @@ import {
   pullWindow,
   pushBodySchema,
   referenceError,
+  transferError,
   type ReferenceFacts,
   sameIntent,
   type TransactionInput,
@@ -22,7 +23,7 @@ const FAMILY = 'f0000000-0000-4000-8000-000000000003';
 const ACCOUNT = 'ac000000-0000-4000-8000-000000000004';
 const CATEGORY = 'ca000000-0000-4000-8000-000000000005';
 
-const input: TransactionInput = {
+const input: Required<TransactionInput> = {
   id: 'e0000000-0000-4000-8000-000000000006',
   workspaceId: FAMILY,
   kind: 'expense',
@@ -33,6 +34,8 @@ const input: TransactionInput = {
   categoryId: null,
   description: 'Bread',
   note: '',
+  transferId: null,
+  transferOutside: false,
 };
 
 const row = (overrides: Partial<ExistingRow> = {}): ExistingRow => ({
@@ -45,6 +48,8 @@ const row = (overrides: Partial<ExistingRow> = {}): ExistingRow => ({
   categoryId: null,
   description: 'Bread',
   note: '',
+  transferId: null,
+  transferOutside: false,
   createdBy: ANN,
   version: 3,
   reviewStatus: 'confirmed',
@@ -61,6 +66,7 @@ const facts = (overrides: Partial<UpsertFacts> = {}): UpsertFacts => ({
   authorPersonalWorkspaceId: BOB_PERSONAL,
   account: null,
   category: null,
+  transferPeers: [],
   ...overrides,
 });
 
@@ -395,5 +401,33 @@ describe('referenceError', () => {
         referenceFacts({ ...archived, current: { accountId: 'acc', categoryId: 'cat' } }),
       ),
     ).toBeNull();
+  });
+});
+
+describe('transferError', () => {
+  const TRANSFER = 'd0000000-0000-4000-8000-000000000007';
+  const side = { ...input, transferId: TRANSFER };
+  const peer = { workspaceId: FAMILY, kind: 'income' as const, transferOutside: false };
+
+  it('accepts a first side alone, a matching second side and a one-sided transfer', () => {
+    expect(transferError(side, [])).toBeNull();
+    expect(transferError(side, [peer])).toBeNull();
+    expect(transferError({ ...side, transferOutside: true }, [])).toBeNull();
+    expect(transferError(input, [])).toBeNull();
+  });
+
+  it('refuses a category, another workspace, the same kind, a third side or a lone marker', () => {
+    expect(transferError({ ...side, categoryId: CATEGORY }, [])).toBe('INVALID_TRANSFER');
+    expect(transferError(side, [{ ...peer, workspaceId: BOB_PERSONAL }])).toBe('INVALID_TRANSFER');
+    expect(transferError(side, [{ ...peer, kind: 'expense' }])).toBe('INVALID_TRANSFER');
+    expect(transferError(side, [peer, peer])).toBe('INVALID_TRANSFER');
+    expect(transferError(side, [{ ...peer, transferOutside: true }])).toBe('INVALID_TRANSFER');
+    expect(transferError({ ...side, transferOutside: true }, [peer])).toBe('INVALID_TRANSFER');
+    expect(transferError({ ...input, transferOutside: true }, [])).toBe('INVALID_TRANSFER');
+  });
+
+  it('accepts a mutation from a client older than transfers', () => {
+    const { transferId: _id, transferOutside: _outside, ...old } = input;
+    expect(transactionInputSchema.parse(old)).toEqual(old);
   });
 });

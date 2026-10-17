@@ -384,6 +384,13 @@ export class FamilyService {
       from memberships p
       where t.workspace_id = ${familyId}
         and p.user_id = t.created_by and p.workspace_kind = 'personal'`);
+    // A family transfer whose sides had different authors now spans two workspaces, so each side
+    // becomes a one-sided transfer of its own (BR-36).
+    await tx.execute(sql`
+      update transactions t set transfer_id = gen_random_uuid(), transfer_outside = true
+      where t.transfer_id is not null and not t.transfer_outside and exists (
+        select 1 from transactions o
+        where o.transfer_id = t.transfer_id and o.id <> t.id and o.workspace_id <> t.workspace_id)`);
     await tx.delete(workspaces).where(eq(workspaces.id, familyId));
   }
 

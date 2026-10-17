@@ -21,7 +21,13 @@ import {
 import { applyLocalChange, SENDING_STALE_MS, setMutationState } from './queue';
 import { LocalStore } from './store';
 import { apiTransport, SYNC_TIMEOUT_MS } from './transport';
-import { deleteTransaction, recordTransaction, updateTransaction } from './writes';
+import {
+  deleteTransaction,
+  markTransfer,
+  recordTransaction,
+  unmarkTransfer,
+  updateTransaction,
+} from './writes';
 
 const draft = (({ id: _id, createdAt: _createdAt, ...rest }) => rest)(localRow());
 const invalid = () =>
@@ -548,6 +554,44 @@ describe('a failed push', () => {
     expect(engine.getStatus().phase).toBe('retrying');
     expect(queueOrder(store.state).map((m) => m.state.status)).toEqual(['queued']);
     engine.stop();
+  });
+
+  it('pushes a transfer marked offline as two upserts, then its unmarking (BR-36)', async () => {
+    store = await LocalStore.open('ann');
+    const out = await recordTransaction(store, { ...draft, description: 'out', categoryId: 'c' });
+    const into = await recordTransaction(store, { ...draft, kind: 'income', description: 'in' });
+    const server = fakeServer();
+    const engine = new SyncEngine(store, server.transport);
+    await engine.flush();
+    const online = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+
+    await markTransfer(store, out, into);
+    await engine.flush();
+    expect(server.pushes).toHaveLength(1);
+
+    online.mockReturnValue(true);
+    await engine.flush();
+    const sent = server.pushes[1]!.map((m) =>
+      m.type === 'transaction.upsert'
+        ? [m.transaction.id, m.baseVersion, m.transaction.categoryId, m.transaction.transferId]
+        : null,
+    );
+    const transferId = store.state.transactions.get(out)?.server?.transferId;
+    expect(transferId).toEqual(expect.any(String));
+    expect(sent).toEqual([
+      [out, 1, null, transferId],
+      [into, 1, null, transferId],
+    ]);
+    expect(store.state.transactions.get(into)?.server?.transferId).toBe(transferId);
+    expect(store.state.mutations.size).toBe(0);
+
+    await unmarkTransfer(store, into);
+    await engine.flush();
+    const sides = [out, into].map((id) => store?.state.transactions.get(id)?.server);
+    expect(sides.map((side) => [side?.transferId, side?.version])).toEqual([
+      [null, 3],
+      [null, 3],
+    ]);
   });
 
   it('is not attempted while the browser is offline', async () => {

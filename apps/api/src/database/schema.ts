@@ -346,6 +346,10 @@ export const transactions = pgTable(
     }),
     recurringOccurrence: date('recurring_occurrence', { mode: 'string' }),
     reviewStatus: reviewStatusEnum('review_status').notNull().default('confirmed'),
+    /** Shared by both sides of a transfer between own accounts; one side alone when `transferOutside`. */
+    transferId: uuid('transfer_id'),
+    /** The other side is an own account outside the app (a one-sided transfer). */
+    transferOutside: boolean('transfer_outside').notNull().default(false),
     version: integer('version').notNull().default(1),
     revision: revision(),
     deletedAt: tstz('deleted_at'),
@@ -361,6 +365,9 @@ export const transactions = pgTable(
     index('transactions_account_idx').on(t.accountId),
     index('transactions_created_by_idx').on(t.createdBy),
     index('transactions_import_batch_idx').on(t.importBatchId),
+    index('transactions_transfer_idx')
+      .on(t.transferId)
+      .where(sql`${t.transferId} is not null`),
     // FxService.backfill's candidates: a row at its own day's rate can never get a closer one.
     index('transactions_fx_pending_idx')
       .on(t.id)
@@ -387,6 +394,11 @@ export const transactions = pgTable(
     ),
     check('transactions_fx_rate_ck', sql`${t.fxRate} is null or ${t.fxRate} > 0`),
     check('transactions_version_ck', sql`${t.version} >= 1`),
+    // A transfer is neither income nor spending, so it has no category (BR-36).
+    check(
+      'transactions_transfer_ck',
+      sql`${t.transferId} is null and not ${t.transferOutside} or ${t.transferId} is not null and ${t.categoryId} is null`,
+    ),
   ],
 );
 

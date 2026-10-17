@@ -188,7 +188,7 @@ edited through REST and arrive through pull like transactions.
   A mutation is `transaction.upsert` (`baseVersion` is the version the client edited, or null for a
   new row) or `transaction.delete` (`baseVersion` required). Each result is `applied` (with the
   fresh row), `conflict` (with `conflictId` and the server row) or `rejected` (with a stable code:
-  `NOT_FOUND`, `FORBIDDEN`, `INVALID_ACCOUNT`, `INVALID_CATEGORY`, `REVIEW_REQUIRED`,
+  `NOT_FOUND`, `FORBIDDEN`, `INVALID_ACCOUNT`, `INVALID_CATEGORY`, `INVALID_TRANSFER`, `REVIEW_REQUIRED`,
   `MUTATION_ID_REUSED`). Rate limit: 120 pushes per minute per user.
 - **Idempotency.** Every result is stored under its `mutationId` (BR-18). A replay returns the
   stored status with a fresh view of the row. A `mutationId` already used by another user is
@@ -224,6 +224,11 @@ edited through REST and arrive through pull like transactions.
   (which bounds the wait for the ledger lock) and `idle_in_transaction_session_timeout` 60 s, and
   waits at most 10 s for a pool connection. A statement or lock timeout answers
   `503 UNAVAILABLE` with nothing committed; the client keeps the push queued and retries it.
+- **Transfers (BR-36, ADR-014).** An upsert carries `transferId` and `transferOutside`. Both are
+  optional on the wire: a client older than transfers (a queued mutation, a tab open across a
+  deploy) leaves them out, and the row keeps its mark. The server checks the other live rows with
+  the same `transferId`. The web writes both sides of a mark or unmark in one IndexedDB commit
+  (`data/sync/transfer.ts`), as two queued upserts.
 - **Account references (BR-3).** A viewer who cannot see a row's account receives
   `accountId: null`. Sending that null back in an upsert keeps the author's account. Only the
   author may choose an account from their own personal workspace.
@@ -282,7 +287,7 @@ Every error is `{ error: { code, message, details? } }` with a stable `code` fro
 `apps/api/src/common/errors.ts`, which the web app localizes. Codes outside the generic HTTP set:
 `SESSION_REVOKED`, `CSRF_FAILED`, `CONFIRMATION_MISMATCH` (400), `FAMILY_EXISTS` (409),
 `OWNER_CANNOT_LEAVE` (409), `NAME_TAKEN` (409), `REVIEW_REQUIRED` (409), `MUTATION_ID_REUSED`
-(409), `INVITATION_INVALID` (410), `INVALID_ACCOUNT` (422), `INVALID_CATEGORY` (422). Sync push
+(409), `INVITATION_INVALID` (410), `INVALID_ACCOUNT` (422), `INVALID_CATEGORY` (422), `INVALID_TRANSFER` (422). Sync push
 reports rejections per mutation with the same codes instead of an HTTP error. A database
 statement or lock timeout is `503 UNAVAILABLE`, safe to retry. A workspace the actor does not belong to
 is always `NOT_FOUND`, never `FORBIDDEN`.

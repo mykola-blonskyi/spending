@@ -87,6 +87,8 @@ Where money sits: a card, a bank account, cash.
 - `source` (`manual|import|recurring`), `importBatchId`, `importHash`, `externalId`
 - `recurringRuleId` and `recurringOccurrence` (a date), unique together
 - `reviewStatus` (`confirmed|pending_review`)
+- `transferId` (nullable, shared by both sides of a transfer) and `transferOutside` (the other
+  side is an own account outside the app). A transfer has no category (BR-36).
 - `version` (incremented on user-visible changes only, so a background FX fill never causes a
   conflict), `revision` (global change sequence used as the sync cursor), `deletedAt` (a tombstone, so sync can propagate deletes), `createdAt`, `updatedAt`
 

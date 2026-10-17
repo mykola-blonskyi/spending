@@ -20,6 +20,7 @@ import {
   NoteField,
   SaveBar,
   ScopeChoice,
+  TransferButton,
 } from '../blocks';
 import { type EntryForm, HISTORY_PATH, useEntryForm } from '../use-entry-form';
 
@@ -155,6 +156,7 @@ export function CardsEntryView({ form, className }: { form: EntryForm; className
           buttonClassName="h-14 rounded-2xl text-[15px] font-semibold"
         >
           {form.canDiscard && <DiscardButton onConfirm={() => void form.discard()} />}
+          {form.canDelete && form.entryId && <TransferButton id={form.entryId} />}
           {form.canDelete && <DeleteButton onConfirm={() => void form.remove()} />}
         </SaveBar>
       </form>

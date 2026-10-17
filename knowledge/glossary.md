@@ -38,6 +38,13 @@ payments" and one item a "rule".
 Bringing transactions in from a bank statement CSV. Imported rows wait in review until the user
 picks personal or family and a category.
 
+### Transfer
+
+Money moved between the user's own accounts in one space: an expense on one account and an
+income on another, linked, and counted as neither (BR-36). A **one-sided transfer** has its other
+side on an "own account outside the app" (uk "власний рахунок поза застосунком", ru "собственный
+счёт вне приложения", es "cuenta propia fuera de la aplicación").
+
 ### Sync
 
 Sending changes made on a device to the server and pulling others' changes back.
@@ -68,6 +75,8 @@ The register is polite "ви" in Ukrainian, polite "вы" in Russian and "tú" i
 | statement          | bank statement          | банківська виписка         | банковская выписка          | extracto bancario      |
 | review             | review                  | перевірка, перевірити      | проверка, проверить         | revisión, revisar      |
 | sync               | sync                    | синхронізація              | синхронизация               | sincronización         |
+| transfer           | transfer                | переказ                    | перевод                     | transferencia          |
+| other side         | other side              | друга сторона              | вторая сторона              | otro lado              |
 | conflict           | conflict                | конфлікт                   | конфликт                    | conflicto              |
 | member             | member                  | учасник                    | участник                    | miembro                |
 | owner              | owner                   | власник                    | владелец                    | propietario            |
