@@ -1,11 +1,22 @@
 import { useVirtualizer, useWindowVirtualizer, type Virtualizer } from '@tanstack/react-virtual';
-import { type Key, type ReactNode, useLayoutEffect, useRef, useState } from 'react';
+import {
+  type CSSProperties,
+  type Key,
+  type ReactNode,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import { cn } from '@shared/lib/utils';
 
 type VirtualListProps = {
   items: readonly unknown[];
   scroll: 'window' | 'self';
   estimateSize: (index: number) => number;
   getItemKey: (index: number) => Key;
+  /** For the `self` scroller. */
+  className?: string;
+  style?: CSSProperties;
   children: (
     virtualizer: Virtualizer<Window, Element> | Virtualizer<HTMLDivElement, Element>,
   ) => ReactNode;
@@ -40,7 +51,11 @@ function SelfList(props: VirtualListProps) {
     getScrollElement: () => scroller.current,
   });
   return (
-    <div ref={scroller} className="h-full overflow-y-auto overscroll-contain">
+    <div
+      ref={scroller}
+      style={props.style}
+      className={cn('h-full overflow-y-auto overscroll-contain', props.className)}
+    >
       {props.children(virtualizer)}
     </div>
   );

@@ -93,8 +93,13 @@ narrow column keep the rows, and the stored choice stays for a wider layout. The
 table's sort are kept per device in `localStorage` as one object (`spending.history`,
 `{view, sort}`, read and written in try/catch and validated on read, so the page works without
 storage and an unknown value falls back to the default). The table (`HistoryTable`) is one block
-in the layout's theme tokens: flat, the whole history on the same virtualizer, with date,
-description, category, account, amount, who (family members only) and sync columns. A transfer
+in the layout's theme tokens: flat, the whole history on the same virtualizer, but always in
+its own scroll box (TanStack's element virtualizer, never the window one) with a sticky header
+row, so search, filters and totals stay in view. In split that box fills the pane; in the layouts
+whose page scrolls it fills the viewport below the controls (`max-height` from the box's
+measured page top, at least 20rem), since those shells are not viewport-high flex columns. The
+rows view keeps scrolling with the page. Its columns are date, description, category, account,
+amount, who (family members only) and sync. A transfer
 is one row (BR-37), or its side under an account filter. Each row is a link to what the layout
 opens for an entry; the table uses `role="table"` with `aria-rowcount` and `aria-rowindex`.
 The Date, Category, Account and Amount headers are sort buttons (`aria-sort` on the active one).
@@ -103,7 +108,7 @@ by the absolute EUR amount the totals use (BR-14), entries without one last in b
 category and account by the shown name with `Intl.Collator` in the interface language, with
 Uncategorized and then transfers, or rows without an account, last in both directions (a
 transfer's account is its route, "Card → Savings"). Ties keep the
-newest-first order, and a new sort starts the list at the top. The rows view keeps its day
+newest-first order, and a new sort starts the box at the top. The rows view keeps its day
 order.
 Split and hybrid decide from the whole master-detail width less the 400 px entry pane (not from
 the list column, which widens once the table is shown) and then widen the list beside the pane. `layouts/<layout>-{history,entry}.tsx` are

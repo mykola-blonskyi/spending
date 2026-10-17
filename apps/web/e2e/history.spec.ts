@@ -173,13 +173,22 @@ test('the table view on desktop covers the whole history and is remembered', asy
   await expect(tableRows.first()).toBeVisible();
   expect(await tableRows.count()).toBeLessThan(DOM_BUDGET);
 
+  // The table scrolls in its own box under the controls; the page stays put.
+  const scroller = table.locator('.overflow-y-auto');
+  const box = await scroller.boundingBox();
+  expect(box!.y + box!.height).toBeLessThanOrEqual(900);
+  const scrollTable = (fraction: number) =>
+    scroller.evaluate((el, f) => el.scrollTo(0, (el.scrollHeight - el.clientHeight) * f), fraction);
   await expect(async () => {
-    await scrollTo(page, 1);
+    await scrollTable(1);
     await expect(tableRows.last()).toContainText('Seed 4996', { timeout: 1000 });
   }).toPass({ timeout: 30_000 });
   expect(await tableRows.count()).toBeLessThan(DOM_BUDGET);
+  expect(await scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(100_000);
+  expect(await page.evaluate(() => scrollY)).toBe(0);
+  await expect(table.getByRole('button', { name: 'Sort by date' })).toBeInViewport();
 
-  await scrollTo(page, 0);
+  await scrollTable(0);
   const newest = table.getByRole('link').first();
   await expect(newest).toHaveText('Seed 5 Salary');
   await newest.press('Enter');
@@ -197,8 +206,11 @@ test('the table view on desktop covers the whole history and is remembered', asy
   const amountHeader = table
     .getByRole('columnheader')
     .filter({ has: page.getByRole('button', { name: 'Sort by amount' }) });
+  await scrollTable(0.5);
+  await expect.poll(() => scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(1000);
   await sortByAmount.click();
   await expect(amountHeader).toHaveAttribute('aria-sort', 'descending');
+  expect(await scroller.evaluate((el) => el.scrollTop)).toBe(0);
   for (const [index, text] of largest.entries())
     await expect(table.getByRole('link').nth(index)).toHaveText(text);
   await page.reload();
