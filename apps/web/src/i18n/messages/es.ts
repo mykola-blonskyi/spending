@@ -353,6 +353,8 @@ export const es = {
     sort: {
       date: 'Ordenar por fecha',
       amount: 'Ordenar por importe',
+      category: 'Ordenar por categoría',
+      account: 'Ordenar por cuenta',
     },
     detail: {
       label: 'Movimiento seleccionado',

@@ -386,6 +386,17 @@ const SORT_KEYS = {
     rank: (row) => (baseMagnitude(row) === null ? 1 : 0),
     compare: (a, b) => (baseMagnitude(a.row) ?? 0) - (baseMagnitude(b.row) ?? 0),
   },
+  // Uncategorized, then transfers, after the named categories.
+  category: {
+    first: 'asc',
+    rank: ({ row }) => (row.transfer ? 2 : row.category ? 0 : 1),
+    compare: (a, b, collator) => collator.compare(a.row.category, b.row.category),
+  },
+  account: {
+    first: 'asc',
+    rank: (row) => (row.account ? 0 : 1),
+    compare: (a, b, collator) => collator.compare(a.row.account, b.row.account),
+  },
 } satisfies Record<string, SortKey>;
 
 export type SortColumn = keyof typeof SORT_KEYS;

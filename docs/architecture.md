@@ -97,9 +97,12 @@ in the layout's theme tokens: flat, the whole history on the same virtualizer, w
 description, category, account, amount, who (family members only) and sync columns. A transfer
 is one row (BR-37), or its side under an account filter. Each row is a link to what the layout
 opens for an entry; the table uses `role="table"` with `aria-rowcount` and `aria-rowindex`.
-The Date and Amount headers are sort buttons (`aria-sort` on the active one). `sortTableRows`
-orders the rows from a table of sort keys: date newest first by default; amount by the absolute
-EUR amount the totals use (BR-14), entries without one last in both directions. Ties keep the
+The Date, Category, Account and Amount headers are sort buttons (`aria-sort` on the active one).
+`sortTableRows` orders the rows from a table of sort keys: date newest first by default; amount
+by the absolute EUR amount the totals use (BR-14), entries without one last in both directions;
+category and account by the shown name with `Intl.Collator` in the interface language, with
+Uncategorized and then transfers, or rows without an account, last in both directions (a
+transfer's account is its route, "Card → Savings"). Ties keep the
 newest-first order, and a new sort starts the list at the top. The rows view keeps its day
 order.
 Split and hybrid decide from the whole master-detail width less the 400 px entry pane (not from

@@ -336,6 +336,8 @@ export const en = {
     sort: {
       date: 'Sort by date',
       amount: 'Sort by amount',
+      category: 'Sort by category',
+      account: 'Sort by account',
     },
     detail: {
       label: 'Selected transaction',

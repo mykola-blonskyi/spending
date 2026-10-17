@@ -209,6 +209,34 @@ describe.each(Object.entries(TRANSACTION_SCREENS))(
       expect(header('date')).toHaveAttribute('aria-sort', 'descending');
     });
 
+    it('sorts by the category and account headers', async () => {
+      localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify({ view: 'table' }));
+      open();
+      const descriptions = () =>
+        within(table())
+          .getAllByRole('link')
+          .map((link) => link.textContent);
+      const sortBy = (name: string) => screen.getByRole('button', { name: `Sort by ${name}` });
+      expect(descriptions()).toEqual(['To savings', 'Bread']);
+
+      await userEvent.click(sortBy('category'));
+      expect(descriptions()).toEqual(['Bread', 'To savings']);
+      expect(sortBy('category').closest('[role="columnheader"]')).toHaveAttribute(
+        'aria-sort',
+        'ascending',
+      );
+
+      await userEvent.click(sortBy('account'));
+      expect(descriptions()).toEqual(['Bread', 'To savings']);
+      await userEvent.click(sortBy('account'));
+      expect(descriptions()).toEqual(['To savings', 'Bread']);
+      expect(sortBy('account').closest('[role="columnheader"]')).toHaveAttribute(
+        'aria-sort',
+        'descending',
+      );
+      expect(sortBy('category').closest('[role="columnheader"]')).not.toHaveAttribute('aria-sort');
+    });
+
     it('adds who recorded an entry for a family member', async () => {
       localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify({ view: 'table' }));
       open(
