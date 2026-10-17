@@ -3,7 +3,7 @@ import { useAccounts } from '@data/sync';
 import { useCategoryViews } from '@features/ledger';
 import { TimezoneSelect } from '@features/profile';
 import { useTranslations } from '@i18n/index';
-import { COMMON_CURRENCIES } from '@shared/format';
+import { COMMON_CURRENCIES, DESCRIPTION_MAX } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
@@ -253,7 +253,7 @@ export function RuleForm({
         <Field id={ids.description} label={t('transactionForm.description')}>
           <Input
             id={ids.description}
-            maxLength={200}
+            maxLength={DESCRIPTION_MAX}
             value={values.description}
             placeholder={t('transactionForm.descriptionPlaceholder')}
             onChange={(event) => set({ description: event.target.value })}

@@ -1,9 +1,13 @@
 import { z } from 'zod';
 import { type CurrencyCode, parseCurrency } from '../common/money';
-import { amountMinorSchema, calendarDateSchema, type EntryKind } from '../ledger/views';
+import {
+  amountMinorSchema,
+  calendarDateSchema,
+  DESCRIPTION_MAX,
+  type EntryKind,
+} from '../ledger/views';
 
 export const IMPORT_ROWS_MAX = 5000;
-const DESCRIPTION_MAX = 200;
 const EXTERNAL_ID_MAX = 100;
 export const MAPPING_MAX_BYTES = 4096;
 

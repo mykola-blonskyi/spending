@@ -3,6 +3,7 @@ import { type ReactNode, useId, useState } from 'react';
 import { ScopeField } from '@features/family';
 import { useTranslations } from '@i18n/index';
 import { ConfirmDialog } from '@shared/components';
+import { DESCRIPTION_MAX, NOTE_MAX } from '@shared/format';
 import { cn } from '@shared/lib/utils';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
@@ -468,7 +469,7 @@ export function DescriptionField({
     >
       <Input
         id={id}
-        maxLength={200}
+        maxLength={DESCRIPTION_MAX}
         className={cn('h-11', controlClassName)}
         value={form.values.description}
         placeholder={t('descriptionPlaceholder')}
@@ -498,7 +499,7 @@ export function NoteField({
       <Textarea
         id={id}
         rows={2}
-        maxLength={2000}
+        maxLength={NOTE_MAX}
         className={controlClassName}
         value={form.values.note}
         placeholder={t('notePlaceholder')}

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { AMOUNT_MINOR_MAX, DESCRIPTION_MAX, NOTE_MAX } from '../ledger/views';
 import { convertToEurMinor, currencyExponent, parseCurrency, type CurrencyCode } from './money';
 
 const c = (code: string) => parseCurrency(code) as CurrencyCode;
@@ -64,12 +65,14 @@ describe('convertToEurMinor', () => {
   });
 });
 
+const webMoney = readFileSync(
+  resolve(__dirname, '../../../web/src/shared/format/money.ts'),
+  'utf8',
+);
+
 describe('MINOR_DIGITS', () => {
   it('matches the web app’s copy for every code either side knows', () => {
-    const source = readFileSync(
-      resolve(__dirname, '../../../web/src/shared/format/money.ts'),
-      'utf8',
-    );
+    const source = webMoney;
     const table = /const MINOR_DIGITS[^{]*\{([^}]*)\}/.exec(source)![1]!;
     const web = new Map(
       [...table.matchAll(/([A-Z]{3}): (\d)/g)].map(([, code, digits]) => [code!, Number(digits)]),
@@ -79,5 +82,15 @@ describe('MINOR_DIGITS', () => {
     for (const code of codes) {
       expect([code, currencyExponent(code)]).toEqual([code, web.get(code) ?? 2]);
     }
+  });
+});
+
+describe('entry limits', () => {
+  it('match the web app’s copies', () => {
+    const web = (name: string) =>
+      Number(new RegExp(`const ${name} = ([\\d_]+);`).exec(webMoney)![1]!.replaceAll('_', ''));
+    expect(web('MAX_AMOUNT_MINOR')).toBe(AMOUNT_MINOR_MAX);
+    expect(web('DESCRIPTION_MAX')).toBe(DESCRIPTION_MAX);
+    expect(web('NOTE_MAX')).toBe(NOTE_MAX);
   });
 });

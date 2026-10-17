@@ -82,6 +82,9 @@ const AMOUNT = /^(\d+)(?:[.,](\d*))?$/;
 
 /** BR-13: the largest amount the server accepts, in minor units. */
 export const MAX_AMOUNT_MINOR = 1_000_000_000_000;
+/** The server's entry text limits. */
+export const DESCRIPTION_MAX = 200;
+export const NOTE_MAX = 2000;
 
 /** Parses what the user typed ("12", "12.5", "12,50") into positive minor units, or null. */
 export function parseAmount(text: string, exponent: number): number | null {

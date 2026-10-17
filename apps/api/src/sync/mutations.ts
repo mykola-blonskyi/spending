@@ -7,9 +7,11 @@ import {
   calendarDateSchema,
   categoryViewSchema,
   currencySchema,
+  DESCRIPTION_MAX,
   ENTRY_KINDS,
   type EntryKind,
   ledgerRowSchema,
+  NOTE_MAX,
 } from '../ledger/views';
 import {
   type AccountFact,
@@ -30,8 +32,8 @@ export const transactionInputSchema = z.strictObject({
   occurredOn: calendarDateSchema,
   accountId: z.uuid().nullable(),
   categoryId: z.uuid().nullable(),
-  description: z.string().max(200),
-  note: z.string().max(2000),
+  description: z.string().max(DESCRIPTION_MAX),
+  note: z.string().max(NOTE_MAX),
   // Absent from a client older than transfers (a queued mutation, a tab open across a deploy):
   // the row keeps its mark (BR-37).
   transferId: z.uuid().nullable().optional(),

@@ -19,7 +19,11 @@ export const currencySchema = z
   .refine((value) => parseCurrency(value) !== null, 'unknown ISO 4217 currency');
 
 /** BR-13: a ceiling far below 2^53, so sums and conversions stay safe integers. */
-export const amountMinorSchema = z.int().positive().max(1_000_000_000_000);
+export const AMOUNT_MINOR_MAX = 1_000_000_000_000;
+export const amountMinorSchema = z.int().positive().max(AMOUNT_MINOR_MAX);
+/** Entry text limits; the web app keeps equal copies (common/money.test.ts). */
+export const DESCRIPTION_MAX = 200;
+export const NOTE_MAX = 2000;
 
 export const calendarDateSchema = z
   .string()

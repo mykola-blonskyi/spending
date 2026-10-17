@@ -3,6 +3,7 @@ import {
   amountMinorSchema,
   calendarDateSchema,
   currencySchema,
+  DESCRIPTION_MAX,
   ENTRY_KINDS,
 } from '../ledger/views';
 import { timezoneSchema } from '../users/profile';
@@ -15,7 +16,7 @@ const template = {
   currency: currencySchema,
   accountId: z.uuid().nullable(),
   categoryId: z.uuid().nullable(),
-  description: z.string().max(200),
+  description: z.string().max(DESCRIPTION_MAX),
   frequency: z.enum(FREQUENCIES),
   interval: z.int().min(1).max(366),
   startsOn: calendarDateSchema,
