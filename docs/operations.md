@@ -295,7 +295,9 @@ origin's headers for this host only: Caching → Cache Rules → Create rule, Ho
   for emergencies.)
 - **Schema.** Migrations are forward-only. Every migration must be backward-compatible with the
   previous release (expand, deploy, then contract in a later release), so rolling the code back
-  never needs a down migration.
+  never needs a down migration. Ship a new enum value and its first use in separate deploys: one
+  deploy applies all pending migrations in one transaction, and Postgres refuses a value added in
+  the same transaction ("unsafe use of new value").
 - **Data.** Never rolled back automatically. Restore a pre-migrate dump only by hand, after
   checking what data written since the dump would be lost.
 
