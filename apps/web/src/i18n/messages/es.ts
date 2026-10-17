@@ -440,6 +440,12 @@ export const es = {
       openingBalanceHint:
         'Lo que tenía la cuenta en la fecha de apertura. Una deuda empieza con un signo menos.',
       openingBalanceInvalid: 'Introduce un importe como 1000 o -250,50.',
+      setBalanceLabel: 'Fijar el saldo actual de {name}',
+      setBalanceTitle: 'Saldo actual de {name}',
+      currentBalance: 'Saldo ahora, en {currency}',
+      setBalanceHint:
+        'Lo que muestra hoy el banco. Los movimientos no cambian; solo cambia el saldo inicial.',
+      setBalanceConfirm: 'Fijar saldo',
       openingOn: 'Fecha de apertura',
       total: 'Total',
       uncounted:

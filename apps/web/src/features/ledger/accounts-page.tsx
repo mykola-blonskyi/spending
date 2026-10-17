@@ -5,6 +5,7 @@ import {
   type LucideIcon,
   PiggyBank,
   Plus,
+  Scale,
   Wallet,
 } from 'lucide-react';
 import { useId, useMemo, useState } from 'react';
@@ -14,6 +15,7 @@ import {
   useAccountBalances,
   useAccounts,
   useLocalDataStatus,
+  useOpeningForBalance,
   useWorkspaces,
 } from '@data/sync';
 import { useProfile } from '@features/profile';
@@ -82,6 +84,69 @@ function parseOpeningBalance(text: string, exponent: number): number | null {
   if (/^[\s0]*([.,]0*)?\s*$/.test(magnitude)) return 0;
   const minor = parseAmount(magnitude, exponent);
   return minor === null ? null : negative ? -minor : minor;
+}
+
+function BalanceDialog({ account, onClose }: { account: Account; onClose: () => void }) {
+  const t = useTranslations('ledger');
+  const actions = useTranslations('actions');
+  const admin = useAccountsAdmin();
+  const openingFor = useOpeningForBalance();
+  const balances = useAccountBalances();
+  const id = useId();
+  const { locale } = useSharedLocale();
+  const exponent = currencyExponent(account.currency);
+  const [text, setText] = useState(() =>
+    minorToDecimalString(balances.get(account.id)?.balanceMinor ?? 0, exponent).replace(
+      '.',
+      decimalSeparator(locale),
+    ),
+  );
+  const [error, setError] = useState(false);
+  const today = todayIn(useProfile().timezone);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const target = parseOpeningBalance(text, exponent);
+    setError(target === null);
+    if (target === null) return;
+    if (await admin.update(account.id, openingFor(account, target, today))) onClose();
+  };
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('accounts.setBalanceTitle', { name: account.name })}</DialogTitle>
+          <DialogDescription className="sr-only">{t('accounts.setBalanceHint')}</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={(event) => void submit(event)} noValidate className="flex flex-col gap-4">
+          <Field
+            id={`${id}-balance`}
+            label={t('accounts.currentBalance', { currency: account.currency })}
+            hint={t('accounts.setBalanceHint')}
+            error={error ? t('accounts.openingBalanceInvalid') : undefined}
+          >
+            <Input
+              id={`${id}-balance`}
+              autoComplete="off"
+              value={text}
+              aria-invalid={error || undefined}
+              aria-describedby={error ? `${id}-balance-error` : `${id}-balance-hint`}
+              onChange={(event) => setText(event.target.value)}
+            />
+          </Field>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              {actions('cancel')}
+            </Button>
+            <Button type="submit" disabled={admin.isPending} className="active:scale-[0.97]">
+              {t('accounts.setBalanceConfirm')}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 function AccountDialog({
@@ -262,6 +327,7 @@ function AccountRow({
   scope,
   disabled,
   onEdit,
+  onSetBalance,
   onArchive,
   onRestore,
 }: {
@@ -270,6 +336,7 @@ function AccountRow({
   scope: string | null;
   disabled: boolean;
   onEdit: () => void;
+  onSetBalance: () => void;
   onArchive: () => void;
   onRestore: () => void;
 }) {
@@ -302,6 +369,18 @@ function AccountRow({
           />
         )}
       </div>
+      {account.archivedAt === null && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-11 active:scale-[0.97] sm:size-9"
+          disabled={disabled}
+          aria-label={t('accounts.setBalanceLabel', { name: account.name })}
+          onClick={onSetBalance}
+        >
+          <Scale aria-hidden />
+        </Button>
+      )}
       <RowActions
         name={account.name}
         archived={account.archivedAt !== null}
@@ -326,6 +405,7 @@ export function AccountsPage() {
   const balances = useAccountBalances();
   const { locale } = useSharedLocale();
   const [dialog, setDialog] = useState<Dialog>(null);
+  const [balanceOf, setBalanceOf] = useState<Account | null>(null);
   const [toArchive, setToArchive] = useState<Account | null>(null);
   const toArchiveBalance = toArchive ? (balances.get(toArchive.id)?.balanceMinor ?? 0) : 0;
 
@@ -376,6 +456,7 @@ export function AccountsPage() {
       scope={scopes.get(account.workspaceId) ?? null}
       disabled={blocked || admin.isPending}
       onEdit={() => setDialog({ account })}
+      onSetBalance={() => setBalanceOf(account)}
       onArchive={() => setToArchive(account)}
       onRestore={() => void admin.archive(account.id, false)}
     />
@@ -443,6 +524,7 @@ export function AccountsPage() {
         </p>
       )}
       {body}
+      {balanceOf && <BalanceDialog account={balanceOf} onClose={() => setBalanceOf(null)} />}
       {dialog && (
         <AccountDialog
           account={dialog === 'new' ? null : dialog.account}

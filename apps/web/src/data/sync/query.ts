@@ -173,3 +173,28 @@ export function accountBalance(
   }
   return { balanceMinor, uncounted };
 }
+
+/**
+ * The opening balance and date that make the account show `targetMinor` (BR-40). An account with
+ * no opening date starts at its earliest live entry (today when it has none), so no entry drops
+ * out of the balance. A zero balance clears the date.
+ */
+export function openingForBalance(
+  account: Pick<Account, 'id' | 'openingOn'>,
+  records: Iterable<TransactionRecord>,
+  targetMinor: number,
+  today: string,
+): Pick<Account, 'openingBalanceMinor' | 'openingOn'> {
+  const live = [...records];
+  let openingOn = account.openingOn ?? today;
+  if (account.openingOn === null) {
+    for (const record of live) {
+      if (isDeleted(record.local)) continue;
+      const row = record.local ?? record.server;
+      if (row?.accountId === account.id && row.occurredOn < openingOn) openingOn = row.occurredOn;
+    }
+  }
+  const entries = accountBalance({ id: account.id, openingBalanceMinor: 0, openingOn }, live);
+  const openingBalanceMinor = targetMinor - entries.balanceMinor;
+  return { openingBalanceMinor, openingOn: openingBalanceMinor === 0 ? null : openingOn };
+}

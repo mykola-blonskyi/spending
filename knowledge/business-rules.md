@@ -127,7 +127,9 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   how many. The opening balance is an integer number of minor units within ±10^12 (BR-13), may be
   negative and defaults to 0. The opening date is present exactly when the opening balance is not
   0 (`400` otherwise, and a database CHECK); the dialog asks for it, defaulting to today, only
-  then. Both are edited and synced with the account. The balance
+  then. Both are edited and synced with the account. "Set current balance" takes what the bank
+  shows and recomputes the opening balance, keeping the existing opening date (else the earliest
+  entry's, else today), so the balance matches and no entry is created or changed. The balance
   is computed on the device from the local entries, so it works offline and follows account
   visibility (BR-2). The accounts page totals active accounts per currency, with no EUR total;
   archived accounts show their balance outside the totals, and archiving an account that still

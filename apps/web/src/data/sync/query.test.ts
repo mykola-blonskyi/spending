@@ -5,7 +5,7 @@ import { localRow, page, sequentialIds, serverRow, syncedState } from './fixture
 import { emptyLocalState, type LocalState } from './model';
 import { reducePull } from './pull';
 import { applyLocalChange, setMutationState } from './queue';
-import { accountBalance, queryTransactions } from './query';
+import { accountBalance, openingForBalance, queryTransactions } from './query';
 import { deriveSyncStatus, smoothingDelay } from './status';
 
 const history = syncedState(
@@ -231,5 +231,61 @@ describe('accountBalance (BR-40)', () => {
     );
     state = applyLocalChange(state, { type: 'delete', id: 'b' }, sequentialIds('d'));
     expect(balanceOf(state).balanceMinor).toBe(96000);
+  });
+});
+
+describe('openingForBalance (BR-40)', () => {
+  const account = { id: 'acc-savings', openingOn: null as string | null };
+  const entry = (patch: Parameters<typeof serverRow>[0]) =>
+    serverRow({ accountId: account.id, amountMinor: 1000, occurredOn: '2026-10-10', ...patch });
+  const opening = (state: LocalState, target: number, on = account.openingOn) =>
+    openingForBalance(
+      { ...account, openingOn: on },
+      state.transactions.values(),
+      target,
+      '2026-10-18',
+    );
+
+  it('keeps the existing opening date and ignores older entries', () => {
+    const state = syncedState(
+      entry({ id: 'old', occurredOn: '2026-09-01', amountMinor: 9999 }),
+      entry({ id: 'in', kind: 'income', amountMinor: 20000 }),
+      entry({ id: 'out', amountMinor: 5000 }),
+    );
+    expect(opening(state, 175000, '2026-10-01')).toEqual({
+      openingBalanceMinor: 160000,
+      openingOn: '2026-10-01',
+    });
+  });
+
+  it('starts at the earliest live entry without an opening date', () => {
+    const state = syncedState(
+      entry({ id: 'a', occurredOn: '2026-10-12', amountMinor: 3000 }),
+      entry({ id: 'b', occurredOn: '2026-10-05', amountMinor: 1000 }),
+      serverRow({ id: 'other', accountId: 'acc-card', occurredOn: '2026-01-01' }),
+    );
+    expect(opening(state, 10000)).toEqual({ openingBalanceMinor: 14000, openingOn: '2026-10-05' });
+  });
+
+  it('starts today when the account has no entries', () => {
+    expect(opening(syncedState(), 50000)).toEqual({
+      openingBalanceMinor: 50000,
+      openingOn: '2026-10-18',
+    });
+  });
+
+  it('clears the date when the opening balance comes out 0', () => {
+    const state = syncedState(entry({ id: 'in', kind: 'income', amountMinor: 20000 }));
+    expect(opening(state, 20000, '2026-10-01')).toEqual({
+      openingBalanceMinor: 0,
+      openingOn: null,
+    });
+  });
+
+  it('takes a negative target', () => {
+    expect(opening(syncedState(), -12000)).toEqual({
+      openingBalanceMinor: -12000,
+      openingOn: '2026-10-18',
+    });
   });
 });

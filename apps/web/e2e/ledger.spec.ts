@@ -146,6 +146,27 @@ test('an opening balance, an income and a transfer in add up to the account bala
   await page.getByRole('option', { name: 'Savings', exact: true }).click();
   await page.getByRole('button', { name: 'Show results' }).click();
   await expect(page.getByText('Balance now').locator('..')).toContainText('€1,500.00');
+  const entries = await page.getByRole('list').last().innerText();
+
+  await page.goto('/accounts');
+  await page.getByRole('button', { name: 'Set current balance of Savings' }).click();
+  await dialog(page).getByLabel('Balance now, in EUR').fill('1750');
+  await dialog(page).getByRole('button', { name: 'Set balance' }).click();
+  await expect(dialog(page)).toBeHidden();
+  await expect(page.getByRole('listitem').filter({ hasText: 'Savings' })).toContainText(
+    '€1,750.00',
+  );
+
+  await page.goto('/transactions');
+  await page.getByRole('button', { name: /^Open filters/ }).click();
+  await page
+    .getByRole('dialog', { name: 'Filters' })
+    .getByRole('combobox', { name: 'Account' })
+    .click();
+  await page.getByRole('option', { name: 'Savings', exact: true }).click();
+  await page.getByRole('button', { name: 'Show results' }).click();
+  await expect(page.getByText('Balance now').locator('..')).toContainText('€1,750.00');
+  expect(await page.getByRole('list').last().innerText()).toBe(entries);
 });
 
 test('categories can be created, edited, archived and shown in the chosen language', async ({
