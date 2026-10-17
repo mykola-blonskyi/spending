@@ -14,6 +14,11 @@ same thing; translations use one word for both.
 
 Where money sits: cash, a card, a bank account, savings. Has one currency, fixed at creation.
 
+### Period net
+
+Income minus expenses over the dashboard's period, in EUR. Not a balance: "balance" is kept for
+the money on an account.
+
 ### Category
 
 A group of expense or income transactions (Groceries, Salary). Default categories show in the
@@ -96,6 +101,7 @@ The register is polite "ви" in Ukrainian, polite "вы" in Russian and "tú" i
 | statement          | bank statement          | банківська виписка         | банковская выписка          | extracto bancario      |
 | card               | card                    | картка                     | карта                       | tarjeta                |
 | balance            | balance                 | залишок                    | остаток                     | saldo                  |
+| period net         | period net              | підсумок періоду           | итог периода                | neto del periodo       |
 | skipped row        | skipped row             | пропущений рядок           | пропущенная строка          | fila omitida           |
 | review             | review                  | перевірка, перевірити      | проверка, проверить         | revisión, revisar      |
 | sync               | sync                    | синхронізація              | синхронизация               | sincronización         |

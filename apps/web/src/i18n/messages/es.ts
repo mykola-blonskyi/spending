@@ -763,7 +763,7 @@ export const es = {
       title: 'Totales',
       income: 'Ingresos',
       expense: 'Gastos',
-      balance: 'Saldo',
+      net: 'Neto del periodo',
       change: '{amount} frente al periodo anterior',
       comparedWith: 'Comparación: {period}',
     },

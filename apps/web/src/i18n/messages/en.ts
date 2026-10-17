@@ -738,7 +738,7 @@ export const en = {
       title: 'Totals',
       income: 'Income',
       expense: 'Expenses',
-      balance: 'Balance',
+      net: 'Period net',
       change: '{amount} vs previous period',
       comparedWith: 'Compared with {period}',
     },

@@ -92,7 +92,7 @@ describe('dashboard', () => {
     const totals = await screen.findByRole('region', { name: 'Totals' });
     expect(totals).toHaveTextContent('Income€3,000.00€3,000.00+€3,000.00 vs previous period');
     expect(totals).toHaveTextContent('Expenses€120.00€120.00+€90.00 vs previous period');
-    expect(totals).toHaveTextContent('Balance€2,880.00€2,880.00+€2,910.00 vs previous period');
+    expect(totals).toHaveTextContent('Period net€2,880.00€2,880.00+€2,910.00 vs previous period');
     expect(totals).toHaveTextContent(
       `Compared with ${formatMonth(shiftPeriod(month, -1).from, 'en')}`,
     );

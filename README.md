@@ -32,7 +32,7 @@ link. Each entry is then marked as personal or family:
 
 - Full history with search and filters (period, category, account, currency, type, personal or
   family).
-- A dashboard with income, expenses and balance, trends, a category breakdown, budget progress
+- A dashboard with income, expenses and period net, trends, a category breakdown, budget progress
   and a comparison with the previous period.
 
 **Bank statements.** You download a statement from your bank as CSV, XLSX or PDF and

@@ -766,7 +766,7 @@ export const uk = {
       title: 'Підсумки',
       income: 'Доходи',
       expense: 'Витрати',
-      balance: 'Баланс',
+      net: 'Підсумок періоду',
       change: '{amount} порівняно з попереднім періодом',
       comparedWith: 'Порівняння: {period}',
     },

@@ -770,7 +770,7 @@ export const ru = {
       title: 'Итоги',
       income: 'Доходы',
       expense: 'Расходы',
-      balance: 'Баланс',
+      net: 'Итог периода',
       change: '{amount} по сравнению с предыдущим периодом',
       comparedWith: 'Сравнение: {period}',
     },
