@@ -438,6 +438,12 @@ export const uk = {
       openingBalance: 'Початковий залишок',
       openingBalanceHint: 'Скільки було на рахунку в дату відкриття. Борг починається з мінуса.',
       openingBalanceInvalid: 'Введіть суму, наприклад 1000 або -250,50.',
+      setBalanceLabel: 'Вказати поточний залишок: {name}',
+      setBalanceTitle: 'Поточний залишок: {name}',
+      currentBalance: 'Залишок зараз, {currency}',
+      setBalanceHint:
+        'Те, що сьогодні показує банк. Записи не змінюються, змінюється лише початковий залишок.',
+      setBalanceConfirm: 'Встановити залишок',
       openingOn: 'Дата відкриття',
       total: 'Разом',
       uncounted:

@@ -32,6 +32,10 @@ vi.mock('@data/sync', () => {
     useCategories: () => list(local.categories),
     useWorkspaces: () => list(local.workspaces),
     useAccountBalances: () => local.balances,
+    useOpeningForBalance: () => (_: unknown, target: number, today: string) => ({
+      openingBalanceMinor: target - 2500,
+      openingOn: today,
+    }),
   };
 });
 vi.mock('@features/profile', () => ({ useProfile: () => ({ timezone: 'UTC' }) }));
@@ -136,6 +140,25 @@ describe('AccountsPage', () => {
       openingOn: null,
     });
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('sets the current balance from what the bank shows', async () => {
+    local.balances = new Map([['a-1', { balanceMinor: 2500, uncounted: 0 }]]);
+    renderPage(<AccountsPage />);
+    await userEvent.click(screen.getByRole('button', { name: 'Set current balance of Cash' }));
+    const dialog = screen.getByRole('dialog', { name: 'Set the current balance of Cash' });
+    const balance = within(dialog).getByLabelText('Balance now, in EUR');
+    expect(balance).toHaveValue('25.00');
+
+    await userEvent.clear(balance);
+    await userEvent.type(balance, '1750');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Set balance' }));
+
+    expect(admin.update).toHaveBeenCalledWith('a-1', {
+      openingBalanceMinor: 172500,
+      openingOn: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+    });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('archives only after confirming', async () => {

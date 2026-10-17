@@ -422,6 +422,12 @@ export const en = {
       openingBalance: 'Opening balance',
       openingBalanceHint: 'What the account held on the opening date. A debt starts with a minus.',
       openingBalanceInvalid: 'Enter an amount such as 1000 or -250.50.',
+      setBalanceLabel: 'Set current balance of {name}',
+      setBalanceTitle: 'Set the current balance of {name}',
+      currentBalance: 'Balance now, in {currency}',
+      setBalanceHint:
+        'What the bank shows today. The entries stay as they are; only the opening balance changes.',
+      setBalanceConfirm: 'Set balance',
       openingOn: 'Opening date',
       total: 'Total',
       uncounted:

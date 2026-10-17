@@ -11,6 +11,7 @@ export {
   useLocalDataStatus,
   useLocalTransactions,
   useMarkTransfer,
+  useOpeningForBalance,
   useRecordTransaction,
   useRecordTransfer,
   useSyncNow,

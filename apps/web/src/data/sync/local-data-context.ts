@@ -24,6 +24,7 @@ import {
   type AccountBalance,
   accountBalance,
   localEntries,
+  openingForBalance,
   queryTransactions,
   type TransactionEntry,
   type TransactionFilter,
@@ -126,6 +127,17 @@ export function useAccountBalances(): ReadonlyMap<string, AccountBalance> {
     return balances;
   }, [state]);
 }
+/** Builds the account patch that makes the balance equal a target, from this device's entries. */
+export function useOpeningForBalance(): (
+  account: Account,
+  targetMinor: number,
+  today: string,
+) => Pick<Account, 'openingBalanceMinor' | 'openingOn'> {
+  const state = useLocalState();
+  return (account, targetMinor, today) =>
+    openingForBalance(account, state?.transactions.values() ?? [], targetMinor, today);
+}
+
 export const useCategories = (): LocalList<Category> => useSorted((state) => state.categories);
 export const useWorkspaces = (): LocalList<Workspace> => useSorted((state) => state.workspaces);
 

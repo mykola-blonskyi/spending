@@ -441,6 +441,12 @@ export const ru = {
       openingBalance: 'Начальный остаток',
       openingBalanceHint: 'Сколько было на счёте в дату открытия. Долг начинается с минуса.',
       openingBalanceInvalid: 'Введите сумму, например 1000 или -250,50.',
+      setBalanceLabel: 'Указать текущий остаток: {name}',
+      setBalanceTitle: 'Текущий остаток: {name}',
+      currentBalance: 'Остаток сейчас, {currency}',
+      setBalanceHint:
+        'То, что сегодня показывает банк. Записи не меняются, меняется только начальный остаток.',
+      setBalanceConfirm: 'Установить остаток',
       openingOn: 'Дата открытия',
       total: 'Итого',
       uncounted:
