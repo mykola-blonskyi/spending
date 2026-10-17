@@ -85,6 +85,13 @@
       "when": 1792194416974,
       "tag": "0011_transfers",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792243469082,
+      "tag": "0012_db_integrity",
+      "breakpoints": true
     }
   ]
 }

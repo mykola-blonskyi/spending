@@ -20,7 +20,7 @@ import {
 const person = (name: string) => ({ sub: `sub-${name}`, email: `${name}@example.test`, name });
 const people = [person('Ann'), person('Bob')] as const;
 
-type Result = { status: string; code?: string; transaction: PushedRow };
+type Result = { status: string; code?: string; conflictId?: string; transaction: PushedRow };
 type Totals = { incomeMinor: number; expenseMinor: number; balanceMinor: number };
 type Summary = {
   totals: Totals;
@@ -230,6 +230,25 @@ describe('transfers (BR-37)', () => {
     expect(await codes(crossSpace!, { transferId: other })).toBe('INVALID_TRANSFER');
   });
 
+  it('refuses a third side, the same kind and another space in the database too', async () => {
+    const [out, into, , food] = await seed();
+    const [familyRow] = await pushNew(t, ann, [{ workspaceId: family, kind: 'income' }]);
+    const transferId = crypto.randomUUID();
+    await link([out!, into!], transferId);
+    const mark = (id: string, patch: { transferId: string; transferOutside?: boolean }) =>
+      t.db
+        .update(transactions)
+        .set({ categoryId: null, ...patch })
+        .where(eq(transactions.id, id));
+
+    await expect(mark(food!.id, { transferId })).rejects.toThrow();
+    await expect(mark(out!.id, { transferId, transferOutside: true })).rejects.toThrow();
+    const other = crypto.randomUUID();
+    await mark(food!.id, { transferId: other });
+    await expect(mark(familyRow!.id, { transferId: other })).rejects.toThrow();
+    await expect(mark(out!.id, { transferId: other })).rejects.toThrow();
+  });
+
   it('keeps the mark when a client older than transfers edits a side', async () => {
     const [out, into] = await seed();
     const [linked] = await link([out!, into!]);
@@ -258,6 +277,64 @@ describe('transfers (BR-37)', () => {
     expect(conflicts).toMatchObject([
       { transactionId: out!.id, local: { transferId: expect.any(String) } },
     ]);
+  });
+
+  const sideOf = async (id: string) =>
+    (
+      await t.db
+        .select({
+          transferId: transactions.transferId,
+          outside: transactions.transferOutside,
+          version: transactions.version,
+          deletedAt: transactions.deletedAt,
+        })
+        .from(transactions)
+        .where(eq(transactions.id, id))
+    )[0]!;
+  const removeSides = async (rows: PushedRow[]) => {
+    const mutations = rows.map((row) => ({
+      mutationId: crypto.randomUUID(),
+      type: 'transaction.delete',
+      transactionId: row.id,
+      baseVersion: row.version,
+    }));
+    const response = await as(t, ann, '/v1/sync/push', { method: 'POST', body: { mutations } });
+    expect(response.status, await response.clone().text()).toBe(200);
+    return ((await response.json()) as { results: Result[] }).results.map((r) => r.status);
+  };
+
+  it('leaves the other side one-sided when one side is deleted alone', async () => {
+    const [out, into, wage, food] = await seed();
+    const transferId = crypto.randomUUID();
+    const [linkedOut, linkedInto] = await link([out!, into!], transferId);
+    expect(await removeSides([linkedOut!.transaction])).toEqual(['applied']);
+    expect(await sideOf(into!.id)).toEqual({
+      transferId,
+      outside: true,
+      version: linkedInto!.transaction.version + 1,
+      deletedAt: null,
+    });
+
+    const both = await link([wage!, food!]);
+    expect(await removeSides(both.map((r) => r.transaction))).toEqual(['applied', 'applied']);
+  });
+
+  it('leaves no orphan when a dropped mark is resolved with the server version', async () => {
+    const [out, into] = await seed();
+    await push(ann, [{ row: out!, patch: { amountMinor: 31_000 } }]);
+    const transferId = crypto.randomUUID();
+    const [conflict, applied] = await link([out!, into!], transferId);
+    expect([conflict!.status, applied!.status]).toEqual(['conflict', 'applied']);
+    const resolved = await as(t, ann, `/v1/sync/conflicts/${conflict!.conflictId}/resolve`, {
+      method: 'POST',
+      body: { resolution: 'server' },
+    });
+    expect(resolved.status, await resolved.clone().text()).toBe(200);
+    expect(await sideOf(into!.id)).toMatchObject({
+      transferId,
+      outside: true,
+      version: applied!.transaction.version + 1,
+    });
   });
 
   it('marks transfers in the JSON export (BR-31)', async () => {
@@ -300,6 +377,7 @@ describe('transfers (BR-37)', () => {
         .update(transactions)
         .set({ transferId, categoryId: null })
         .where(eq(transactions.importBatchId, batch.id));
+      await tx.execute(sql`set constraints transactions_transfer_shape immediate`);
       await tx.execute(sql`alter table transactions enable trigger transactions_version`);
     });
     const [manual] = await pushNew(t, ann, [
@@ -348,6 +426,36 @@ describe('transfers (BR-37)', () => {
     expect(sides).toHaveLength(2);
     expect(sides.every((side) => side.outside && side.transferId !== transferId)).toBe(true);
     expect(sides[0]!.transferId).not.toBe(sides[1]!.transferId);
+  });
+
+  it('leaves a half-linked transfer outside the deleted family untouched', async () => {
+    const bobPersonal = (await workspacesOf(t, bob)).personal;
+    const [annSide] = await pushNew(t, ann, [
+      { workspaceId: personal, kind: 'expense', amountMinor: 2000 },
+    ]);
+    const [bobSide] = await pushNew(t, bob, [
+      { workspaceId: bobPersonal, kind: 'income', amountMinor: 2000 },
+    ]);
+    const transferId = crypto.randomUUID();
+    await t.db
+      .update(transactions)
+      .set({ transferId, deletedAt: sql`now()` })
+      .where(eq(transactions.id, bobSide!.id));
+    await t.db.update(transactions).set({ transferId }).where(eq(transactions.id, annSide!.id));
+    const before = await t.db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.transferId, transferId));
+    const deleted = await as(t, ann, '/v1/family', {
+      method: 'DELETE',
+      body: { confirmName: 'Home' },
+    });
+    expect(deleted.status, await deleted.clone().text()).toBe(204);
+    const after = await t.db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.transferId, transferId));
+    expect(after).toEqual(before);
   });
 
   it('keeps a family side one-sided when its partner had no author left', async () => {

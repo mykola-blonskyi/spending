@@ -9,12 +9,13 @@ import {
   Post,
   Query,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { createZodDto, ZodResponse } from 'nestjs-zod';
 import { type Actor, CurrentActor } from '../common/actor';
-import { RateLimit } from '../common/rate-limit';
+import { SyncMutationBudget } from '../common/rate-limit';
 import {
   conflictListSchema,
   pullQuerySchema,
@@ -41,7 +42,7 @@ export class SyncController {
 
   @Post('push')
   @HttpCode(200)
-  @RateLimit('sync')
+  @UseGuards(SyncMutationBudget)
   @ApiBody({ type: PushDto })
   @ZodResponse({ status: 200, type: PushResponseDto })
   async push(

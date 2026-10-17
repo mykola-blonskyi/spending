@@ -21,7 +21,7 @@ import {
   transactions,
 } from '../database/schema';
 import { FxService } from '../ledger/fx/fx.service';
-import { LedgerService, selectViewRows } from '../ledger/ledger.service';
+import { LedgerService, releaseLoneSides, selectViewRows } from '../ledger/ledger.service';
 import {
   type AccountView,
   type CategoryView,
@@ -112,6 +112,7 @@ export class SyncService {
   ): Promise<PushResult[]> {
     const started = Date.now();
     const results: PushResult[] = [];
+    const left = new Set<string>();
     for (const mutation of mutations) {
       if (gone?.aborted || (results.length > 0 && Date.now() - started > budgetMs)) break;
       results.push(
@@ -127,7 +128,7 @@ export class SyncService {
                 ? (stored.result as Outcome)
                 : rejected('MUTATION_ID_REUSED');
           } else {
-            outcome = await this.apply(tx, actorId, mutation);
+            outcome = await this.apply(tx, actorId, mutation, left);
             await tx
               .insert(syncMutations)
               .values({ id: mutation.mutationId, userId: actorId, result: outcome });
@@ -136,6 +137,8 @@ export class SyncService {
         }),
       );
     }
+    // After the whole push, so the other side's own delete or unmark in it is not made stale.
+    if (left.size > 0) await ledgerTransaction(this.db, (tx) => releaseLoneSides(tx, [...left]));
     return results;
   }
 
@@ -150,6 +153,23 @@ export class SyncService {
         lt(syncMutations.createdAt, sql`now() - make_interval(days => ${MUTATION_RETENTION_DAYS})`),
       )
       .returning({ id: syncMutations.id });
+    return pruned.length;
+  }
+
+  /** A resolved conflict is never pulled again, so after the same retention it is only weight. */
+  async pruneResolvedConflicts(): Promise<number> {
+    const pruned = await this.db
+      .delete(syncConflicts)
+      .where(
+        and(
+          eq(syncConflicts.status, 'resolved'),
+          lt(
+            syncConflicts.resolvedAt,
+            sql`now() - make_interval(days => ${MUTATION_RETENTION_DAYS})`,
+          ),
+        ),
+      )
+      .returning({ id: syncConflicts.id });
     return pruned.length;
   }
 
@@ -295,15 +315,19 @@ export class SyncService {
           throw new ApiError('VALIDATION_FAILED', 'merged needs the conflicting transaction');
         }
         const local = resolution === 'merged' ? merged! : (conflict.local as ConflictLocal);
+        const left = new Set<string>();
         if (resolution !== 'server') {
           const outcome =
             'deleted' in local
-              ? await this.delete(tx, actorId, conflict.transactionId, 'current')
-              : await this.upsert(tx, actorId, local, 'current');
+              ? await this.delete(tx, actorId, conflict.transactionId, 'current', left)
+              : await this.upsert(tx, actorId, local, 'current', left);
           if (outcome.status === 'rejected') {
             throw new ApiError(outcome.code as RejectCode, outcome.message);
           }
+        } else if (!('deleted' in local) && local.transferId) {
+          left.add(local.transferId);
         }
+        await releaseLoneSides(tx, [...left]);
         await tx
           .update(syncConflicts)
           .set({ status: 'resolved', resolution, resolvedAt: sql`now()` })
@@ -327,10 +351,11 @@ export class SyncService {
     });
   }
 
-  private apply(tx: Tx, actorId: string, mutation: Mutation): Promise<Outcome> {
+  /** `left` collects the transfers an applied write took a live side out of. */
+  private apply(tx: Tx, actorId: string, mutation: Mutation, left: Set<string>): Promise<Outcome> {
     return mutation.type === 'transaction.upsert'
-      ? this.upsert(tx, actorId, mutation.transaction, mutation.baseVersion)
-      : this.delete(tx, actorId, mutation.transactionId, mutation.baseVersion);
+      ? this.upsert(tx, actorId, mutation.transaction, mutation.baseVersion, left)
+      : this.delete(tx, actorId, mutation.transactionId, mutation.baseVersion, left);
   }
 
   private async upsert(
@@ -338,6 +363,7 @@ export class SyncService {
     actorId: string,
     input: TransactionInput,
     base: Base,
+    left: Set<string>,
   ): Promise<Outcome> {
     const workspaces = new Set(
       (await this.policy.memberships(actorId, tx)).map((m) => m.workspaceId),
@@ -417,6 +443,13 @@ export class SyncService {
             .values({ id: input.id, ...intended, ...conversion, createdBy: actorId });
         } else {
           const moved = existing!.workspaceId !== intended.workspaceId;
+          if (
+            existing!.deletedAt === null &&
+            existing!.transferId !== null &&
+            existing!.transferId !== intended.transferId
+          ) {
+            left.add(existing!.transferId);
+          }
           await tx
             .update(transactions)
             .set({ ...intended, ...conversion, deletedAt: null })
@@ -456,7 +489,13 @@ export class SyncService {
     }
   }
 
-  private async delete(tx: Tx, actorId: string, id: string, base: DeleteBase): Promise<Outcome> {
+  private async delete(
+    tx: Tx,
+    actorId: string,
+    id: string,
+    base: DeleteBase,
+    left: Set<string>,
+  ): Promise<Outcome> {
     const workspaces = new Set(
       (await this.policy.memberships(actorId, tx)).map((m) => m.workspaceId),
     );
@@ -478,6 +517,7 @@ export class SyncService {
           .update(transactions)
           .set({ deletedAt: sql`now()` })
           .where(eq(transactions.id, id));
+        if (existing!.transferId) left.add(existing!.transferId);
         return { status: 'applied', transactionId: id };
     }
   }
@@ -597,6 +637,7 @@ export class SyncScheduler implements OnApplicationBootstrap, OnApplicationShutd
   private async run(): Promise<void> {
     try {
       this.logger.log(`sync_mutations_pruned count=${await this.sync.pruneMutations()}`);
+      this.logger.log(`sync_conflicts_pruned count=${await this.sync.pruneResolvedConflicts()}`);
     } catch (error) {
       this.logger.warn(`sync_prune_failed ${error instanceof Error ? error.message : 'unknown'}`);
     }

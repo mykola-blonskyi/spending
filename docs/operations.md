@@ -57,18 +57,19 @@ Workflows then stop instead of incurring charges. Never switch to larger runners
 The API reads its configuration from the environment and refuses to start when any value is
 missing or invalid. `apps/api/.env.example` documents every variable with local defaults.
 
-| Variable                 | Meaning                                                                        |
-| ------------------------ | ------------------------------------------------------------------------------ |
-| `NODE_ENV`               | `development`, `test` or `production` (default `production`)                   |
-| `PORT`                   | API listen port (default 3000)                                                 |
-| `DATABASE_URL`           | PostgreSQL connection string                                                   |
-| `APP_ORIGIN`             | Public origin, e.g. `https://spending.blonskyi.dev`. https in production       |
-| `OIDC_ISSUER`            | `https://login.blonskyi.dev`                                                   |
-| `OIDC_CLIENT_ID`         | Client registered at the provider                                              |
-| `OIDC_CLIENT_SECRET`     | Its secret (`client_secret_basic`)                                             |
-| `SESSION_ENCRYPTION_KEY` | Base64 of 32 random bytes. Rotating it signs everyone out at the next re-check |
-| `COOKIE_SECURE`          | Default `true`; must be `true` in production                                   |
-| `SOURCE_COMMIT`          | Build commit shown by `/api/health` (default `unknown`); Coolify sets it       |
+| Variable                    | Meaning                                                                             |
+| --------------------------- | ----------------------------------------------------------------------------------- |
+| `NODE_ENV`                  | `development`, `test` or `production` (default `production`)                        |
+| `PORT`                      | API listen port (default 3000)                                                      |
+| `DATABASE_URL`              | PostgreSQL connection string                                                        |
+| `APP_ORIGIN`                | Public origin, e.g. `https://spending.blonskyi.dev`. https in production            |
+| `OIDC_ISSUER`               | `https://login.blonskyi.dev`                                                        |
+| `OIDC_CLIENT_ID`            | Client registered at the provider                                                   |
+| `OIDC_CLIENT_SECRET`        | Its secret (`client_secret_basic`)                                                  |
+| `SESSION_ENCRYPTION_KEY`    | Base64 of 32 random bytes. Rotating it signs everyone out at the next re-check      |
+| `COOKIE_SECURE`             | Default `true`; must be `true` in production                                        |
+| `SOURCE_COMMIT`             | Build commit shown by `/api/health` (default `unknown`); Coolify sets it            |
+| `SYNC_MUTATIONS_PER_MINUTE` | Sync push budget per user, in mutations (default `2000`); leave unset in production |
 
 Register these URIs with the provider: redirect `${APP_ORIGIN}/api/v1/auth/callback` and
 post-logout `${APP_ORIGIN}/signin`.
@@ -295,7 +296,9 @@ origin's headers for this host only: Caching → Cache Rules → Create rule, Ho
   for emergencies.)
 - **Schema.** Migrations are forward-only. Every migration must be backward-compatible with the
   previous release (expand, deploy, then contract in a later release), so rolling the code back
-  never needs a down migration.
+  never needs a down migration. Ship a new enum value and its first use in separate deploys: one
+  deploy applies all pending migrations in one transaction, and Postgres refuses a value added in
+  the same transaction ("unsafe use of new value").
 - **Data.** Never rolled back automatically. Restore a pre-migrate dump only by hand, after
   checking what data written since the dump would be lost.
 

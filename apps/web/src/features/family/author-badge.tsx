@@ -20,21 +20,22 @@ export function AuthorBadge({
 }) {
   const t = useTranslations('family.author');
   const profile = useProfile();
-  const avatar = useQuery({
+  const member = useQuery({
     ...workspacesQuery,
     enabled: entry.scope === 'family',
     select: (workspaces) =>
-      findFamily(workspaces)?.members.find((member) => member.userId === entry.author?.userId)
-        ?.avatarUrl ?? null,
+      findFamily(workspaces)?.members.find((member) => member.userId === entry.author?.userId) ??
+      null,
   });
   // A row this device created has no server author yet: it is the signed-in user's own.
   if (entry.scope !== 'family' || !entry.author || entry.author.userId === profile.id) return null;
 
-  const name = entry.author.displayName ?? t('formerMember');
+  // The row's own name is a snapshot from its last edit; a current member's may have changed.
+  const name = member.data?.displayName ?? entry.author.displayName ?? t('formerMember');
   return (
     <span className={cn('inline-flex min-w-0 items-center gap-1', className)}>
       <UserAvatar
-        user={{ displayName: name, avatarUrl: avatar.data ?? null }}
+        user={{ displayName: name, avatarUrl: member.data?.avatarUrl ?? null }}
         className="size-4 text-[9px]"
       />
       <span className="truncate">{entry.accountId === null ? t('paidBy', { name }) : name}</span>
