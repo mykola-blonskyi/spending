@@ -182,19 +182,19 @@ describe.each(Object.entries(TRANSACTION_SCREENS))(
           .map((row) => within(row).getAllByRole('cell')[1]!.textContent);
       const header = (name: string) =>
         within(table())
-          .getByRole('button', { name: name[0]!.toUpperCase() + name.slice(1), exact: true })
+          .getByRole('button', { name: new RegExp(`^${name}$`, 'i') })
           .closest('[role="columnheader"]');
       const first = open(amounts);
       expect(descriptions()).toEqual(['Small', 'Unconverted', 'Big']);
       expect(header('date')).toHaveAttribute('aria-sort', 'descending');
       expect(header('amount')).not.toHaveAttribute('aria-sort');
 
-      await userEvent.click(screen.getByRole('button', { name: 'Amount', exact: true }));
+      await userEvent.click(screen.getByRole('button', { name: /^amount$/i }));
       expect(descriptions()).toEqual(['Big', 'Small', 'Unconverted']);
       expect(header('amount')).toHaveAttribute('aria-sort', 'descending');
       expect(header('date')).not.toHaveAttribute('aria-sort');
 
-      screen.getByRole('button', { name: 'Amount', exact: true }).focus();
+      screen.getByRole('button', { name: /^amount$/i }).focus();
       await userEvent.keyboard('{Enter}');
       expect(descriptions()).toEqual(['Small', 'Big', 'Unconverted']);
       expect(header('amount')).toHaveAttribute('aria-sort', 'ascending');
@@ -204,7 +204,7 @@ describe.each(Object.entries(TRANSACTION_SCREENS))(
       expect(descriptions()).toEqual(['Small', 'Big', 'Unconverted']);
       expect(header('amount')).toHaveAttribute('aria-sort', 'ascending');
 
-      await userEvent.click(screen.getByRole('button', { name: 'Date', exact: true }));
+      await userEvent.click(screen.getByRole('button', { name: /^date$/i }));
       expect(descriptions()).toEqual(['Small', 'Unconverted', 'Big']);
       expect(header('date')).toHaveAttribute('aria-sort', 'descending');
     });
@@ -217,7 +217,7 @@ describe.each(Object.entries(TRANSACTION_SCREENS))(
           .getAllByRole('link')
           .map((link) => link.textContent);
       const sortBy = (name: string) =>
-        screen.getByRole('button', { name: name[0]!.toUpperCase() + name.slice(1), exact: true });
+        screen.getByRole('button', { name: new RegExp(`^${name}$`, 'i') });
       expect(descriptions()).toEqual(['To savings', 'Bread']);
 
       await userEvent.click(sortBy('category'));
