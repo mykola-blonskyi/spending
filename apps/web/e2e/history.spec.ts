@@ -48,37 +48,75 @@ async function expectAllRows(page: Page, text: string) {
   await expect(rows(page).filter({ hasNotText: text })).toHaveCount(0);
 }
 
+const scroller = (page: Page) => list(page).locator('..');
 const scrollTo = (page: Page, fraction: number) =>
-  page.evaluate(
-    (f) => window.scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * f),
+  scroller(page).evaluate(
+    (el, f) => el.scrollTo(0, (el.scrollHeight - el.clientHeight) * f),
     fraction,
   );
+const scrollTop = (page: Page) => scroller(page).evaluate((el) => el.scrollTop);
 
-test('a 5,000-entry history keeps a bounded DOM from the top to the bottom', async ({
+test('a 5,000-entry history scrolls in its own box with a bounded DOM, on desktop and phone', async ({
   page,
   signInAs,
 }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
   await signInAs('ann');
   await openSeededHistory(page);
-  expect(await items(page).count()).toBeLessThan(DOM_BUDGET);
+  const search = page.getByRole('searchbox', { name: 'Search transactions' });
 
-  await scrollTo(page, 0.5);
-  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(1000);
-  await expect(rows(page).first()).toBeVisible();
-  expect(await items(page).count()).toBeLessThan(DOM_BUDGET);
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 375, height: 812 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await scrollTo(page, 0);
+    expect(await items(page).count()).toBeLessThan(DOM_BUDGET);
+    // The box re-measures on resize, a frame after the viewport changes.
+    await expect
+      .poll(async () => {
+        const box = (await scroller(page).boundingBox())!;
+        return box.y + box.height;
+      })
+      .toBeLessThanOrEqual(viewport.height);
 
-  // Row heights are measured as they scroll into view, so the first jump falls short of the end.
-  await expect(async () => {
-    await scrollTo(page, 1);
-    await expect(rows(page).last()).toContainText('Seed 4996', { timeout: 1000 });
-  }).toPass({ timeout: 30_000 });
-  expect(await items(page).count()).toBeLessThan(DOM_BUDGET);
+    await scrollTo(page, 0.5);
+    await expect.poll(() => scrollTop(page)).toBeGreaterThan(1000);
+    await expect(rows(page).first()).toBeVisible();
+    expect(await items(page).count()).toBeLessThan(DOM_BUDGET);
 
+    // Row heights are measured as they scroll into view, so the first jump falls short of the end.
+    await expect(async () => {
+      await scrollTo(page, 1);
+      await expect(rows(page).last()).toContainText('Seed 4996', { timeout: 1000 });
+    }).toPass({ timeout: 30_000 });
+    expect(await scrollTop(page)).toBeGreaterThan(100_000);
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+    await expect(search).toBeInViewport();
+    await expect(rows(page).last()).toBeInViewport();
+    expect(await items(page).count()).toBeLessThan(DOM_BUDGET);
+
+    // A row focused below the box's bottom edge scrolls into view inside the box.
+    await scrollTo(page, 0);
+    await expect.poll(() => scrollTop(page)).toBe(0);
+    await expect(rows(page).first()).toBeInViewport();
+    // Pinned by its link: `.last()` would follow the virtualizer to whichever row it draws last.
+    const href = await rows(page).last().getAttribute('href');
+    const below = list(page).locator(`a[href="${href}"]`);
+    await expect(below).not.toBeInViewport();
+    await below.focus();
+    await expect(below).toBeInViewport();
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+  }
+
+  await page.setViewportSize({ width: 1440, height: 900 });
   await scrollTo(page, 0);
-  await expect(page.getByRole('searchbox', { name: 'Search transactions' })).toBeVisible();
-  await page.mouse.move(400, 400);
+  const area = (await scroller(page).boundingBox())!;
+  await page.mouse.move(area.x + area.width / 2, area.y + area.height / 2);
   for (let tick = 0; tick < 20; tick += 1) await page.mouse.wheel(0, 600);
-  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(1000);
+  await expect.poll(() => scrollTop(page)).toBeGreaterThan(1000);
+  expect(await page.evaluate(() => scrollY)).toBe(0);
+  await expect(search).toBeInViewport();
   await expect(rows(page).first()).toBeVisible();
   expect(await items(page).count()).toBeLessThan(DOM_BUDGET);
 });

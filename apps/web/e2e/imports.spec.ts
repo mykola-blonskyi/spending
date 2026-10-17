@@ -523,6 +523,8 @@ test.describe('PDF statements', () => {
       { description: 'Transferencia Inmediata De Acme Iberia S.L.', amount_minor: 150000 },
       { description: /^Compra Panaderia Sol/, amount_minor: 340, occurred_on: '2026-10-16' },
     ]);
+    // Background requests still in flight would otherwise fail inside the next test.
+    await page.unrouteAll({ behavior: 'ignoreErrors' });
   });
 
   test('a signed monobank PDF imports the card-currency amount', async ({ page, signInAs, db }) => {

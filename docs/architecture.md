@@ -84,8 +84,8 @@ checks their contrast.
 (`history-model.ts`: filters to query, rows, day grouping with row positions, per-currency
 totals, the history table's columns and rows; `form-model.ts`: validation, the keypad reducer)
 and hooks (`useHistory`, `useEntryForm`, `useTransactionDetail`). `blocks/` holds the building
-blocks every layout composes (`VirtualList` is the only user of TanStack Virtual, scrolling the
-window or its own pane; `HistoryList` virtualizes a flat list of day headers and rows through it;
+blocks every layout composes (`VirtualList` is the only user of TanStack Virtual, always in its
+own scroll box; `HistoryList` virtualizes a flat list of day headers and rows through it;
 `FilterSheet`, `HistoryStatus`, the entry fields, `MasterDetail`, `EntryDetail`). Where the list
 itself is at least 600 px wide (measured with `ResizeObserver`), `HistoryList` puts a rows /
 table switch above it, so every layout that has the room gets it; phones and the card stack's
@@ -93,12 +93,15 @@ narrow column keep the rows, and the stored choice stays for a wider layout. The
 table's sort are kept per device in `localStorage` as one object (`spending.history`,
 `{view, sort}`, read and written in try/catch and validated on read, so the page works without
 storage and an unknown value falls back to the default). The table (`HistoryTable`) is one block
-in the layout's theme tokens: flat, the whole history on the same virtualizer, but always in
-its own scroll box (TanStack's element virtualizer, never the window one) with a sticky header
-row, so search, filters and totals stay in view. In split that box fills the pane; in the layouts
-whose page scrolls it fills the viewport below the controls (`max-height` from the box's
-measured page top, at least 20rem), since those shells are not viewport-high flex columns. The
-rows view keeps scrolling with the page. Its columns are date, description, category, account,
+in the layout's theme tokens: flat, the whole history on the same virtualizer, with a sticky
+header row. Both views scroll in their own box (TanStack's element virtualizer, never the window
+one), in every layout and on phones too, so search, filters, totals and the rows / table switch
+stay in view and the page itself does not scroll; the rows view's day headers scroll with its
+rows. In split that box fills the pane; in the layouts whose page scrolls it fills the viewport
+below the controls (`max-height: calc(100dvh - top - bottom)`, at least 12rem, where `top` is the
+box's measured page top and `bottom` the shell `main`'s bottom padding, which clears a phone's tab
+bar or floating Add button), since those shells are not viewport-high flex columns. Both are
+measured again on resize, when the items change and when `main` resizes. The table's columns are date, description, category, account,
 amount, who (family members only) and sync. A transfer
 is one row (BR-37), or its side under an account filter. Each row is a link to what the layout
 opens for an entry; the table uses `role="table"` with `aria-rowcount` and `aria-rowindex`.

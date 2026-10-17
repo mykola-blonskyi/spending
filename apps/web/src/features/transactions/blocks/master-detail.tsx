@@ -24,8 +24,8 @@ type MasterDetailProps = {
   renderDay: ListProps['renderDay'];
   renderEntry: ListProps['renderEntry'];
   estimate?: ListProps['estimate'];
-  /** How the desktop list scrolls: inside its pane (`self`) or with the page (`window`). */
-  scroll: 'self' | 'window';
+  /** On desktop, the list fills its pane's height instead of the viewport below its top. */
+  fill?: boolean;
   className?: string;
   listClassName?: string;
   statusClassName?: string;
@@ -42,7 +42,7 @@ export function MasterDetail({
   renderDay,
   renderEntry,
   estimate,
-  scroll,
+  fill = false,
   className,
   listClassName,
   statusClassName,
@@ -68,11 +68,11 @@ export function MasterDetail({
       {header}
       <HistoryStatus status={history.status} loaded={history.loaded} className={statusClassName} />
       {history.status === 'ready' && (
-        <div className={cn(desktop && scroll === 'self' && 'min-h-0 flex-1')}>
+        <div className={cn(desktop && fill && 'min-h-0 flex-1')}>
           <HistoryList
             items={history.items}
             label={t('pages.transactions.title')}
-            scroll={desktop ? scroll : 'window'}
+            fill={desktop && fill}
             wide={wide}
             estimate={estimate}
             selectedId={selectedId}
