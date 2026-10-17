@@ -122,7 +122,7 @@ describe('migrations', () => {
       .insert(transactions)
       .values({ ...entry, id: crypto.randomUUID(), accountId: card!.id });
     await expect(replay(t, '0013_entry_account_currency.sql')).rejects.toMatchObject({
-      cause: { message: expect.stringMatching(/^1 live transactions differ/) },
+      cause: { message: expect.stringMatching(/^1 live transactions or recurring rules differ/) },
     });
   });
 });
