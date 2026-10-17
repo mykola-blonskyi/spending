@@ -11,6 +11,9 @@
 # Every ${VAR:?} comes from Coolify's per-resource environment panel. `:?` makes a missing
 # entry fail the deploy instead of starting a container with an empty value.
 #
+# Every service runs as a non-root user and needs no Linux capability (web listens on 8080), so
+# each drops them all and cannot gain privileges (docs/operations.md, Container hardening).
+#
 # Start order on every deploy: predeploy-backup (pg_dump) → migrate → api (healthy) → web.
 # `docker compose up` stops at the first step that fails, so migrations never run without a
 # fresh dump and the new api never starts against an unmigrated schema. The one-shot services
@@ -21,6 +24,8 @@ services:
     build:
       context: .
       dockerfile: deploy/backup.Dockerfile
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
     command: ['pre-migrate']
     environment:
       DATABASE_URL: ${DATABASE_URL:?}
@@ -32,6 +37,8 @@ services:
     build:
       context: .
       dockerfile: deploy/api.Dockerfile
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
     command: ['node', 'dist/database/migrate.js']
     environment:
       DATABASE_URL: ${DATABASE_URL:?}
@@ -45,6 +52,8 @@ services:
     build:
       context: .
       dockerfile: deploy/api.Dockerfile
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
     environment:
       DATABASE_URL: ${DATABASE_URL:?}
       APP_ORIGIN: ${APP_ORIGIN:?}
@@ -75,6 +84,8 @@ services:
     build:
       context: .
       dockerfile: deploy/web.Dockerfile
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
     depends_on:
       spending-api:
         condition: service_healthy
@@ -90,6 +101,8 @@ services:
     build:
       context: .
       dockerfile: deploy/backup.Dockerfile
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
     command: ['schedule']
     depends_on:
       migrate:

@@ -199,6 +199,24 @@ docker compose --env-file deploy/smoke.env -f docker-compose.yml \
   -f deploy/docker-compose.smoke.yml down -v
 ```
 
+### Container hardening
+
+Every service in `docker-compose.yml` runs as a non-root user, drops all Linux capabilities
+(`cap_drop: [ALL]`) and sets `no-new-privileges`. None needs a capability: nginx listens on
+8080, node and the backup scripts only open outbound connections and write files their user
+owns. Dropping `NET_RAW` in particular stops a compromised container from sniffing or
+ARP-spoofing the plaintext hops on the shared network. The throwaway Postgres in
+`deploy/docker-compose.smoke.yml` is left at Docker's defaults: its entrypoint starts as root
+and needs `CHOWN`, `SETUID`, `SETGID`, `FOWNER` and `DAC_OVERRIDE`, and it never runs in
+production.
+
+Not done yet, each worth adding later:
+
+- `read_only: true` with a `tmpfs` for `/tmp` on `web` and `spending-api` (nginx writes its pid
+  and temp files to `/tmp`; the backup containers also write `/backups`).
+- Base images pinned by digest instead of by tag, with a scheduled job to bump them.
+- Memory limits per service.
+
 ## First-time production setup (owner checklist)
 
 1. **Database role and database.** Generate the password with `openssl rand -hex 24` (hex
