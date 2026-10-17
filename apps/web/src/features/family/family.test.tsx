@@ -375,4 +375,24 @@ describe('ScopeField and AuthorBadge', () => {
     expect(screen.getByText('Paid by Bob')).toBeInTheDocument();
     expect(screen.getByText('Bob')).toBeInTheDocument();
   });
+
+  it("names a member by the current members list, and a former member by the row's own name", () => {
+    const carol = {
+      userId: '00000000-0000-4000-8000-000000000003',
+      displayName: 'Carol',
+      avatarUrl: null,
+    };
+    setup(
+      <>
+        <AuthorBadge
+          entry={{ scope: 'family', author: { ...bob, displayName: 'Bobby' }, accountId: 'acc-1' }}
+        />
+        <AuthorBadge entry={{ scope: 'family', author: carol, accountId: 'acc-1' }} />
+      </>,
+      seeded([PERSONAL, family('member')]),
+    );
+    expect(screen.getByText('Bob')).toBeInTheDocument();
+    expect(screen.queryByText('Bobby')).not.toBeInTheDocument();
+    expect(screen.getByText('Carol')).toBeInTheDocument();
+  });
 });
