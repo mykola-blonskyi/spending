@@ -133,8 +133,10 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   local commit of ordinary mutations, one per side. The full history shows a transfer as one row
   ("monobank → PrivatBank, 50 000 ₴", the amount that arrived beside it when it differs); a
   history filtered by account shows that account's side, and a side whose partner is not on the
-  device shows alone. Undoing an import (BR-30) that held one side turns the other side into a
-  one-sided transfer. Deleting a family turns a transfer whose sides land in two personal
+  device shows alone. A side left without a live partner becomes a one-sided transfer: when an
+  import that held the other side is undone (BR-30), when the other side is deleted or unmarked
+  without it (in the same push, the other side's own delete or unmark still applies), and when a
+  conflict over marking the other side is resolved with the server version. Deleting a family turns a transfer whose sides land in two personal
   workspaces into two one-sided transfers, and a side whose partner is deleted with the family
   (its author left the app) into a one-sided transfer.
 

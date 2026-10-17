@@ -692,6 +692,30 @@ describe('imports', () => {
         });
       });
 
+      it('suggests a cross-currency counterpart for a first statement in a new currency', async () => {
+        await t.db
+          .insert(fxRates)
+          .values({ date: '2026-10-02', currency: 'USD', ratePerEur: '2', source: 'ecb' });
+        const card = await json<{ id: string }>(
+          await as(t, ann, '/v1/accounts', {
+            method: 'POST',
+            body: { workspaceId: annPersonal, name: 'Visa', kind: 'card', currency: 'USD' },
+          }),
+          201,
+        );
+        const topUp = await add(ann, entry(savings, 'income', 25000));
+        const usd = await importRows(
+          ann,
+          [row(2, { occurredOn: '2026-10-02', currency: 'USD', amountMinor: -50500 })],
+          card.id,
+        );
+        const review = await json<Review>(await as(t, ann, '/v1/imports/review'), 200);
+        expect(
+          review.items.find((i) => i.transaction.id === usd.imported.transactionIds[0])
+            ?.transferSuggestion,
+        ).toEqual({ counterpartId: topUp.id, reason: 'counterpart' });
+      });
+
       it('links a pair awaiting review, a confirmed counterpart and a one-sided transfer, learning nothing', async () => {
         const { transactions: confirmed } = await json<{ transactions: View[] }>(
           await confirm(ann, [

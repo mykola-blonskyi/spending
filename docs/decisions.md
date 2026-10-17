@@ -273,7 +273,8 @@ cannot duplicate a row or silently overwrite a newer change.
 again on the row: transaction IDs are client-chosen primary keys, so a create cannot duplicate; a
 create or update whose base version is older than the row answers applied if the row already
 holds that intent and a conflict otherwise (BR-19); a delete of a deleted row succeeds. An
-integration test replays pruned creates, updates and deletes to prove it.
+integration test replays pruned creates, updates and deletes to prove it. The same job deletes a
+resolved conflict 180 days after its resolution; only open conflicts are ever pulled.
 
 **Alternatives.**
 
@@ -369,7 +370,9 @@ constraint enforces the missing category. Analytics filter `transferId is null`;
 filter, because a transfer has no category. Marking and unmarking are ordinary
 `transaction.upsert` mutations, one per side, queued together in one local commit. The server
 validates each side against the other live sides (same workspace, opposite kind, at most two,
-one-sided alone) and answers `INVALID_TRANSFER` otherwise. Version bumps include both columns,
+one-sided alone) and answers `INVALID_TRANSFER` otherwise. A deferred constraint trigger
+(`transactions_transfer_shape`, migration 0012) checks the same shape at commit for every writer,
+direct SQL included; every app writer holds the ledger lock, so the check never races. Version bumps include both columns,
 so a mark made elsewhere turns a stale edit into a conflict.
 
 **Alternatives.**
@@ -383,7 +386,12 @@ so a mark made elsewhere turns a stale edit into a conflict.
 
 **Consequences.** Each side commits on its own, so between two pushes, or when one side
 conflicts, a pair can be half linked; that side is already out of the totals and the conflict is
-resolved like any other. Deleting both sides, the shared date and note, the combined history row,
+resolved like any other. A half link never becomes permanent through the server: after a push
+that deleted, unmarked or relinked a side, and after a conflict resolution that drops a mark, the
+server sets `transferOutside` on a live side of that transfer left without a live partner, as
+import undo does. It runs at the end of the push, so the other side's own mutation in the same
+push is not made stale. Discarding a rejected side happens only on the device, so the server
+cannot repair what that leaves. Deleting both sides, the shared date and note, the combined history row,
 import undo and exports (#108) and the entry form type (#109) build on the same two columns
 without a migration: a delete or edit queues one ordinary mutation per side in one local commit,
 the combined row is built on the device from the sides it holds, and import undo sets

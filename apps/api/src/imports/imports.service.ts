@@ -8,7 +8,7 @@ import { DB, type Db, ledgerTransaction, type Tx } from '../database/database.mo
 import { accounts, categories, importBatches, transactions, users } from '../database/schema';
 import { convert, type RateQuote } from '../ledger/fx/conversion';
 import { FxService } from '../ledger/fx/fx.service';
-import { LedgerService, selectViewRows } from '../ledger/ledger.service';
+import { LedgerService, releaseLoneSides, selectViewRows } from '../ledger/ledger.service';
 import { type EntryKind, toLedgerRow, type TransactionView } from '../ledger/views';
 import { transferError } from '../sync/mutations';
 import { AccessPolicy } from '../workspaces/access-policy';
@@ -242,20 +242,10 @@ export class ImportsService {
             ),
           )
           .returning({ transferId: transactions.transferId });
-        const transferIds = undone.flatMap((row) => (row.transferId ? [row.transferId] : []));
-        // A transfer has at most two sides, so a side still live here has lost its partner (BR-37).
-        if (transferIds.length > 0) {
-          await tx
-            .update(transactions)
-            .set({ transferOutside: true })
-            .where(
-              and(
-                inArray(transactions.transferId, transferIds),
-                isNull(transactions.deletedAt),
-                eq(transactions.transferOutside, false),
-              ),
-            );
-        }
+        await releaseLoneSides(
+          tx,
+          undone.flatMap((row) => (row.transferId ? [row.transferId] : [])),
+        );
         const [updated] = await tx
           .update(importBatches)
           .set({ undoneAt: sql`now()` })
@@ -501,7 +491,7 @@ export class ImportsService {
   /**
    * BR-38. Candidates are the live, confirmed, non-transfer entries of the workspace (on its other
    * accounts than the import's, when given) around the imported dates, read with one query, and
-   * the imported rows themselves; rates come per currency as for the import itself.
+   * the imported rows themselves; rates come per currency of both, as for the import itself.
    */
   private async transferSuggestions(
     tx: Tx,
@@ -539,7 +529,11 @@ export class ImportsService {
         ),
       )
       .orderBy(transactions.occurredOn, transactions.id);
-    for (const currency of new Set(candidates.map((row) => row.currency as CurrencyCode))) {
+    const currencies = [
+      ...candidates.map((row) => row.currency as CurrencyCode),
+      ...imported.map((row) => row.currency),
+    ];
+    for (const currency of new Set(currencies)) {
       if (!quotes.has(currency)) quotes.set(currency, await this.fx.quotes(tx, currency, dates));
     }
     const [user] = await tx
