@@ -189,7 +189,9 @@ edited through REST and arrive through pull like transactions.
   new row) or `transaction.delete` (`baseVersion` required). Each result is `applied` (with the
   fresh row), `conflict` (with `conflictId` and the server row) or `rejected` (with a stable code:
   `NOT_FOUND`, `FORBIDDEN`, `INVALID_ACCOUNT`, `INVALID_CATEGORY`, `INVALID_TRANSFER`, `REVIEW_REQUIRED`,
-  `MUTATION_ID_REUSED`). Rate limit: 120 pushes per minute per user.
+  `MUTATION_ID_REUSED`). Rate limit: 2000 mutations per minute per user
+  (`SYNC_MUTATIONS_PER_MINUTE`), counted by the mutations in each push, since each one holds the
+  ledger lock; a push over the budget is refused whole with `RATE_LIMITED`.
 - **Idempotency.** Every result is stored under its `mutationId` (BR-18). A replay returns the
   stored status with a fresh view of the row. A `mutationId` already used by another user is
   rejected.
