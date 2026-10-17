@@ -319,6 +319,20 @@ export const en = {
     convertedTo: 'Converted to {amount} at {rate} ({source}, {date})',
     originalAmount: 'Original amount',
     eurAmount: 'Amount in EUR',
+    view: {
+      label: 'View',
+      rows: 'Rows',
+      table: 'Table',
+    },
+    columns: {
+      date: 'Date',
+      description: 'Description',
+      category: 'Category',
+      account: 'Account',
+      amount: 'Amount',
+      who: 'Who',
+      sync: 'Sync',
+    },
     detail: {
       label: 'Selected transaction',
       count: '{count, plural, one {# transaction} other {# transactions}}',

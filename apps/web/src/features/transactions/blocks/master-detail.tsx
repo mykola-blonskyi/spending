@@ -5,6 +5,7 @@ import { useTranslations } from '@i18n/index';
 import { EmptyState } from '@shared/components';
 import { useIsDesktop } from '@shared/lib/media';
 import { cn } from '@shared/lib/utils';
+import { useHistoryView } from '../history-view';
 import type { History } from '../use-history';
 import { HISTORY_PATH } from '../use-entry-form';
 import { EntryDetail } from './entry-detail';
@@ -46,6 +47,7 @@ export function MasterDetail({
 }: MasterDetailProps) {
   const t = useTranslations();
   const desktop = useIsDesktop();
+  const view = useHistoryView();
   const navigate = useNavigate();
   const { selectedId } = history;
 
@@ -77,7 +79,14 @@ export function MasterDetail({
   if (!desktop) return list;
 
   return (
-    <div className={cn('grid grid-cols-[380px_minmax(0,1fr)]', className)}>
+    <div
+      className={cn(
+        'grid',
+        // The table needs the width; the selected entry keeps a phone-sized pane beside it.
+        view === 'table' ? 'grid-cols-[minmax(0,1fr)_400px]' : 'grid-cols-[380px_minmax(0,1fr)]',
+        className,
+      )}
+    >
       {list}
       <section aria-label={t('history.detail.label')} className={cn('min-w-0', detailClassName)}>
         {selectedId ? (

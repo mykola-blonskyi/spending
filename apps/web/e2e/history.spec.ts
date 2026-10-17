@@ -156,3 +156,42 @@ test('the filter sheet works on a phone', async ({ page, signInAs }) => {
   await page.getByRole('radio', { name: 'All' }).click();
   await expect(rows(page).nth(5)).toBeVisible();
 });
+
+test('the table view on desktop covers the whole history and is remembered', async ({
+  page,
+  signInAs,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signInAs('ann');
+  await openSeededHistory(page);
+
+  await page.getByRole('radio', { name: 'Table' }).click();
+  const table = page.getByRole('table', { name: 'Transactions' });
+  const tableRows = table.locator('[role="row"][aria-rowindex]:not([aria-rowindex="1"])');
+  await expect(table).toHaveAttribute('aria-rowcount', String(ENTRIES + 1));
+  await expect(table.getByRole('columnheader', { name: 'Amount' })).toBeVisible();
+  await expect(tableRows.first()).toBeVisible();
+  expect(await tableRows.count()).toBeLessThan(DOM_BUDGET);
+
+  await expect(async () => {
+    await scrollTo(page, 1);
+    await expect(tableRows.last()).toContainText('Seed 4996', { timeout: 1000 });
+  }).toPass({ timeout: 30_000 });
+  expect(await tableRows.count()).toBeLessThan(DOM_BUDGET);
+
+  await scrollTo(page, 0);
+  const newest = table.getByRole('link').first();
+  await expect(newest).toHaveText('Seed 5 Salary');
+  await newest.press('Enter');
+  await expect(page).toHaveURL(/\/transactions\/[0-9a-f-]{36}$/);
+  await expect(page.getByLabel('Description')).toHaveValue('Seed 5 Salary');
+
+  await page.goBack();
+  await page.reload();
+  await expect(page.getByRole('radio', { name: 'Table' })).toBeChecked();
+  await expect(table.getByRole('link').first()).toBeVisible();
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  await expect(page.getByRole('radio', { name: 'Table' })).toHaveCount(0);
+  await expect(rows(page).first()).toBeVisible();
+});

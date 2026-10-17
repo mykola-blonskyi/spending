@@ -82,11 +82,20 @@ checks their contrast.
 
 **Transactions feature** (`features/transactions`). Logic lives once, in pure models
 (`history-model.ts`: filters to query, rows, day grouping with row positions, per-currency
-totals; `form-model.ts`: validation, the keypad reducer) and hooks (`useHistory`,
-`useEntryForm`, `useTransactionDetail`). `blocks/` holds the building blocks every layout
-composes (`HistoryList` is the only user of TanStack Virtual and virtualizes a flat list of day
-headers and rows, scrolling the window or its own pane; `FilterSheet`, `HistoryStatus`, the
-entry fields, `MasterDetail`, `EntryDetail`). `layouts/<layout>-{history,entry}.tsx` are
+totals, the history table's columns and rows; `form-model.ts`: validation, the keypad reducer)
+and hooks (`useHistory`, `useEntryForm`, `useTransactionDetail`). `blocks/` holds the building
+blocks every layout composes (`VirtualList` is the only user of TanStack Virtual, scrolling the
+window or its own pane; `HistoryList` virtualizes a flat list of day headers and rows through it;
+`FilterSheet`, `HistoryStatus`, the entry fields, `MasterDetail`, `EntryDetail`). On screens
+1024 px and wider `HistoryList` puts a rows / table switch above the list, so every layout has
+it; the choice is kept per device in `localStorage` (`spending.history`, read and written in
+try/catch, so the page works without storage). The table (`HistoryTable`) is one block in the
+layout's theme tokens: flat, newest first, the whole history on the same virtualizer, with date,
+description, category, account, amount, who (family members only) and sync columns. A transfer
+is one row (BR-37), or its side under an account filter. Each row is a link to what the layout
+opens for an entry; the table uses `role="table"` with `aria-rowcount` and `aria-rowindex`.
+Split and hybrid widen the list beside the entry pane while the table is shown. Phones keep the
+rows. `layouts/<layout>-{history,entry}.tsx` are
 presentation only: an ESLint rule bans `@data/*` and `@tanstack/*` there. `layouts/screens.ts`
 is the per-layout table the registry reads. Split and hybrid register their master-detail
 history for both `history` and `detail`, so selecting a row keeps the list mounted.
