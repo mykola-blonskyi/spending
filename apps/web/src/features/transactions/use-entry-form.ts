@@ -1,4 +1,5 @@
 import { type FormEvent, useCallback, useMemo, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 import {
@@ -254,10 +255,13 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
     accounts: workspaceAccounts,
     currencies,
     submitting,
-    submit: async (event?: FormEvent) => {
+    submit: async (event?: FormEvent<HTMLFormElement>) => {
       event?.preventDefault();
-      setAttempted(true);
+      const form = event?.currentTarget;
+      flushSync(() => setAttempted(true));
       const { draft: fields } = validate(values, workspaceAccounts);
+      // On a phone the first error can sit a screen above Save, so it is brought into view.
+      if (!fields) form?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
       if (!fields || !workspaceId || submitting) return;
       setSubmitting(true);
       try {
