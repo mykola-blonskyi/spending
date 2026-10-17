@@ -203,7 +203,10 @@ export function CategoryPicker({
         aria-labelledby={labelId}
         value={values.categoryId ?? ''}
         onValueChange={(next) => form.setCategory(next || null)}
-        className={cn('grid w-full grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-2', className)}
+        className={cn(
+          'grid w-full grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-2',
+          className,
+        )}
       >
         {form.categories.map((category) => (
           <ToggleGroupItem

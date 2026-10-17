@@ -2,13 +2,13 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ComponentType } from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { FAMILY, PERSONAL, serverRow, syncedState } from '@data/sync/fixtures';
+import { fakeLocalData, FAMILY, PERSONAL, serverRow, syncedState } from '@data/sync/fixtures';
 import { type LocalState, queueOrder } from '@data/sync/model';
 import { testSession } from '@data/testing';
 import { CalmEntry } from './layouts/calm-entry';
 import { CalmHistory } from './layouts/calm-history';
 import { TRANSACTION_SCREENS } from './layouts/screens';
-import { account, category, fakeLocalData, renderTransactionScreen } from './test-helpers';
+import { account, category, renderTransactionScreen } from './test-helpers';
 
 vi.mock('@features/auth', () => ({ useSession: () => testSession() }));
 

@@ -1,21 +1,37 @@
-import { screen, within } from '@testing-library/react';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { render, screen, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
-import { localRow, sequentialIds, serverRow, syncedState } from '@data/sync/fixtures';
+import { createQueryClient } from '@data/query-client';
+import {
+  fakeLocalData,
+  localRow,
+  sequentialIds,
+  serverRow,
+  syncedState,
+} from '@data/sync/fixtures';
+import { LocalDataContext } from '@data/sync/local-data-context';
 import type { LocalState } from '@data/sync/model';
 import { reducePush } from '@data/sync/push';
 import { applyLocalChange } from '@data/sync/queue';
 import { testSession } from '@data/testing';
-import { fakeLocalData, renderTransactionScreen } from '@features/transactions/test-helpers';
+import { I18nProvider } from '@i18n/index';
 import { SyncPage } from './sync-page';
 
 vi.mock('@features/auth', () => ({ useSession: () => testSession() }));
 
 const renderSync = (state: LocalState) =>
-  renderTransactionScreen(<SyncPage />, {
-    data: fakeLocalData(state).value,
-    path: '/sync',
-    route: '/sync',
-  });
+  render(
+    <QueryClientProvider client={createQueryClient()}>
+      <I18nProvider locale="en">
+        <LocalDataContext value={fakeLocalData(state).value}>
+          <MemoryRouter>
+            <SyncPage />
+          </MemoryRouter>
+        </LocalDataContext>
+      </I18nProvider>
+    </QueryClientProvider>,
+  );
 
 const ids = sequentialIds();
 const edit = (state: LocalState, patch: Parameters<typeof localRow>[0]) =>

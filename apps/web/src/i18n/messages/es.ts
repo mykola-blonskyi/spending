@@ -277,7 +277,8 @@ export const es = {
   },
   syncCenter: {
     conflictsTitle: 'Por revisar',
-    failedTitle: '{count, plural, one {# cambio sin sincronizar} other {# cambios sin sincronizar}}',
+    failedTitle:
+      '{count, plural, one {# cambio sin sincronizar} other {# cambios sin sincronizar}}',
     failedDescription:
       'El servidor los ha rechazado. Abre un movimiento para corregirlo o descartar el cambio.',
     review: 'Revisar',
@@ -543,7 +544,8 @@ export const es = {
     offlineTitle: 'Las importaciones anteriores necesitan conexión',
     offlineDescription: 'Se guardan en el servidor. Vuelve a conectarte para verlas.',
     newTitle: 'Importar un extracto',
-    newDescription: 'Sube un CSV, XLSX o PDF de tu banco, revisa cómo se leen sus columnas e impórtalo.',
+    newDescription:
+      'Sube un CSV, XLSX o PDF de tu banco, revisa cómo se leen sus columnas e impórtalo.',
     account: 'Cuenta',
     accountHint:
       'Los movimientos van a esta cuenta y usan su moneda salvo que el archivo indique otra.',

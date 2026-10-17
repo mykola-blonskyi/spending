@@ -1,14 +1,22 @@
 import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ServerTransaction } from '@data/sync/model';
-import { FAMILY, localRow, PERSONAL, sequentialIds, serverRow, syncedState } from '@data/sync/fixtures';
+import type { LocalState, ServerTransaction } from '@data/sync/model';
+import {
+  fakeLocalData,
+  FAMILY,
+  localRow,
+  PERSONAL,
+  sequentialIds,
+  serverRow,
+  syncedState,
+} from '@data/sync/fixtures';
 import { reducePush } from '@data/sync/push';
 import { applyLocalChange } from '@data/sync/queue';
 import { testProfile, testSession } from '@data/testing';
 import { CalmEntry } from './layouts/calm-entry';
 import { TRANSACTION_SCREENS } from './layouts/screens';
-import { account, category, fakeLocalData, renderTransactionScreen } from './test-helpers';
+import { account, category, renderTransactionScreen } from './test-helpers';
 
 vi.mock('@features/auth', () => ({ useSession: () => testSession() }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn() } }));
@@ -64,7 +72,7 @@ describe.each(Object.entries(TRANSACTION_SCREENS))('the %s entry screen', (_, { 
     accounts: new Map([['acc-card', account()]]),
     categories: new Map([['cat-groceries', category()]]),
   };
-  const open = (state: typeof ledger, path: string) =>
+  const open = (state: LocalState, path: string) =>
     renderTransactionScreen(<Entry />, {
       data: fakeLocalData(state).value,
       path,

@@ -1,3 +1,7 @@
+import { vi } from 'vitest';
+import type { SyncEngine } from './engine';
+import type { LocalData } from './local-data-context';
+import type { LocalStore } from './store';
 import {
   emptyLocalState,
   type LocalState,
@@ -96,4 +100,37 @@ export function syncedState(...rows: ServerTransaction[]): LocalState {
 export function sequentialIds(prefix = 'm'): () => string {
   let next = 0;
   return () => `${prefix}-${++next}`;
+}
+
+/** An in-memory stand-in for the IndexedDB store and the sync engine behind the real hooks. */
+export function fakeLocalData(initial: LocalState) {
+  let state = initial;
+  const listeners = new Set<() => void>();
+  const store = {
+    get state() {
+      return state;
+    },
+    getState: () => state,
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+      return () => void listeners.delete(listener);
+    },
+    commit: vi.fn(async (transition: (current: LocalState) => LocalState) => {
+      state = transition(state);
+      for (const listener of listeners) listener();
+      return state;
+    }),
+  };
+  const idle = { phase: 'idle' } as const;
+  const engine = {
+    subscribe: () => () => {},
+    getStatus: () => idle,
+    notifyLocalWrite: vi.fn(),
+  };
+  const value: LocalData = {
+    status: 'ready',
+    store: store as unknown as LocalStore,
+    engine: engine as unknown as SyncEngine,
+  };
+  return { value, store, current: () => state };
 }

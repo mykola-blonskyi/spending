@@ -1,12 +1,12 @@
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { serverRow, syncedState } from '@data/sync/fixtures';
+import { fakeLocalData, serverRow, syncedState } from '@data/sync/fixtures';
 import { testSession } from '@data/testing';
 import { BentoEntry } from './layouts/bento-entry';
 import { BentoHistory } from './layouts/bento-history';
 import { JournalEntry } from './layouts/journal-entry';
 import { JournalHistory } from './layouts/journal-history';
-import { account, category, fakeLocalData, renderTransactionScreen } from './test-helpers';
+import { account, category, renderTransactionScreen } from './test-helpers';
 
 vi.mock('@features/auth', () => ({ useSession: () => testSession() }));
 
