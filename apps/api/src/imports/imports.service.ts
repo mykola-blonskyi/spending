@@ -147,7 +147,8 @@ export class ImportsService {
 
   /**
    * BR-30. Tombstones the batch's rows nobody edited (still version 1 in the personal workspace)
-   * and clears their keys so the statement can be imported again. Repeating it changes nothing.
+   * and clears their keys so the statement can be imported again. A transfer side left without its
+   * partner becomes a one-sided transfer. Repeating it changes nothing.
    * The counts are read back from the rows at the time it runs, so a manual delete in between
    * changes what a repeat reports.
    */
@@ -160,7 +161,7 @@ export class ImportsService {
       if (!batch) throw new ApiError('NOT_FOUND');
       let stored = batch;
       if (!batch.undoneAt) {
-        await tx
+        const undone = await tx
           .update(transactions)
           .set({ deletedAt: sql`now()`, importHash: null })
           .where(
@@ -170,7 +171,22 @@ export class ImportsService {
               eq(transactions.version, 1),
               isNull(transactions.deletedAt),
             ),
-          );
+          )
+          .returning({ transferId: transactions.transferId });
+        const transferIds = undone.flatMap((row) => (row.transferId ? [row.transferId] : []));
+        // A transfer has at most two sides, so a side still live here has lost its partner (BR-37).
+        if (transferIds.length > 0) {
+          await tx
+            .update(transactions)
+            .set({ transferOutside: true })
+            .where(
+              and(
+                inArray(transactions.transferId, transferIds),
+                isNull(transactions.deletedAt),
+                eq(transactions.transferOutside, false),
+              ),
+            );
+        }
         const [updated] = await tx
           .update(importBatches)
           .set({ undoneAt: sql`now()` })

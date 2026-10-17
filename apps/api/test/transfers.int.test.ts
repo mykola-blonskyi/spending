@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { transactions } from '../src/database/schema';
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
@@ -258,6 +258,58 @@ describe('transfers (BR-37)', () => {
     expect(conflicts).toMatchObject([
       { transactionId: out!.id, local: { transferId: expect.any(String) } },
     ]);
+  });
+
+  it('keeps the other side as a one-sided transfer when its import is undone', async () => {
+    const imported = await as(t, ann, '/v1/imports', {
+      method: 'POST',
+      body: {
+        accountId: card,
+        fileName: 'statement.csv',
+        mapping: { date: 0, amount: 2 },
+        rows: [
+          { line: 2, occurredOn: '2026-10-01', amountMinor: -30_000, description: 'To savings' },
+        ],
+      },
+    });
+    expect(imported.status, await imported.clone().text()).toBe(201);
+    const { batch } = (await imported.json()) as { batch: { id: string } };
+    const transferId = crypto.randomUUID();
+    // Linked at import, as suggestions will do (#110): still version 1, so undo deletes it.
+    await t.db.transaction(async (tx) => {
+      await tx.execute(sql`alter table transactions disable trigger transactions_version`);
+      await tx
+        .update(transactions)
+        .set({ transferId, categoryId: null })
+        .where(eq(transactions.importBatchId, batch.id));
+      await tx.execute(sql`alter table transactions enable trigger transactions_version`);
+    });
+    const [manual] = await pushNew(t, ann, [
+      { workspaceId: personal, accountId: savings, kind: 'income', amountMinor: 30_000 },
+    ]);
+    const [linked] = await push(ann, [{ row: manual!, patch: { transferId } }]);
+    expect(linked).toMatchObject({ status: 'applied', transaction: { version: 2 } });
+
+    const undone = await as(t, ann, `/v1/imports/${batch.id}/undo`, { method: 'POST' });
+    expect(await undone.json()).toMatchObject({ deleted: 1, kept: 0 });
+    const sides = await t.db
+      .select({
+        id: transactions.id,
+        deletedAt: transactions.deletedAt,
+        transferId: transactions.transferId,
+        outside: transactions.transferOutside,
+        version: transactions.version,
+      })
+      .from(transactions)
+      .where(eq(transactions.transferId, transferId));
+    expect(sides.find((side) => side.id === manual!.id)).toEqual({
+      id: manual!.id,
+      deletedAt: null,
+      transferId,
+      outside: true,
+      version: 3,
+    });
+    expect(sides.find((side) => side.id !== manual!.id)?.deletedAt).not.toBeNull();
   });
 
   it('splits a family transfer whose sides land in two spaces when the family is deleted', async () => {
