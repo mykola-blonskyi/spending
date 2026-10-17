@@ -74,6 +74,13 @@ describe.each(LOCALES)('%s catalog', (locale) => {
     );
     expect(missing).toEqual([]);
   });
+
+  // A confirm dialog's action next to a Cancel button with the same words is a coin toss.
+  it('names no action like the Cancel button', () => {
+    const cancels = new Set(['actions.cancel', 'history.detail.cancelEdit']);
+    const cancel = entries.find(([key]) => key === 'actions.cancel')?.[1];
+    expect(entries.filter(([key, message]) => !cancels.has(key) && message === cancel)).toEqual([]);
+  });
 });
 
 describe('detectLocale', () => {
