@@ -727,6 +727,13 @@ export const es = {
       undoResult:
         '{deleted, plural, one {# movimiento borrado} other {# movimientos borrados}}, {kept, plural, one {# conservado} other {# conservados}}.',
       removedAccount: 'Cuenta eliminada',
+      remove: 'Quitar {name} del historial',
+      offlineHint: 'Quitar necesita conexión.',
+      clear: 'Borrar importaciones deshechas',
+      clearTitle: '¿Borrar las importaciones deshechas?',
+      clearDescription:
+        '{count, plural, one {Se quita # importación deshecha} other {Se quitan # importaciones deshechas}} del historial. Los movimientos no cambian.',
+      clearConfirm: 'Borrar',
     },
     review: {
       title: 'Revisar filas importadas',

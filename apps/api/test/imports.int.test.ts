@@ -544,6 +544,61 @@ describe('imports', () => {
       expect((await undo(bob, batch.id)).status).toBe(404);
       expect(await history(ann)).toHaveLength(3);
     });
+
+    describe('removing undone imports from the history', () => {
+      const del = (s: Session, path: string) =>
+        as(t, s, `/v1/imports${path}`, { method: 'DELETE' });
+      const listed = async (s: Session) =>
+        (await json<{ batches: { id: string }[] }>(await as(t, s, '/v1/imports'), 200)).batches.map(
+          (b) => b.id,
+        );
+
+      it('removes one undone batch, keeps its entries and still skips them as duplicates', async () => {
+        const { batch } = await importRows(ann, statement);
+        const [edited] = await history(ann);
+        expect((await edit(ann, edited!, { note: 'checked' })).status).toBe('applied');
+        await undo(ann, batch.id);
+        // The foreign key nulls the link, which also bumps revision and updatedAt for sync.
+        const content = async () =>
+          (await history(ann)).map(
+            ({ importBatchId: _link, revision: _rev, updatedAt: _at, ...entry }) => entry,
+          );
+        const entries = await content();
+
+        expect((await del(ann, `/${batch.id}`)).status).toBe(204);
+        expect(await listed(ann)).toEqual([]);
+        expect(await content()).toEqual(entries);
+
+        const again = await importRows(ann, statement);
+        expect(again.duplicates).toBe(1);
+        expect(again.imported.count).toBe(2);
+      });
+
+      it("refuses an active batch and another user's batch", async () => {
+        const { batch } = await importRows(ann, statement);
+        expect((await del(ann, `/${batch.id}`)).status).toBe(409);
+        await undo(ann, batch.id);
+        expect((await del(bob, `/${batch.id}`)).status).toBe(404);
+        expect(await listed(ann)).toEqual([batch.id]);
+      });
+
+      it('clears only the undone batches of the actor', async () => {
+        const undone = await importRows(ann, [row(2)]);
+        const active = await importRows(ann, [row(3)]);
+        const theirs = await importRows(
+          bob,
+          [row(2)],
+          await createAccount(bob, await personal(bob)),
+        );
+        await undo(ann, undone.batch.id);
+        await undo(bob, theirs.batch.id);
+
+        expect(await json(await del(ann, '/undone'), 200)).toEqual({ removed: 1 });
+        expect(await listed(ann)).toEqual([active.batch.id]);
+        expect(await listed(bob)).toEqual([theirs.batch.id]);
+        expect(await json(await del(ann, '/undone'), 200)).toEqual({ removed: 0 });
+      });
+    });
   });
 
   describe('family review queue (BR-28)', () => {

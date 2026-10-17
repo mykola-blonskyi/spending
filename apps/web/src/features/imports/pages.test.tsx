@@ -21,7 +21,7 @@ import { ImportsPage } from './imports-page';
 import { bulkCategoryChoice, transferChoice } from './review-choice';
 import { ReviewPage } from './review-page';
 
-vi.mock('@shared/lib/network', () => ({ useOnlineStatus: () => true }));
+vi.mock('@shared/lib/network', () => ({ useOnlineStatus: () => online.value }));
 vi.mock(import('@data/sync'), async (importOriginal) => ({
   ...(await importOriginal()),
   useWorkspaces: vi.fn(),
@@ -36,11 +36,16 @@ vi.mock(import('@data/sync'), async (importOriginal) => ({
   useMarkTransfer: vi.fn(),
 }));
 const confirmMutate = vi.hoisted(() => vi.fn());
+const removeMutate = vi.hoisted(() => vi.fn());
+const clearMutate = vi.hoisted(() => vi.fn());
+const online = vi.hoisted(() => ({ value: true }));
 vi.mock('./imports', () => ({
   useHasFamily: vi.fn(),
   useReviewQueue: vi.fn(),
   useImportBatches: vi.fn(),
   useUndoImport: vi.fn(),
+  useRemoveImport: () => ({ mutate: removeMutate }),
+  useClearUndoneImports: () => ({ mutate: clearMutate }),
   useConfirmReview: () => ({ mutate: confirmMutate, isPending: false }),
   bankCategoryOf: () => undefined,
 }));
@@ -56,7 +61,10 @@ const ui = (node: React.ReactNode) =>
     </MemoryRouter>,
   );
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  online.value = true;
+});
 
 describe('ImportsPage', () => {
   it('shows past imports as needing a connection when they cannot be loaded offline', () => {
@@ -77,6 +85,62 @@ describe('ImportsPage', () => {
       screen.getByRole('heading', { name: 'Past imports need a connection' }),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+  });
+
+  describe('history removal', () => {
+    const batch = (id: string, undoneAt: string | null) => ({
+      id,
+      fileName: `${id}.csv`,
+      undoneAt,
+      createdAt: '2026-10-01T10:00:00Z',
+      accountId: 'savings',
+      rowCount: 1,
+      importedCount: 1,
+      duplicateCount: 0,
+      rejectedCount: 0,
+    });
+    const show = (batches: ReturnType<typeof batch>[]) => {
+      vi.mocked(useHasFamily).mockReturnValue(false);
+      vi.mocked(useReviewQueue).mockReturnValue({ data: [] } as unknown as ReturnType<
+        typeof useReviewQueue
+      >);
+      vi.mocked(useImportBatches).mockReturnValue({
+        isSuccess: true,
+        data: batches,
+      } as unknown as ReturnType<typeof useImportBatches>);
+      ui(<ImportsPage />);
+    };
+    const undone = '2026-10-02T10:00:00Z';
+
+    it('removes an undone import with its icon and offers it on undone rows only', () => {
+      show([batch('live', null), batch('gone', undone)]);
+      expect(screen.queryByRole('button', { name: 'Remove live.csv from history' })).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Remove gone.csv from history' }));
+      expect(removeMutate).toHaveBeenCalledWith('gone');
+    });
+
+    it('clears all undone imports after a confirmation with their count', () => {
+      show([batch('live', null), batch('a', undone), batch('b', undone)]);
+      fireEvent.click(screen.getByRole('button', { name: 'Clear undone imports' }));
+      const dialog = screen.getByRole('alertdialog');
+      expect(dialog).toHaveTextContent('2 undone imports are removed from the history');
+      expect(dialog).toHaveTextContent('Entries do not change.');
+      expect(clearMutate).not.toHaveBeenCalled();
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Clear' }));
+      expect(clearMutate).toHaveBeenCalled();
+    });
+
+    it('has no clear button without undone imports', () => {
+      show([batch('live', null)]);
+      expect(screen.queryByRole('button', { name: 'Clear undone imports' })).toBeNull();
+    });
+
+    it('disables both controls offline', () => {
+      online.value = false;
+      show([batch('gone', undone)]);
+      expect(screen.getByRole('button', { name: 'Clear undone imports' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Remove gone.csv from history' })).toBeDisabled();
+    });
   });
 });
 

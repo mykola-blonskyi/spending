@@ -260,6 +260,40 @@ test('undoing an import keeps the edited entry and lets the statement in again',
   await expect(stat(page, 'Already imported')).toHaveText('1');
 });
 
+test('an undone import can be removed from the history and its kept entry stays a duplicate', async ({
+  page,
+  signInAs,
+  db,
+}) => {
+  await signInAs('ann');
+  await createAccount(page, 'BBVA');
+  await importFile(page, 'bbva.csv', 6);
+
+  await page.goto('/transactions');
+  await page.getByRole('link', { name: /ENDESA/ }).click();
+  await page.getByLabel('Amount').fill('90');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect
+    .poll(async () => (await db.history(ann.email)).find((r) => /ENDESA/.test(r.description)))
+    .toMatchObject({ version: 2 });
+
+  await page.goto('/imports');
+  const batch = page.getByRole('listitem').filter({ hasText: 'bbva.csv' });
+  await expect(batch.getByRole('button', { name: 'Remove bbva.csv from history' })).toHaveCount(0);
+  await batch.getByRole('button', { name: 'Undo' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Undo' }).click();
+  await expect(batch.getByText('Undone')).toBeVisible();
+
+  await batch.getByRole('button', { name: 'Remove bbva.csv from history' }).click();
+  await expect(batch).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('listitem').filter({ hasText: 'bbva.csv' })).toHaveCount(0);
+
+  await importFile(page, 'bbva.csv', 6);
+  await expect(stat(page, 'Imported')).toHaveText('4');
+  await expect(stat(page, 'Already imported')).toHaveText('1');
+});
+
 test('without a personal account, the import page points to accounts', async ({
   page,
   signInAs,
