@@ -18,19 +18,17 @@ export type LayoutScreen = 'dashboard' | 'history' | 'entry' | 'detail';
 
 type LayoutDefinition = {
   shell: ComponentType<ShellProps>;
-  /** A screen a layout does not override falls back to the calm version. */
-  screens: Partial<Record<LayoutScreen, ComponentType>>;
+  screens: Record<Exclude<LayoutScreen, 'detail'>, ComponentType> & { detail?: ComponentType };
 };
 
 const screensOf = (layout: Layout) => ({
   dashboard: DASHBOARD_SCREENS[layout],
   ...TRANSACTION_SCREENS[layout],
 });
-const calmScreens = screensOf('calm');
 
 /** Order is the order in the settings picker. */
 export const LAYOUTS: Record<Layout, LayoutDefinition> = {
-  calm: { shell: CalmShell, screens: calmScreens },
+  calm: { shell: CalmShell, screens: screensOf('calm') },
   cards: { shell: CardsShell, screens: screensOf('cards') },
   soft: { shell: SoftShell, screens: screensOf('soft') },
   journal: { shell: JournalShell, screens: screensOf('journal') },
@@ -46,6 +44,5 @@ export const LAYOUT_IDS = Object.keys(LAYOUTS) as Layout[];
 /** `detail` (`/transactions/:id`) falls back to the layout's entry screen, which edits by `:id`. */
 export function screenFor(layout: Layout, screen: LayoutScreen): ComponentType {
   const screens = LAYOUTS[layout].screens;
-  if (screen === 'detail') return screens.detail ?? screens.entry ?? calmScreens.entry;
-  return screens[screen] ?? calmScreens[screen];
+  return screen === 'detail' ? (screens.detail ?? screens.entry) : screens[screen];
 }

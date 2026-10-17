@@ -74,8 +74,8 @@ components (`QueryUnavailable`, `useRefetchErrorToast`) read it through `strings
 
 **Layouts and palettes.** The profile stores a `layout` and a `palette`. `app/layouts/registry`
 maps each layout to a shell from `shared/shell` (all take the same `ShellProps`) and to its
-dashboard, history, entry and detail screens; a missing screen falls back to the calm version,
-and a missing `detail` (`/transactions/:id`) falls back to the layout's entry screen, which
+dashboard, history and entry screens, which every layout defines, and an optional detail screen.
+A missing `detail` (`/transactions/:id`) falls back to the layout's entry screen, which
 edits by `:id`. Palettes are `[data-palette]` token sets in `shared/styles.css` applied on
 `<html>` by `shared/theme` (and by `public/theme-init.js` before first paint); a unit test
 checks their contrast.
