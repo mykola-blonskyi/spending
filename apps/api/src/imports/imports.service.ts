@@ -501,7 +501,7 @@ export class ImportsService {
   /**
    * BR-38. Candidates are the live, confirmed, non-transfer entries of the workspace (on its other
    * accounts than the import's, when given) around the imported dates, read with one query, and
-   * the imported rows themselves; rates come per currency as for the import itself.
+   * the imported rows themselves; rates come per currency of both, as for the import itself.
    */
   private async transferSuggestions(
     tx: Tx,
@@ -539,7 +539,11 @@ export class ImportsService {
         ),
       )
       .orderBy(transactions.occurredOn, transactions.id);
-    for (const currency of new Set(candidates.map((row) => row.currency as CurrencyCode))) {
+    const currencies = [
+      ...candidates.map((row) => row.currency as CurrencyCode),
+      ...imported.map((row) => row.currency),
+    ];
+    for (const currency of new Set(currencies)) {
       if (!quotes.has(currency)) quotes.set(currency, await this.fx.quotes(tx, currency, dates));
     }
     const [user] = await tx
