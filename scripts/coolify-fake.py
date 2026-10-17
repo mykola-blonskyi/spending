@@ -18,6 +18,7 @@ TERMINAL = {
     "failed": "failed",
     "cancelled": "cancelled-by-user",
     "unknown_status": "something-coolify-never-returns",
+    "truncated_logs": "failed",
 }
 
 LOGS = json.dumps(
@@ -68,7 +69,9 @@ class Handler(BaseHTTPRequestHandler):
             status = "queued" if polls == 1 else "in_progress"
         else:
             status = TERMINAL[case]
-        return self._send(200, {"status": status, "logs": LOGS})
+        # A cut-off log the filter cannot parse must not be printed raw.
+        logs = LOGS[: LOGS.index("}, {") + 40] if case == "truncated_logs" else LOGS
+        return self._send(200, {"status": status, "logs": logs})
 
     def do_POST(self):
         case = parse_qs(urlparse(self.path).query).get("case", ["finished"])[0]
