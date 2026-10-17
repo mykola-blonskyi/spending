@@ -8,6 +8,7 @@ import {
 import { and, between, eq, max, sql } from 'drizzle-orm';
 import { APP_CONFIG, type AppConfig } from '../../common/config';
 import { addDays } from '../../common/dates';
+import { describeUnexpected } from '../../common/error.filter';
 import { BASE_CURRENCY, type CurrencyCode } from '../../common/money';
 import { DB, type Db, ledgerTransaction, type Tx } from '../../database/database.module';
 import { fxRates } from '../../database/schema';
@@ -259,7 +260,7 @@ export class FxScheduler implements OnApplicationBootstrap, OnApplicationShutdow
       const { rates, filled } = await this.fx.refresh();
       this.logger.log(`fx_refreshed rates=${rates} filled=${filled}`);
     } catch (error) {
-      this.logger.warn(`fx_refresh_failed ${error instanceof Error ? error.message : 'unknown'}`);
+      this.logger.warn(`fx_refresh_failed ${describeUnexpected(error)}`);
     }
   }
 }

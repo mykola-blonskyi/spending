@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { and, asc, desc, eq, exists, gt, inArray, isNull, lt, ne, not, sql } from 'drizzle-orm';
 import { APP_CONFIG, type AppConfig } from '../common/config';
+import { describeUnexpected } from '../common/error.filter';
 import { ApiError } from '../common/errors';
 import type { CurrencyCode } from '../common/money';
 import { DB, type Db, ledgerTransaction, type Tx } from '../database/database.module';
@@ -598,7 +599,7 @@ export class SyncScheduler implements OnApplicationBootstrap, OnApplicationShutd
     try {
       this.logger.log(`sync_mutations_pruned count=${await this.sync.pruneMutations()}`);
     } catch (error) {
-      this.logger.warn(`sync_prune_failed ${error instanceof Error ? error.message : 'unknown'}`);
+      this.logger.warn(`sync_prune_failed ${describeUnexpected(error)}`);
     }
   }
 }
