@@ -33,6 +33,14 @@ export async function undoImport(id: string): Promise<UndoResult> {
   return present((await api.POST('/api/v1/imports/{id}/undo', { params: { path: { id } } })).data);
 }
 
+export async function removeImport(id: string): Promise<void> {
+  await api.DELETE('/api/v1/imports/{id}', { params: { path: { id } } });
+}
+
+export async function clearUndoneImports(): Promise<void> {
+  await api.DELETE('/api/v1/imports/undone');
+}
+
 export async function confirmReview(items: ConfirmItem[]) {
   return present((await api.POST('/api/v1/imports/review/confirm', { body: { items } })).data)
     .transactions;

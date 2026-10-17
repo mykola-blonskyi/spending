@@ -70,6 +70,8 @@ export const undoResultSchema = z.object({
   kept: z.int(),
 });
 
+export const clearResultSchema = z.object({ removed: z.int() });
+
 export const reviewListSchema = z.object({
   items: z.array(
     z.object({

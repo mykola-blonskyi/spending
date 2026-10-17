@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { z } from 'zod';
-import { and, between, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
+import { and, between, desc, eq, inArray, isNotNull, isNull, ne, sql } from 'drizzle-orm';
 import { addDays } from '../common/dates';
 import { ApiError } from '../common/errors';
 import { type CurrencyCode } from '../common/money';
@@ -262,6 +262,31 @@ export class ImportsService {
         .where(eq(transactions.importBatchId, id));
       return { batch: toBatchView(stored), deleted: counts!.deleted, kept: counts!.kept };
     });
+  }
+
+  /**
+   * BR-30. Removes undone batches of the actor from the history, one by `id` or all. Entries stay;
+   * their link to the batch is nulled by the foreign key, and their dedupe keys are untouched.
+   */
+  async remove(actorId: string, id?: string) {
+    const removed = await this.db
+      .delete(importBatches)
+      .where(
+        and(
+          eq(importBatches.userId, actorId),
+          isNotNull(importBatches.undoneAt),
+          id ? eq(importBatches.id, id) : undefined,
+        ),
+      )
+      .returning({ id: importBatches.id });
+    if (id && removed.length === 0) {
+      const [batch] = await this.db
+        .select({ id: importBatches.id })
+        .from(importBatches)
+        .where(and(eq(importBatches.id, id), eq(importBatches.userId, actorId)));
+      throw new ApiError(batch ? 'CONFLICT' : 'NOT_FOUND');
+    }
+    return { removed: removed.length };
   }
 
   /**

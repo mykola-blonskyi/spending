@@ -1033,6 +1033,51 @@
         ]
       }
     },
+    "/api/v1/imports/undone": {
+      "delete": {
+        "operationId": "ImportsController_clearUndone",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClearResultDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Imports"
+        ]
+      }
+    },
+    "/api/v1/imports/{id}": {
+      "delete": {
+        "operationId": "ImportsController_removeUndone",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Imports"
+        ]
+      }
+    },
     "/api/v1/budgets": {
       "get": {
         "operationId": "BudgetsController_list",
@@ -5265,6 +5310,20 @@
           "batch",
           "deleted",
           "kept"
+        ],
+        "additionalProperties": false
+      },
+      "ClearResultDto_Output": {
+        "type": "object",
+        "properties": {
+          "removed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "removed"
         ],
         "additionalProperties": false
       },

@@ -221,7 +221,9 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   workspace. A live transfer side whose partner the undo deleted becomes a one-sided transfer
   (BR-37). Only the importer can undo; repeating an undo changes nothing. Undo reports the deleted
   and kept counts as they are when it runs, so a manual deletion made in between can change what
-  a repeat reports.
+  a repeat reports. An undone import can be removed from the import history, alone or all of the
+  importer's at once; an active one cannot. Removal deletes only the batch record: entries keep
+  everything, including their dedupe keys, so a re-import still skips them as duplicates.
 - **BR-36.** A statement is read in the browser; only the mapped cells of transaction rows are
   sent, never the metadata above the header (name, date of birth, tax id, passport, address,
   IBAN) or card numbers. The format is told by the file's bytes: CSV text, an XLSX workbook
