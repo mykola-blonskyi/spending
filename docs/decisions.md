@@ -306,8 +306,9 @@ Legacy binary `.xls` is refused with a message. Known banks are recognized by th
 - Server-side parsing: the metadata block would leave the device (BR-36).
 
 **Consequences.** No new dependency. The reader takes formula cells by their cached value and
-skips ZIP64, CRC checks and every sheet but the first; a part over 64 MiB or a sheet over 100
-columns is refused. PDF statements will reuse the same cell table and mapping step.
+skips ZIP64, CRC checks and every sheet but the first; a part over 64 MiB, parts that inflate to
+over 128 MiB together, or a sheet over 100 columns is refused. A sheet with more than twice the
+row limit (BR-26) in non-empty rows is refused as too many rows before its XML is parsed. PDF statements will reuse the same cell table and mapping step.
 
 **Addendum (category hints, #104).** The mapping step has two optional roles, bank category and
 MCC, set by the PrivatBank and monobank presets. Each row carries them as optional request fields,
