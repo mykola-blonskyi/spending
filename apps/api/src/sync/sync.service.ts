@@ -153,6 +153,23 @@ export class SyncService {
     return pruned.length;
   }
 
+  /** A resolved conflict is never pulled again, so after the same retention it is only weight. */
+  async pruneResolvedConflicts(): Promise<number> {
+    const pruned = await this.db
+      .delete(syncConflicts)
+      .where(
+        and(
+          eq(syncConflicts.status, 'resolved'),
+          lt(
+            syncConflicts.resolvedAt,
+            sql`now() - make_interval(days => ${MUTATION_RETENTION_DAYS})`,
+          ),
+        ),
+      )
+      .returning({ id: syncConflicts.id });
+    return pruned.length;
+  }
+
   /**
    * One repeatable-read snapshot covers all four sources. Separate snapshots could see a late row
    * in one source but miss an earlier-revision row in another, and the cursor would skip it.
@@ -597,6 +614,7 @@ export class SyncScheduler implements OnApplicationBootstrap, OnApplicationShutd
   private async run(): Promise<void> {
     try {
       this.logger.log(`sync_mutations_pruned count=${await this.sync.pruneMutations()}`);
+      this.logger.log(`sync_conflicts_pruned count=${await this.sync.pruneResolvedConflicts()}`);
     } catch (error) {
       this.logger.warn(`sync_prune_failed ${error instanceof Error ? error.message : 'unknown'}`);
     }

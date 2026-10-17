@@ -273,7 +273,8 @@ cannot duplicate a row or silently overwrite a newer change.
 again on the row: transaction IDs are client-chosen primary keys, so a create cannot duplicate; a
 create or update whose base version is older than the row answers applied if the row already
 holds that intent and a conflict otherwise (BR-19); a delete of a deleted row succeeds. An
-integration test replays pruned creates, updates and deletes to prove it.
+integration test replays pruned creates, updates and deletes to prove it. The same job deletes a
+resolved conflict 180 days after its resolution; only open conflicts are ever pulled.
 
 **Alternatives.**
 

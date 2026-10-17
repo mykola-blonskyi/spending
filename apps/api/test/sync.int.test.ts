@@ -216,6 +216,35 @@ describe('sync', () => {
     expect((await serverRow(gone.id)).deletedAt).not.toBeNull();
   });
 
+  it('prunes resolved conflicts after 180 days and keeps open ones', async () => {
+    const conflicted = async () => {
+      const tx = draft(annPersonal);
+      await push(ann, upsert(tx));
+      await push(ann, upsert({ ...tx, amountMinor: 2000 }, 1));
+      const [conflict] = await push(ann, upsert({ ...tx, description: 'Local' }, 1));
+      return conflict!.conflictId!;
+    };
+    const [old, recent, open] = [await conflicted(), await conflicted(), await conflicted()];
+    for (const id of [old, recent]) {
+      await as(t, ann, `/v1/sync/conflicts/${id}/resolve`, {
+        method: 'POST',
+        body: { resolution: 'server' },
+      });
+    }
+    await t.db.execute(
+      sql`update sync_conflicts set created_at = now() - interval '200 days',
+            resolved_at = now() - interval '181 days' where id = ${old}`,
+    );
+    await t.db.execute(
+      sql`update sync_conflicts set created_at = now() - interval '200 days' where id = ${open}`,
+    );
+
+    expect(await t.app.get(SyncService).pruneResolvedConflicts()).toBe(1);
+    expect((await t.db.select().from(syncConflicts)).map((c) => c.id).sort()).toEqual(
+      [recent, open].sort(),
+    );
+  });
+
   it('stops applying a push once its client has gone', async () => {
     const slow = sql.raw(`create function zz_slow() returns trigger language plpgsql as $$
       begin perform pg_sleep(0.05); return new; end $$;
