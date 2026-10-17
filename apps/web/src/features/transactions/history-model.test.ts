@@ -12,6 +12,7 @@ import {
   type RowContext,
   summarize,
   toEntryRow,
+  toHistoryRows,
   toQuery,
   transferCandidates,
 } from './history-model';
@@ -26,13 +27,18 @@ const groceries: CategoryView = {
   archived: false,
 };
 const card = { id: 'acc-card', name: 'Card' } as Account;
+const savings = { id: 'acc-savings', name: 'Savings' } as Account;
 
 const context: RowContext = {
   categories: new Map([[groceries.id, groceries]]),
-  accounts: new Map([[card.id, card]]),
+  accounts: new Map([
+    [card.id, card],
+    [savings.id, savings],
+  ]),
   dayLabel: (date) => `day ${date}`,
   uncategorized: 'Uncategorized',
   transfer: 'Transfer',
+  outside: 'Own account outside the app',
 };
 
 function entry(patch: Partial<TransactionEntry> = {}): TransactionEntry {
@@ -183,11 +189,77 @@ describe('transfers (BR-37)', () => {
       entry({ description: '', accountId: card.id, transferId: 'tr-1' }),
       context,
     );
-    expect(side).toMatchObject({ title: 'Transfer', subtitle: 'Card', isTransfer: true });
+    expect(side).toMatchObject({ title: 'Transfer', subtitle: 'Card', transfer: { view: 'side' } });
     expect(toEntryRow(entry({ transferId: 'tr-1' }), context).subtitle).toBe('Transfer');
     expect(summarize([side, toEntryRow(entry({ amountMinor: 300 }), context)]).base).toEqual({
       expense: 300,
       income: 0,
+    });
+  });
+
+  describe('history rows', () => {
+    const out = entry({
+      id: 'out',
+      accountId: card.id,
+      amountMinor: 5000,
+      transferId: 'tr-1',
+      description: 'To savings',
+    });
+    const into = entry({
+      id: 'in',
+      kind: 'income',
+      accountId: savings.id,
+      amountMinor: 4990,
+      currency: 'UAH',
+      transferId: 'tr-1',
+      occurredOn: '2026-10-15',
+      sync: { state: 'pending' },
+    });
+    const plain = entry({ id: 'plain', occurredOn: '2026-10-13' });
+
+    it('shows both sides as one row where the newer side sorts, outside the totals', () => {
+      const rows = toHistoryRows([into, out, plain], context, true);
+      expect(rows.map((row) => row.id)).toEqual(['out', 'plain']);
+      expect(rows[0]).toMatchObject({
+        title: 'Card → Savings',
+        subtitle: 'Transfer · To savings',
+        amountMinor: 5000,
+        currency: 'EUR',
+        occurredOn: '2026-10-15',
+        sync: { state: 'pending' },
+        transfer: { view: 'whole', into: { amountMinor: 4990, currency: 'UAH' } },
+      });
+      expect(summarize(rows).base).toEqual({ expense: 1250, income: 0 });
+      expect(groupByDay(rows, context.dayLabel).map((item) => item.key)).toEqual([
+        'day-2026-10-15',
+        'out',
+        'day-2026-10-13',
+        'plain',
+      ]);
+    });
+
+    it('shows each side with an account filter', () => {
+      const rows = toHistoryRows([into, out], context, false);
+      expect(rows.map((row) => [row.id, row.transfer])).toEqual([
+        ['in', { view: 'side' }],
+        ['out', { view: 'side' }],
+      ]);
+    });
+
+    it('names an own account outside the app for a one-sided transfer', () => {
+      const outside = { ...into, transferOutside: true };
+      expect(toHistoryRows([outside], context, true)[0]).toMatchObject({
+        title: 'Own account outside the app → Savings',
+        transfer: { view: 'whole', into: null },
+      });
+    });
+
+    it('keeps a side whose partner is not here as a side row', () => {
+      expect(toHistoryRows([out], context, true)[0]).toMatchObject({
+        id: 'out',
+        title: 'To savings',
+        transfer: { view: 'side' },
+      });
     });
   });
 

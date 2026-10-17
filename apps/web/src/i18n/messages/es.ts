@@ -251,6 +251,9 @@ export const es = {
     deleteTitle: '¿Eliminar este movimiento?',
     deleteDescription:
       'Desaparece de tu historial ahora y del servidor en la próxima sincronización.',
+    deleteTransferTitle: '¿Eliminar esta transferencia?',
+    deleteTransferDescription:
+      'Sus dos partes desaparecen de tu historial ahora y del servidor en la próxima sincronización.',
     discard: 'Descartar cambio',
     discardTitle: '¿Descartar este cambio?',
     discardDescription:

@@ -253,6 +253,9 @@ export const ru = {
     delete: 'Удалить',
     deleteTitle: 'Удалить эту операцию?',
     deleteDescription: 'Она сразу исчезнет из истории, а с сервера — при следующей синхронизации.',
+    deleteTransferTitle: 'Удалить этот перевод?',
+    deleteTransferDescription:
+      'Обе его части сразу исчезнут из истории, а с сервера — при следующей синхронизации.',
     discard: 'Отменить изменение',
     discardTitle: 'Отменить это изменение?',
     discardDescription:

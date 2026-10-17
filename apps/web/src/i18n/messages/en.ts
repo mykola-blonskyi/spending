@@ -239,6 +239,8 @@ export const en = {
     delete: 'Delete',
     deleteTitle: 'Delete this transaction?',
     deleteDescription: 'It leaves your history now and the server on the next sync.',
+    deleteTransferTitle: 'Delete this transfer?',
+    deleteTransferDescription: 'Both sides leave your history now and the server on the next sync.',
     discard: 'Discard change',
     discardTitle: 'Discard this change?',
     discardDescription:

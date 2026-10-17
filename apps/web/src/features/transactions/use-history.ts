@@ -16,7 +16,7 @@ import {
   type HistoryKind,
   type RowContext,
   summarize,
-  toEntryRow,
+  toHistoryRows,
   toQuery,
 } from './history-model';
 
@@ -38,6 +38,7 @@ export function useRowContext(): RowContext {
       dayLabel: (date: string) => formatRelativeDay(date, locale, today),
       uncategorized: t('uncategorized'),
       transfer: transfer('label'),
+      outside: transfer('outside'),
     }),
     [categories.byId, accounts.items, locale, today, t, transfer],
   );
@@ -66,8 +67,8 @@ export function useHistory() {
   const accounts = useAccounts();
 
   const rows = useMemo(
-    () => transactions.items.map((entry) => toEntryRow(entry, context)),
-    [transactions.items, context],
+    () => toHistoryRows(transactions.items, context, !accountId),
+    [transactions.items, context, accountId],
   );
   const items = useMemo(() => groupByDay(rows, context.dayLabel), [rows, context.dayLabel]);
   const totals = useMemo(() => summarize(rows), [rows]);

@@ -81,6 +81,14 @@ export function fxLabels(fx: Fx, locale: string, ecb: string) {
   };
 }
 
+/**
+ * How a row stands for a transfer (BR-37): `side` is one account's side, `whole` is the
+ * transfer in one row, with the receiving side's amount when both sides are here.
+ */
+export type RowTransfer =
+  | Readonly<{ view: 'side' }>
+  | Readonly<{ view: 'whole'; into: Readonly<{ amountMinor: number; currency: string }> | null }>;
+
 export type EntryRow = Readonly<
   {
     id: string;
@@ -99,8 +107,8 @@ export type EntryRow = Readonly<
     currency: string;
     conversion: Conversion;
     sync: EntrySync;
-    /** Neither income nor spending, so it stays out of totals (BR-37). */
-    isTransfer: boolean;
+    /** Set on a transfer, which is neither income nor spending, so it stays out of totals. */
+    transfer: RowTransfer | null;
   } & Pick<TransactionEntry, 'scope' | 'author' | 'accountId'>
 >;
 
@@ -110,13 +118,15 @@ export type RowContext = Readonly<{
   dayLabel: (date: string) => string;
   uncategorized: string;
   transfer: string;
+  /** Names the other side of a one-sided transfer. */
+  outside: string;
 }>;
 
 export function toEntryRow(entry: TransactionEntry, context: RowContext): EntryRow {
   const category = entry.categoryId ? context.categories.get(entry.categoryId) : undefined;
   const accountName = entry.accountId ? context.accounts.get(entry.accountId)?.name : undefined;
-  const isTransfer = entry.transferId !== null;
-  const group = category?.name ?? (isTransfer ? context.transfer : undefined);
+  const transfer = entry.transferId === null ? null : ({ view: 'side' } as const);
+  const group = category?.name ?? (transfer ? context.transfer : undefined);
   const title = entry.description || group || context.uncategorized;
   return {
     id: entry.id,
@@ -132,11 +142,59 @@ export function toEntryRow(entry: TransactionEntry, context: RowContext): EntryR
     currency: entry.currency,
     conversion: conversionOf(entry),
     sync: entry.sync,
-    isTransfer,
+    transfer,
     scope: entry.scope,
     author: entry.author,
     accountId: entry.accountId,
   };
+}
+
+/** Both sides of a transfer as one row: "monobank → PrivatBank", where the first side sorts. */
+function toTransferRow(sides: readonly TransactionEntry[], context: RowContext): EntryRow {
+  const out = sides.find((side) => side.kind === 'expense');
+  const into = sides.find((side) => side.kind === 'income');
+  const main = (out ?? into)!;
+  const name = (side: TransactionEntry | undefined) =>
+    side
+      ? ((side.accountId && context.accounts.get(side.accountId)?.name) ?? '—')
+      : context.outside;
+  const first = sides[0]!;
+  return {
+    ...toEntryRow(main, context),
+    title: `${name(out)} → ${name(into)}`,
+    subtitle: [context.transfer, out?.description || into?.description].filter(Boolean).join(' · '),
+    occurredOn: first.occurredOn,
+    dateLabel: context.dayLabel(first.occurredOn),
+    sync: sides.find((side) => side.sync.state !== 'synced')?.sync ?? main.sync,
+    transfer: {
+      view: 'whole',
+      into: out && into ? { amountMinor: into.amountMinor, currency: into.currency } : null,
+    },
+  };
+}
+
+/**
+ * History rows, newest first. With `combine` (no account filter) a transfer is one row; a side
+ * whose partner is not among `entries` stays a side row (BR-37).
+ */
+export function toHistoryRows(
+  entries: readonly TransactionEntry[],
+  context: RowContext,
+  combine: boolean,
+): EntryRow[] {
+  if (!combine) return entries.map((entry) => toEntryRow(entry, context));
+  const sides = new Map<string, TransactionEntry[]>();
+  for (const entry of entries) {
+    if (entry.transferId !== null)
+      sides.set(entry.transferId, [...(sides.get(entry.transferId) ?? []), entry]);
+  }
+  return entries.flatMap((entry) => {
+    const transfer = entry.transferId === null ? undefined : sides.get(entry.transferId);
+    if (!transfer) return [toEntryRow(entry, context)];
+    if (transfer[0] !== entry) return [];
+    const whole = transfer.length > 1 || entry.transferOutside;
+    return [whole ? toTransferRow(transfer, context) : toEntryRow(entry, context)];
+  });
 }
 
 type Sums = { expense: number; income: number };
@@ -153,13 +211,13 @@ export type Totals = Readonly<{
 export function summarize(
   entries: readonly Pick<
     EntryRow,
-    'kind' | 'amountMinor' | 'currency' | 'conversion' | 'isTransfer'
+    'kind' | 'amountMinor' | 'currency' | 'conversion' | 'transfer'
   >[],
 ): Totals {
   const base = { expense: 0, income: 0 };
   const unconverted = new Map<string, Sums & { currency: string }>();
   for (const entry of entries) {
-    if (entry.isTransfer) continue;
+    if (entry.transfer) continue;
     const { conversion } = entry;
     if (conversion.state === 'pending' || conversion.state === 'unavailable') {
       const sum = unconverted.get(entry.currency) ?? {

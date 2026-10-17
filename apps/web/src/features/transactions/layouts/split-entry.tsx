@@ -18,7 +18,7 @@ export function SplitEntryView({ form }: { form: EntryForm }) {
             form.entryId && (
               <>
                 <TransferButton id={form.entryId} />
-                <DeleteButton onConfirm={() => void form.remove()} />
+                <DeleteButton transfer={form.isTransfer} onConfirm={() => void form.remove()} />
               </>
             )
           }

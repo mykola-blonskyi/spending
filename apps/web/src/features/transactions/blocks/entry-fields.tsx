@@ -430,14 +430,18 @@ export function ConfirmButton({
   );
 }
 
-export function DeleteButton(props: ConfirmProps) {
+/** Deleting a side of a transfer deletes the whole transfer, so the dialog says so (BR-37). */
+export function DeleteButton({
+  transfer = false,
+  ...props
+}: ConfirmProps & { transfer?: boolean }) {
   const t = useTranslations('transactionForm');
   return (
     <ConfirmButton
       icon={Trash2}
       label={t('delete')}
-      title={t('deleteTitle')}
-      description={t('deleteDescription')}
+      title={t(transfer ? 'deleteTransferTitle' : 'deleteTitle')}
+      description={t(transfer ? 'deleteTransferDescription' : 'deleteDescription')}
       {...props}
     />
   );

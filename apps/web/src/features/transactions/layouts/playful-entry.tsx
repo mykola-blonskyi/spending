@@ -124,7 +124,11 @@ export function PlayfulEntryView({ form }: { form: EntryForm }) {
               <TransferButton id={form.entryId} className="h-12 rounded-2xl" />
             )}
             {form.canDelete && (
-              <DeleteButton onConfirm={() => void form.remove()} className="h-12 rounded-2xl" />
+              <DeleteButton
+                transfer={form.isTransfer}
+                onConfirm={() => void form.remove()}
+                className="h-12 rounded-2xl"
+              />
             )}
           </SaveBar>
         </form>

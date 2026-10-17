@@ -258,7 +258,11 @@ export function EntryDetail({ id, onBack }: { id: string; onBack?: () => void })
               <DiscardButton onConfirm={() => void detail.discard()} className={quietButton} />
             )}
             <TransferButton id={id} className={quietButton} />
-            <DeleteButton onConfirm={() => void detail.remove()} className={quietButton} />
+            <DeleteButton
+              transfer={Boolean(row?.transfer)}
+              onConfirm={() => void detail.remove()}
+              className={quietButton}
+            />
           </div>
         )}
       </div>
@@ -310,13 +314,13 @@ export function EntryDetail({ id, onBack }: { id: string; onBack?: () => void })
                     />
                     {row.category.name}
                   </span>
-                ) : row.isTransfer ? (
+                ) : row.transfer ? (
                   t('transfer.label')
                 ) : (
                   t('pages.transactions.uncategorized')
                 )}
               </MetaRow>
-              {row.isTransfer && <OtherSide id={id} />}
+              {row.transfer && <OtherSide id={id} />}
               <MetaRow label={t('transactionForm.account')}>
                 {row.accountName ?? t('transactionForm.noAccount')}
               </MetaRow>

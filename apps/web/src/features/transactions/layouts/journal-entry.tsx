@@ -349,7 +349,11 @@ export function JournalEntryView({ form }: { form: EntryForm }) {
               <TransferButton id={form.entryId} className="h-12 rounded-full" />
             )}
             {form.canDelete && (
-              <DeleteButton onConfirm={() => void form.remove()} className="h-12 rounded-full" />
+              <DeleteButton
+                transfer={form.isTransfer}
+                onConfirm={() => void form.remove()}
+                className="h-12 rounded-full"
+              />
             )}
             <p className="text-center text-xs text-muted-foreground sm:text-left">
               {t('transactionForm.saveHint')}

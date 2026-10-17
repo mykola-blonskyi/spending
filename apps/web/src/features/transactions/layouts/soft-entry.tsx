@@ -120,7 +120,11 @@ export function SoftEntryView({ form }: { form: EntryForm }) {
               <TransferButton id={form.entryId} className="h-12 rounded-full" />
             )}
             {form.canDelete && (
-              <DeleteButton onConfirm={() => void form.remove()} className="h-12 rounded-full" />
+              <DeleteButton
+                transfer={form.isTransfer}
+                onConfirm={() => void form.remove()}
+                className="h-12 rounded-full"
+              />
             )}
           </SaveBar>
         </form>
