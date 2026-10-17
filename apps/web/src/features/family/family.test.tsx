@@ -3,7 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { toast } from 'sonner';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { ApiError } from '@data/api-error';
 import { api } from '@data/client';
 import {
@@ -316,10 +316,39 @@ describe('InviteFlow', () => {
       `/invite/${token}`,
     );
     expect(await screen.findByRole('heading', { name: 'Join Home?' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Join Home' })).toHaveAttribute(
-      'href',
-      `/api/v1/auth/login?returnTo=%2Finvite%2F${token}`,
+    const join = screen.getByRole('link', { name: 'Join Home' });
+    expect(join).toHaveAttribute('href', '/api/v1/auth/login?returnTo=%2Finvite');
+    join.addEventListener('click', (event) => event.preventDefault());
+    await userEvent.click(join);
+    expect(sessionStorage.getItem('spending.pendingInvite')).toBe(token);
+  });
+
+  it('still goes to sign-in when the token cannot be stored', async () => {
+    const blocked = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('blocked', 'SecurityError');
+    });
+    onTestFinished(() => blocked.mockRestore());
+    setup(
+      <InviteFlow token={token} />,
+      (client) => {
+        client.setQueryData(sessionQuery.queryKey, null);
+        client.setQueryData(invitationPreviewQuery(token).queryKey, {
+          familyName: 'Home',
+          ownerName: 'Bob',
+          expiresAt: '2026-10-22T00:00:00.000Z',
+          state: 'pending',
+        });
+      },
+      `/invite/${token}`,
     );
+    const join = await screen.findByRole('link', { name: 'Join Home' });
+    let followed = false;
+    join.addEventListener('click', (event) => {
+      followed = !event.defaultPrevented;
+      event.preventDefault();
+    });
+    await userEvent.click(join);
+    expect(followed).toBe(true);
   });
 
   it('shows one generic message for any unusable link', async () => {

@@ -1,7 +1,7 @@
 import { Compass } from 'lucide-react';
 import { isRouteErrorResponse, Link, useParams, useRouteError } from 'react-router';
 import { errorCode } from '@data/api-error';
-import { InviteFlow } from '@features/family';
+import { InviteFlow, PendingInvite } from '@features/family';
 import { useTranslations } from '@i18n/index';
 import { EmptyState, ErrorState } from '@shared/components';
 import { Button } from '@shared/ui/button';
@@ -40,11 +40,11 @@ export function RouteErrorPage() {
 }
 
 export function InvitePage() {
-  const { token = '' } = useParams();
+  const { token } = useParams();
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col items-center justify-center gap-8 px-4 text-center">
       <BrandMark className="size-12" />
-      <InviteFlow token={token} />
+      {token ? <InviteFlow token={token} /> : <PendingInvite />}
     </main>
   );
 }

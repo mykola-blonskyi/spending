@@ -6,6 +6,13 @@ describe('sanitizeReturnTo', () => {
     expect(sanitizeReturnTo(path)).toBe(path);
   });
 
+  it.each(['/invite/abc', '/invite/abc?x=1#y', '/invite/', '/a/../invite/abc'])(
+    'drops the invitation token from %s (BR-8)',
+    (path) => {
+      expect(sanitizeReturnTo(path)).toBe('/invite');
+    },
+  );
+
   it.each([
     undefined,
     '',

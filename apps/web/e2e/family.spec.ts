@@ -1,5 +1,6 @@
 import type { Browser, Page } from '@playwright/test';
 import { clientHeaders, expect, signInAs as signInPageAs, test } from './fixtures';
+import type { E2EDatabase } from './support/database';
 import { E2E_USERS } from './support/env';
 
 const ann = E2E_USERS.ann;
@@ -27,13 +28,19 @@ async function secondDevice(browser: Browser): Promise<Page> {
   return context.newPage();
 }
 
-/** A signed-out visitor: the preview is public, Join goes through sign-in and comes back. */
-async function joinThroughLink(page: Page, url: string, familyName: string) {
+/**
+ * A signed-out visitor: the preview is public, Join goes through sign-in and comes back. The
+ * token stays in the tab, never in the server's login attempt (BR-8).
+ */
+async function joinThroughLink(page: Page, url: string, familyName: string, db: E2EDatabase) {
   await page.goto(url);
   await expect(page.getByRole('heading', { name: `Join ${familyName}?` })).toBeVisible();
   await expect(page.getByText(`${ann.name} invited you`)).toBeVisible();
   await page.getByRole('link', { name: `Join ${familyName}` }).click();
-  await page.getByRole('link', { name: `Sign in as ${bob.name}` }).click();
+  const signIn = page.getByRole('link', { name: `Sign in as ${bob.name}` });
+  await expect(signIn).toBeVisible();
+  expect(await db.loginReturnTargets()).toEqual(['/invite']);
+  await signIn.click();
   await page.waitForURL(/\/invite\//);
   await page.getByRole('button', { name: `Join ${familyName}` }).click();
   await expect(page).toHaveURL('/family');
@@ -71,7 +78,7 @@ test('two people share family entries but never personal ones', async ({
   const url = await inviteLink(page);
 
   const bobPage = await secondDevice(browser);
-  await joinThroughLink(bobPage, url, 'Home');
+  await joinThroughLink(bobPage, url, 'Home', db);
   await expect(bobPage.getByRole('list', { name: 'Members' })).toContainText(ann.name);
   await expect(bobPage.getByRole('list', { name: 'Members' })).toContainText(`${bob.name} (you)`);
   await expect(bobPage.getByRole('button', { name: 'Leave family' })).toBeVisible();
@@ -127,7 +134,7 @@ test('revoked, expired and used links all read the same', async ({
   await expect(invalid).toBeVisible();
 
   const used = await inviteLink(page);
-  await joinThroughLink(bobPage, used, 'Home');
+  await joinThroughLink(bobPage, used, 'Home', db);
   await bobPage.goto(used);
   await expect(bobPage.getByRole('heading', { name: 'You are already in a family' })).toBeVisible();
 
@@ -149,7 +156,7 @@ test('the owner manages members, reads the log and deletes the family, returning
   await signInAs('ann');
   await createFamily(page, 'Home');
   const bobPage = await secondDevice(browser);
-  await joinThroughLink(bobPage, await inviteLink(page), 'Home');
+  await joinThroughLink(bobPage, await inviteLink(page), 'Home', db);
   await addEntry(bobPage, 'Bob groceries', 'Family');
   await addEntry(page, 'Ann rent', 'Family');
 
@@ -235,7 +242,7 @@ test('leaving a family removes its entries and fails a pending edit with no acce
   await signInAs('ann');
   await createFamily(page, 'Home');
   const bobPage = await secondDevice(browser);
-  await joinThroughLink(bobPage, await inviteLink(page), 'Home');
+  await joinThroughLink(bobPage, await inviteLink(page), 'Home', db);
   await addEntry(page, 'Family dinner', 'Family');
   await addEntry(page, 'Family rent', 'Family');
   await expect.poll(() => db.transactions(ann.email)).toHaveLength(2);

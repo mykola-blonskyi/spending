@@ -1,7 +1,7 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { invitationPreviewQuery, workspacesQuery } from '@data/family';
 import { createQueryClient } from '@data/query-client';
 import { type Profile, type ProfilePatch, type Session, sessionQuery } from '@data/session';
@@ -41,6 +41,7 @@ describe('app routes', () => {
     }));
     useLocaleStore.getState().setLocale('en');
     localStorage.clear();
+    sessionStorage.clear();
   });
 
   it('shows the login failure message on the sign-in page', () => {
@@ -135,6 +136,44 @@ describe('app routes', () => {
     await act(() => router.navigate('/invite/abc'));
     expect(document.title).toBe('Join Home? · Spending');
     expect(screen.getByRole('main')).toHaveFocus();
+  });
+
+  it('returns from sign-in to the invitation link held in this tab, then forgets it', async () => {
+    sessionStorage.setItem('spending.pendingInvite', 'abc');
+    const router = renderAt('/invite', testSession(), (queryClient) => {
+      queryClient.setQueryData(workspacesQuery.queryKey, [
+        { id: 'ws-1', kind: 'personal', name: 'Ann', role: 'owner', members: [] },
+      ]);
+      queryClient.setQueryData(invitationPreviewQuery('abc').queryKey, {
+        familyName: 'Home',
+        ownerName: 'Bob',
+        expiresAt: '2026-10-22T00:00:00.000Z',
+        state: 'pending',
+      });
+    });
+    expect(await screen.findByRole('button', { name: 'Join Home' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/invite/abc');
+    expect(sessionStorage.getItem('spending.pendingInvite')).toBeNull();
+  });
+
+  it.each([
+    ['nothing is held', () => {}],
+    [
+      'storage is unavailable',
+      () => {
+        const blocked = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+          throw new DOMException('blocked', 'SecurityError');
+        });
+        onTestFinished(() => blocked.mockRestore());
+      },
+    ],
+  ])('asks to open the invitation link again when %s', async (_, arrange) => {
+    arrange();
+    const router = renderAt('/invite', testSession());
+    expect(
+      await screen.findByRole('heading', { name: 'Open your invitation link again' }),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/invite');
   });
 
   it('sends a signed-out visitor to sign-in, keeping the deep link', () => {
