@@ -70,10 +70,15 @@ test('a change rejected for an archived category is shown as failed, fixed and s
 
   await page.setViewportSize({ width: 375, height: 812 });
   const title = row(page, 'Market run').getByText('Market run', { exact: true });
-  expect(await title.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
-  const marker = await row(page, 'Market run').locator('span[data-sync]').boundingBox();
-  const amount = await row(page, 'Market run').getByText('-€12.00').boundingBox();
-  expect(marker!.x + marker!.width).toBeLessThanOrEqual(amount!.x);
+  // The row reflows after the resize, so both layout checks wait for it.
+  await expect.poll(() => title.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+  await expect
+    .poll(async () => {
+      const marker = await row(page, 'Market run').locator('span[data-sync]').boundingBox();
+      const amount = await row(page, 'Market run').getByText('-€12.00').boundingBox();
+      return marker!.x + marker!.width <= amount!.x;
+    })
+    .toBe(true);
 
   await badge(page).click();
   const refused = page.getByRole('region', { name: '1 change not synced' });

@@ -16,7 +16,7 @@ export async function createApp(config: AppConfig): Promise<NestExpressApplicati
   return app;
 }
 
-export function configureApp(app: NestExpressApplication): void {
+function configureApp(app: NestExpressApplication): void {
   app.setGlobalPrefix('api');
   app.disable('x-powered-by');
   // One hop: the web container's nginx, which sends a single X-Forwarded-For (docs/operations.md).

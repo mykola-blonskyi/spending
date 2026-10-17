@@ -16,7 +16,7 @@ function ConversionPending({ className }: { className?: string }) {
 }
 
 /** Says an entry has no EUR amount yet; the title explains why. */
-export function ConversionUnavailable({
+function ConversionUnavailable({
   className,
   labelClassName,
 }: {

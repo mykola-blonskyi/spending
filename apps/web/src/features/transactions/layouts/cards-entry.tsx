@@ -11,17 +11,15 @@ import {
   CategoryPicker,
   CurrencySelect,
   DateField,
-  DeleteButton,
   DescriptionField,
-  DiscardButton,
+  EntryActions,
   EntryStatus,
-  KindToggle,
   Keypad,
+  KindToggle,
   NoteField,
   SaveBar,
   ScopeChoice,
   SyncFailure,
-  TransferButton,
 } from '../blocks';
 import { type EntryForm, HISTORY_PATH, useEntryForm } from '../use-entry-form';
 
@@ -157,11 +155,7 @@ export function CardsEntryView({ form, className }: { form: EntryForm; className
           className="mt-4"
           buttonClassName="h-14 rounded-2xl text-[15px] font-semibold"
         >
-          {form.canDiscard && <DiscardButton onConfirm={() => void form.discard()} />}
-          {form.canDelete && form.entryId && <TransferButton id={form.entryId} />}
-          {form.canDelete && (
-            <DeleteButton transfer={form.isTransfer} onConfirm={() => void form.remove()} />
-          )}
+          <EntryActions form={form} />
         </SaveBar>
       </form>
     </div>

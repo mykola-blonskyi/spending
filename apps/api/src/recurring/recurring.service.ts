@@ -12,10 +12,10 @@ import { describeUnexpected } from '../common/error.filter';
 import { ApiError } from '../common/errors';
 import type { CurrencyCode } from '../common/money';
 import { DB, type Db, ledgerTransaction, type Tx } from '../database/database.module';
-import { accounts, categories, recurringRules, transactions, workspaces } from '../database/schema';
+import { accounts, recurringRules, transactions, workspaces } from '../database/schema';
 import { FxService } from '../ledger/fx/fx.service';
+import { loadReferenceFacts, referenceError, type ReferenceFacts } from '../ledger/rules';
 import { UsersService } from '../users/users.service';
-import { referenceError, type ReferenceFacts } from '../sync/mutations';
 import { AccessPolicy } from '../workspaces/access-policy';
 import { type CreateRule, type RuleView, type UpdateRule } from './rules';
 import { nextOccurrence, occurrences } from './schedule';
@@ -204,22 +204,7 @@ export class RecurringService {
     rule: Pick<Rule, 'workspaceId' | 'kind' | 'accountId' | 'categoryId' | 'createdBy'>,
     current: Rule | null,
   ): Promise<void> {
-    const [account] = rule.accountId
-      ? await tx
-          .select({ workspaceId: accounts.workspaceId, archivedAt: accounts.archivedAt })
-          .from(accounts)
-          .where(eq(accounts.id, rule.accountId))
-      : [];
-    const [category] = rule.categoryId
-      ? await tx
-          .select({
-            workspaceId: categories.workspaceId,
-            kind: categories.kind,
-            archivedAt: categories.archivedAt,
-          })
-          .from(categories)
-          .where(eq(categories.id, rule.categoryId))
-      : [];
+    const references = await loadReferenceFacts(tx, [rule.accountId], [rule.categoryId]);
     const facts: ReferenceFacts = {
       ...rule,
       current,
@@ -227,10 +212,8 @@ export class RecurringService {
       authorPersonalWorkspaceId: rule.createdBy
         ? await this.policy.personalWorkspaceId(rule.createdBy, tx)
         : null,
-      account: account
-        ? { workspaceId: account.workspaceId, archived: !!account.archivedAt }
-        : null,
-      category: category ? { ...category, archived: !!category.archivedAt } : null,
+      account: references.accounts.get(rule.accountId ?? '') ?? null,
+      category: references.categories.get(rule.categoryId ?? '') ?? null,
     };
     const error = referenceError(facts);
     if (error) throw new ApiError(error);

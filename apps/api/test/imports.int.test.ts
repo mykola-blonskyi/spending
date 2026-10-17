@@ -4,6 +4,7 @@ import { categoryRules, fxRates, importBatches, transactions } from '../src/data
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
 import {
   as,
+  liveRows,
   loginAs,
   resetData,
   type Session,
@@ -138,10 +139,8 @@ describe('imports', () => {
     }>(await as(t, s, `/v1/categories?workspaceId=${workspaceId}`), 200);
     return new Map(categories.map((c) => [c.systemKey ?? c.name, c.id]));
   }
-  async function history(s: Session, query = ''): Promise<View[]> {
-    return (await json<{ transactions: View[] }>(await as(t, s, `/v1/transactions${query}`), 200))
-      .transactions;
-  }
+  const history = (s: Session, reviewStatus?: 'pending_review') =>
+    liveRows<View>(t, s, reviewStatus);
 
   describe('create (BR-26)', () => {
     it('imports valid rows, rejects invalid ones with reasons, and stores the batch', async () => {
@@ -586,7 +585,7 @@ describe('imports', () => {
       const familyIds = await categoryIds(ann, family);
       const { imported } = await importRows(ann, [row(2, { description: 'MERCADONA' }), row(3)]);
       expect(await history(ann)).toEqual([]);
-      expect(await history(ann, '?reviewStatus=pending_review')).toHaveLength(2);
+      expect(await history(ann, 'pending_review')).toHaveLength(2);
       expect(await history(bob)).toEqual([]);
       const bobPull = (await pulled(bob)).map((r) => r.id);
       expect(bobPull.filter((id) => imported.transactionIds.includes(id))).toEqual([]);
@@ -790,7 +789,7 @@ describe('imports', () => {
           expect(response.status).toBe(422);
           expect(await errorCode(response)).toBe('INVALID_TRANSFER');
         }
-        expect(await history(ann, '?reviewStatus=pending_review')).toHaveLength(5);
+        expect(await history(ann, 'pending_review')).toHaveLength(5);
         expect((await stored(manual.id)).transferId).toBeNull();
       });
     });
@@ -902,7 +901,7 @@ describe('imports', () => {
       expect(
         (await confirm(ann, [item(a!, 'family', null), item(a!, 'personal', null)])).status,
       ).toBe(400);
-      expect(await history(ann, '?reviewStatus=pending_review')).toHaveLength(2);
+      expect(await history(ann, 'pending_review')).toHaveLength(2);
     });
 
     it('keeps a suggested category archived since, but refuses picking an archived one (BR-4)', async () => {

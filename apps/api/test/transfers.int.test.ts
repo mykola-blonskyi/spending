@@ -6,6 +6,7 @@ import {
   as,
   categoriesOf,
   createFamily,
+  liveRows,
   loginAs,
   type PushedRow,
   pushNew,
@@ -168,11 +169,9 @@ describe('transfers (BR-37)', () => {
 
     // Balances: each account still holds its side of the move.
     const accountRows = async (accountId: string) =>
-      (
-        (await (await as(t, ann, `/v1/transactions?accountId=${accountId}`)).json()) as {
-          transactions: { kind: string; amountMinor: number }[];
-        }
-      ).transactions.reduce((sum, r) => sum + (r.kind === 'income' ? 1 : -1) * r.amountMinor, 0);
+      (await liveRows<{ accountId: string; kind: string; amountMinor: number }>(t, ann))
+        .filter((r) => r.accountId === accountId)
+        .reduce((sum, r) => sum + (r.kind === 'income' ? 1 : -1) * r.amountMinor, 0);
     expect(await accountRows(savings)).toBe(30_000);
     expect(await accountRows(card)).toBe(200_000 - 5_000 - 30_000 - 70_000);
 

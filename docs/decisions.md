@@ -11,8 +11,9 @@ Vite) in one repository, with no microservices.
 
 **Decision.** Use a pnpm workspace with two apps. The API is one deployable NestJS process with
 modules `auth`, `users`, `workspaces`, `ledger`, `budgets`, `recurring`, `sync`, `data-rights`,
-`imports`, `analytics`, `database` and a small `common`. Modules call each other only through exported
-services. The web app gets API types generated from the API's OpenAPI document, so no shared
+`imports`, `analytics`, `database` and a small `common`. Modules share the Drizzle schema;
+cross-module calls go through exported services or pure rule files (the ledger invariants live in
+`ledger/rules.ts`). The web app gets API types generated from the API's OpenAPI document, so no shared
 contracts package is needed.
 
 **Consequences.** One build, one migration stream, one process to operate. The OpenAPI file is
@@ -99,6 +100,10 @@ must be in the `docker` group, which is root-equivalent.
 Coolify's deploy endpoint with a token limited to deploy and read. It polls the deployment and
 checks `/api/health`.
 
+**Addendum (automatic deploy).** `deploy.yml` also runs on `workflow_run` once CI passes on a
+push to `main`, and deploys that exact commit; the manual dispatch stays for redeploys. See
+operations.md, "Deploying".
+
 **Alternatives.** An SSH deploy user would need docker group membership (root-equivalent) or a
 sudo wrapper that reimplements what Coolify already does. A second proxy (Caddy or a host nginx)
 would conflict with Traefik.
@@ -139,8 +144,9 @@ or not, the queue is flushed to `POST /api/v1/sync/push`. That endpoint is the o
 creates, updates or deletes transactions, apart from server-side import and recurring jobs and
 conflict resolution. `GET /api/v1/sync/pull?cursor=` returns changes by global revision. Accounts
 and categories are pulled for offline use but edited online through REST. History search and
-filtering run on the local store. `GET /api/v1/transactions` offers the same filters server-side
-for export and API clients.
+filtering run on the local store; the export reads `GET /api/v1/data-export`. A server-side
+history endpoint (`GET /api/v1/transactions`) existed with no client and was removed in the
+2026-10-17 architecture audit (L5).
 
 **Consequences.** There is no second code path whose access checks can drift. Offline and online
 behave identically.

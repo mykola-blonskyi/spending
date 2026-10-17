@@ -34,7 +34,7 @@ const COLUMNS = [
   'author',
   'transfer',
 ] as const;
-export type CsvColumn = (typeof COLUMNS)[number];
+type CsvColumn = (typeof COLUMNS)[number];
 
 type Names = {
   header: (column: CsvColumn) => string;

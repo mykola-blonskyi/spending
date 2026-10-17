@@ -340,22 +340,6 @@ export interface paths {
         patch: operations["LedgerController_updateCategory"];
         trace?: never;
     };
-    "/api/v1/transactions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["LedgerController_transactions"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/sync/push": {
         parameters: {
             query?: never;
@@ -869,6 +853,40 @@ export interface components {
             icon?: string;
             archived?: boolean;
         };
+        PushDto: {
+            mutations: ({
+                /** Format: uuid */
+                mutationId: string;
+                /** @constant */
+                type: "transaction.upsert";
+                baseVersion: number | null;
+                transaction: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    workspaceId: string;
+                    /** @enum {string} */
+                    kind: "income" | "expense";
+                    amountMinor: number;
+                    currency: string;
+                    occurredOn: string;
+                    accountId: string | null;
+                    categoryId: string | null;
+                    description: string;
+                    note: string;
+                    transferId?: string | null;
+                    transferOutside?: boolean;
+                };
+            } | {
+                /** Format: uuid */
+                mutationId: string;
+                /** @constant */
+                type: "transaction.delete";
+                /** Format: uuid */
+                transactionId: string;
+                baseVersion: number;
+            })[];
+        };
         TransactionView_Output: {
             /** Format: uuid */
             id: string;
@@ -908,45 +926,6 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
-        };
-        NextCursor_Output: string | null;
-        TransactionPageDto_Output: {
-            transactions: components["schemas"]["TransactionView_Output"][];
-            nextCursor: components["schemas"]["NextCursor_Output"];
-        };
-        PushDto: {
-            mutations: ({
-                /** Format: uuid */
-                mutationId: string;
-                /** @constant */
-                type: "transaction.upsert";
-                baseVersion: number | null;
-                transaction: {
-                    /** Format: uuid */
-                    id: string;
-                    /** Format: uuid */
-                    workspaceId: string;
-                    /** @enum {string} */
-                    kind: "income" | "expense";
-                    amountMinor: number;
-                    currency: string;
-                    occurredOn: string;
-                    accountId: string | null;
-                    categoryId: string | null;
-                    description: string;
-                    note: string;
-                    transferId?: string | null;
-                    transferOutside?: boolean;
-                };
-            } | {
-                /** Format: uuid */
-                mutationId: string;
-                /** @constant */
-                type: "transaction.delete";
-                /** Format: uuid */
-                transactionId: string;
-                baseVersion: number;
-            })[];
         };
         Tombstone_Output: {
             /** Format: uuid */
@@ -2235,38 +2214,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CategoryDto_Output"];
-                };
-            };
-        };
-    };
-    LedgerController_transactions: {
-        parameters: {
-            query?: {
-                q?: string;
-                from?: string;
-                to?: string;
-                kind?: string;
-                currency?: string;
-                accountId?: string;
-                categoryId?: string;
-                scope?: string;
-                workspaceId?: string;
-                reviewStatus?: string;
-                cursor?: string;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TransactionPageDto_Output"];
                 };
             };
         };

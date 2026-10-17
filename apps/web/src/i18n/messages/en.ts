@@ -748,6 +748,7 @@ export const en = {
       spent: 'Spent {amount}',
       received: 'Received {amount}',
     },
+    emptyPeriod: { title: 'Nothing recorded in {period}.', add: 'Add', import: 'Import' },
     offlineTitle: 'The overview needs a connection',
     offlineDescription: 'Totals and charts come from the server. Reconnect to see them.',
   },

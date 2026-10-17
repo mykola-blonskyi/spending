@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-export const LOCALES = ['en', 'uk', 'ru', 'es'] as const;
-export const THEMES = ['light', 'dark', 'system'] as const;
-export const LAYOUTS = [
+const LOCALES = ['en', 'uk', 'ru', 'es'] as const;
+const THEMES = ['light', 'dark', 'system'] as const;
+const LAYOUTS = [
   'calm',
   'cards',
   'soft',
@@ -12,11 +12,10 @@ export const LAYOUTS = [
   'playful',
   'hybrid',
 ] as const;
-export const PALETTES = ['emerald', 'rose', 'ocean', 'sand', 'graphite'] as const;
-export type Locale = (typeof LOCALES)[number];
-export type Theme = (typeof THEMES)[number];
-export type Layout = (typeof LAYOUTS)[number];
-export type Palette = (typeof PALETTES)[number];
+const PALETTES = ['emerald', 'rose', 'ocean', 'sand', 'graphite'] as const;
+type Locale = (typeof LOCALES)[number];
+type Theme = (typeof THEMES)[number];
+type Palette = (typeof PALETTES)[number];
 
 const DISPLAY_NAME_MAX = 80;
 const THEME_CLAIM = 'https://blonskyi.dev/theme';

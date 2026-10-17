@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 export const WORKSPACE_KINDS = ['personal', 'family'] as const;
 export const MEMBER_ROLES = ['owner', 'member'] as const;
-export const INVITATION_STATES = ['pending', 'accepted', 'revoked', 'expired'] as const;
-export const WORKSPACE_EVENT_TYPES = [
+const INVITATION_STATES = ['pending', 'accepted', 'revoked', 'expired'] as const;
+const WORKSPACE_EVENT_TYPES = [
   'family_created',
   'renamed',
   'invitation_created',
@@ -19,7 +19,7 @@ export type MemberRole = (typeof MEMBER_ROLES)[number];
 export type InvitationState = (typeof INVITATION_STATES)[number];
 export type WorkspaceEventType = (typeof WORKSPACE_EVENT_TYPES)[number];
 
-export const INVITATION_DEFAULT_DAYS = 7;
+const INVITATION_DEFAULT_DAYS = 7;
 
 /** Null while a default category or the personal workspace goes by its key (ADR-012). */
 export const storedName = z.string().nullable().meta({ id: 'StoredName' });
@@ -46,7 +46,7 @@ export const transferBodySchema = z.strictObject({ userId: z.uuid() });
 
 const personRef = z.object({ userId: z.uuid(), displayName: z.string() });
 
-export const memberViewSchema = z.object({
+const memberViewSchema = z.object({
   userId: z.uuid(),
   displayName: z.string(),
   avatarUrl: z.string().nullable(),

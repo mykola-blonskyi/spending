@@ -56,7 +56,7 @@ export function markTransfer(
   return setSides(state, ids, { transferId, transferOutside: !counterpartId }, newMutationId);
 }
 
-export type TransferSide = Readonly<{ accountId: string; amountMinor: number; currency: string }>;
+type TransferSide = Readonly<{ accountId: string; amountMinor: number; currency: string }>;
 
 export type TransferDraft = Readonly<{
   workspaceId: string;

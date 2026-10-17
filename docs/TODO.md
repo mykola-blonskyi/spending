@@ -1,29 +1,3 @@
 # TODO
 
-## Backlog
-
-- [ ]
-
----
-
-## Planned
-
-- [ ]
-
----
-
-## In Progress
-
-- [ ]
-
----
-
-## Review
-
-- [ ]
-
----
-
-## Done
-
-- [x]
+Tasks are tracked in GitHub Issues of `mykola-blonskyi/spending` (see `docs/agents/issue-tracker.md`).

@@ -84,7 +84,8 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
 
 - **BR-16.** Deleting a transaction writes a tombstone. Tombstones are excluded from every read
   except sync pull.
-- **BR-17.** Every write increments `version` and takes a new global `revision`. Sync pull returns
+- **BR-17.** Every write takes a new global `revision`; every user-visible change also
+  increments `version`, so a background FX fill never makes a conflict. Sync pull returns
   rows with `revision > cursor` that the actor may see, plus the actor's current workspace list.
   The client drops local rows of workspaces it no longer belongs to; its pending changes there
   are shown as failed with no access, never dropped silently.

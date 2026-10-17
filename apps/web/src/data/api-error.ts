@@ -1,4 +1,4 @@
-export const API_ERROR_CODES = [
+const API_ERROR_CODES = [
   'AUTH_REQUIRED',
   'SESSION_REVOKED',
   'CSRF_FAILED',

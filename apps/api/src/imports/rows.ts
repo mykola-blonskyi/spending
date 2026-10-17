@@ -1,9 +1,13 @@
 import { z } from 'zod';
 import { type CurrencyCode, parseCurrency } from '../common/money';
-import { amountMinorSchema, calendarDateSchema, type EntryKind } from '../ledger/views';
+import {
+  amountMinorSchema,
+  calendarDateSchema,
+  DESCRIPTION_MAX,
+  type EntryKind,
+} from '../ledger/views';
 
 export const IMPORT_ROWS_MAX = 5000;
-const DESCRIPTION_MAX = 200;
 const EXTERNAL_ID_MAX = 100;
 export const MAPPING_MAX_BYTES = 4096;
 
@@ -18,7 +22,7 @@ export const REJECT_REASONS = [
   'EXTERNAL_ID_TOO_LONG',
   'DUPLICATE_IN_FILE_EXTERNAL_ID',
 ] as const;
-export type RejectReason = (typeof REJECT_REASONS)[number];
+type RejectReason = (typeof REJECT_REASONS)[number];
 export type RejectedRow = Readonly<{ line: number; reason: RejectReason }>;
 
 /**

@@ -23,11 +23,8 @@ export type TransactionScreens = Readonly<{
   detail?: ComponentType;
 }>;
 
-const calm: TransactionScreens = { history: CalmHistory, entry: CalmEntry };
-
-/** Per layout; every layout starts on the calm screens until it gets its own. */
 export const TRANSACTION_SCREENS = {
-  calm,
+  calm: { history: CalmHistory, entry: CalmEntry },
   cards: { history: CardsHistory, entry: CardsEntry },
   soft: { history: SoftHistory, entry: SoftEntry },
   journal: { history: JournalHistory, entry: JournalEntry },

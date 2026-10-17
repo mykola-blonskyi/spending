@@ -10,17 +10,15 @@ import {
   CategoryPicker,
   CurrencySelect,
   DateField,
-  DeleteButton,
   DescriptionField,
-  DiscardButton,
+  EntryActions,
   EntryStatus,
   KindToggle,
   NoteField,
   ScopeChoice,
   SyncFailure,
-  TransferButton,
 } from '../blocks';
-import { type EntryForm, useEntryForm } from '../use-entry-form';
+import { useEntryForm } from '../use-entry-form';
 
 /** Block labels inside a tile read as the tile's small caps heading. */
 const tile =
@@ -31,7 +29,8 @@ function Tile({ className, children }: { className?: string; children: ReactNode
 }
 
 /** Bento entry: one tile per field on a grid, with the save bar summing the entry up. */
-export function BentoEntryView({ form }: { form: EntryForm }) {
+export function BentoEntry() {
+  const form = useEntryForm();
   const t = useTranslations();
   const page = form.mode === 'edit' ? 'editTransaction' : 'addTransaction';
   const { values } = form;
@@ -106,11 +105,7 @@ export function BentoEntryView({ form }: { form: EntryForm }) {
             </span>
           </Button>
           <div className="col-span-2 flex flex-col items-center gap-3 lg:col-span-4">
-            {form.canDiscard && <DiscardButton onConfirm={() => void form.discard()} />}
-            {form.canDelete && form.entryId && <TransferButton id={form.entryId} />}
-            {form.canDelete && (
-              <DeleteButton transfer={form.isTransfer} onConfirm={() => void form.remove()} />
-            )}
+            <EntryActions form={form} />
             <p className="text-center text-xs text-muted-foreground">
               {t('transactionForm.saveHint')}
             </p>
@@ -121,8 +116,4 @@ export function BentoEntryView({ form }: { form: EntryForm }) {
       )}
     </div>
   );
-}
-
-export function BentoEntry() {
-  return <BentoEntryView form={useEntryForm()} />;
 }

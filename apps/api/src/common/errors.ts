@@ -2,7 +2,7 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import { z } from 'zod';
 
 /** Stable error codes. The web app maps each one to a localized message. */
-export const ERROR_STATUS = {
+const ERROR_STATUS = {
   AUTH_REQUIRED: HttpStatus.UNAUTHORIZED,
   SESSION_REVOKED: HttpStatus.UNAUTHORIZED,
   CSRF_FAILED: HttpStatus.FORBIDDEN,

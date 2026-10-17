@@ -3,11 +3,11 @@ import { daysInMonth, todayIn } from '../common/dates';
 import { WORKSPACE_KINDS } from '../workspaces/family';
 import { amountMinorSchema } from '../ledger/views';
 
-export const BUDGET_STATUSES = ['ok', 'near', 'over'] as const;
+const BUDGET_STATUSES = ['ok', 'near', 'over'] as const;
 export type BudgetStatus = (typeof BUDGET_STATUSES)[number];
 
 /** Spending at or above this share of the limit is `near`. */
-export const NEAR_LIMIT_PERCENT = 80;
+const NEAR_LIMIT_PERCENT = 80;
 
 const MONTH = /^(\d{4})-(0[1-9]|1[0-2])$/;
 
@@ -31,7 +31,7 @@ export function budgetStatus(spentMinor: number, limitMinor: number): BudgetStat
   return 'ok';
 }
 
-export const monthSchema = z
+const monthSchema = z
   .string()
   .regex(MONTH, 'must be a YYYY-MM month')
   .refine((value) => value >= '1970-01' && value <= '2100-12', 'out of range');
@@ -49,7 +49,7 @@ export const putBudgetSchema = z.strictObject({
 });
 export type PutBudget = z.infer<typeof putBudgetSchema>;
 
-export const unconvertedSchema = z.object({ currency: z.string(), amountMinor: z.int() });
+const unconvertedSchema = z.object({ currency: z.string(), amountMinor: z.int() });
 
 export const budgetViewSchema = z.object({
   id: z.uuid(),

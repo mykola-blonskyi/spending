@@ -59,7 +59,7 @@ import {
  * set instead of lucide's full `icons` record, which would ship about 1,500 icons. Every default
  * category's icon (apps/api/src/workspaces/default-categories.ts) is in here.
  */
-export const CATEGORY_ICONS: Readonly<Record<string, LucideIcon>> = {
+const CATEGORY_ICONS: Readonly<Record<string, LucideIcon>> = {
   'shopping-basket': ShoppingBasket,
   utensils: Utensils,
   bus: Bus,

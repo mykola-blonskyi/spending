@@ -6,16 +6,14 @@ import {
   CategoryPicker,
   CurrencySelect,
   DateField,
-  DeleteButton,
   DescriptionField,
-  DiscardButton,
+  EntryActions,
   EntryStatus,
   KindToggle,
   NoteField,
   SaveBar,
   ScopeChoice,
   SyncFailure,
-  TransferButton,
 } from '../blocks';
 import { type EntryForm, useEntryForm } from '../use-entry-form';
 
@@ -55,11 +53,7 @@ export function CalmEntryView({ form }: { form: EntryForm }) {
           <DescriptionField form={form} />
           <NoteField form={form} />
           <SaveBar form={form}>
-            {form.canDiscard && <DiscardButton onConfirm={() => void form.discard()} />}
-            {form.canDelete && form.entryId && <TransferButton id={form.entryId} />}
-            {form.canDelete && (
-              <DeleteButton transfer={form.isTransfer} onConfirm={() => void form.remove()} />
-            )}
+            <EntryActions form={form} />
           </SaveBar>
         </form>
       ) : (

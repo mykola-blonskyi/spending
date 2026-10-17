@@ -3,10 +3,10 @@ import { isCalendarDate } from '../common/dates';
 import { parseCurrency } from '../common/money';
 import { storedName, WORKSPACE_KINDS, type WorkspaceKind } from '../workspaces/family';
 
-export const ACCOUNT_KINDS = ['cash', 'bank', 'card', 'savings', 'other'] as const;
+const ACCOUNT_KINDS = ['cash', 'bank', 'card', 'savings', 'other'] as const;
 export const ENTRY_KINDS = ['income', 'expense'] as const;
-export const TRANSACTION_SOURCES = ['manual', 'import', 'recurring'] as const;
-export const REVIEW_STATUSES = ['confirmed', 'pending_review'] as const;
+const TRANSACTION_SOURCES = ['manual', 'import', 'recurring'] as const;
+const REVIEW_STATUSES = ['confirmed', 'pending_review'] as const;
 export type EntryKind = (typeof ENTRY_KINDS)[number];
 
 const timestamp = z.iso.datetime();
@@ -19,7 +19,11 @@ export const currencySchema = z
   .refine((value) => parseCurrency(value) !== null, 'unknown ISO 4217 currency');
 
 /** BR-13: a ceiling far below 2^53, so sums and conversions stay safe integers. */
-export const amountMinorSchema = z.int().positive().max(1_000_000_000_000);
+export const AMOUNT_MINOR_MAX = 1_000_000_000_000;
+export const amountMinorSchema = z.int().positive().max(AMOUNT_MINOR_MAX);
+/** Entry text limits; the web app keeps equal copies (common/money.test.ts). */
+export const DESCRIPTION_MAX = 200;
+export const NOTE_MAX = 2000;
 
 export const calendarDateSchema = z
   .string()
@@ -116,7 +120,7 @@ export const transactionViewSchema = z
   .meta({ id: 'TransactionView' });
 export type TransactionView = z.infer<typeof transactionViewSchema>;
 
-export const tombstoneSchema = z
+const tombstoneSchema = z
   .object({ id: z.uuid(), workspaceId: z.uuid(), deletedAt: timestamp, revision: z.int() })
   .meta({ id: 'Tombstone' });
 export type Tombstone = z.infer<typeof tombstoneSchema>;

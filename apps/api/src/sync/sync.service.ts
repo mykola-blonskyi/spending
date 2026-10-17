@@ -31,6 +31,7 @@ import {
   toLedgerRow,
 } from '../ledger/views';
 import { learnCategoryRules } from '../imports/category-rules';
+import { loadReferenceFacts } from '../ledger/rules';
 import { AccessPolicy } from '../workspaces/access-policy';
 import {
   type ConflictLocal,
@@ -394,8 +395,7 @@ export class SyncService {
     const authorPersonalWorkspaceId = authorId
       ? await this.policy.personalWorkspaceId(authorId, tx)
       : null;
-    const account = intended.accountId ? await this.accountFact(tx, intended.accountId) : null;
-    const category = intended.categoryId ? await this.categoryFact(tx, intended.categoryId) : null;
+    const references = await loadReferenceFacts(tx, [intended.accountId], [intended.categoryId]);
     const transferPeers = intended.transferId
       ? await tx
           .select({
@@ -419,8 +419,8 @@ export class SyncService {
       baseVersion: base === 'current' ? (existing?.version ?? null) : base,
       existing,
       authorPersonalWorkspaceId,
-      account,
-      category,
+      account: references.accounts.get(intended.accountId ?? '') ?? null,
+      category: references.categories.get(intended.categoryId ?? '') ?? null,
       transferPeers,
     });
     switch (decision.outcome) {
@@ -584,28 +584,6 @@ export class SyncService {
       .where(eq(transactions.id, id))
       .for('update', { of: transactions });
     return found ?? null;
-  }
-
-  private async accountFact(tx: Tx, id: string) {
-    const [row] = await tx
-      .select({ workspaceId: accounts.workspaceId, archivedAt: accounts.archivedAt })
-      .from(accounts)
-      .where(eq(accounts.id, id));
-    return row ? { workspaceId: row.workspaceId, archived: row.archivedAt !== null } : null;
-  }
-
-  private async categoryFact(tx: Tx, id: string) {
-    const [row] = await tx
-      .select({
-        workspaceId: categories.workspaceId,
-        kind: categories.kind,
-        archivedAt: categories.archivedAt,
-      })
-      .from(categories)
-      .where(eq(categories.id, id));
-    return row
-      ? { workspaceId: row.workspaceId, kind: row.kind, archived: row.archivedAt !== null }
-      : null;
   }
 }
 

@@ -49,7 +49,9 @@ deploy/      Docker images, nginx config, backup script
 `workspaces` exports `AccessPolicy`, which every other module calls before touching
 workspace-scoped data (BR-1, BR-2). Business logic that needs no I/O (money, schedules, dedupe
 keys, categorization, CSV row parsing, conflict detection) is written as pure functions with unit
-tests. Services are thin shells over them.
+tests. Services are thin shells over them. The ledger invariants (BR-3, BR-4, BR-37) live in
+`ledger/rules.ts` with the one account and category lookup they need; sync, recurring and the
+import review all check through it.
 
 ## Frontend layers (`apps/web/src`)
 
@@ -72,8 +74,8 @@ components (`QueryUnavailable`, `useRefetchErrorToast`) read it through `strings
 
 **Layouts and palettes.** The profile stores a `layout` and a `palette`. `app/layouts/registry`
 maps each layout to a shell from `shared/shell` (all take the same `ShellProps`) and to its
-dashboard, history, entry and detail screens; a missing screen falls back to the calm version,
-and a missing `detail` (`/transactions/:id`) falls back to the layout's entry screen, which
+dashboard, history and entry screens, which every layout defines, and an optional detail screen.
+A missing `detail` (`/transactions/:id`) falls back to the layout's entry screen, which
 edits by `:id`. Palettes are `[data-palette]` token sets in `shared/styles.css` applied on
 `<html>` by `shared/theme` (and by `public/theme-init.js` before first paint); a unit test
 checks their contrast.
@@ -95,7 +97,9 @@ each category with its previous-period amount; `useDashboard` owns the period an
 `/analytics/summary` and `/budgets` (budgets of the chosen month, otherwise this month), refetching
 both after the first completed sync and each one that moved the cursor (`useRefreshOnSync`). `blocks/` are self-titled sections (totals, trend,
 categories, budgets via `BudgetProgress`, unconverted amounts); `layouts/<layout>-dashboard.tsx`
-only arrange them, under the same ESLint rule, and hybrid uses the bento one. Charts are plain SVG
+only arrange them, under the same ESLint rule, and hybrid uses the bento one. A period with no
+income, no expenses and nothing unconverted gets one line under the controls ("Nothing recorded
+in October 2026.") with Add and Import links (`DashboardStatus`); the tiles stay. Charts are plain SVG
 in theme tokens; the trend has a table under "Show as a table" and category bars carry their
 figures as text.
 
@@ -306,7 +310,7 @@ no category, else 400). `confirm` links it in the same ledger transaction: one s
 `transferId`, set on a confirmed counterpart too, or `transferOutside` for null. The counterpart
 must be a live non-transfer row of the personal workspace on another account, used once, either
 confirmed or a pending item of the same request pointing back; `transferError` from
-`sync/mutations.ts` checks the workspace and kind. Anything else is `422 INVALID_TRANSFER`. The
+`ledger/rules.ts` checks the workspace and kind. Anything else is `422 INVALID_TRANSFER`. The
 version trigger bumps the linked rows, so devices pull them. The review page
 (`features/imports/review-page.tsx`) shows a Transfer toggle per suggestion, sets it on both rows
 of a pending pair and publishes them together (`review-choice.ts` holds the choice shape).

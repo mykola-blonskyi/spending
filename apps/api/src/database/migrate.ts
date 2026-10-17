@@ -5,7 +5,8 @@ import { Pool } from 'pg';
 
 /** Applies all pending migrations in one transaction, so a failure applies none; reruns are no-ops. */
 export async function runMigrations(databaseUrl: string): Promise<void> {
-  const pool = new Pool({ connectionString: databaseUrl, max: 1 });
+  // A lock still held by the running API fails the deploy instead of queueing its queries.
+  const pool = new Pool({ connectionString: databaseUrl, max: 1, lock_timeout: 10_000 });
   try {
     await migrate(drizzle(pool), { migrationsFolder: resolve(__dirname, '../../drizzle') });
   } finally {

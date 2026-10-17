@@ -142,6 +142,40 @@ describe('dashboard', () => {
     );
   });
 
+  it('says when the period has nothing in it, with the ways to add some', async () => {
+    get.mockImplementation((async (path: string) =>
+      path === '/api/v1/analytics/summary'
+        ? {
+            data: {
+              ...summary,
+              totals: { incomeMinor: 0, expenseMinor: 0, balanceMinor: 0 },
+              unconverted: [],
+              byCategory: [],
+              series: [],
+            },
+          }
+        : { data: { budgets: [] } }) as never);
+    renderScreen();
+    const line = await screen.findByText(`Nothing recorded in ${formatMonth(month.from, 'en')}.`, {
+      exact: false,
+    });
+    expect(within(line).getByRole('link', { name: 'Add' })).toHaveAttribute(
+      'href',
+      '/transactions/new',
+    );
+    expect(within(line).getByRole('link', { name: 'Import' })).toHaveAttribute(
+      'href',
+      '/imports/new',
+    );
+    expect(screen.getByRole('radio', { name: 'Month' })).toBeInTheDocument();
+  });
+
+  it('says nothing about an empty period when it has entries', async () => {
+    renderScreen();
+    await screen.findByRole('region', { name: 'Totals' });
+    expect(screen.queryByText(/Nothing recorded in/)).not.toBeInTheDocument();
+  });
+
   it('asks for the quarter, steps back and refuses a reversed custom range', async () => {
     renderScreen();
     await screen.findByRole('region', { name: 'Totals' });

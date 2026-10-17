@@ -13,14 +13,12 @@ import { ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { createZodDto, ZodResponse } from 'nestjs-zod';
 import { z } from 'zod';
 import { type Actor, CurrentActor } from '../common/actor';
-import { transactionQuerySchema } from './history';
 import { LedgerService } from './ledger.service';
 import {
   accountViewSchema,
   categoryViewSchema,
   createAccountSchema,
   createCategorySchema,
-  transactionViewSchema,
   updateAccountSchema,
   updateCategorySchema,
   workspaceFilterSchema,
@@ -35,13 +33,6 @@ class CategoryListDto extends createZodDto(z.object({ categories: z.array(catego
 class CreateCategoryDto extends createZodDto(createCategorySchema) {}
 class UpdateCategoryDto extends createZodDto(updateCategorySchema) {}
 class WorkspaceFilterDto extends createZodDto(workspaceFilterSchema) {}
-class TransactionQueryDto extends createZodDto(transactionQuerySchema) {}
-class TransactionPageDto extends createZodDto(
-  z.object({
-    transactions: z.array(transactionViewSchema),
-    nextCursor: z.string().nullable().meta({ id: 'NextCursor' }),
-  }),
-) {}
 
 // @ApiBody, @ApiQuery and @ApiParam are explicit because tsx, which writes the OpenAPI file, emits no
 // parameter metadata.
@@ -99,12 +90,5 @@ export class LedgerController {
     @Body() body: UpdateCategoryDto,
   ) {
     return this.ledger.updateCategory(actor.userId, id, body);
-  }
-
-  @Get('transactions')
-  @ApiQuery({ type: TransactionQueryDto })
-  @ZodResponse({ status: 200, type: TransactionPageDto })
-  transactions(@CurrentActor() actor: Actor, @Query() query: TransactionQueryDto) {
-    return this.ledger.listTransactions(actor.userId, query);
   }
 }

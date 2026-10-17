@@ -16,10 +16,11 @@ import { testDatabaseUrl } from './env';
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
 import {
   as,
+  liveRows,
   loginAs,
   resetData,
-  SESSION_COOKIE,
   type Session,
+  SESSION_COOKIE,
   startTestApp,
   TEST_APP_ORIGIN,
   TEST_CLIENT,
@@ -364,10 +365,7 @@ describe('sync', () => {
       sql`select sum(base_amount_minor)::text as total from transactions where deleted_at is null`,
     );
     expect(rows[0]!.total).toBe('6000');
-    const history = (await (await as(t, bob, '/v1/transactions')).json()) as {
-      transactions: Row[];
-    };
-    expect(history.transactions.map((r) => r.amountMinor)).toEqual([6000]);
+    expect((await liveRows<Row>(t, bob)).map((r) => r.amountMinor)).toEqual([6000]);
     for (const member of [ann, bob]) {
       const response = await as(
         t,

@@ -40,7 +40,7 @@ export type FormErrors = Readonly<{
 }>;
 
 /** Everything a draft needs except the workspace and transfer mark, which the form keeps. */
-export type DraftFields = Omit<TransactionDraft, 'workspaceId' | 'transferId' | 'transferOutside'>;
+type DraftFields = Omit<TransactionDraft, 'workspaceId' | 'transferId' | 'transferOutside'>;
 export type FormDraft = DraftFields | ({ kind: 'transfer' } & Omit<TransferDraft, 'workspaceId'>);
 
 type AccountRef = Pick<Account, 'id' | 'workspaceId' | 'currency'>;

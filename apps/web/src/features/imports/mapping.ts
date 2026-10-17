@@ -40,7 +40,7 @@ const COLUMN_KEYS = [
   'bankCategory',
   'mcc',
 ] as const satisfies readonly (keyof Columns)[];
-export type AmountLayout = 'signed' | 'split';
+type AmountLayout = 'signed' | 'split';
 
 export type Mapping = {
   preset: PresetId;

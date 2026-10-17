@@ -14,7 +14,7 @@ import {
   withoutEntries,
 } from './model';
 
-export const PUSH_LIMIT = 200;
+const PUSH_LIMIT = 200;
 
 /** Twice the transport timeout: a mutation `sending` longer than this lost its flush with its tab. */
 export const SENDING_STALE_MS = 60_000;
