@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { testSession } from '@data/testing';
 import {
+  fakeLocalData,
   localRow,
   page,
   PERSONAL,
@@ -14,7 +15,7 @@ import { reducePull } from '@data/sync/pull';
 import { reducePush } from '@data/sync/push';
 import { applyLocalChange } from '@data/sync/queue';
 import { emptyLocalState, type LocalState, queueOrder } from '@data/sync/model';
-import { account, category, fakeLocalData, renderTransactionHook } from './test-helpers';
+import { account, category, renderTransactionHook } from './test-helpers';
 import { useEntryForm } from './use-entry-form';
 
 vi.mock('@features/auth', () => ({ useSession: () => testSession() }));
@@ -171,6 +172,15 @@ describe('useEntryForm', () => {
     await act(() => result.current.remove());
     expect(location()).toBe('/transactions');
     await waitFor(() => expect(toast.error).toHaveBeenCalledOnce());
+  });
+
+  it('keeps the kind of a transfer side, which the server would refuse to change', () => {
+    const { result } = setup(
+      '/transactions/tx-1',
+      ledger(syncedState(serverRow({ categoryId: null, transferId: 'tr-1' }))),
+    );
+    act(() => result.current.setKind('income'));
+    expect(result.current.values.kind).toBe('expense');
   });
 
   it('reports a missing entry and an unopened store', () => {

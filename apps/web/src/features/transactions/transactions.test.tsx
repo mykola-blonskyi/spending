@@ -1,11 +1,22 @@
 import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
-import type { ServerTransaction } from '@data/sync/model';
-import { FAMILY, PERSONAL, serverRow, syncedState } from '@data/sync/fixtures';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { LocalState, ServerTransaction } from '@data/sync/model';
+import {
+  fakeLocalData,
+  FAMILY,
+  localRow,
+  PERSONAL,
+  sequentialIds,
+  serverRow,
+  syncedState,
+} from '@data/sync/fixtures';
+import { reducePush } from '@data/sync/push';
+import { applyLocalChange } from '@data/sync/queue';
 import { testProfile, testSession } from '@data/testing';
 import { CalmEntry } from './layouts/calm-entry';
-import { account, category, fakeLocalData, renderTransactionScreen } from './test-helpers';
+import { TRANSACTION_SCREENS } from './layouts/screens';
+import { account, category, renderTransactionScreen } from './test-helpers';
 
 vi.mock('@features/auth', () => ({ useSession: () => testSession() }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn() } }));
@@ -45,6 +56,59 @@ beforeAll(() => {
   Element.prototype.hasPointerCapture = () => false;
   Element.prototype.releasePointerCapture = () => {};
   Element.prototype.scrollIntoView = () => {};
+});
+
+beforeEach(() => {
+  vi.stubGlobal('matchMedia', () => ({
+    matches: false,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }));
+});
+
+describe.each(Object.entries(TRANSACTION_SCREENS))('the %s entry screen', (_, { entry: Entry }) => {
+  const ledger = {
+    ...syncedState(serverRow({ accountId: 'acc-card' })),
+    accounts: new Map([['acc-card', account()]]),
+    categories: new Map([['cat-groceries', category()]]),
+  };
+  const open = (state: LocalState, path: string) =>
+    renderTransactionScreen(<Entry />, {
+      data: fakeLocalData(state).value,
+      path,
+      route: path === '/transactions/new' ? path : '/transactions/:id',
+    });
+
+  it('asks for the kind before the category', () => {
+    open(ledger, '/transactions/new');
+    const kind = screen.getByRole('radio', { name: 'Expense' });
+    const categories = screen.getByRole('radiogroup', { name: 'Category' });
+    expect(kind.compareDocumentPosition(categories)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('moves focus to the invalid amount when a save is refused', async () => {
+    open(ledger, '/transactions/new');
+    await userEvent.click(screen.getByRole('button', { name: /^Save/ }));
+    expect(screen.getByLabelText('Amount')).toHaveFocus();
+  });
+
+  it('says why the server rejected a change', () => {
+    const edited = applyLocalChange(
+      ledger,
+      { type: 'upsert', row: localRow({ accountId: 'acc-card', categoryId: 'cat-archived' }) },
+      sequentialIds(),
+    );
+    const rejected = reducePush(
+      edited,
+      [{ mutationId: 'm-1', status: 'rejected', code: 'INVALID_CATEGORY', message: 'archived' }],
+      '2026-10-15T00:00:00.000Z',
+      ['m-1'],
+    );
+    open(rejected, '/transactions/tx-1');
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'This category is archived or does not fit this type. Pick another one.',
+    );
+  });
 });
 
 describe('editing a family entry', () => {

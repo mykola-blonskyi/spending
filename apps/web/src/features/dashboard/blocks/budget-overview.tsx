@@ -33,7 +33,10 @@ export function BudgetOverview({
           ))}
         </ul>
       )}
-      <Link to="/budgets" className="w-fit text-sm font-medium text-primary hover:underline">
+      <Link
+        to="/budgets"
+        className="inline-flex min-h-11 w-fit items-center text-sm font-medium text-primary hover:underline"
+      >
         {t('manage')}
       </Link>
     </Section>

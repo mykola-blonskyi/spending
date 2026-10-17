@@ -2,13 +2,13 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ComponentType } from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { FAMILY, PERSONAL, serverRow, syncedState } from '@data/sync/fixtures';
+import { fakeLocalData, FAMILY, PERSONAL, serverRow, syncedState } from '@data/sync/fixtures';
 import { type LocalState, queueOrder } from '@data/sync/model';
 import { testSession } from '@data/testing';
 import { CalmEntry } from './layouts/calm-entry';
 import { CalmHistory } from './layouts/calm-history';
 import { TRANSACTION_SCREENS } from './layouts/screens';
-import { account, category, fakeLocalData, renderTransactionScreen } from './test-helpers';
+import { account, category, renderTransactionScreen } from './test-helpers';
 
 vi.mock('@features/auth', () => ({ useSession: () => testSession() }));
 
@@ -292,9 +292,17 @@ describe('recording a transfer in the entry form (BR-37)', () => {
     expect(screen.getByRole('radio', { name: 'Transfer' })).toBeDisabled();
   });
 
-  it('keeps the entry form when editing a side', () => {
-    editScreen(ledger({ ...out, categoryId: null, transferId: 'tr-1' }), 'out');
-    expect(screen.getByRole('radio', { name: 'Expense' })).toBeChecked();
-    expect(screen.queryByRole('radio', { name: 'Transfer' })).toBeNull();
-  });
+  it.each(Object.entries(TRANSACTION_SCREENS))(
+    'offers no kind switch when editing a side in the %s layout',
+    (_, { entry: Entry }) => {
+      renderTransactionScreen(<Entry />, {
+        data: fakeLocalData(ledger({ ...out, categoryId: null, transferId: 'tr-1' })).value,
+        path: '/transactions/out',
+        route: '/transactions/:id',
+      });
+      expect(screen.getByLabelText('Amount')).toHaveValue('300.00');
+      for (const kind of ['Expense', 'Income', 'Transfer'])
+        expect(screen.queryByRole('radio', { name: kind })).toBeNull();
+    },
+  );
 });

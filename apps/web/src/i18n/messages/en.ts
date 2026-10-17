@@ -205,7 +205,7 @@ export const en = {
       description: 'Bring in transactions from a bank statement.',
       emptyTitle: 'No imports yet',
       emptyDescription:
-        'Upload a CSV or XLSX statement from your bank to add many transactions at once.',
+        'Upload a CSV, XLSX or PDF statement from your bank to add many transactions at once.',
     },
     family: {
       title: 'Family',
@@ -266,6 +266,8 @@ export const en = {
   },
   syncCenter: {
     conflictsTitle: 'Needs review',
+    failedTitle: '{count, plural, one {# change not synced} other {# changes not synced}}',
+    failedDescription: 'The server refused these. Open an entry to fix it or discard the change.',
     review: 'Review',
     reviewLabel: 'Review {name}',
     untitled: 'Untitled entry',
@@ -522,10 +524,12 @@ export const en = {
   },
   imports: {
     start: 'Import statement',
-    offline: 'Importing needs a connection. Your past imports are listed below.',
+    offline: 'Importing needs a connection.',
+    offlineTitle: 'Past imports need a connection',
+    offlineDescription: 'They are kept on the server. Reconnect to see them.',
     newTitle: 'Import a statement',
     newDescription:
-      'Upload a CSV or XLSX from your bank, check how its columns are read, then import.',
+      'Upload a CSV, XLSX or PDF from your bank, check how its columns are read, then import.',
     account: 'Account',
     accountHint: 'Entries go into this account and use its currency unless the file names one.',
     noAccountsTitle: 'Create an account first',

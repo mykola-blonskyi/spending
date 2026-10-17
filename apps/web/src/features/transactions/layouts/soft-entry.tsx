@@ -15,6 +15,7 @@ import {
   NoteField,
   SaveBar,
   ScopeChoice,
+  SyncFailure,
   TransferButton,
 } from '../blocks';
 import { type EntryForm, useEntryForm } from '../use-entry-form';
@@ -37,6 +38,7 @@ export function SoftEntryView({ form }: { form: EntryForm }) {
           noValidate
           className="flex flex-col gap-5"
         >
+          <SyncFailure sync={form.sync} />
           <ScopeChoice form={form} />
           <KindToggle
             form={form}

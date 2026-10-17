@@ -54,11 +54,11 @@ function Row({ row, selected }: { row: EntryRow; selected: boolean }) {
           <span className="flex min-w-0 items-center gap-1.5">
             <span className="truncate font-medium">{row.title}</span>
             <AuthorBadge entry={row} className="max-w-[45%] text-xs text-muted-foreground" />
-            <SyncMarker sync={row.sync} className="shrink-0" />
           </span>
           {row.subtitle && (
             <span className={cn('mt-0.5 block truncate text-[13px]', sub)}>{row.subtitle}</span>
           )}
+          <SyncMarker sync={row.sync} className="mt-0.5 flex" />
         </span>
         <EntryAmount
           row={row}

@@ -59,14 +59,14 @@ function Row({ row, position }: { row: EntryRow; position: RowPosition }) {
           <span className="flex min-w-0 items-center gap-2">
             <span className="truncate font-medium">{row.title}</span>
             <AuthorBadge entry={row} className="max-w-[45%] text-xs text-muted-foreground" />
-            <SyncMarker
-              sync={row.sync}
-              className="h-6 shrink-0 rounded-full px-2 font-medium data-[sync=conflict]:bg-destructive/10 data-[sync=failed]:bg-destructive/10 data-[sync=pending]:bg-warning/15"
-            />
           </span>
           {row.subtitle && (
             <span className="truncate text-sm text-muted-foreground">{row.subtitle}</span>
           )}
+          <SyncMarker
+            sync={row.sync}
+            className="mt-1 h-6 w-fit max-w-full rounded-full px-2 font-medium data-[sync=conflict]:bg-destructive/10 data-[sync=failed]:bg-destructive/10 data-[sync=pending]:bg-warning/15"
+          />
         </span>
         <EntryAmount row={row} className="shrink-0 font-semibold tracking-tight" />
       </Link>

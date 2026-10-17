@@ -1,4 +1,5 @@
 import { type FormEvent, useCallback, useMemo, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 import {
@@ -205,7 +206,10 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
     errors,
     set: <K extends SharedKey>(key: K, value: FormValues[K]) =>
       change((current) => ({ ...current, [key]: value })),
-    setKind: (kind: FormKind) => change((current) => withKind(current, kind)),
+    /** A transfer side keeps its kind: the server refuses two sides of one kind (BR-37). */
+    setKind: (kind: FormKind) => {
+      if (transferId === null) change((current) => withKind(current, kind));
+    },
     setCategory: (categoryId: string | null) =>
       change((current) => (current.kind === 'transfer' ? current : { ...current, categoryId })),
     /** Recording a new entry may record a transfer instead; it needs two accounts in the space. */
@@ -251,10 +255,13 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
     accounts: workspaceAccounts,
     currencies,
     submitting,
-    submit: async (event?: FormEvent) => {
+    submit: async (event?: FormEvent<HTMLFormElement>) => {
       event?.preventDefault();
-      setAttempted(true);
+      const form = event?.currentTarget;
+      flushSync(() => setAttempted(true));
       const { draft: fields } = validate(values, workspaceAccounts);
+      // On a phone the first error can sit a screen above Save, so it is brought into view.
+      if (!fields) form?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
       if (!fields || !workspaceId || submitting) return;
       setSubmitting(true);
       try {
@@ -285,6 +292,7 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
     entryId,
     canDelete: mode === 'edit' && status === 'ready',
     remove: () => (entryId ? removeEntry(entryId) : Promise.resolve()),
+    sync: stored.entry?.sync ?? null,
     canDiscard: status === 'ready' && stored.entry?.sync.state === 'failed',
     discard: () => (entryId ? discardEntry(entryId) : Promise.resolve()),
   };

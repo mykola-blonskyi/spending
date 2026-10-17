@@ -51,6 +51,14 @@ export function periodProblem(period: Period): 'order' | 'length' | null {
   return lengthInDays(period) > MAX_PERIOD_DAYS ? 'length' : null;
 }
 
+/** Against a previous period with nothing in it, every change is the whole total again: noise. */
+export function withoutEmptyComparison(summary: Summary): Summary {
+  const { previous, ...rest } = summary;
+  if (!previous || previous.totals.incomeMinor !== 0 || previous.totals.expenseMinor !== 0)
+    return summary;
+  return rest;
+}
+
 /** A category only the previous period had has an amount and share of 0. */
 export type CategoryComparison = CategoryShare & {
   key: string;

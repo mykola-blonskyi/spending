@@ -1,8 +1,8 @@
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { serverRow, syncedState } from '@data/sync/fixtures';
+import { fakeLocalData, serverRow, syncedState } from '@data/sync/fixtures';
 import { testSession } from '@data/testing';
-import { account, category, fakeLocalData, renderTransactionScreen } from './test-helpers';
+import { account, category, renderTransactionScreen } from './test-helpers';
 import { CardsEntry } from './layouts/cards-entry';
 import { CardsHistory } from './layouts/cards-history';
 import { PlayfulEntry } from './layouts/playful-entry';

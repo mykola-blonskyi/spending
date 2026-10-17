@@ -20,6 +20,7 @@ import {
   NoteField,
   SaveBar,
   ScopeChoice,
+  SyncFailure,
   TransferButton,
 } from '../blocks';
 import { type EntryForm, HISTORY_PATH, useEntryForm } from '../use-entry-form';
@@ -90,6 +91,7 @@ export function CardsEntryView({ form, className }: { form: EntryForm; className
           </Link>
         </header>
 
+        <SyncFailure sync={form.sync} className="mb-3" />
         <ScopeChoice form={form} />
         <KindToggle
           form={form}

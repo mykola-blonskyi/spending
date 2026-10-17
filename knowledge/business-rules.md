@@ -76,7 +76,8 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   Analytics count only confirmed, non-deleted rows of the actor's workspaces in the chosen scope
   (personal, family or both). The comparison period is the previous calendar month for exactly one
   calendar month, the previous calendar year for exactly one calendar year, otherwise the
-  equal-length period right before. Categories are never merged across scopes: same-named personal
+  equal-length period right before; against one with no income and no expenses the dashboard
+  shows no change, since every change would be the whole total. Categories are never merged across scopes: same-named personal
   and family categories stay separate rows in "all".
 
 ## Ledger, history and sync
@@ -129,7 +130,7 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   to another of the same space, also offline; across currencies the form asks for the amount that
   arrived, otherwise both sides take the same amount. "Not a transfer" returns every side to
   income or expense without a category. Deleting either side deletes both after one confirmation, and changing the
-  date or note of a side changes both; amount, account and description stay per side. Each is one
+  date or note of a side changes both; amount, account and description stay per side, and a side's kind is fixed, so its form offers no kind switch. Each is one
   local commit of ordinary mutations, one per side. The full history shows a transfer as one row
   ("monobank → PrivatBank, 50 000 ₴", the amount that arrived beside it when it differs); a
   history filtered by account shows that account's side, and a side whose partner is not on the
