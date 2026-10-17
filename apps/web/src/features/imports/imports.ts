@@ -3,10 +3,12 @@ import { toast } from 'sonner';
 import { errorCode } from '@data/api-error';
 import {
   confirmReview,
+  clearUndoneImports,
   createImport,
   importBatchesQuery,
   learnCategories,
   type LearnItem,
+  removeImport,
   reviewQueueQuery,
   undoImport,
 } from '@data/imports';
@@ -79,6 +81,30 @@ export function useUndoImport() {
       );
       void syncNow();
     },
+  });
+}
+
+export function useRemoveImport() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: removeImport,
+    onError: useExplainFailure(),
+    onSuccess: (_, id) =>
+      queryClient.setQueryData(importBatchesQuery.queryKey, (batches) =>
+        batches?.filter((batch) => batch.id !== id),
+      ),
+  });
+}
+
+export function useClearUndoneImports() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: clearUndoneImports,
+    onError: useExplainFailure(),
+    onSuccess: () =>
+      queryClient.setQueryData(importBatchesQuery.queryKey, (batches) =>
+        batches?.filter((batch) => !batch.undoneAt),
+      ),
   });
 }
 

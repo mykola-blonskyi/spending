@@ -1,4 +1,4 @@
-import { ClipboardCheck, FileUp, Undo2 } from 'lucide-react';
+import { ClipboardCheck, FileUp, Trash2, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
@@ -13,7 +13,14 @@ import { useOnlineStatus } from '@shared/lib/network';
 import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
 import { Card } from '@shared/ui/card';
-import { useHasFamily, useImportBatches, useReviewQueue, useUndoImport } from './imports';
+import {
+  useClearUndoneImports,
+  useHasFamily,
+  useImportBatches,
+  useRemoveImport,
+  useReviewQueue,
+  useUndoImport,
+} from './imports';
 
 const NEW_IMPORT_PATH = '/imports/new';
 export const REVIEW_PATH = '/imports/review';
@@ -35,10 +42,12 @@ function BatchRow({
   batch,
   accountName,
   onUndo,
+  onRemove,
 }: {
   batch: ImportBatch;
   accountName: string;
   onUndo: () => void;
+  onRemove: () => void;
 }) {
   const t = useTranslations('imports.history');
   const { locale } = useSharedLocale();
@@ -62,7 +71,18 @@ function BatchRow({
           })}
         </span>
       </div>
-      {!batch.undoneAt && (
+      {batch.undoneAt ? (
+        <Button
+          variant="ghost"
+          size="icon"
+          disabled={!online}
+          title={online ? undefined : t('offlineHint')}
+          aria-label={t('remove', { name: batch.fileName })}
+          onClick={onRemove}
+        >
+          <Trash2 aria-hidden />
+        </Button>
+      ) : (
         <Button variant="outline" size="sm" disabled={!online} onClick={onUndo}>
           <Undo2 aria-hidden />
           {t('undo')}
@@ -80,10 +100,14 @@ export function ImportsPage() {
   const hasFamily = useHasFamily();
   const review = useReviewQueue();
   const undo = useUndoImport();
+  const removeImport = useRemoveImport();
+  const clearUndone = useClearUndoneImports();
   const [undoing, setUndoing] = useState<ImportBatch | null>(null);
+  const [clearing, setClearing] = useState(false);
   const accountName = (id: string | null) =>
     accounts.items.find((account) => account.id === id)?.name ??
     t('imports.history.removedAccount');
+  const undoneCount = batches.data?.filter((batch) => batch.undoneAt).length ?? 0;
   const pendingReview = review.data?.length ?? 0;
 
   return (
@@ -124,9 +148,22 @@ export function ImportsPage() {
         />
       ) : (
         <section className="flex flex-col gap-3">
-          <h2 className="px-1 text-sm font-medium text-muted-foreground">
-            {t('imports.history.title')}
-          </h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="px-1 text-sm font-medium text-muted-foreground">
+              {t('imports.history.title')}
+            </h2>
+            {undoneCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!online}
+                title={online ? undefined : t('imports.history.offlineHint')}
+                onClick={() => setClearing(true)}
+              >
+                {t('imports.history.clear')}
+              </Button>
+            )}
+          </div>
           <Card className="gap-0 py-0">
             <ul aria-label={t('imports.history.title')} className="divide-y">
               {batches.data.map((batch) => (
@@ -135,6 +172,7 @@ export function ImportsPage() {
                   batch={batch}
                   accountName={accountName(batch.accountId)}
                   onUndo={() => setUndoing(batch)}
+                  onRemove={() => removeImport.mutate(batch.id)}
                 />
               ))}
             </ul>
@@ -156,6 +194,17 @@ export function ImportsPage() {
             onSuccess: ({ deleted, kept }) =>
               toast.success(t('imports.history.undoResult', { deleted, kept })),
           });
+        }}
+      />
+      <ConfirmDialog
+        open={clearing}
+        onOpenChange={setClearing}
+        title={t('imports.history.clearTitle')}
+        description={t('imports.history.clearDescription', { count: undoneCount })}
+        confirmLabel={t('imports.history.clearConfirm')}
+        onConfirm={() => {
+          setClearing(false);
+          clearUndone.mutate();
         }}
       />
     </div>

@@ -500,6 +500,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/imports/undone": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["ImportsController_clearUndone"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["ImportsController_removeUndone"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/budgets": {
         parameters: {
             query?: never;
@@ -1420,6 +1452,9 @@ export interface components {
             batch: components["schemas"]["ImportBatchView_Output"];
             deleted: number;
             kept: number;
+        };
+        ClearResultDto_Output: {
+            removed: number;
         };
         BudgetListDto_Output: {
             budgets: {
@@ -2450,6 +2485,44 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["UndoResultDto_Output"];
                 };
+            };
+        };
+    };
+    ImportsController_clearUndone: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClearResultDto_Output"];
+                };
+            };
+        };
+    };
+    ImportsController_removeUndone: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

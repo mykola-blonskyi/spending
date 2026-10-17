@@ -44,6 +44,11 @@ payments" and one item a "rule".
 Bringing transactions in from a bank statement (CSV or XLSX). Imported rows wait in review until
 the user picks personal or family and a category.
 
+### Import history
+
+The list of past statement uploads (import batches) on the Imports page. An undone import can be
+removed from it; entries do not change.
+
 ### Preset
 
 A known bank layout (BBVA, Santander, monobank, PrivatBank) recognized by its header row; it

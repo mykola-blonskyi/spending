@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Inject,
@@ -15,6 +16,7 @@ import { RateLimit } from '../common/rate-limit';
 import { ImportsService } from './imports.service';
 import {
   batchListSchema,
+  clearResultSchema,
   confirmBodySchema,
   confirmResultSchema,
   importBodySchema,
@@ -28,6 +30,7 @@ class ImportDto extends createZodDto(importBodySchema) {}
 class ImportResultDto extends createZodDto(importResultSchema) {}
 class BatchListDto extends createZodDto(batchListSchema) {}
 class UndoResultDto extends createZodDto(undoResultSchema) {}
+class ClearResultDto extends createZodDto(clearResultSchema) {}
 class ReviewListDto extends createZodDto(reviewListSchema) {}
 class ConfirmDto extends createZodDto(confirmBodySchema) {}
 class ConfirmResultDto extends createZodDto(confirmResultSchema) {}
@@ -81,5 +84,24 @@ export class ImportsController {
   @ZodResponse({ status: 200, type: UndoResultDto })
   undo(@CurrentActor() actor: Actor, @Param('id', ParseUUIDPipe) id: string) {
     return this.imports.undo(actor.userId, id);
+  }
+
+  @Delete('undone')
+  @RateLimit('sensitive')
+  @ZodResponse({ status: 200, type: ClearResultDto })
+  clearUndone(@CurrentActor() actor: Actor) {
+    return this.imports.remove(actor.userId);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @RateLimit('sensitive')
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  @ApiNoContentResponse()
+  async removeUndone(
+    @CurrentActor() actor: Actor,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
+    await this.imports.remove(actor.userId, id);
   }
 }

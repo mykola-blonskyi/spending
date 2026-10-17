@@ -693,6 +693,13 @@ export const en = {
       undoResult:
         '{deleted, plural, one {# entry deleted} other {# entries deleted}}, {kept, plural, one {# kept} other {# kept}}.',
       removedAccount: 'Removed account',
+      remove: 'Remove {name} from history',
+      offlineHint: 'Removing needs a connection.',
+      clear: 'Clear undone imports',
+      clearTitle: 'Clear undone imports?',
+      clearDescription:
+        '{count, plural, one {# undone import is} other {# undone imports are}} removed from the history. Entries do not change.',
+      clearConfirm: 'Clear',
     },
     review: {
       title: 'Review imported rows',
