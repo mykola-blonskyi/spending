@@ -228,7 +228,9 @@ edited through REST and arrive through pull like transactions.
   optional on the wire: a client older than transfers (a queued mutation, a tab open across a
   deploy) leaves them out, and the row keeps its mark. The server checks the other live rows with
   the same `transferId`. The web writes both sides of a mark, unmark, delete or date/note edit in
-  one IndexedDB commit (`data/sync/transfer.ts`), one queued mutation per side. History builds the
+  one IndexedDB commit (`data/sync/transfer.ts`), one queued mutation per side; recording a new
+  transfer in the entry form writes both new sides the same way. The form's third type,
+  `transfer`, exists only in `features/transactions/form-model.ts`. History builds the
   combined transfer row on the device (`features/transactions/history-model.ts`). Import undo
   sets `transferOutside` on a live side whose partner it tombstoned.
 - **Account references (BR-3).** A viewer who cannot see a row's account receives
