@@ -152,8 +152,27 @@ proxied traffic, or the client itself when someone reaches the VPS directly.
 nginx (`deploy/nginx.conf`) recovers that peer from private-range proxies. It believes
 `CF-Connecting-IP` only when the peer is in Cloudflare's published ranges
 (`deploy/cloudflare-ips.conf`). A request that bypasses Cloudflare therefore cannot spoof its
-address. nginx sends the result as the only `X-Forwarded-For` value to the API, which trusts
-only private ranges, so rate limits key on the real client.
+address. nginx sends the result as the only `X-Forwarded-For` value to the API.
+
+The API sets Express `trust proxy` to `1`: it trusts exactly one hop, the peer that connects to
+it, and takes `req.ip` from the rightmost `X-Forwarded-For` entry, the one nginx wrote. The
+per-IP `auth` and `sensitive` budgets key on it. Two other values were rejected:
+
+- A list of private ranges (the earlier `loopback, linklocal, uniquelocal`) also walks past any
+  private address a client prepends, and is no narrower: every container on the `coolify`
+  network has such an address.
+- The stack network's subnet. Docker assigns it when Coolify creates the network, so it is not
+  known in advance and can change on recreate. When the subnet is wrong, `req.ip` becomes
+  nginx's own address, every visitor shares one sign-in budget, and sign-in locks out
+  site-wide.
+
+Residual risk: the API is reachable on the shared `coolify` network (it needs it for Postgres).
+Another container on that network can call `spending-api:3000` directly with a forged
+`X-Forwarded-For`, and so evade the per-IP budgets. The per-user budgets still apply after
+sign-in. This stack's containers drop `NET_RAW` (see Container hardening), so a compromised one
+cannot ARP-spoof the plaintext nginx→API and API→Postgres hops; other stacks on that network
+are outside this repository. Closing the gap fully needs nginx to prove itself to the API, for
+example with a shared-secret header. That is not done.
 
 Cloudflare occasionally changes its ranges. Refresh the file, review the diff, and redeploy:
 
