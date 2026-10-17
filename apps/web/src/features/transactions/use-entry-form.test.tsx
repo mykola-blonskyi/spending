@@ -173,6 +173,15 @@ describe('useEntryForm', () => {
     await waitFor(() => expect(toast.error).toHaveBeenCalledOnce());
   });
 
+  it('keeps the kind of a transfer side, which the server would refuse to change', () => {
+    const { result } = setup(
+      '/transactions/tx-1',
+      ledger(syncedState(serverRow({ categoryId: null, transferId: 'tr-1' }))),
+    );
+    act(() => result.current.setKind('income'));
+    expect(result.current.values.kind).toBe('expense');
+  });
+
   it('reports a missing entry and an unopened store', () => {
     expect(setup('/transactions/nope').result.current.status).toBe('notFound');
     expect(setup('/transactions/new', emptyLocalState()).result.current.status).toBe('loading');

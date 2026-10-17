@@ -81,6 +81,7 @@ export function KindToggle({
   const reasonId = useId();
   const kinds = form.transferOffered ? [...KINDS, 'transfer' as const] : KINDS;
   const blocked = form.transferOffered && form.transferBlocked;
+  if (form.isTransfer) return null;
   return (
     <div className="flex flex-col gap-1.5">
       <ToggleGroup

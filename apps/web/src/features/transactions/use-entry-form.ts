@@ -205,7 +205,10 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
     errors,
     set: <K extends SharedKey>(key: K, value: FormValues[K]) =>
       change((current) => ({ ...current, [key]: value })),
-    setKind: (kind: FormKind) => change((current) => withKind(current, kind)),
+    /** A transfer side keeps its kind: the server refuses two sides of one kind (BR-37). */
+    setKind: (kind: FormKind) => {
+      if (transferId === null) change((current) => withKind(current, kind));
+    },
     setCategory: (categoryId: string | null) =>
       change((current) => (current.kind === 'transfer' ? current : { ...current, categoryId })),
     /** Recording a new entry may record a transfer instead; it needs two accounts in the space. */

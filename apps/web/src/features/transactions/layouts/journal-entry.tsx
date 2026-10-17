@@ -294,12 +294,14 @@ export function JournalEntryView({ form }: { form: EntryForm }) {
                 onChange={form.setScope}
               />
             )}
-            <Pills
-              label={t('transactionForm.kind')}
-              value={values.kind}
-              items={kinds}
-              onChange={form.setKind}
-            />
+            {!form.isTransfer && (
+              <Pills
+                label={t('transactionForm.kind')}
+                value={values.kind}
+                items={kinds}
+                onChange={form.setKind}
+              />
+            )}
             {/* A transfer's currency is its from-account's. */}
             {values.kind !== 'transfer' && (
               <Pills

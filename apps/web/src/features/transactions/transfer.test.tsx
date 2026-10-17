@@ -292,9 +292,17 @@ describe('recording a transfer in the entry form (BR-37)', () => {
     expect(screen.getByRole('radio', { name: 'Transfer' })).toBeDisabled();
   });
 
-  it('keeps the entry form when editing a side', () => {
-    editScreen(ledger({ ...out, categoryId: null, transferId: 'tr-1' }), 'out');
-    expect(screen.getByRole('radio', { name: 'Expense' })).toBeChecked();
-    expect(screen.queryByRole('radio', { name: 'Transfer' })).toBeNull();
-  });
+  it.each(Object.entries(TRANSACTION_SCREENS))(
+    'offers no kind switch when editing a side in the %s layout',
+    (_, { entry: Entry }) => {
+      renderTransactionScreen(<Entry />, {
+        data: fakeLocalData(ledger({ ...out, categoryId: null, transferId: 'tr-1' })).value,
+        path: '/transactions/out',
+        route: '/transactions/:id',
+      });
+      expect(screen.getByLabelText('Amount')).toHaveValue('300.00');
+      for (const kind of ['Expense', 'Income', 'Transfer'])
+        expect(screen.queryByRole('radio', { name: kind })).toBeNull();
+    },
+  );
 });
