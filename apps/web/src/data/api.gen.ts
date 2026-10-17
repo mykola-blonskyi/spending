@@ -1383,6 +1383,13 @@ export interface components {
                 bankCategories: {
                     [key: string]: string;
                 };
+                transferSuggestions: {
+                    /** Format: uuid */
+                    transactionId: string;
+                    counterpartId: string | null;
+                    /** @enum {string} */
+                    reason: "keyword" | "counterpart";
+                }[];
             };
             duplicates: number;
             rejected: {

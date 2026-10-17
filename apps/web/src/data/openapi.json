@@ -5099,12 +5099,51 @@
                 "additionalProperties": {
                   "type": "string"
                 }
+              },
+              "transferSuggestions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "transactionId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "counterpartId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "reason": {
+                      "type": "string",
+                      "enum": [
+                        "keyword",
+                        "counterpart"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "transactionId",
+                    "counterpartId",
+                    "reason"
+                  ],
+                  "additionalProperties": false
+                }
               }
             },
             "required": [
               "count",
               "transactionIds",
-              "bankCategories"
+              "bankCategories",
+              "transferSuggestions"
             ],
             "additionalProperties": false
           },
