@@ -6,6 +6,7 @@ import {
   type AccountPatch,
   createAccount,
   createCategory,
+  deleteAccount,
   type CategoryCreate,
   type CategoryPatch,
   updateAccount,
@@ -51,6 +52,7 @@ export function useAccountsAdmin() {
       patch: Pick<AccountPatch, 'name' | 'kind' | 'openingBalanceMinor' | 'openingOn'>,
     ) => run(() => updateAccount(id, patch)),
     archive: (id: string, archived: boolean) => run(() => updateAccount(id, { archived })),
+    remove: (id: string) => run(() => deleteAccount(id)),
   };
 }
 

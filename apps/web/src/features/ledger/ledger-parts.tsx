@@ -1,4 +1,4 @@
-import { Archive, ChevronRight, Pencil, Undo2 } from 'lucide-react';
+import { Archive, ChevronRight, Pencil, Trash2, Undo2 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslations } from '@i18n/index';
 import { cn } from '@shared/lib/utils';
@@ -38,7 +38,7 @@ export function Field({
 
 const touchButton = 'size-11 sm:size-9';
 
-/** Edit and archive (or restore) for one row; both stay out of the way of the row's text. */
+/** Edit, archive (or restore) and, when given, delete for one row, out of the way of its text. */
 export function RowActions({
   name,
   archived,
@@ -46,6 +46,7 @@ export function RowActions({
   onEdit,
   onArchive,
   onRestore,
+  onDelete,
 }: {
   name: string;
   archived: boolean;
@@ -53,6 +54,7 @@ export function RowActions({
   onEdit: () => void;
   onArchive: () => void;
   onRestore: () => void;
+  onDelete?: () => void;
 }) {
   const t = useTranslations('ledger');
   return (
@@ -88,6 +90,18 @@ export function RowActions({
           onClick={onArchive}
         >
           <Archive aria-hidden />
+        </Button>
+      )}
+      {onDelete && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(touchButton, 'active:scale-[0.97]')}
+          disabled={disabled}
+          aria-label={t('deleteLabel', { name })}
+          onClick={onDelete}
+        >
+          <Trash2 aria-hidden />
         </Button>
       )}
     </div>

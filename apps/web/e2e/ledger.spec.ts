@@ -73,6 +73,40 @@ test('accounts can be created, renamed, archived and restored', async ({ page, s
   await expect(page.getByRole('option', { name: 'Revolut USD' })).toBeVisible();
 });
 
+test('an unused account can be deleted; one with an entry offers Archive instead', async ({
+  page,
+  signInAs,
+  db,
+}) => {
+  await signInAs('ann');
+  await createAccount(page, { name: 'Typo', kind: 'cash', currency: 'EUR' });
+  const used = await createAccount(page, { name: 'Wallet', kind: 'cash', currency: 'EUR' });
+  await pushEntries(page, [
+    { amountMinor: 1_000, occurredOn: '2026-01-15', description: 'Coffee', accountId: used },
+  ]);
+  await page.goto('/accounts');
+  const confirm = page.getByRole('alertdialog');
+
+  await page.getByRole('button', { name: 'Delete Typo' }).click();
+  await expect(confirm.getByRole('heading')).toHaveText('Delete the account Typo?');
+  await expect(confirm).toContainText('This cannot be undone.');
+  await confirm.getByRole('button', { name: 'Delete' }).click();
+  await expect(page.getByRole('listitem').filter({ hasText: 'Typo' })).toHaveCount(0);
+  await expect
+    .poll(async () => (await db.accounts(ann.email)).map((a) => a.name))
+    .not.toContain('Typo');
+
+  await page.getByRole('button', { name: 'Delete Wallet' }).click();
+  await expect(confirm).toContainText('Wallet is in use');
+  await expect(confirm).toContainText('(1 entry)');
+  await expect(confirm.getByRole('button', { name: 'Delete' })).toHaveCount(0);
+  await confirm.getByRole('button', { name: 'Archive' }).click();
+  await expect(page.getByText(/^Archived \(1\)$/)).toBeVisible();
+  await expect
+    .poll(() => db.accounts(ann.email))
+    .toContainEqual({ name: 'Wallet', kind: 'cash', currency: 'EUR', archived: true });
+});
+
 test('the server rejects a second account with the same name and kind', async ({
   page,
   signInAs,

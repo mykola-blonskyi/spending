@@ -94,12 +94,16 @@ export function reducePull(state: LocalState, page: PullPage, now: string): Pull
     if (!visible.has(record.workspaceId) && !pending.has(id)) transactions.delete(id);
   }
 
+  // BR-41: a deleted account arrives as a tombstone with its id.
+  const accounts = upsertAll(state.accounts, page.accounts, visible);
+  for (const row of page.transactions) if (isTombstone(row)) accounts.delete(row.id);
+
   const hasMore = joined || page.hasMore;
   return {
     state: {
       ...state,
       transactions,
-      accounts: upsertAll(state.accounts, page.accounts, visible),
+      accounts,
       categories: upsertAll(state.categories, page.categories, visible),
       workspaces,
       mutations: failWithoutAccess({ ...state, transactions }, visible),

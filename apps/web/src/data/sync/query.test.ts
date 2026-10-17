@@ -183,7 +183,7 @@ describe('accountBalance (BR-40)', () => {
       on({ id: 'b', kind: 'expense', amountMinor: 5000 }),
       serverRow({ id: 'c', accountId: 'acc-card', amountMinor: 999 }),
     );
-    expect(balanceOf(state)).toEqual({ balanceMinor: 115000, uncounted: 0 });
+    expect(balanceOf(state)).toEqual({ balanceMinor: 115000, uncounted: 0, entries: 2 });
   });
 
   it('counts transfer sides in and out, and rows awaiting review', () => {
@@ -198,7 +198,7 @@ describe('accountBalance (BR-40)', () => {
       }),
       on({ id: 'review', kind: 'expense', amountMinor: 2000, reviewStatus: 'pending_review' }),
     );
-    expect(balanceOf(state).balanceMinor).toBe(118000);
+    expect(balanceOf(state)).toEqual({ balanceMinor: 118000, uncounted: 0, entries: 3 });
   });
 
   it('leaves entries before the opening date out and reports how many', () => {
@@ -206,7 +206,7 @@ describe('accountBalance (BR-40)', () => {
       on({ id: 'old', occurredOn: '2026-09-30', amountMinor: 7000 }),
       on({ id: 'first', occurredOn: '2026-10-01', amountMinor: 1000 }),
     );
-    expect(balanceOf(state)).toEqual({ balanceMinor: 99000, uncounted: 1 });
+    expect(balanceOf(state)).toEqual({ balanceMinor: 99000, uncounted: 1, entries: 2 });
   });
 
   it('counts every entry when the account has no opening date', () => {
@@ -214,6 +214,7 @@ describe('accountBalance (BR-40)', () => {
     expect(balanceOf(state, { ...savings, openingBalanceMinor: 0, openingOn: null })).toEqual({
       balanceMinor: -7000,
       uncounted: 0,
+      entries: 1,
     });
   });
 

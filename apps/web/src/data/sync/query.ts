@@ -151,7 +151,7 @@ export function queryTransactions(
     .sort(compareEntries);
 }
 
-export type AccountBalance = Readonly<{ balanceMinor: number; uncounted: number }>;
+export type AccountBalance = Readonly<{ balanceMinor: number; uncounted: number; entries: number }>;
 
 /**
  * BR-40: the opening balance plus the signed sum of the account's live entries from the opening
@@ -164,14 +164,16 @@ export function accountBalance(
 ): AccountBalance {
   let balanceMinor = account.openingBalanceMinor;
   let uncounted = 0;
+  let entries = 0;
   for (const record of records) {
     if (isDeleted(record.local)) continue;
     const row = record.local ?? record.server;
     if (row?.accountId !== account.id) continue;
+    entries += 1;
     if (account.openingOn !== null && row.occurredOn < account.openingOn) uncounted += 1;
     else balanceMinor += row.kind === 'income' ? row.amountMinor : -row.amountMinor;
   }
-  return { balanceMinor, uncounted };
+  return { balanceMinor, uncounted, entries };
 }
 
 /**

@@ -3,6 +3,7 @@ import { Info, SearchX, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { QueryUnavailable } from '@data/query-unavailable';
+import { rulesQuery } from '@data/recurring';
 import { useWorkspaces } from '@data/sync';
 import { useProfile } from '@features/profile';
 import { useTranslations } from '@i18n/index';
@@ -14,7 +15,7 @@ import { Button } from '@shared/ui/button';
 import { type RuleFormValues, valuesFromRule } from './form-values';
 import { DeleteRuleDialog } from './recurring-page';
 import { RuleForm } from './rule-form';
-import { RECURRING_PATH, rulesQuery, useCreateRule, useUpdateRule } from './rules';
+import { RECURRING_PATH, useCreateRule, useUpdateRule } from './rules';
 
 export function NewRulePage() {
   const t = useTranslations();

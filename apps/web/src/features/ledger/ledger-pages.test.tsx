@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -11,13 +12,15 @@ const admin = vi.hoisted(() => ({
   create: vi.fn(),
   update: vi.fn(),
   archive: vi.fn(),
+  remove: vi.fn(),
 }));
 const local = vi.hoisted(() => ({
   status: 'ready' as 'opening' | 'unavailable' | 'ready',
   accounts: [] as unknown[],
   categories: [] as unknown[],
   workspaces: [] as unknown[],
-  balances: new Map<string, { balanceMinor: number; uncounted: number }>(),
+  balances: new Map<string, { balanceMinor: number; uncounted: number; entries?: number }>(),
+  rules: [] as { accountId: string | null }[],
 }));
 
 vi.mock('./use-ledger-mutations', () => ({
@@ -38,6 +41,9 @@ vi.mock('@data/sync', () => {
     }),
   };
 });
+vi.mock('@data/recurring', () => ({
+  rulesQuery: { queryKey: ['recurring-rules'], queryFn: () => local.rules },
+}));
 vi.mock('@features/profile', () => ({ useProfile: () => ({ timezone: 'UTC' }) }));
 
 const PERSONAL: Workspace = { id: 'ws-1', kind: 'personal', name: 'Ann', role: 'owner' };
@@ -68,7 +74,11 @@ const category = (patch: Partial<Category>): Category => ({
 });
 
 function renderPage(page: React.ReactNode, locale: 'en' | 'uk' = 'en') {
-  return render(<I18nProvider locale={locale}>{page}</I18nProvider>);
+  return render(
+    <QueryClientProvider client={new QueryClient()}>
+      <I18nProvider locale={locale}>{page}</I18nProvider>
+    </QueryClientProvider>,
+  );
 }
 
 beforeEach(() => {
@@ -79,6 +89,8 @@ beforeEach(() => {
   admin.create.mockResolvedValue(true);
   admin.update.mockResolvedValue(true);
   admin.archive.mockResolvedValue(true);
+  admin.remove.mockResolvedValue(true);
+  local.rules = [];
   local.status = 'ready';
   local.workspaces = [PERSONAL];
   local.balances = new Map();
@@ -167,6 +179,45 @@ describe('AccountsPage', () => {
     expect(admin.archive).not.toHaveBeenCalled();
     await userEvent.click(screen.getByRole('button', { name: 'Archive' }));
     expect(admin.archive).toHaveBeenCalledWith('a-1', true);
+  });
+
+  it('deletes an unused account only after confirming, warning about its opening balance', async () => {
+    local.accounts = [account({ openingBalanceMinor: 12550, openingOn: '2026-01-01' })];
+    local.balances = new Map([['a-1', { balanceMinor: 12550, uncounted: 0, entries: 0 }]]);
+    renderPage(<AccountsPage />);
+    await userEvent.click(screen.getByRole('button', { name: 'Delete Cash' }));
+    const dialog = screen.getByRole('alertdialog', { name: 'Delete the account Cash?' });
+    expect(dialog).toHaveTextContent(
+      'There is still €125.50 on this account. This cannot be undone.',
+    );
+    expect(admin.remove).not.toHaveBeenCalled();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
+    expect(admin.remove).toHaveBeenCalledWith('a-1');
+    expect(admin.archive).not.toHaveBeenCalled();
+  });
+
+  it('names why an account in use cannot be deleted and offers Archive instead', async () => {
+    local.balances = new Map([['a-1', { balanceMinor: 0, uncounted: 0, entries: 12 }]]);
+    local.rules = [{ accountId: 'a-1' }, { accountId: 'a-9' }];
+    renderPage(<AccountsPage />);
+    await userEvent.click(screen.getByRole('button', { name: 'Delete Cash' }));
+    const dialog = screen.getByRole('alertdialog', { name: 'Cash is in use' });
+    expect(await within(dialog).findByText(/\(12 entries, 1 recurring rule\)/)).toBeVisible();
+    expect(within(dialog).queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Archive' }));
+    expect(admin.archive).toHaveBeenCalledWith('a-1', true);
+    expect(admin.remove).not.toHaveBeenCalled();
+  });
+
+  it('offers Delete on an archived account only while nothing uses it', () => {
+    local.accounts = [
+      account({ id: 'a-2', name: 'Old card', archivedAt: '2026-02-01T00:00:00Z' }),
+      account({ id: 'a-3', name: 'Old loan', archivedAt: '2026-02-01T00:00:00Z' }),
+    ];
+    local.balances = new Map([['a-3', { balanceMinor: 0, uncounted: 0, entries: 1 }]]);
+    renderPage(<AccountsPage />);
+    expect(screen.getByRole('button', { name: 'Delete Old card' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Delete Old loan' })).not.toBeInTheDocument();
   });
 
   it('shows each balance, red when negative, and per-currency totals of active accounts', () => {

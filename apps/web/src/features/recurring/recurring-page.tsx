@@ -3,6 +3,7 @@ import { Pause, Pencil, Play, Plus, Repeat, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { QueryUnavailable } from '@data/query-unavailable';
+import { rulesQuery } from '@data/recurring';
 import { useRefetchErrorToast } from '@data/refetch-error-toast';
 import { useCategoryViews } from '@features/ledger';
 import { useProfile } from '@features/profile';
@@ -12,7 +13,7 @@ import { formatDate, formatRelativeDay, todayIn } from '@shared/format';
 import { useSharedLocale } from '@shared/lib/locale-context';
 import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
-import { RECURRING_PATH, type Rule, rulesQuery, useDeleteRule, useUpdateRule } from './rules';
+import { RECURRING_PATH, type Rule, useDeleteRule, useUpdateRule } from './rules';
 import { scheduleWords } from './schedule-text';
 
 /** BR-24: deleting a rule keeps the entries it generated. */
