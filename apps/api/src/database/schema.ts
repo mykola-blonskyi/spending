@@ -394,7 +394,7 @@ export const transactions = pgTable(
     ),
     check('transactions_fx_rate_ck', sql`${t.fxRate} is null or ${t.fxRate} > 0`),
     check('transactions_version_ck', sql`${t.version} >= 1`),
-    // A transfer is neither income nor spending, so it has no category (BR-36).
+    // A transfer is neither income nor spending, so it has no category (BR-37).
     check(
       'transactions_transfer_ck',
       sql`${t.transferId} is null and not ${t.transferOutside} or ${t.transferId} is not null and ${t.categoryId} is null`,

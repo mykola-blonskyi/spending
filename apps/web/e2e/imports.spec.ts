@@ -1,7 +1,8 @@
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { Page } from '@playwright/test';
 import { apiCall, expect, test } from './fixtures';
-import { E2E_USERS } from './support/env';
+import { APP_ORIGIN, E2E_USERS } from './support/env';
 
 const ann = E2E_USERS.ann;
 const fixture = (name: string) => fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
@@ -383,6 +384,34 @@ test('a PrivatBank file with two cards imports one card, then the next', async (
   ]);
 });
 
+test('the bank category suggests a default category', async ({ page, signInAs, db }) => {
+  await signInAs('ann');
+  await createAccount(page, 'Privat UAH', 'UAH');
+  await page.goto('/imports/new');
+  await page.getByLabel('Statement file').setInputFiles(fixture('privatbank-hints.xlsx'));
+  await expect(page.getByLabel('Statement category (suggestion only)')).toHaveText(/Категорія/);
+  const body = importBody(page);
+  await page.getByRole('button', { name: 'Import 2 rows' }).click();
+  await expect(page.getByRole('heading', { name: 'Import finished' })).toBeVisible();
+  expect(await body).toContain('Комуналка та Інтернет');
+  await expect(categoryOf(page, 'Київводоканал')).toHaveText('Utilities');
+  await expect(categoryOf(page, 'Невідома крамниця')).toHaveText('Uncategorized');
+  expect((await db.transactions(ann.email)).map((r) => r.description)).toEqual([
+    'Київводоканал',
+    'Невідома крамниця',
+  ]);
+
+  // A choice made on the summary teaches the bank category too; nothing keeps it after.
+  await categoryOf(page, 'Невідома крамниця').click();
+  await page.getByRole('option', { name: 'Shopping' }).click();
+  await expect
+    .poll(() => db.categoryRules(ann.email))
+    .toEqual([
+      { merchant_key: 'bank:різне', category: 'shopping' },
+      { merchant_key: 'невідома крамниця', category: 'shopping' },
+    ]);
+});
+
 test('a legacy .xls is refused, rows without an amount are skipped, a mapping is remembered', async ({
   page,
   signInAs,
@@ -430,4 +459,127 @@ test('a legacy .xls is refused, rows without an amount are skipped, a mapping is
   await expect(page.getByLabel('Date format')).toHaveText('Day/Month/Year');
   await expect(page.getByLabel('Amount', { exact: true })).toHaveText(/Value/);
   await expect(page.getByRole('button', { name: 'Import 1 row' })).toBeEnabled();
+});
+
+/** The production CSP from deploy/security-headers.conf, minus the https upgrade of a local run. */
+const PRODUCTION_CSP = readFileSync(
+  fileURLToPath(new URL('../../../deploy/security-headers.conf', import.meta.url)),
+  'utf8',
+)
+  .match(/Content-Security-Policy "([^"]+)"/)![1]!
+  .replace(/;\s*upgrade-insecure-requests/, '');
+
+test.describe('PDF statements', () => {
+  // Requests a service worker answers would bypass the route that adds the CSP.
+  test.use({ serviceWorkers: 'block' });
+
+  test('a Santander PDF imports under the production CSP, its worker from our origin', async ({
+    page,
+    signInAs,
+    db,
+  }) => {
+    await signInAs('ann');
+    await createAccount(page, 'Santander');
+    // After sign-in: the local OIDC form posts to another port, which form-action forbids.
+    await page.route('**/*', async (route) => {
+      if (!route.request().url().startsWith(APP_ORIGIN)) return route.continue();
+      const response = await route.fetch();
+      await route.fulfill({
+        response,
+        headers: { ...response.headers(), 'content-security-policy': PRODUCTION_CSP },
+      });
+    });
+    await page.addInitScript(() => {
+      const seen: string[] = [];
+      Object.assign(window, { cspViolations: seen });
+      document.addEventListener('securitypolicyviolation', (event) =>
+        seen.push(`${event.violatedDirective} ${event.blockedURI}`),
+      );
+    });
+    await page.goto('/imports/new');
+    const workers: string[] = [];
+    page.on('worker', (worker) => workers.push(worker.url()));
+    await page.getByLabel('Statement file').setInputFiles(fixture('santander.pdf'));
+    await expect(page.getByText('Read as a PDF table: 5 rows.')).toBeVisible();
+    expect(workers).toContainEqual(
+      expect.stringMatching(new RegExp(`^${APP_ORIGIN}/assets/pdf\\.worker.*\\.js$`)),
+    );
+    expect(
+      await page.evaluate(() => (window as { cspViolations?: string[] }).cspViolations),
+    ).toEqual([]);
+    await expect(page.getByLabel('Bank')).toHaveText('Santander');
+    await expect(page.getByLabel('Description')).toHaveText(/Transaction/);
+    await expect(page.locator('#main').getByRole('status')).toHaveText('5 rows ready');
+    const body = importBody(page);
+    await page.getByRole('button', { name: 'Import 5 rows' }).click();
+    await expect(stat(page, 'Imported')).toHaveText('5');
+    for (const secret of ['Jane Example', 'ES00 0000', 'Holder', 'Document on']) {
+      expect(await body).not.toContain(secret);
+    }
+    expect(await db.history(ann.email)).toMatchObject([
+      { description: 'Recibo Gimnasio Norte S.L.', amount_minor: 3500, occurred_on: '2026-09-01' },
+      { description: 'Compra Libreria Mar, Madrid, Tarjeta', amount_minor: 1250 },
+      { description: /^Recibo Agua Clara/, amount_minor: 2510, occurred_on: '2026-09-30' },
+      { description: 'Transferencia Inmediata De Acme Iberia S.L.', amount_minor: 150000 },
+      { description: /^Compra Panaderia Sol/, amount_minor: 340, occurred_on: '2026-10-16' },
+    ]);
+  });
+
+  test('a signed monobank PDF imports the card-currency amount', async ({ page, signInAs, db }) => {
+    await signInAs('ann');
+    await createAccount(page, 'monobank', 'UAH');
+    await page.goto('/imports/new');
+    await page.getByLabel('Statement file').setInputFiles(fixture('monobank-uk.pdf'));
+    await expect(page.getByText('Read as a PDF table: 4 rows.')).toBeVisible();
+    await expect(page.getByLabel('Bank')).toHaveText('monobank');
+    await expect(page.locator('#main').getByRole('status')).toHaveText('4 rows ready');
+    const body = importBody(page);
+    await page.getByRole('button', { name: 'Import 4 rows' }).click();
+    await expect(stat(page, 'Imported')).toHaveText('4');
+    for (const secret of ['Петренко', '0000000000', 'UA000000000000000000000000000']) {
+      expect(await body).not.toContain(secret);
+    }
+    expect(await db.history(ann.email)).toMatchObject([
+      { description: 'Переказ на картку', amount_minor: 50000, occurred_on: '2026-10-13' },
+      { description: 'Netflix', amount_minor: 125000, currency: 'UAH' },
+      { description: 'Від: Коваленко Олена Петрівна', amount_minor: 100000 },
+      { description: 'Сільпо', amount_minor: 24590, occurred_on: '2026-10-16' },
+    ]);
+  });
+
+  test('a UkrSibbank PDF joins both tables, skips the row without an amount, leaves holds out', async ({
+    page,
+    signInAs,
+    db,
+  }) => {
+    await signInAs('ann');
+    await createAccount(page, 'UKRSIBBANK', 'UAH');
+    await page.goto('/imports/new');
+    await page.getByLabel('Statement file').setInputFiles(fixture('ukrsib.pdf'));
+    await expect(page.getByText('Read as a PDF table: 7 rows.')).toBeVisible();
+    await expect(page.getByLabel('Bank')).toHaveText('UKRSIBBANK');
+    await expect(page.locator('#main').getByRole('status')).toHaveText(
+      '6 rows ready. 1 row has no amount and is skipped',
+    );
+    await page.getByRole('button', { name: 'Import 6 rows' }).click();
+    await expect(stat(page, 'Imported')).toHaveText('6');
+    expect(await db.history(ann.email)).toMatchObject([
+      { description: /SHOP TX02/, amount_minor: 8000, occurred_on: '2026-10-10' },
+      { description: /Cafe Sol TX01/, amount_minor: 19530, currency: 'UAH' },
+      { description: 'Комісія за переказ', amount_minor: 500 },
+      { description: 'Заробітна плата та аванси від ТОВ "ПРИКЛАД СОФТ"', amount_minor: 2000000 },
+      { description: 'Зарахування миттєвого переказу · Повернення боргу', amount_minor: 300000 },
+      { description: /^Оплата послуг за допомогою інтернет-банкінгу · /, amount_minor: 25000 },
+    ]);
+  });
+
+  test('a scanned PDF is refused with a clear message', async ({ page, signInAs }) => {
+    await signInAs('ann');
+    await createAccount(page, 'Santander');
+    await page.goto('/imports/new');
+    await page.getByLabel('Statement file').setInputFiles(fixture('scanned.pdf'));
+    await expect(page.getByRole('alert')).toHaveText(
+      'This PDF has no text, only images (a scan). Download the statement from your bank as a PDF with text, an XLSX or a CSV.',
+    );
+  });
 });

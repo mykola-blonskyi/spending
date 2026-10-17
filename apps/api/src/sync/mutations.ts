@@ -26,7 +26,7 @@ export const transactionInputSchema = z.strictObject({
   description: z.string().max(200),
   note: z.string().max(2000),
   // Absent from a client older than transfers (a queued mutation, a tab open across a deploy):
-  // the row keeps its mark (BR-36).
+  // the row keeps its mark (BR-37).
   transferId: z.uuid().nullable().optional(),
   transferOutside: z.boolean().optional(),
 });
@@ -205,7 +205,7 @@ export type TransferPeer = Readonly<{
 }>;
 
 /**
- * BR-36. A transfer has no category. A one-sided transfer stands alone; a linked side has at most
+ * BR-37. A transfer has no category. A one-sided transfer stands alone; a linked side has at most
  * one other side, of the opposite kind, in the same workspace. Each side is its own upsert, so
  * the first side of a pair arrives alone and is valid.
  */

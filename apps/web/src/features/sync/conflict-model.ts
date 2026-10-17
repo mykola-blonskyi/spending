@@ -19,7 +19,7 @@ const KEYS: Record<ConflictField, readonly (keyof TransactionInput)[]> = {
   kind: ['kind'],
   amount: ['amountMinor', 'currency'],
   occurredOn: ['occurredOn'],
-  // A transfer has no category, so the transfer mark travels with the category (BR-36).
+  // A transfer has no category, so the transfer mark travels with the category (BR-37).
   categoryId: ['categoryId', 'transferId', 'transferOutside'],
   accountId: ['accountId'],
   workspaceId: ['workspaceId'],

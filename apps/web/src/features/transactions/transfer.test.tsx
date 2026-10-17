@@ -58,7 +58,7 @@ beforeEach(() => {
   }));
 });
 
-describe('the transfer action (BR-36)', () => {
+describe('the transfer action (BR-37)', () => {
   it('links an entry to its other side on another account', async () => {
     const data = editScreen(ledger(out, into), 'out');
     await userEvent.click(screen.getByRole('button', { name: 'This is a transfer' }));

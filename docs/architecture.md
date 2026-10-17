@@ -224,7 +224,7 @@ edited through REST and arrive through pull like transactions.
   (which bounds the wait for the ledger lock) and `idle_in_transaction_session_timeout` 60 s, and
   waits at most 10 s for a pool connection. A statement or lock timeout answers
   `503 UNAVAILABLE` with nothing committed; the client keeps the push queued and retries it.
-- **Transfers (BR-36, ADR-015).** An upsert carries `transferId` and `transferOutside`. Both are
+- **Transfers (BR-37, ADR-016).** An upsert carries `transferId` and `transferOutside`. Both are
   optional on the wire: a client older than transfers (a queued mutation, a tab open across a
   deploy) leaves them out, and the row keeps its mark. The server checks the other live rows with
   the same `transferId`. The web writes both sides of a mark or unmark in one IndexedDB commit
@@ -262,17 +262,20 @@ passport, IBAN, card numbers) never leaves the device (BR-36). The pipeline is o
 table of text cells (`Row = { line, cells }`), made by a reader per format:
 
 - `statement.ts` sniffs the bytes (zip magic is XLSX, the OLE magic is a legacy `.xls` and is
-  refused, `%PDF` is not read yet, anything else is CSV), applies the size limit of that format,
-  finds the header row and the row limit (BR-26).
+  refused, `%PDF` or a CMS SignedData is PDF, anything else is CSV), applies the size limit of
+  that format, finds the header row and the row limit (BR-26).
 - `csv.ts` decodes UTF-8 or Windows-1252, detects the delimiter and splits RFC 4180 rows.
 - `xlsx.ts` reads the zip with `DecompressionStream('deflate-raw')` and the XML with
   `DOMParser`: first sheet, shared and inline strings, numbers at Excel's 15 digits, date-styled
   numbers as `YYYY-MM-DD`. Rows are padded to one width, as a CSV pads its metadata lines.
+- `pdf.ts` unwraps monobank's CMS signature, lazy-loads pdf.js (worker from our origin, no
+  WebAssembly) and rebuilds the table from text positions (ADR-015). It returns the header row
+  first, so the shared header and row-limit step applies unchanged.
 - `mapping.ts` owns presets (matched on the header signature), value parsing (the only money
   parser), card listing, skipped rows and the running-balance check (`prepareRows`), and the
   remembered mapping per header signature in `localStorage['spending.importMapping:<headers>']`.
 
-A new format (PDF next) only needs a reader that returns rows and a branch in `statement.ts`.
+A new format only needs a reader that returns rows and a branch in `statement.ts`.
 The server receives the normalized rows and the mapping (column indexes, formats, file kind) and
 validates them as before.
 

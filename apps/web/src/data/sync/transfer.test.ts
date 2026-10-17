@@ -27,7 +27,7 @@ const upserts = (state: ReturnType<typeof syncedState>) =>
       }))(m.change.transaction)),
   }));
 
-describe('transfer reducers (BR-36)', () => {
+describe('transfer reducers (BR-37)', () => {
   it('queues both sides as ordinary upserts on their own base versions', () => {
     const marked = markTransfer(syncedState(out, into), 'out', 'in', 'tr-1', sequentialIds());
     expect(upserts(marked)).toEqual([

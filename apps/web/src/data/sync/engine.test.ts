@@ -556,7 +556,7 @@ describe('a failed push', () => {
     engine.stop();
   });
 
-  it('pushes a transfer marked offline as two upserts, then its unmarking (BR-36)', async () => {
+  it('pushes a transfer marked offline as two upserts, then its unmarking (BR-37)', async () => {
     store = await LocalStore.open('ann');
     const out = await recordTransaction(store, { ...draft, description: 'out', categoryId: 'c' });
     const into = await recordTransaction(store, { ...draft, kind: 'income', description: 'in' });

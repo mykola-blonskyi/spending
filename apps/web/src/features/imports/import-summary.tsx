@@ -20,6 +20,7 @@ import { Checkbox } from '@shared/ui/checkbox';
 import { Label } from '@shared/ui/label';
 import { Switch } from '@shared/ui/switch';
 import { CategorySelect } from './category-select';
+import { learnBankCategories } from './imports';
 import { REVIEW_PATH } from './imports-page';
 import { Table, Td, Th, Tr } from './table';
 
@@ -41,7 +42,8 @@ function Stat({ label, value, hint }: { label: string; value: number; hint?: str
 
 /**
  * The imported rows, read back from the local store once the pull lands. Changing a category
- * here goes through the sync queue like any edit, which teaches the categorizer (BR-29).
+ * here goes through the sync queue like any edit, which teaches the categorizer the description;
+ * the bank category is taught directly while this screen is open (BR-29).
  */
 function ImportedEntries({ ids }: { ids: readonly string[] }) {
   const t = useTranslations('imports.summary');
@@ -69,7 +71,7 @@ function ImportedEntries({ ids }: { ids: readonly string[] }) {
   const uncategorized = entries.filter((e) => e.categoryId === null).length;
   const allShownSelected = shown.length > 0 && shown.every((e) => selected.has(e.id));
 
-  const setCategory = (entry: TransactionEntry, categoryId: string | null) =>
+  const saveCategory = (entry: TransactionEntry, categoryId: string | null) =>
     update(entry.id, {
       workspaceId: entry.workspaceId,
       kind: entry.kind,
@@ -83,13 +85,20 @@ function ImportedEntries({ ids }: { ids: readonly string[] }) {
       transferId: null,
       transferOutside: false,
     });
+  const setCategory = async (entry: TransactionEntry, categoryId: string | null) => {
+    await saveCategory(entry, categoryId);
+    learnBankCategories([{ transactionId: entry.id, categoryId }]);
+  };
   const applyBulk = async () => {
     const category = bulkCategory ? byId.get(bulkCategory) : undefined;
+    const changed = [];
     for (const entry of shown) {
       if (!selected.has(entry.id)) continue;
       if (category && category.kind !== entry.kind) continue;
-      await setCategory(entry, category?.id ?? null);
+      await saveCategory(entry, category?.id ?? null);
+      changed.push({ transactionId: entry.id, categoryId: category?.id ?? null });
     }
+    learnBankCategories(changed);
     setSelected(new Set());
   };
   const optionsFor = (entry: TransactionEntry, extra: CategoryView | undefined) =>

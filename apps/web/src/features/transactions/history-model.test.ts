@@ -177,7 +177,7 @@ describe('summarize', () => {
   });
 });
 
-describe('transfers (BR-36)', () => {
+describe('transfers (BR-37)', () => {
   it('names a transfer instead of "Uncategorized" and leaves it out of the totals', () => {
     const side = toEntryRow(
       entry({ description: '', accountId: card.id, transferId: 'tr-1' }),

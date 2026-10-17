@@ -62,7 +62,7 @@ that does not is shown as a warning before import; it is still imported.
 ### Transfer
 
 Money moved between the user's own accounts in one space: an expense on one account and an
-income on another, linked, and counted as neither (BR-36). A **one-sided transfer** has its other
+income on another, linked, and counted as neither (BR-37). A **one-sided transfer** has its other
 side on an "own account outside the app" (uk "власний рахунок поза застосунком", ru "собственный
 счёт вне приложения", es "cuenta propia fuera de la aplicación").
 

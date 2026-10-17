@@ -103,7 +103,7 @@ export const transactionViewSchema = z
     source: z.enum(TRANSACTION_SOURCES),
     reviewStatus: z.enum(REVIEW_STATUSES),
     importBatchId: z.uuid().nullable(),
-    /** Both sides of a transfer share it; null for ordinary income and expense (BR-36). */
+    /** Both sides of a transfer share it; null for ordinary income and expense (BR-37). */
     transferId: z.uuid().nullable(),
     /** A one-sided transfer: the other side is an own account outside the app. */
     transferOutside: z.boolean(),

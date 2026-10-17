@@ -287,6 +287,39 @@ const privatbank: Sheet = {
   ],
 };
 
+/** PrivatBank with the bank's category column only, one UAH card: for category hints. */
+const privatbankHints: Sheet = {
+  merges: ['A1:J1'],
+  rows: [
+    privatbank.rows[0]!,
+    privatbank.rows[1]!,
+    [
+      '12.10.2026 10:00:00',
+      'Комуналка та Інтернет',
+      UAH_CARD,
+      'Київводоканал',
+      -480.5,
+      'UAH',
+      480.5,
+      'UAH',
+      4519.5,
+      'UAH',
+    ],
+    [
+      '11.10.2026 10:00:00',
+      'Різне',
+      UAH_CARD,
+      'Невідома крамниця',
+      -100,
+      'UAH',
+      100,
+      'UAH',
+      5000,
+      'UAH',
+    ],
+  ],
+};
+
 /** Reader edge cases: inline strings, a sparse row, date serials with and without a time. */
 const features: Sheet = {
   sharedStrings: false,
@@ -302,4 +335,5 @@ const here = (name: string) => new URL(name, import.meta.url);
 writeFileSync(here('santander.xlsx'), workbook(santander));
 writeFileSync(here('monobank.xls'), workbook(monobank));
 writeFileSync(here('privatbank.xlsx'), workbook(privatbank));
+writeFileSync(here('privatbank-hints.xlsx'), workbook(privatbankHints));
 writeFileSync(here('features.xlsx'), workbook(features));

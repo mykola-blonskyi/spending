@@ -5,6 +5,8 @@ import {
   confirmReview,
   createImport,
   importBatchesQuery,
+  learnCategories,
+  type LearnItem,
   reviewQueueQuery,
   undoImport,
 } from '@data/imports';
@@ -30,6 +32,24 @@ function useExplainFailure() {
   };
 }
 
+/**
+ * BR-29: the bank category of each row imported in this tab, by transaction ID. Never stored, so
+ * only categories chosen before a reload teach a bank-category rule.
+ */
+const bankCategories = new Map<string, string>();
+export const bankCategoryOf = (transactionId: string) => bankCategories.get(transactionId);
+
+/** Teaches the bank categories of these choices; best effort, the category change itself syncs. */
+export function learnBankCategories(
+  choices: { transactionId: string; categoryId: string | null }[],
+) {
+  const items = choices.flatMap(({ transactionId, categoryId }): LearnItem[] => {
+    const bankCategory = bankCategoryOf(transactionId);
+    return bankCategory && categoryId ? [{ transactionId, categoryId, bankCategory }] : [];
+  });
+  if (items.length > 0) learnCategories(items).catch(() => {});
+}
+
 /** Imports write on the server, so a pull brings the new rows to this device. */
 export function useCreateImport() {
   const queryClient = useQueryClient();
@@ -37,7 +57,10 @@ export function useCreateImport() {
   return useMutation({
     mutationFn: createImport,
     onError: useExplainFailure(),
-    onSuccess: () => {
+    onSuccess: (result) => {
+      for (const [id, bankCategory] of Object.entries(result.imported.bankCategories)) {
+        bankCategories.set(id, bankCategory);
+      }
       void queryClient.invalidateQueries({ queryKey: importBatchesQuery.queryKey });
       void syncNow();
     },

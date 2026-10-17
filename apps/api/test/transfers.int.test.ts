@@ -29,7 +29,7 @@ type Summary = {
   previous: { totals: Totals; byCategory: { categoryId: string | null }[] };
 };
 
-describe('transfers (BR-36)', () => {
+describe('transfers (BR-37)', () => {
   let provider: FakeOidc;
   let t: TestApp;
   let ann: Session;
@@ -278,5 +278,29 @@ describe('transfers (BR-36)', () => {
     expect(sides).toHaveLength(2);
     expect(sides.every((side) => side.outside && side.transferId !== transferId)).toBe(true);
     expect(sides[0]!.transferId).not.toBe(sides[1]!.transferId);
+  });
+
+  it('keeps a family side one-sided when its partner had no author left', async () => {
+    const [annSide] = await pushNew(t, ann, [{ workspaceId: family, kind: 'expense' }]);
+    const [bobSide] = await pushNew(t, bob, [{ workspaceId: family, kind: 'income' }]);
+    const transferId = crypto.randomUUID();
+    await link([annSide!], transferId);
+    await push(bob, [{ row: bobSide!, patch: { transferId } }]);
+    await t.db
+      .update(transactions)
+      .set({ createdBy: null })
+      .where(eq(transactions.id, bobSide!.id));
+    const deleted = await as(t, ann, '/v1/family', {
+      method: 'DELETE',
+      body: { confirmName: 'Home' },
+    });
+    expect(deleted.status, await deleted.clone().text()).toBe(204);
+    const sides = await t.db
+      .select({ transferId: transactions.transferId, outside: transactions.transferOutside })
+      .from(transactions)
+      .where(eq(transactions.amountMinor, 1000));
+    expect(sides).toHaveLength(1);
+    expect(sides[0]!.outside).toBe(true);
+    expect(sides[0]!.transferId).not.toBe(transferId);
   });
 });

@@ -62,7 +62,7 @@ export class AnalyticsService {
 
   /**
    * Only server rows exist here, so an open conflict never counts twice (BR-19). Transfers are
-   * neither earning nor spending (BR-36).
+   * neither earning nor spending (BR-37).
    */
   private async sums(workspaceIds: string[], period: Period): Promise<SumRow[]> {
     if (workspaceIds.length === 0) return [];

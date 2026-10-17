@@ -99,7 +99,7 @@ export type EntryRow = Readonly<
     currency: string;
     conversion: Conversion;
     sync: EntrySync;
-    /** Neither income nor spending, so it stays out of totals (BR-36). */
+    /** Neither income nor spending, so it stays out of totals (BR-37). */
     isTransfer: boolean;
   } & Pick<TransactionEntry, 'scope' | 'author' | 'accountId'>
 >;
@@ -249,7 +249,7 @@ export function groupByDay(
 
 /**
  * Entries that can be the other side of `entry`'s transfer: same workspace, opposite kind, another
- * account, not a transfer yet (BR-36). Nearest date first, then nearest amount.
+ * account, not a transfer yet (BR-37). Nearest date first, then nearest amount.
  */
 export function transferCandidates(
   entry: TransactionEntry,

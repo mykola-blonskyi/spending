@@ -79,10 +79,35 @@ describe('parseStatement', () => {
     expect(await read('privatbank.xlsx')).toMatchObject({ header: 'Дата', first: 3, count: 6 });
   });
 
-  it('tells a legacy binary .xls and a PDF apart from a CSV by their bytes', async () => {
+  it('reads PDF statements, monobank’s signed ones too, by their bytes', async () => {
+    const read = async (name: string) => {
+      const result = await parseStatement(fixture(name));
+      if (!result.ok) throw new Error(result.problem);
+      const { format, headers, rows } = result.statement;
+      return { format, header: headers[0], first: rows[0]!.line, count: rows.length };
+    };
+    expect(await read('santander.pdf')).toEqual({
+      format: { kind: 'pdf' },
+      header: 'Transaction date',
+      first: 1,
+      count: 5,
+    });
+    expect(await read('monobank-uk.pdf')).toMatchObject({
+      header: 'Дата i час операції',
+      count: 4,
+    });
+    expect(await read('ukrsib.pdf')).toMatchObject({ header: 'Дата операції', count: 7 });
+    expect(await parseStatement(fixture('scanned.pdf'))).toEqual({
+      ok: false,
+      problem: 'PDF_NO_TEXT',
+    });
+  });
+
+  it('tells a legacy binary .xls and a broken PDF apart from a CSV by their bytes', async () => {
     const ole = new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0, 0]);
     expect(await parseStatement(file(ole))).toEqual({ ok: false, problem: 'LEGACY_XLS' });
-    expect(await parseStatement(file('%PDF-1.7\n'))).toEqual({ ok: false, problem: 'UNSUPPORTED' });
+    expect(await parseStatement(file('%PDF-1.7\n'))).toEqual({ ok: false, problem: 'UNREADABLE' });
+    expect(await parseStatement(file('0,1\n2026-10-01,5\n'))).toMatchObject({ ok: true });
     expect(await parseStatement(file('PK\u0003\u0004broken'))).toEqual({
       ok: false,
       problem: 'UNREADABLE',
@@ -102,6 +127,13 @@ describe('parseStatement', () => {
       ok: false,
       problem: 'TOO_LARGE',
       maxBytes: MAX_BYTES.xlsx,
+    });
+    const pdf = new Uint8Array(MAX_BYTES.pdf + 1);
+    pdf.set([0x25, 0x50, 0x44, 0x46]);
+    expect(await parseStatement(file(pdf))).toEqual({
+      ok: false,
+      problem: 'TOO_LARGE',
+      maxBytes: MAX_BYTES.pdf,
     });
   });
 });

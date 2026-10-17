@@ -532,7 +532,8 @@ export const es = {
     noAccountsAction: 'Abrir cuentas',
     noAccountsDescription: 'Un extracto se importa en una de tus cuentas personales.',
     file: 'Archivo del extracto',
-    fileHint: 'Un CSV de hasta 2 MiB o un XLSX de hasta 5 MiB, con hasta 5.000 filas.',
+    fileHint:
+      'Un CSV de hasta 2 MiB, un XLSX de hasta 5 MiB o un PDF de hasta 10 MiB y 100 páginas, con hasta 5.000 filas.',
     chooseFile: 'Elegir archivo',
     noFile: 'Ningún archivo seleccionado',
     fileTooLarge:
@@ -543,7 +544,11 @@ export const es = {
     readFailed: 'No se pudo leer este archivo.',
     legacyXls:
       'Es un archivo antiguo de Excel (.xls). Guárdalo como .xlsx o CSV en una hoja de cálculo y súbelo.',
-    unsupported: 'Este tipo de archivo no se puede leer. Sube un extracto CSV o XLSX.',
+    pdfNoText:
+      'Este PDF no tiene texto, solo imágenes (un escaneo). Descarga del banco el extracto en PDF con texto, XLSX o CSV.',
+    pdfTooManyPages:
+      'Este PDF tiene más de 100 páginas. Exporta un periodo más corto y vuelve a intentarlo.',
+    detectedPdf: 'Leído como tabla PDF: {count, plural, one {# fila} other {# filas}}.',
     detectedWorkbook: 'Leído como libro de Excel: {count, plural, one {# fila} other {# filas}}.',
     detected: 'Leído como {encoding}, {delimiter}: {count, plural, one {# fila} other {# filas}}.',
     delimiters: {
@@ -557,6 +562,7 @@ export const es = {
       santander: 'Santander',
       monobank: 'monobank',
       privatbank: 'PrivatBank',
+      ukrsib: 'UKRSIBBANK',
       custom: 'Otro',
     },
     columns: 'Columnas',
@@ -570,6 +576,8 @@ export const es = {
       currency: 'Moneda',
       card: 'Tarjeta',
       balance: 'Saldo',
+      bankCategory: 'Categoría del banco (solo sugerencia)',
+      mcc: 'MCC (solo sugerencia)',
     },
     notMapped: 'No está en este archivo',
     amountLayout: 'Columnas del importe',

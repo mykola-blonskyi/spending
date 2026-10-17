@@ -533,7 +533,7 @@ export const ru = {
     noAccountsAction: 'Открыть счета',
     noAccountsDescription: 'Выписка импортируется на один из ваших личных счетов.',
     file: 'Файл выписки',
-    fileHint: 'CSV до 2 МиБ или XLSX до 5 МиБ, не больше 5 000 строк.',
+    fileHint: 'CSV до 2 МиБ, XLSX до 5 МиБ или PDF до 10 МиБ и 100 страниц, не больше 5 000 строк.',
     chooseFile: 'Выбрать файл',
     noFile: 'Файл не выбран',
     fileTooLarge: 'Файл больше {size} МиБ. Экспортируйте более короткий период и попробуйте снова.',
@@ -543,7 +543,12 @@ export const ru = {
     readFailed: 'Не удалось прочитать этот файл.',
     legacyXls:
       'Это старый двоичный файл Excel (.xls). Сохраните его как .xlsx или CSV в табличном редакторе и загрузите.',
-    unsupported: 'Этот тип файла не читается. Загрузите выписку CSV или XLSX.',
+    pdfNoText:
+      'В этом PDF нет текста, только изображения (скан). Скачайте в банке выписку в PDF с текстом, XLSX или CSV.',
+    pdfTooManyPages:
+      'В этом PDF больше 100 страниц. Экспортируйте более короткий период и попробуйте снова.',
+    detectedPdf:
+      'Прочитано как таблица PDF: {count, plural, one {# строка} few {# строки} many {# строк} other {# строк}}.',
     detectedWorkbook:
       'Прочитано как книга Excel: {count, plural, one {# строка} few {# строки} many {# строк} other {# строк}}.',
     detected:
@@ -559,6 +564,7 @@ export const ru = {
       santander: 'Santander',
       monobank: 'monobank',
       privatbank: 'ПриватБанк',
+      ukrsib: 'УКРСИББАНК',
       custom: 'Другой',
     },
     columns: 'Столбцы',
@@ -572,6 +578,8 @@ export const ru = {
       currency: 'Валюта',
       card: 'Карта',
       balance: 'Остаток',
+      bankCategory: 'Категория банка (только подсказка)',
+      mcc: 'MCC (только подсказка)',
     },
     notMapped: 'Нет в этом файле',
     amountLayout: 'Столбцы суммы',

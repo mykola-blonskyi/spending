@@ -10,7 +10,7 @@ import { useRowContext } from './use-history';
 
 const EVERY_ENTRY: TransactionFilter = {};
 
-/** One entry's transfer mark: its other side, the entries that could be it, and the writes (BR-36). */
+/** One entry's transfer mark: its other side, the entries that could be it, and the writes (BR-37). */
 export function useTransfer(id: string) {
   const all = useLocalTransactions(EVERY_ENTRY);
   const context = useRowContext();

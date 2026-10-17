@@ -17,6 +17,7 @@ import { validateRows } from './rows';
 import {
   batchColumns,
   type ConfirmItem,
+  type LearnItem,
   type ImportBatchView,
   type ImportBody,
   type importResultSchema,
@@ -71,9 +72,12 @@ export class ImportsService {
         quotes.set(currency, await this.fx.quotes(tx, currency, dates));
       }
       const values = [];
+      const bankCategories = new Map<string, string>();
       for (const [index, row] of valid.entries()) {
+        const id = crypto.randomUUID();
+        if (row.bankCategory) bankCategories.set(id, row.bankCategory);
         values.push({
-          id: crypto.randomUUID(),
+          id,
           workspaceId,
           createdBy: actorId,
           kind: row.kind,
@@ -81,7 +85,7 @@ export class ImportsService {
           currency: row.currency,
           occurredOn: row.occurredOn,
           accountId: account.id,
-          categoryId: categorize(row.description, row.kind, catalog),
+          categoryId: categorize(row.description, row.kind, catalog, row),
           description: row.description,
           externalId: row.externalId,
           importHash: hashes[index]!,
@@ -116,7 +120,16 @@ export class ImportsService {
         .returning(batchColumns);
       return {
         batch: toBatchView(stored!),
-        imported: { count: transactionIds.length, transactionIds },
+        imported: {
+          count: transactionIds.length,
+          transactionIds,
+          bankCategories: Object.fromEntries(
+            transactionIds.flatMap((id) => {
+              const bankCategory = bankCategories.get(id);
+              return bankCategory ? [[id, bankCategory]] : [];
+            }),
+          ),
+        },
         duplicates,
         rejected,
       };
@@ -268,6 +281,7 @@ export class ImportsService {
           description: row.description,
           workspaceId: target,
           categoryId: item.categoryId,
+          bankCategory: item.bankCategory,
         };
       });
       const values = sql.join(
@@ -281,12 +295,65 @@ export class ImportsService {
         where t.id = v.id`);
       await learnCategoryRules(
         tx,
-        confirmed.flatMap(({ workspaceId, description, categoryId }) =>
-          categoryId ? [{ workspaceId, description, categoryId }] : [],
+        confirmed.flatMap(({ categoryId, ...rule }) =>
+          categoryId ? [{ ...rule, categoryId }] : [],
         ),
       );
       const views = await this.ledger.ledgerRows(tx, actorId, ids);
       return ids.map((id) => views.get(id) as TransactionView);
+    });
+  }
+
+  /**
+   * BR-29. Categories chosen on the import summary, with the bank category only the browser
+   * still holds: each becomes a bank-category rule. The description rule comes with the sync push.
+   */
+  learn(actorId: string, items: readonly LearnItem[]): Promise<void> {
+    return this.db.transaction(async (tx) => {
+      const personalId = await this.policy.personalWorkspaceId(actorId, tx);
+      const rows = await tx
+        .select({ id: transactions.id, kind: transactions.kind })
+        .from(transactions)
+        .where(
+          and(
+            inArray(
+              transactions.id,
+              items.map((i) => i.transactionId),
+            ),
+            eq(transactions.workspaceId, personalId),
+            eq(transactions.createdBy, actorId),
+            eq(transactions.source, 'import'),
+            isNull(transactions.deletedAt),
+          ),
+        );
+      const found = await tx
+        .select({ id: categories.id, kind: categories.kind })
+        .from(categories)
+        .where(
+          and(
+            inArray(
+              categories.id,
+              items.map((i) => i.categoryId),
+            ),
+            eq(categories.workspaceId, personalId),
+            isNull(categories.archivedAt),
+          ),
+        );
+      const kindOf = new Map(rows.map((r) => [r.id, r.kind]));
+      const categoryKind = new Map(found.map((c) => [c.id, c.kind]));
+      for (const item of items) {
+        const kind = kindOf.get(item.transactionId);
+        if (!kind) throw new ApiError('NOT_FOUND');
+        if (categoryKind.get(item.categoryId) !== kind) throw new ApiError('INVALID_CATEGORY');
+      }
+      await learnCategoryRules(
+        tx,
+        items.map(({ categoryId, bankCategory }) => ({
+          workspaceId: personalId,
+          categoryId,
+          bankCategory,
+        })),
+      );
     });
   }
 

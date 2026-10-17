@@ -133,7 +133,7 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
         : { for: key, values: { ...initial, ...patch }, version: settledVersion },
     );
 
-  // A transfer has no category (BR-36), so a transfer's form offers none.
+  // A transfer has no category (BR-37), so a transfer's form offers none.
   const categories = categoryViews.items.filter(
     (category) =>
       transferId === null &&

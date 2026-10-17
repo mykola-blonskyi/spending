@@ -22,7 +22,7 @@ const option =
   'flex min-h-11 cursor-pointer items-center gap-3 rounded-md border px-3 py-2 text-sm transition-colors duration-150 ease-out hover:bg-muted/60 has-[:checked]:border-foreground has-[:checked]:bg-muted has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring';
 
 /**
- * "This is a transfer" for an ordinary entry, "Not a transfer" for a side of one (BR-36). Both
+ * "This is a transfer" for an ordinary entry, "Not a transfer" for a side of one (BR-37). Both
  * write locally and sync like any edit.
  */
 export function TransferButton({ id, className }: { id: string; className?: string }) {

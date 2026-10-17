@@ -309,7 +309,50 @@ Legacy binary `.xls` is refused with a message. Known banks are recognized by th
 skips ZIP64, CRC checks and every sheet but the first; a part over 64 MiB or a sheet over 100
 columns is refused. PDF statements will reuse the same cell table and mapping step.
 
-## ADR-015: A transfer is two ordinary entries sharing a transfer id
+**Addendum (category hints, #104).** The mapping step has two optional roles, bank category and
+MCC, set by the PrivatBank and monobank presets. Each row carries them as optional request fields,
+used only by BR-29. Neither is stored anywhere, on the server or on the device (#101, decision
+13). The import response echoes each imported row's bank category, and the browser holds it in
+memory for that tab. While the import screens are open, it sends the bank category with the
+user's category choice: per item on the review confirmation, and to `POST /v1/imports/learn` for
+choices on the import summary, since those edits otherwise travel through the sync queue, which
+would persist the hint in the local store. A correction made later, from history, learns only the
+description rule; a lost bank-category rule is cheaper than a stored bank category. The MCC is
+matched against a fixed table and never learned. The amount parser also accepts "грн" and "₴"
+for UAH.
+
+## ADR-015: Rebuild PDF statement tables from the text layer with pdf.js
+
+Date: 2026-10-17
+
+**Context.** UkrSibbank exports statements only as PDF; Santander and monobank offer PDF too.
+monobank's PDF is wrapped in a CMS SignedData (DSTU) signature. The same header metadata as in
+XLSX (ADR-014) must stay on the device, and the CSP allows scripts and workers from our origin
+only.
+
+**Decision.** Read PDFs in the browser with `pdfjs-dist` (exact pin), imported only when a PDF is
+opened, its worker built as a same-origin `.js` asset (nginx's `mime.types` has no `.mjs`), and
+WebAssembly off (it only decodes images). One generic layout parser turns positioned text into
+the shared cell table: lines by baseline, the header as the lowest same-size block above the first
+date line, column edges in the emptiest gutter between header centres, and lines without a date
+joined to the row above until a wide gap or a totals line. A header repeated on a later page
+continues the table; a later table with every column of the first joins it by label (UkrSib's
+card operations), one without (UkrSib's pending holds) is left out. The CMS wrapper is opened by
+a DER walk to the OCTET STRING that starts with `%PDF`; the signature is not verified.
+
+**Alternatives.**
+
+- A layout template per bank: exact, but every bank redesign breaks it, and other banks get
+  nothing.
+- Server-side extraction (pdftotext, Tabula): the metadata block would leave the device (BR-36).
+- Scanning for `%PDF` … last `%%EOF` in the CMS file: shorter, but wrong for a chunked OCTET
+  STRING, which the DER walk joins.
+
+**Consequences.** About 490 kB of pdf.js plus a 1.2 MB worker, loaded only when a PDF is opened and
+kept by the service worker from then on (not precached, so other users never download it). A scanned PDF (no text) is refused with a message; OCR is out
+of scope. BER indefinite-length CMS wrappers are refused. Limits: 10 MiB and 100 pages.
+
+## ADR-016: A transfer is two ordinary entries sharing a transfer id
 
 Date: 2026-10-17
 

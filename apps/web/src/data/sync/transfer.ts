@@ -34,7 +34,7 @@ function setSides(
   return ids.reduce((next, id) => {
     const row = currentRow(next, id);
     if (!row) throw new Error(`Transaction ${id} is not on this device`);
-    // A transfer is neither income nor spending, and unmarking asks for a category again (BR-36).
+    // A transfer is neither income nor spending, and unmarking asks for a category again (BR-37).
     const change = { type: 'upsert' as const, row: { ...row, ...patch, categoryId: null } };
     return applyLocalChange(next, change, newMutationId);
   }, state);

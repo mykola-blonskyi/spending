@@ -46,7 +46,7 @@ export async function deleteTransaction(store: LocalStore, id: string): Promise<
   await write(store, { type: 'delete', id });
 }
 
-/** Both sides change in one local commit (BR-36). `counterpartId` null: an own account outside the app. */
+/** Both sides change in one local commit (BR-37). `counterpartId` null: an own account outside the app. */
 export async function markTransfer(
   store: LocalStore,
   id: string,

@@ -484,6 +484,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/imports/learn": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ImportsController_learn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/imports/{id}/undo": {
         parameters: {
             query?: never;
@@ -1342,6 +1358,8 @@ export interface components {
                 currency?: string;
                 description: string;
                 externalId?: string;
+                bankCategory?: string;
+                mcc?: string;
             }[];
         };
         ImportBatchView_Output: {
@@ -1362,6 +1380,9 @@ export interface components {
             imported: {
                 count: number;
                 transactionIds: string[];
+                bankCategories: {
+                    [key: string]: string;
+                };
             };
             duplicates: number;
             rejected: {
@@ -1386,10 +1407,20 @@ export interface components {
                 /** @enum {string} */
                 scope: "personal" | "family";
                 categoryId: string | null;
+                bankCategory?: string;
             }[];
         };
         ConfirmResultDto_Output: {
             transactions: components["schemas"]["TransactionView_Output"][];
+        };
+        LearnDto: {
+            items: {
+                /** Format: uuid */
+                transactionId: string;
+                /** Format: uuid */
+                categoryId: string;
+                bankCategory: string;
+            }[];
         };
         UndoResultDto_Output: {
             batch: components["schemas"]["ImportBatchView_Output"];
@@ -2415,6 +2446,27 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ConfirmResultDto_Output"];
                 };
+            };
+        };
+    };
+    ImportsController_learn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LearnDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
