@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ImportResult } from '@data/imports';
+import type { ImportResult, ReviewItem } from '@data/imports';
 import {
   type Account,
   type Category,
@@ -16,7 +16,7 @@ import { I18nProvider } from '@i18n/index';
 import { ImportSummary } from './import-summary';
 import { TransferSuggestions } from './transfer-suggestions';
 import { useHasFamily, useReviewQueue } from './imports';
-import { bulkCategoryChoice } from './review-choice';
+import { bulkCategoryChoice, transferChoice } from './review-choice';
 import { ReviewPage } from './review-page';
 
 vi.mock('@shared/lib/network', () => ({ useOnlineStatus: () => true }));
@@ -33,10 +33,12 @@ vi.mock(import('@data/sync'), async (importOriginal) => ({
   })),
   useMarkTransfer: vi.fn(),
 }));
+const confirmMutate = vi.hoisted(() => vi.fn());
 vi.mock('./imports', () => ({
   useHasFamily: vi.fn(),
   useReviewQueue: vi.fn(),
-  useConfirmReview: () => ({ mutate: vi.fn(), isPending: false }),
+  useConfirmReview: () => ({ mutate: confirmMutate, isPending: false }),
+  bankCategoryOf: () => undefined,
 }));
 
 const personal = { id: 'w1', kind: 'personal', name: 'Mine' } as Workspace;
@@ -53,6 +55,8 @@ const ui = (node: React.ReactNode) =>
 beforeEach(() => vi.clearAllMocks());
 
 describe('ReviewPage', () => {
+  beforeEach(() => vi.mocked(useLocalTransactions).mockReturnValue({ ready: true, items: [] }));
+
   it('tells a user without a family there is nothing to review instead of loading forever', () => {
     vi.mocked(useWorkspaces).mockReturnValue({ ready: true, items: [personal] });
     vi.mocked(useHasFamily).mockReturnValue(false);
@@ -66,10 +70,122 @@ describe('ReviewPage', () => {
     expect(screen.getByRole('heading', { name: 'Nothing to review' })).toBeInTheDocument();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
+
+  it('offers a suggested transfer, chosen on both rows of a pair awaiting review', () => {
+    const family = { id: 'w2', kind: 'family', name: 'Home' } as Workspace;
+    vi.mocked(useWorkspaces).mockReturnValue({ ready: true, items: [personal, family] });
+    vi.mocked(useHasFamily).mockReturnValue(true);
+    const pendingRow = (id: string, kind: Category['kind'], accountId: string) =>
+      ({
+        transaction: {
+          id,
+          kind,
+          accountId,
+          amountMinor: 3000,
+          currency: 'EUR',
+          occurredOn: '2026-10-05',
+          description: id,
+          categoryId: null,
+          transferId: null,
+        },
+        familyCategoryId: null,
+      }) as unknown as ReviewItem;
+    const queue = [
+      {
+        ...pendingRow('out', 'expense', 'card'),
+        transferSuggestion: { counterpartId: 'in', reason: 'counterpart' },
+      },
+      {
+        ...pendingRow('in', 'income', 'savings'),
+        transferSuggestion: { counterpartId: 'out', reason: 'counterpart' },
+      },
+      {
+        ...pendingRow('own', 'expense', 'card'),
+        transferSuggestion: { counterpartId: null, reason: 'keyword' },
+      },
+      {
+        ...pendingRow('gone', 'expense', 'card'),
+        transferSuggestion: { counterpartId: 'elsewhere', reason: 'counterpart' },
+      },
+      {
+        ...pendingRow('paid', 'expense', 'card'),
+        transferSuggestion: { counterpartId: 'received', reason: 'counterpart' },
+      },
+      {
+        ...pendingRow('late', 'expense', 'card'),
+        transferSuggestion: { counterpartId: 'linked', reason: 'counterpart' },
+      },
+      pendingRow('shop', 'expense', 'card'),
+    ] as ReviewItem[];
+    const confirmed = (id: string, transferId: string | null) =>
+      ({ id, accountId: 'savings', occurredOn: '2026-10-07', transferId }) as TransactionEntry;
+    vi.mocked(useLocalTransactions).mockReturnValue({
+      ready: true,
+      items: [confirmed('received', null), confirmed('linked', 'x')],
+    });
+    vi.mocked(useReviewQueue).mockReturnValue({
+      isPending: false,
+      isSuccess: true,
+      isError: false,
+      data: queue,
+    } as unknown as ReturnType<typeof useReviewQueue>);
+    ui(<ReviewPage />);
+
+    const rowOf = (description: string) =>
+      screen.getByRole('checkbox', { name: `Select ${description}` }).closest('li')!;
+    expect(rowOf('out')).toHaveTextContent(
+      'Looks like a transfer · Other side: Savings, Oct 5, 2026',
+    );
+    expect(rowOf('own')).toHaveTextContent('Own account outside the app');
+    expect(screen.queryByRole('button', { name: 'Transfer: gone' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Transfer: shop' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Transfer: late' })).not.toBeInTheDocument();
+    expect(rowOf('paid')).toHaveTextContent('Other side: Savings, Oct 7, 2026');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Transfer: out' }));
+    expect(screen.getByRole('button', { name: 'Transfer: in' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    for (const description of ['out', 'in']) {
+      expect(
+        screen.queryByRole('combobox', { name: `Category: ${description}` }),
+      ).not.toBeInTheDocument();
+      expect(rowOf(description)).toHaveTextContent('Personal, no category: it is a transfer');
+    }
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select out' }));
+    expect(screen.getByRole('checkbox', { name: 'Select in' })).toBeChecked();
+    fireEvent.click(screen.getByRole('button', { name: 'Publish 2 rows' }));
+    expect(confirmMutate).toHaveBeenCalledWith(
+      [
+        {
+          transactionId: 'out',
+          scope: 'personal',
+          categoryId: null,
+          transfer: { counterpartId: 'in' },
+        },
+        {
+          transactionId: 'in',
+          scope: 'personal',
+          categoryId: null,
+          transfer: { counterpartId: 'out' },
+        },
+      ],
+      expect.anything(),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Transfer: in' }));
+    expect(screen.getByRole('button', { name: 'Transfer: out' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    expect(screen.getByRole('combobox', { name: 'Category: out' })).toBeInTheDocument();
+  });
 });
 
 describe('bulkCategoryChoice', () => {
-  it('leaves a row outside the bulk scope, or of another kind, as it was', () => {
+  it('leaves a row outside the bulk scope, of another kind, or a transfer as it was', () => {
     const groceries = category('c1', 'expense');
     const kept = { scope: 'personal', categoryId: 'c0' } as const;
     expect(bulkCategoryChoice(kept, 'expense', 'family', groceries)).toBe(kept);
@@ -79,6 +195,8 @@ describe('bulkCategoryChoice', () => {
     expect(
       bulkCategoryChoice({ scope: 'family', categoryId: null }, 'expense', 'family', groceries),
     ).toEqual({ scope: 'family', categoryId: 'c1' });
+    const transfer = transferChoice(null);
+    expect(bulkCategoryChoice(transfer, 'expense', 'personal', groceries)).toBe(transfer);
   });
 });
 
