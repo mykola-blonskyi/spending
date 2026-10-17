@@ -34,9 +34,13 @@ export class E2EDatabase {
       base_amount_minor: string | null;
       deleted: boolean;
       scope: 'personal' | 'family';
+      kind: 'income' | 'expense';
+      currency: string;
+      transfer_id: string | null;
     }>(
       `select t.id, t.amount_minor, t.description, t.version, t.revision, t.base_amount_minor,
-              t.deleted_at is not null as deleted, w.kind as scope
+              t.deleted_at is not null as deleted, w.kind as scope, t.kind, t.currency,
+              t.transfer_id
          from transactions t join users u on u.id = t.created_by
          join workspaces w on w.id = t.workspace_id
         where u.email = $1 order by t.created_at`,
