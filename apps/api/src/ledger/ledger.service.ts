@@ -76,6 +76,8 @@ const viewColumns = {
   source: transactions.source,
   reviewStatus: transactions.reviewStatus,
   importBatchId: transactions.importBatchId,
+  transferId: transactions.transferId,
+  transferOutside: transactions.transferOutside,
   createdBy: transactions.createdBy,
   authorName: users.displayName,
   version: transactions.version,

@@ -15,6 +15,7 @@ import {
   DiscardButton,
   EntryStatus,
   NoteField,
+  TransferButton,
 } from '../blocks';
 import type { EntryKind } from '../form-model';
 import { type EntryForm, useEntryForm } from '../use-entry-form';
@@ -343,6 +344,9 @@ export function JournalEntryView({ form }: { form: EntryForm }) {
             </Button>
             {form.canDiscard && (
               <DiscardButton onConfirm={() => void form.discard()} className="h-12 rounded-full" />
+            )}
+            {form.canDelete && form.entryId && (
+              <TransferButton id={form.entryId} className="h-12 rounded-full" />
             )}
             {form.canDelete && (
               <DeleteButton onConfirm={() => void form.remove()} className="h-12 rounded-full" />

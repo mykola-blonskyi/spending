@@ -19,7 +19,8 @@ const KEYS: Record<ConflictField, readonly (keyof TransactionInput)[]> = {
   kind: ['kind'],
   amount: ['amountMinor', 'currency'],
   occurredOn: ['occurredOn'],
-  categoryId: ['categoryId'],
+  // A transfer has no category, so the transfer mark travels with the category (BR-37).
+  categoryId: ['categoryId', 'transferId', 'transferOutside'],
   accountId: ['accountId'],
   workspaceId: ['workspaceId'],
   description: ['description'],
@@ -45,8 +46,18 @@ export function versionsOf(conflict: Conflict): Versions {
           categoryId: server.categoryId,
           description: server.description,
           note: server.note,
+          transferId: server.transferId,
+          transferOutside: server.transferOutside,
         },
-    local: 'deleted' in local ? null : local,
+    // A version sent by a client older than transfers carries no mark.
+    local:
+      'deleted' in local
+        ? null
+        : {
+            ...local,
+            transferId: local.transferId ?? null,
+            transferOutside: local.transferOutside ?? false,
+          },
   };
 }
 

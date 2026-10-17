@@ -9,10 +9,12 @@ export {
   useLocalTransaction,
   useLocalDataStatus,
   useLocalTransactions,
+  useMarkTransfer,
   useRecordTransaction,
   useSyncNow,
   useResolveConflict,
   useSyncStatus,
+  useUnmarkTransfer,
   useUpdateTransaction,
   useWorkspaces,
 } from './local-data-context';

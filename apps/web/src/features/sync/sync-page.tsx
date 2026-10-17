@@ -125,6 +125,7 @@ function useFieldText() {
       case 'occurredOn':
         return formatDate(row.occurredOn, locale);
       case 'categoryId':
+        if (row.transferId) return t('transfer.label');
         return (
           categories.find((c) => c.id === row.categoryId)?.name ?? t('transactionForm.noCategory')
         );

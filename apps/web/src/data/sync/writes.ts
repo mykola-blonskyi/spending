@@ -3,6 +3,7 @@ import { settleConflict } from './pull';
 import { discardFailed } from './push';
 import { applyLocalChange, type LocalChange } from './queue';
 import type { LocalStore } from './store';
+import { markTransfer as markSides, unmarkTransfer as unmarkSides } from './transfer';
 import { postResolution } from './transport';
 
 export type TransactionDraft = Omit<TransactionInput, 'id'>;
@@ -43,6 +44,20 @@ export async function updateTransaction(
 
 export async function deleteTransaction(store: LocalStore, id: string): Promise<void> {
   await write(store, { type: 'delete', id });
+}
+
+/** Both sides change in one local commit (BR-37). `counterpartId` null: an own account outside the app. */
+export async function markTransfer(
+  store: LocalStore,
+  id: string,
+  counterpartId: string | null,
+): Promise<void> {
+  const transferId = newId();
+  await store.commit((state) => markSides(state, id, counterpartId, transferId, newId));
+}
+
+export async function unmarkTransfer(store: LocalStore, id: string): Promise<void> {
+  await store.commit((state) => unmarkSides(state, id, newId));
 }
 
 /** Drops an entry's rejected change, back to its last server row or gone if it never synced. */

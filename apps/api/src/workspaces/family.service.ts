@@ -343,6 +343,12 @@ export class FamilyService {
    * The caller holds the ledger lock and the family row lock.
    */
   private async purge(tx: Tx, familyId: string): Promise<void> {
+    // A side whose partner has no author left loses that partner below: it becomes one-sided.
+    await tx.execute(sql`
+      update transactions t set transfer_id = gen_random_uuid(), transfer_outside = true
+      where t.workspace_id = ${familyId} and t.created_by is not null and t.transfer_id in (
+        select o.transfer_id from transactions o
+        where o.workspace_id = ${familyId} and o.created_by is null)`);
     await tx.execute(sql`
       delete from transactions where workspace_id = ${familyId} and created_by is null`);
     await tx.execute(sql`
@@ -384,6 +390,13 @@ export class FamilyService {
       from memberships p
       where t.workspace_id = ${familyId}
         and p.user_id = t.created_by and p.workspace_kind = 'personal'`);
+    // A family transfer whose sides had different authors now spans two workspaces, so each side
+    // becomes a one-sided transfer of its own (BR-37).
+    await tx.execute(sql`
+      update transactions t set transfer_id = gen_random_uuid(), transfer_outside = true
+      where t.transfer_id is not null and not t.transfer_outside and exists (
+        select 1 from transactions o
+        where o.transfer_id = t.transfer_id and o.id <> t.id and o.workspace_id <> t.workspace_id)`);
     await tx.delete(workspaces).where(eq(workspaces.id, familyId));
   }
 

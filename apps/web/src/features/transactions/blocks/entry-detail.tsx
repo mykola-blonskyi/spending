@@ -11,6 +11,7 @@ import { Button } from '@shared/ui/button';
 import { type EntryRow, fxLabels } from '../history-model';
 import { type EntryForm, useEntryForm } from '../use-entry-form';
 import { useTransactionDetail } from '../use-transaction-detail';
+import { useTransfer } from '../use-transfer';
 import {
   AccountSelect,
   AmountInput,
@@ -28,6 +29,7 @@ import {
 import { ConversionNote, EntryAmount } from './entry-amount';
 import { EntryStatus } from './history-status';
 import { SyncMarker } from './sync-marker';
+import { TransferButton } from './transfer-action';
 
 /** The category glyph in its color on a muted square (the split view's icon treatment). */
 export function CategoryGlyph({
@@ -168,6 +170,30 @@ function ConversionMeta({
   );
 }
 
+/** Where the other side of a transfer is: an entry on another account, or outside the app. */
+function OtherSide({ id }: { id: string }) {
+  const t = useTranslations('transfer');
+  const { counterpart, outside } = useTransfer(id);
+  return (
+    <MetaRow label={t('otherSide')}>
+      {outside ? (
+        t('outside')
+      ) : counterpart ? (
+        <span className="flex flex-wrap items-baseline gap-x-2">
+          <span>{counterpart.accountName ?? counterpart.title}</span>
+          <MoneyText
+            amountMinor={counterpart.amountMinor}
+            currency={counterpart.currency}
+            className="text-muted-foreground tabular"
+          />
+        </span>
+      ) : (
+        <span className="text-muted-foreground">{t('waiting')}</span>
+      )}
+    </MetaRow>
+  );
+}
+
 const iconButton = 'h-11 gap-1.5 px-3 text-[13px] lg:h-8 lg:px-2.5';
 const quietButton = cn(
   iconButton,
@@ -231,6 +257,7 @@ export function EntryDetail({ id, onBack }: { id: string; onBack?: () => void })
             {row?.sync.state === 'failed' && (
               <DiscardButton onConfirm={() => void detail.discard()} className={quietButton} />
             )}
+            <TransferButton id={id} className={quietButton} />
             <DeleteButton onConfirm={() => void detail.remove()} className={quietButton} />
           </div>
         )}
@@ -283,10 +310,13 @@ export function EntryDetail({ id, onBack }: { id: string; onBack?: () => void })
                     />
                     {row.category.name}
                   </span>
+                ) : row.isTransfer ? (
+                  t('transfer.label')
                 ) : (
                   t('pages.transactions.uncategorized')
                 )}
               </MetaRow>
+              {row.isTransfer && <OtherSide id={id} />}
               <MetaRow label={t('transactionForm.account')}>
                 {row.accountName ?? t('transactionForm.noAccount')}
               </MetaRow>

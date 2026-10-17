@@ -896,6 +896,8 @@ export interface components {
             /** @enum {string} */
             reviewStatus: "confirmed" | "pending_review";
             importBatchId: string | null;
+            transferId: string | null;
+            transferOutside: boolean;
             author: {
                 userId: string | null;
                 displayName: string | null;
@@ -933,6 +935,8 @@ export interface components {
                     categoryId: string | null;
                     description: string;
                     note: string;
+                    transferId?: string | null;
+                    transferOutside?: boolean;
                 };
             } | {
                 /** Format: uuid */
@@ -1045,6 +1049,8 @@ export interface components {
                     categoryId: string | null;
                     description: string;
                     note: string;
+                    transferId?: string | null;
+                    transferOutside?: boolean;
                 } | {
                     /** @constant */
                     deleted: true;
@@ -1078,6 +1084,8 @@ export interface components {
                     categoryId: string | null;
                     description: string;
                     note: string;
+                    transferId?: string | null;
+                    transferOutside?: boolean;
                 } | {
                     /** @constant */
                     deleted: true;
@@ -1104,6 +1112,8 @@ export interface components {
                 categoryId: string | null;
                 description: string;
                 note: string;
+                transferId?: string | null;
+                transferOutside?: boolean;
             };
         };
         ResolveResponseDto_Output: {
@@ -1148,6 +1158,8 @@ export interface components {
             /** @enum {string} */
             reviewStatus: "confirmed" | "pending_review";
             importBatchId: string | null;
+            transferId: string | null;
+            transferOutside: boolean;
             author: {
                 userId: string | null;
                 displayName: string | null;
@@ -1319,6 +1331,8 @@ export interface components {
                     categoryId: string | null;
                     description: string;
                     note: string;
+                    transferId?: string | null;
+                    transferOutside?: boolean;
                 } | {
                     /** @constant */
                     deleted: true;

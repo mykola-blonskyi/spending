@@ -20,7 +20,13 @@ function history(count: number): HistoryItem[] {
         fx: null,
         sync: { state: 'synced' },
       },
-      { categories: new Map(), accounts: new Map(), dayLabel: String, uncategorized: '' },
+      {
+        categories: new Map(),
+        accounts: new Map(),
+        dayLabel: String,
+        uncategorized: '',
+        transfer: '',
+      },
     ),
   );
   return groupByDay(

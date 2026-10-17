@@ -31,9 +31,11 @@ import type { LocalStore } from './store';
 import {
   deleteTransaction,
   discardChange,
+  markTransfer,
   recordTransaction,
   resolveConflict,
   type TransactionDraft,
+  unmarkTransfer,
   updateTransaction,
 } from './writes';
 
@@ -205,6 +207,9 @@ export const useUpdateTransaction = (): ((
 ) => Promise<void>) => useWriter(updateTransaction);
 export const useDeleteTransaction = (): ((id: string) => Promise<void>) =>
   useWriter(deleteTransaction);
+export const useMarkTransfer = (): ((id: string, counterpartId: string | null) => Promise<void>) =>
+  useWriter(markTransfer);
+export const useUnmarkTransfer = (): ((id: string) => Promise<void>) => useWriter(unmarkTransfer);
 export const useDiscardChange = (): ((id: string) => Promise<void>) => useWriter(discardChange);
 export const useResolveConflict = (): ((
   conflictId: string,

@@ -167,6 +167,9 @@ export function CategoryPicker({
 }) {
   const t = useTranslations('transactionForm');
   const labelId = useId();
+  if (form.isTransfer) {
+    return <p className="text-sm text-muted-foreground">{t('transferNoCategory')}</p>;
+  }
   return (
     <div className="flex flex-col gap-2">
       <Label id={labelId} className={labelClassName}>
@@ -392,7 +395,7 @@ export function SaveBar({
 
 type ConfirmProps = { onConfirm: () => void; className?: string };
 
-function ConfirmButton({
+export function ConfirmButton({
   icon: Icon,
   label,
   title,

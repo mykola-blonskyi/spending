@@ -24,7 +24,13 @@ const row = (patch: Partial<TransactionEntry>) =>
       sync: { state: 'synced' },
       ...patch,
     },
-    { categories: new Map(), accounts: new Map(), dayLabel: String, uncategorized: '' },
+    {
+      categories: new Map(),
+      accounts: new Map(),
+      dayLabel: String,
+      uncategorized: '',
+      transfer: '',
+    },
   );
 const usd = row({ id: 'usd', currency: 'USD', amountMinor: 1085, baseAmountMinor: 1000, fx });
 const chf = row({ id: 'chf', currency: 'CHF', amountMinor: 500, version: 1 });

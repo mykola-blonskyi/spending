@@ -114,6 +114,20 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
 - **BR-21.** Pending-review transactions are excluded from history, totals and budgets until they
   are confirmed.
 
+- **BR-37.** A transfer is money moved between the user's own accounts. It is neither income nor
+  spending. Its sides stay ordinary income and expense entries, each in its own account's
+  currency, sharing a `transferId`; a one-sided transfer (the other account is outside the app)
+  is one entry with `transferOutside`. A transfer has no category. The two sides are in the same
+  workspace and of opposite kinds, and a transfer has at most two sides; anything else is
+  rejected with `INVALID_TRANSFER`. Analytics (totals, categories, trends, the comparison
+  period) and history totals leave transfers out, budgets never count them, and an account's
+  entries, transfers included, are its movement. Marking and "not a transfer" are ordinary sync
+  upserts, one per side, so they work offline and a stale side becomes a normal conflict (BR-19)
+  while the other side applies. "Not a transfer" returns every side to income or expense
+  without a category. Deleting a family turns a transfer whose sides land in two personal
+  workspaces into two one-sided transfers, and a side whose partner is deleted with the family
+  (its author left the app) into a one-sided transfer.
+
 ## Budgets and recurring
 
 - **BR-22.** A budget is a monthly EUR limit on one expense category. Progress is the sum of

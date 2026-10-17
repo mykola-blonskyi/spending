@@ -6,7 +6,7 @@ import {
   type OnApplicationBootstrap,
   type OnApplicationShutdown,
 } from '@nestjs/common';
-import { and, asc, desc, eq, exists, gt, inArray, lt, ne, not, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, exists, gt, inArray, isNull, lt, ne, not, sql } from 'drizzle-orm';
 import { APP_CONFIG, type AppConfig } from '../common/config';
 import { ApiError } from '../common/errors';
 import type { CurrencyCode } from '../common/money';
@@ -81,6 +81,8 @@ const existingColumns = {
   categoryId: transactions.categoryId,
   description: transactions.description,
   note: transactions.note,
+  transferId: transactions.transferId,
+  transferOutside: transactions.transferOutside,
   createdBy: transactions.createdBy,
   version: transactions.version,
   reviewStatus: transactions.reviewStatus,
@@ -354,6 +356,12 @@ export class SyncService {
       categoryId: input.categoryId,
       description: input.description,
       note: input.note,
+      transferId:
+        input.transferId === undefined ? (existing?.transferId ?? null) : input.transferId,
+      transferOutside:
+        input.transferOutside === undefined
+          ? (existing?.transferOutside ?? false)
+          : input.transferOutside,
     };
     const authorId = existing ? existing.createdBy : actorId;
     const authorPersonalWorkspaceId = authorId
@@ -361,6 +369,22 @@ export class SyncService {
       : null;
     const account = intended.accountId ? await this.accountFact(tx, intended.accountId) : null;
     const category = intended.categoryId ? await this.categoryFact(tx, intended.categoryId) : null;
+    const transferPeers = intended.transferId
+      ? await tx
+          .select({
+            workspaceId: transactions.workspaceId,
+            kind: transactions.kind,
+            transferOutside: transactions.transferOutside,
+          })
+          .from(transactions)
+          .where(
+            and(
+              eq(transactions.transferId, intended.transferId),
+              ne(transactions.id, input.id),
+              isNull(transactions.deletedAt),
+            ),
+          )
+      : [];
     const decision = decideUpsert({
       actorId,
       workspaces,
@@ -370,6 +394,7 @@ export class SyncService {
       authorPersonalWorkspaceId,
       account,
       category,
+      transferPeers,
     });
     switch (decision.outcome) {
       case 'rejected':

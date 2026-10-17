@@ -59,6 +59,13 @@ amount in a foreign currency, the rate, commission and cashback are not.
 The balance column after each row should equal the previous balance plus the row's amount. A row
 that does not is shown as a warning before import; it is still imported.
 
+### Transfer
+
+Money moved between the user's own accounts in one space: an expense on one account and an
+income on another, linked, and counted as neither (BR-37). A **one-sided transfer** has its other
+side on an "own account outside the app" (uk "власний рахунок поза застосунком", ru "собственный
+счёт вне приложения", es "cuenta propia fuera de la aplicación").
+
 ### Sync
 
 Sending changes made on a device to the server and pulling others' changes back.
@@ -92,6 +99,8 @@ The register is polite "ви" in Ukrainian, polite "вы" in Russian and "tú" i
 | skipped row        | skipped row             | пропущений рядок           | пропущенная строка          | fila omitida           |
 | review             | review                  | перевірка, перевірити      | проверка, проверить         | revisión, revisar      |
 | sync               | sync                    | синхронізація              | синхронизация               | sincronización         |
+| transfer           | transfer                | переказ                    | перевод                     | transferencia          |
+| other side         | other side              | друга сторона              | вторая сторона              | otro lado              |
 | conflict           | conflict                | конфлікт                   | конфликт                    | conflicto              |
 | member             | member                  | учасник                    | участник                    | miembro                |
 | owner              | owner                   | власник                    | владелец                    | propietario            |

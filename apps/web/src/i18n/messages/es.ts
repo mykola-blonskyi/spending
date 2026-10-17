@@ -261,6 +261,7 @@ export const es = {
     backspace: 'Borrar el último dígito',
     decimalSeparator: 'Separador decimal',
     saveHint: 'Se guarda primero en este dispositivo y luego se sincroniza.',
+    transferNoCategory: 'Una transferencia no tiene categoría.',
   },
   syncCenter: {
     conflictsTitle: 'Por revisar',
@@ -332,6 +333,24 @@ export const es = {
       expense: '{date} gasté {amount} en {category}, en {where}, con {account}.',
       income: '{date} recibí {amount} como {category}, de {where}, en {account}.',
     },
+  },
+  transfer: {
+    label: 'Transferencia',
+    mark: 'Es una transferencia',
+    markTitle: 'Marcar como transferencia',
+    markDescription:
+      'El dinero que mueves entre tus cuentas no es ni ingreso ni gasto. Elige dónde está el otro lado de esta transferencia.',
+    otherSide: 'Otro lado',
+    outside: 'Cuenta propia fuera de la aplicación',
+    outsideHint: 'Esa cuenta no se registra aquí.',
+    noCandidates: 'No hay ningún movimiento que encaje en tus otras cuentas de este espacio.',
+    confirm: 'Marcar como transferencia',
+    marked: 'Marcado como transferencia',
+    unmark: 'No es una transferencia',
+    unmarkTitle: '¿No es una transferencia?',
+    unmarkDescription: 'Los dos lados vuelven a ser ingreso y gasto, sin categoría.',
+    unmarked: 'Elige una categoría para los dos movimientos.',
+    waiting: 'El otro lado aún no está en este dispositivo',
   },
   categoryDefaults: {
     groceries: 'Supermercado',
@@ -940,6 +959,8 @@ export const es = {
       'Sin conexión con el servidor. Comprueba tu conexión a internet y vuelve a intentarlo.',
     INVALID_ACCOUNT: 'Esta cuenta está archivada o no está disponible aquí. Elige otra.',
     INVALID_CATEGORY: 'Esta categoría está archivada o no encaja con este tipo. Elige otra.',
+    INVALID_TRANSFER:
+      'Este movimiento no puede ser un lado de esa transferencia. Vuelve a marcarlo.',
     REVIEW_REQUIRED:
       'Este movimiento espera revisión en una importación y aún no se puede cambiar.',
     MUTATION_ID_REUSED: 'No hemos podido asociar este cambio a tu cuenta. Vuelve a hacerlo.',

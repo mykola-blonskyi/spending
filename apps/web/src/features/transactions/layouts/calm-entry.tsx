@@ -14,6 +14,7 @@ import {
   NoteField,
   SaveBar,
   ScopeChoice,
+  TransferButton,
 } from '../blocks';
 import { type EntryForm, useEntryForm } from '../use-entry-form';
 
@@ -53,6 +54,7 @@ export function CalmEntryView({ form }: { form: EntryForm }) {
           <NoteField form={form} />
           <SaveBar form={form}>
             {form.canDiscard && <DiscardButton onConfirm={() => void form.discard()} />}
+            {form.canDelete && form.entryId && <TransferButton id={form.entryId} />}
             {form.canDelete && <DeleteButton onConfirm={() => void form.remove()} />}
           </SaveBar>
         </form>

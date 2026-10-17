@@ -80,7 +80,13 @@ describe('pressKey', () => {
 });
 
 describe('valuesFromDraft', () => {
-  const draft = { ...values, amountMinor: 1250, workspaceId: 'ws-1' };
+  const draft = {
+    ...values,
+    amountMinor: 1250,
+    workspaceId: 'ws-1',
+    transferId: null,
+    transferOutside: false,
+  };
 
   it.each([
     ['.', '12.50'],

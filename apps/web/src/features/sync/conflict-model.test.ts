@@ -19,6 +19,8 @@ const server = {
   source: 'manual',
   reviewStatus: 'confirmed',
   importBatchId: null,
+  transferId: null,
+  transferOutside: false,
   author: { userId: 'ann', displayName: 'Ann' },
   version: 2,
   revision: 10,
@@ -26,6 +28,7 @@ const server = {
   updatedAt: '2026-10-14T09:00:00.000Z',
 } as const;
 const { id, workspaceId, kind, amountMinor, occurredOn, accountId, categoryId, note } = server;
+const { transferId, transferOutside } = server;
 const local = {
   id,
   workspaceId,
@@ -37,6 +40,8 @@ const local = {
   categoryId,
   description: 'Team lunch',
   note,
+  transferId,
+  transferOutside,
 };
 
 function conflict(patch: Partial<Conflict> = {}): Conflict {
@@ -55,6 +60,20 @@ function conflict(patch: Partial<Conflict> = {}): Conflict {
 describe('conflict review', () => {
   it('lists the fields that differ, amount and currency as one', () => {
     expect(differingFields(versionsOf(conflict()))).toEqual(['amount', 'description']);
+  });
+
+  it('compares a transfer mark as the category, and merges them together', () => {
+    const marked = versionsOf(
+      conflict({
+        local: { ...local, categoryId: null, transferId: 'tr-1', transferOutside: true },
+      }),
+    );
+    expect(differingFields(marked)).toEqual(['amount', 'categoryId', 'description']);
+    expect(mergeVersions(marked.server!, marked.local!, { categoryId: 'local' })).toMatchObject({
+      categoryId: null,
+      transferId: 'tr-1',
+      transferOutside: true,
+    });
   });
 
   it('compares a deletion as a whole', () => {

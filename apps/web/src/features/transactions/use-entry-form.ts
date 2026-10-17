@@ -91,6 +91,7 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
           ? 'ready'
           : 'loading';
 
+  const transferId = stored.entry?.transferId ?? null;
   const today = todayIn(profile.timezone);
   const separator = decimalSeparator(locale);
   const initial = useMemo<FormValues>(
@@ -132,8 +133,10 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
         : { for: key, values: { ...initial, ...patch }, version: settledVersion },
     );
 
+  // A transfer has no category (BR-37), so a transfer's form offers none.
   const categories = categoryViews.items.filter(
     (category) =>
+      transferId === null &&
       category.workspaceId === workspaceId &&
       category.kind === typed.kind &&
       (!category.archived || category.id === typed.categoryId),
@@ -199,6 +202,7 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
       press: (key: KeypadKey) => change({ amount: pressKey(values.amount, key, exponent) }),
     },
     conversion,
+    isTransfer: transferId !== null,
     categories,
     accounts: workspaceAccounts,
     currencies,
@@ -210,7 +214,12 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
       if (!draftFields || !workspaceId || submitting) return;
       setSubmitting(true);
       try {
-        const draft = { ...draftFields, workspaceId };
+        const draft = {
+          ...draftFields,
+          workspaceId,
+          transferId,
+          transferOutside: stored.entry?.transferOutside ?? false,
+        };
         if (entryId) {
           await update(entryId, draft, ours?.version);
           // Later saves build on this one, whose base is now on the queue.
@@ -224,6 +233,7 @@ export function useEntryForm(id?: string, onSaved?: () => void) {
         setSubmitting(false);
       }
     },
+    entryId,
     canDelete: mode === 'edit' && status === 'ready',
     remove: () => (entryId ? removeEntry(entryId) : Promise.resolve()),
     canDiscard: status === 'ready' && stored.entry?.sync.state === 'failed',

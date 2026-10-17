@@ -13,6 +13,7 @@ import {
   summarize,
   toEntryRow,
   toQuery,
+  transferCandidates,
 } from './history-model';
 
 const groceries: CategoryView = {
@@ -31,6 +32,7 @@ const context: RowContext = {
   accounts: new Map([[card.id, card]]),
   dayLabel: (date) => `day ${date}`,
   uncategorized: 'Uncategorized',
+  transfer: 'Transfer',
 };
 
 function entry(patch: Partial<TransactionEntry> = {}): TransactionEntry {
@@ -172,6 +174,38 @@ describe('summarize', () => {
         { currency: 'CHF', expense: 500, income: 70 },
       ],
     });
+  });
+});
+
+describe('transfers (BR-37)', () => {
+  it('names a transfer instead of "Uncategorized" and leaves it out of the totals', () => {
+    const side = toEntryRow(
+      entry({ description: '', accountId: card.id, transferId: 'tr-1' }),
+      context,
+    );
+    expect(side).toMatchObject({ title: 'Transfer', subtitle: 'Card', isTransfer: true });
+    expect(toEntryRow(entry({ transferId: 'tr-1' }), context).subtitle).toBe('Transfer');
+    expect(summarize([side, toEntryRow(entry({ amountMinor: 300 }), context)]).base).toEqual({
+      expense: 300,
+      income: 0,
+    });
+  });
+
+  it('offers the other sides on another account of the same space, nearest first', () => {
+    const out = entry({ id: 'out', accountId: 'card', amountMinor: 5000 });
+    const other = (id: string, patch: Partial<TransactionEntry>) =>
+      entry({ id, kind: 'income', accountId: 'savings', amountMinor: 5000, ...patch });
+    const candidates = transferCandidates(out, [
+      out,
+      other('far', { occurredOn: '2026-09-01' }),
+      other('close', { amountMinor: 4900 }),
+      other('exact', {}),
+      other('same-account', { accountId: 'card' }),
+      other('same-kind', { kind: 'expense' }),
+      other('family', { workspaceId: 'ws-family' }),
+      other('linked', { transferId: 'tr-9' }),
+    ]);
+    expect(candidates.map((c) => c.id)).toEqual(['exact', 'close', 'far']);
   });
 });
 

@@ -15,6 +15,7 @@ import {
   NoteField,
   SaveBar,
   ScopeChoice,
+  TransferButton,
 } from '../blocks';
 import { type EntryForm, useEntryForm } from '../use-entry-form';
 
@@ -114,6 +115,9 @@ export function SoftEntryView({ form }: { form: EntryForm }) {
           <SaveBar form={form} buttonClassName="h-14 rounded-full text-[17px] font-semibold">
             {form.canDiscard && (
               <DiscardButton onConfirm={() => void form.discard()} className="h-12 rounded-full" />
+            )}
+            {form.canDelete && form.entryId && (
+              <TransferButton id={form.entryId} className="h-12 rounded-full" />
             )}
             {form.canDelete && (
               <DeleteButton onConfirm={() => void form.remove()} className="h-12 rounded-full" />

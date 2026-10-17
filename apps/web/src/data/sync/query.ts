@@ -101,6 +101,8 @@ export function localEntries(state: LocalState): TransactionEntry[] {
         categoryId: row.categoryId,
         description: row.description,
         note: row.note,
+        transferId: row.transferId,
+        transferOutside: row.transferOutside,
         createdAt: row.createdAt,
         scope: row.scope,
         version: row.version,
