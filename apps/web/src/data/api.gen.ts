@@ -1405,6 +1405,11 @@ export interface components {
             items: {
                 transaction: components["schemas"]["TransactionView_Output"];
                 familyCategoryId: string | null;
+                transferSuggestion?: {
+                    counterpartId: string | null;
+                    /** @enum {string} */
+                    reason: "keyword" | "counterpart";
+                };
             }[];
         };
         ConfirmDto: {
@@ -1415,6 +1420,9 @@ export interface components {
                 scope: "personal" | "family";
                 categoryId: string | null;
                 bankCategory?: string;
+                transfer?: {
+                    counterpartId: string | null;
+                };
             }[];
         };
         ConfirmResultDto_Output: {

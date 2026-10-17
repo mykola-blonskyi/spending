@@ -5227,6 +5227,35 @@
                       "type": "null"
                     }
                   ]
+                },
+                "transferSuggestion": {
+                  "type": "object",
+                  "properties": {
+                    "counterpartId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "reason": {
+                      "type": "string",
+                      "enum": [
+                        "keyword",
+                        "counterpart"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "counterpartId",
+                    "reason"
+                  ],
+                  "additionalProperties": false
                 }
               },
               "required": [
@@ -5279,6 +5308,27 @@
                 "bankCategory": {
                   "type": "string",
                   "maxLength": 100
+                },
+                "transfer": {
+                  "type": "object",
+                  "properties": {
+                    "counterpartId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "counterpartId"
+                  ],
+                  "additionalProperties": false
                 }
               },
               "required": [

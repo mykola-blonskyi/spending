@@ -38,6 +38,12 @@ export const importBatchViewSchema = z
   .meta({ id: 'ImportBatchView' });
 export type ImportBatchView = z.infer<typeof importBatchViewSchema>;
 
+const transferSuggestionFields = {
+  /** Null: a transfer to or from an own account outside the app. */
+  counterpartId: z.uuid().nullable(),
+  reason: z.enum(['keyword', 'counterpart']),
+};
+
 const rejectedRowSchema = z.object({ line: z.int(), reason: z.enum(REJECT_REASONS) });
 
 export const importResultSchema = z.object({
@@ -49,11 +55,7 @@ export const importResultSchema = z.object({
     bankCategories: z.record(z.uuid(), z.string()),
     /** BR-38: rows that look like own transfers, for the user to confirm. Never stored. */
     transferSuggestions: z.array(
-      z.object({
-        transactionId: z.uuid(),
-        counterpartId: z.uuid().nullable(),
-        reason: z.enum(['keyword', 'counterpart']),
-      }),
+      z.object({ transactionId: z.uuid(), ...transferSuggestionFields }),
     ),
   }),
   duplicates: z.int(),
@@ -74,6 +76,8 @@ export const reviewListSchema = z.object({
       transaction: transactionViewSchema,
       // The transaction's own categoryId is the personal suggestion.
       familyCategoryId: z.uuid().nullable(),
+      /** BR-38: the counterpart may be another row of this list, which then points back. */
+      transferSuggestion: z.object(transferSuggestionFields).optional(),
     }),
   ),
 });
@@ -81,12 +85,19 @@ export const reviewListSchema = z.object({
 export const confirmBodySchema = z.strictObject({
   items: z
     .array(
-      z.strictObject({
-        transactionId: z.uuid(),
-        scope: z.enum(WORKSPACE_KINDS),
-        categoryId: z.uuid().nullable(),
-        bankCategory: bankCategorySchema.optional(),
-      }),
+      z
+        .strictObject({
+          transactionId: z.uuid(),
+          scope: z.enum(WORKSPACE_KINDS),
+          categoryId: z.uuid().nullable(),
+          bankCategory: bankCategorySchema.optional(),
+          /** BR-38: confirm as a transfer; null links it to an own account outside the app. */
+          transfer: z.strictObject({ counterpartId: z.uuid().nullable() }).optional(),
+        })
+        .refine(
+          (item) => !item.transfer || (item.scope === 'personal' && item.categoryId === null),
+          'a transfer is personal and has no category',
+        ),
     )
     .min(1)
     .max(500)

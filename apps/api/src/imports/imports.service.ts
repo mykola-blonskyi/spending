@@ -9,7 +9,8 @@ import { accounts, categories, importBatches, transactions, users } from '../dat
 import { convert, type RateQuote } from '../ledger/fx/conversion';
 import { FxService } from '../ledger/fx/fx.service';
 import { LedgerService, selectViewRows } from '../ledger/ledger.service';
-import { toLedgerRow, type TransactionView } from '../ledger/views';
+import { type EntryKind, toLedgerRow, type TransactionView } from '../ledger/views';
+import { transferError } from '../sync/mutations';
 import { AccessPolicy } from '../workspaces/access-policy';
 import { categorize } from './categorize';
 import { learnCategoryRules, loadCatalog } from './category-rules';
@@ -28,6 +29,58 @@ import {
 
 /** Keeps one multi-row insert well under PostgreSQL's 65535 bind parameters. */
 const INSERT_CHUNK = 500;
+
+type LinkSide = Readonly<{ id: string; kind: EntryKind; accountId: string | null }>;
+type Counterpart = LinkSide &
+  Readonly<{
+    workspaceId: string;
+    transferId: string | null;
+    reviewStatus: 'confirmed' | 'pending_review';
+  }>;
+
+/**
+ * BR-37, BR-38: the transfer id each row confirmed as a transfer takes, and the confirmed
+ * counterparts with it. A counterpart is a live non-transfer entry of the personal workspace on
+ * another account, of the opposite kind, used once: confirmed already, or awaiting review in
+ * this request and pointing back.
+ */
+function transferLinks(
+  items: readonly ConfirmItem[],
+  pending: ReadonlyMap<string, LinkSide>,
+  counterparts: ReadonlyMap<string, Counterpart>,
+  personalId: string,
+): Map<string, string> {
+  const pointsTo = new Map(items.map((i) => [i.transactionId, i.transfer?.counterpartId]));
+  const links = new Map<string, string>();
+  for (const item of items) {
+    if (!item.transfer || links.has(item.transactionId)) continue;
+    const row = pending.get(item.transactionId)!;
+    const transferId = crypto.randomUUID();
+    links.set(row.id, transferId);
+    const { counterpartId } = item.transfer;
+    if (counterpartId === null) continue;
+    const other = counterparts.get(counterpartId);
+    const fits =
+      other !== undefined &&
+      other.transferId === null &&
+      other.accountId !== row.accountId &&
+      !links.has(other.id) &&
+      (other.reviewStatus === 'confirmed' || pointsTo.get(other.id) === row.id) &&
+      transferError(
+        {
+          workspaceId: personalId,
+          kind: row.kind,
+          categoryId: null,
+          transferId,
+          transferOutside: false,
+        },
+        [{ workspaceId: other.workspaceId, kind: other.kind, transferOutside: false }],
+      ) === null;
+    if (!fits) throw new ApiError('INVALID_TRANSFER');
+    links.set(other.id, transferId);
+  }
+  return links;
+}
 
 @Injectable()
 export class ImportsService {
@@ -221,7 +274,10 @@ export class ImportsService {
     });
   }
 
-  /** BR-28. The actor's rows awaiting review, with what the family workspace would suggest. */
+  /**
+   * BR-28. The actor's rows awaiting review, with what the family workspace would suggest and,
+   * BR-38, a transfer counterpart among the confirmed entries and the other rows awaiting review.
+   */
   async review(actorId: string) {
     return this.db.transaction(async (tx) => {
       const personalId = await this.policy.personalWorkspaceId(actorId, tx);
@@ -241,13 +297,31 @@ export class ImportsService {
           desc(transactions.createdAt),
           desc(transactions.id),
         );
+      const suggestions = await this.transferSuggestions(
+        tx,
+        actorId,
+        personalId,
+        null,
+        rows.map((row) => ({ ...row, currency: row.currency as CurrencyCode })),
+        new Map(),
+      );
+      const suggestionOf = new Map(suggestions.map((s) => [s.transactionId, s]));
       const visible = new Set([personalId, ...(family ? [family.workspaceId] : [])]);
-      return rows.map((row) => ({
-        transaction: toLedgerRow(row, visible) as TransactionView,
-        familyCategoryId: familyCatalog
-          ? categorize(row.description, row.kind, familyCatalog)
-          : null,
-      }));
+      return rows.map((row) => {
+        const suggestion = suggestionOf.get(row.id);
+        return {
+          transaction: toLedgerRow(row, visible) as TransactionView,
+          familyCategoryId: familyCatalog
+            ? categorize(row.description, row.kind, familyCatalog)
+            : null,
+          ...(suggestion && {
+            transferSuggestion: {
+              counterpartId: suggestion.counterpartId,
+              reason: suggestion.reason,
+            },
+          }),
+        };
+      });
     });
   }
 
@@ -255,6 +329,7 @@ export class ImportsService {
    * BR-28. Publishes reviewed rows in one transaction: each takes its category (of the target
    * workspace and the row's kind, BR-4) and moves to the family when asked. The account stays,
    * which BR-3 allows for the author's personal account. Each chosen category is learned (BR-29).
+   * A row confirmed as a transfer stays personal without a category and is linked here (BR-38).
    */
   confirm(actorId: string, items: readonly ConfirmItem[]): Promise<TransactionView[]> {
     return ledgerTransaction(this.db, async (tx) => {
@@ -265,6 +340,7 @@ export class ImportsService {
         .select({
           id: transactions.id,
           kind: transactions.kind,
+          accountId: transactions.accountId,
           description: transactions.description,
           categoryId: transactions.categoryId,
         })
@@ -316,14 +392,47 @@ export class ImportsService {
           bankCategory: item.bankCategory,
         };
       });
+      const counterpartIds = items.flatMap((i) =>
+        i.transfer?.counterpartId ? [i.transfer.counterpartId] : [],
+      );
+      const counterparts =
+        counterpartIds.length === 0
+          ? []
+          : await tx
+              .select({
+                id: transactions.id,
+                kind: transactions.kind,
+                accountId: transactions.accountId,
+                workspaceId: transactions.workspaceId,
+                transferId: transactions.transferId,
+                reviewStatus: transactions.reviewStatus,
+              })
+              .from(transactions)
+              .where(and(inArray(transactions.id, counterpartIds), isNull(transactions.deletedAt)));
+      const links = transferLinks(
+        items,
+        rows,
+        new Map(counterparts.map((c) => [c.id, c])),
+        personalId,
+      );
+      const outside = new Set(
+        items.flatMap((i) => (i.transfer?.counterpartId === null ? [i.transactionId] : [])),
+      );
+      const linkedConfirmed = counterparts.filter(
+        (c) => c.reviewStatus === 'confirmed' && links.has(c.id),
+      );
       const values = sql.join(
-        confirmed.map((c) => sql`(${c.id}::uuid, ${c.workspaceId}::uuid, ${c.categoryId}::uuid)`),
+        [...confirmed, ...linkedConfirmed.map((c) => ({ ...c, categoryId: null }))].map(
+          (c) =>
+            sql`(${c.id}::uuid, ${c.workspaceId}::uuid, ${c.categoryId}::uuid, ${links.get(c.id) ?? null}::uuid, ${outside.has(c.id)}::boolean)`,
+        ),
         sql`, `,
       );
       await tx.execute(sql`
         update transactions t
-        set workspace_id = v.workspace_id, category_id = v.category_id, review_status = 'confirmed'
-        from (values ${values}) as v(id, workspace_id, category_id)
+        set workspace_id = v.workspace_id, category_id = v.category_id, review_status = 'confirmed',
+          transfer_id = v.transfer_id, transfer_outside = v.transfer_outside
+        from (values ${values}) as v(id, workspace_id, category_id, transfer_id, transfer_outside)
         where t.id = v.id`);
       await learnCategoryRules(
         tx,
@@ -390,15 +499,15 @@ export class ImportsService {
   }
 
   /**
-   * BR-38. Candidates are the live, confirmed, non-transfer entries on the workspace's other
-   * accounts around the imported dates, read with one query; rates come per currency as for the
-   * import itself.
+   * BR-38. Candidates are the live, confirmed, non-transfer entries of the workspace (on its other
+   * accounts than the import's, when given) around the imported dates, read with one query, and
+   * the imported rows themselves; rates come per currency as for the import itself.
    */
   private async transferSuggestions(
     tx: Tx,
     actorId: string,
     workspaceId: string,
-    accountId: string,
+    accountId: string | null,
     imported: readonly MatchRow[],
     quotes: Map<CurrencyCode, Map<string, RateQuote | null>>,
   ) {
@@ -418,7 +527,7 @@ export class ImportsService {
       .where(
         and(
           eq(transactions.workspaceId, workspaceId),
-          ne(transactions.accountId, accountId),
+          accountId === null ? undefined : ne(transactions.accountId, accountId),
           isNull(transactions.deletedAt),
           isNull(transactions.transferId),
           eq(transactions.reviewStatus, 'confirmed'),
@@ -439,7 +548,10 @@ export class ImportsService {
       .where(eq(users.id, actorId));
     return suggestTransfers(
       imported,
-      candidates.map((row) => ({ ...row, currency: row.currency as CurrencyCode })),
+      [
+        ...candidates.map((row) => ({ ...row, currency: row.currency as CurrencyCode })),
+        ...imported,
+      ],
       user?.displayName ?? '',
       (currency, date) => quotes.get(currency)?.get(date) ?? null,
     );
