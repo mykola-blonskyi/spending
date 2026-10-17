@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq, inArray, isNull, ne, notExists, type SQL, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, ne, notExists, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { z } from 'zod';
 import { ApiError } from '../common/errors';
@@ -12,7 +12,6 @@ import {
 } from '../database/database.module';
 import { accounts, categories, transactions, users, workspaces } from '../database/schema';
 import { AccessPolicy } from '../workspaces/access-policy';
-import { decodeCursor, encodeCursor, escapeLike, type TransactionQuery } from './history';
 import {
   type AccountView,
   type CategoryView,
@@ -21,7 +20,6 @@ import {
   type LedgerRow,
   toView,
   toLedgerRow,
-  type TransactionView,
   updateAccountSchema,
   updateCategorySchema,
 } from './views';
@@ -88,8 +86,6 @@ const viewColumns = {
   updatedAt: transactions.updatedAt,
 };
 
-const historyKey = sql<string>`to_char(${transactions.createdAt} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
-
 /**
  * BR-37. A live side of one of these transfers left without a live partner becomes one-sided.
  * The caller holds the ledger lock and passes the transfers a write took a side out of.
@@ -122,9 +118,9 @@ export async function releaseLoneSides(tx: Tx, transferIds: readonly string[]): 
 }
 
 /** Transactions joined with what `toLedgerRow` needs. Callers add the workspace constraint. */
-export function selectViewRows<E extends Record<string, SQL>>(tx: Tx, extra: E = {} as E) {
+export function selectViewRows(tx: Tx) {
   return tx
-    .select({ ...viewColumns, ...extra })
+    .select(viewColumns)
     .from(transactions)
     .innerJoin(workspaces, eq(workspaces.id, transactions.workspaceId))
     .leftJoin(users, eq(users.id, transactions.createdBy))
@@ -230,72 +226,6 @@ export class LedgerService {
         .returning(categoryColumns);
       return toView(row!);
     });
-  }
-
-  /**
-   * Server-side history (ADR-006) for export and API clients. Tombstones never appear (BR-16);
-   * pending-review rows only on request, and only from the actor's personal workspace (BR-21).
-   */
-  async listTransactions(
-    actorId: string,
-    query: TransactionQuery,
-  ): Promise<{ transactions: TransactionView[]; nextCursor: string | null }> {
-    const memberships = await this.policy.memberships(actorId);
-    const visible = new Set(memberships.map((m) => m.workspaceId));
-    if (query.workspaceId) await this.policy.requireMember(actorId, query.workspaceId);
-    const pending = query.reviewStatus === 'pending_review';
-    const searched = memberships
-      .filter((m) => !query.workspaceId || m.workspaceId === query.workspaceId)
-      .filter((m) => !query.scope || m.kind === query.scope)
-      .filter((m) => !pending || m.kind === 'personal')
-      .map((m) => m.workspaceId);
-    if (searched.length === 0) return { transactions: [], nextCursor: null };
-
-    const conditions: (SQL | undefined)[] = [
-      inArray(transactions.workspaceId, searched),
-      isNull(transactions.deletedAt),
-      eq(transactions.reviewStatus, query.reviewStatus ?? 'confirmed'),
-      query.from ? sql`${transactions.occurredOn} >= ${query.from}` : undefined,
-      query.to ? sql`${transactions.occurredOn} <= ${query.to}` : undefined,
-      query.kind ? eq(transactions.kind, query.kind) : undefined,
-      query.currency ? eq(transactions.currency, query.currency) : undefined,
-      query.categoryId ? eq(transactions.categoryId, query.categoryId) : undefined,
-      // BR-3: an account the actor cannot see must not be usable as a filter either.
-      query.accountId
-        ? and(
-            eq(transactions.accountId, query.accountId),
-            inArray(accounts.workspaceId, [...visible]),
-          )
-        : undefined,
-    ];
-    if (query.q) {
-      const pattern = `%${escapeLike(query.q)}%`;
-      conditions.push(
-        sql`(${transactions.description} ilike ${pattern} or ${transactions.note} ilike ${pattern})`,
-      );
-    }
-    if (query.cursor) {
-      const cursor = decodeCursor(query.cursor);
-      if (!cursor) throw new ApiError('VALIDATION_FAILED', 'Invalid cursor');
-      conditions.push(
-        sql`(${transactions.occurredOn}, ${transactions.createdAt}, ${transactions.id})
-            < (${cursor.occurredOn}::date, ${cursor.createdAt}::timestamptz, ${cursor.id}::uuid)`,
-      );
-    }
-    const rows = await selectViewRows(this.db, { historyKey })
-      .where(and(...conditions))
-      .orderBy(desc(transactions.occurredOn), desc(transactions.createdAt), desc(transactions.id))
-      .limit(query.limit + 1);
-    const page = rows.slice(0, query.limit);
-    const last = page.at(-1);
-    const nextCursor =
-      rows.length > query.limit && last
-        ? encodeCursor({ occurredOn: last.occurredOn, createdAt: last.historyKey, id: last.id })
-        : null;
-    return {
-      transactions: page.map((row) => toLedgerRow(row, visible) as TransactionView),
-      nextCursor,
-    };
   }
 
   /** Views of the given rows as `actorId` sees them, keyed by id; invisible rows are absent. */

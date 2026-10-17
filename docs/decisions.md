@@ -139,8 +139,9 @@ or not, the queue is flushed to `POST /api/v1/sync/push`. That endpoint is the o
 creates, updates or deletes transactions, apart from server-side import and recurring jobs and
 conflict resolution. `GET /api/v1/sync/pull?cursor=` returns changes by global revision. Accounts
 and categories are pulled for offline use but edited online through REST. History search and
-filtering run on the local store. `GET /api/v1/transactions` offers the same filters server-side
-for export and API clients.
+filtering run on the local store; the export reads `GET /api/v1/data-export`. A server-side
+history endpoint (`GET /api/v1/transactions`) existed with no client and was removed in the
+2026-10-17 architecture audit (L5).
 
 **Consequences.** There is no second code path whose access checks can drift. Offline and online
 behave identically.

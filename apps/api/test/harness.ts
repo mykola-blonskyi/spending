@@ -234,6 +234,25 @@ export async function categoriesOf(
   return Object.fromEntries(categories.map((c) => [c.systemKey ?? c.id, c.id]));
 }
 
+/**
+ * The live rows `session` sees, newest first as history orders them, read through the sync pull.
+ * Pending-review rows come back only when asked for.
+ */
+export async function liveRows<T extends Record<string, unknown>>(
+  t: TestApp,
+  session: Session,
+  reviewStatus: 'confirmed' | 'pending_review' = 'confirmed',
+): Promise<T[]> {
+  const { transactions } = await body<{ transactions: Record<string, unknown>[] }>(
+    await as(t, session, '/v1/sync/pull?limit=1000'),
+    200,
+  );
+  const key = (r: Record<string, unknown>) => `${r.occurredOn}|${r.createdAt}|${r.id}`;
+  return transactions
+    .filter((r) => r.reviewStatus === reviewStatus)
+    .sort((a, b) => key(b).localeCompare(key(a))) as T[];
+}
+
 export type PushedRow = { id: string; version: number } & Record<string, unknown>;
 
 /** Creates transactions through sync push and fails unless every one is applied. */

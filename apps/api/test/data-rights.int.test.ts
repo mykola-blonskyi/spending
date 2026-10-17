@@ -18,6 +18,7 @@ import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
 import {
   api,
   as,
+  liveRows,
   loginAs,
   resetData,
   type Session,
@@ -383,10 +384,7 @@ describe('data rights', () => {
         await t.db.select().from(transactions).where(eq(transactions.id, privateRow!.id)),
       ).toEqual([]);
 
-      const { transactions: seen } = await json<{ transactions: View[] }>(
-        await as(t, ann, '/v1/transactions'),
-        200,
-      );
+      const seen = await liveRows<View>(t, ann);
       expect(seen.find((r) => r.id === familyRow!.id)).toMatchObject({
         description: 'bob family',
         accountId: null,
