@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq, inArray, isNull, type SQL, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, ne, notExists, type SQL, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { z } from 'zod';
 import { ApiError } from '../common/errors';
 import {
@@ -88,6 +89,37 @@ const viewColumns = {
 };
 
 const historyKey = sql<string>`to_char(${transactions.createdAt} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
+
+/**
+ * BR-37. A live side of one of these transfers left without a live partner becomes one-sided.
+ * The caller holds the ledger lock and passes the transfers a write took a side out of.
+ */
+export async function releaseLoneSides(tx: Tx, transferIds: readonly string[]): Promise<void> {
+  if (transferIds.length === 0) return;
+  const peer = alias(transactions, 'peer');
+  await tx
+    .update(transactions)
+    .set({ transferOutside: true })
+    .where(
+      and(
+        inArray(transactions.transferId, [...transferIds]),
+        isNull(transactions.deletedAt),
+        eq(transactions.transferOutside, false),
+        notExists(
+          tx
+            .select({ id: peer.id })
+            .from(peer)
+            .where(
+              and(
+                eq(peer.transferId, transactions.transferId),
+                ne(peer.id, transactions.id),
+                isNull(peer.deletedAt),
+              ),
+            ),
+        ),
+      ),
+    );
+}
 
 /** Transactions joined with what `toLedgerRow` needs. Callers add the workspace constraint. */
 export function selectViewRows<E extends Record<string, SQL>>(tx: Tx, extra: E = {} as E) {

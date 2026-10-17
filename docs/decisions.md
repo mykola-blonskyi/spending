@@ -385,7 +385,12 @@ so a mark made elsewhere turns a stale edit into a conflict.
 
 **Consequences.** Each side commits on its own, so between two pushes, or when one side
 conflicts, a pair can be half linked; that side is already out of the totals and the conflict is
-resolved like any other. Deleting both sides, the shared date and note, the combined history row,
+resolved like any other. A half link never becomes permanent through the server: after a push
+that deleted, unmarked or relinked a side, and after a conflict resolution that drops a mark, the
+server sets `transferOutside` on a live side of that transfer left without a live partner, as
+import undo does. It runs at the end of the push, so the other side's own mutation in the same
+push is not made stale. Discarding a rejected side happens only on the device, so the server
+cannot repair what that leaves. Deleting both sides, the shared date and note, the combined history row,
 import undo and exports (#108) and the entry form type (#109) build on the same two columns
 without a migration: a delete or edit queues one ordinary mutation per side in one local commit,
 the combined row is built on the device from the sides it holds, and import undo sets

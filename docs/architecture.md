@@ -231,8 +231,10 @@ edited through REST and arrive through pull like transactions.
   one IndexedDB commit (`data/sync/transfer.ts`), one queued mutation per side; recording a new
   transfer in the entry form writes both new sides the same way. The form's third type,
   `transfer`, exists only in `features/transactions/form-model.ts`. History builds the
-  combined transfer row on the device (`features/transactions/history-model.ts`). Import undo
-  sets `transferOutside` on a live side whose partner it tombstoned.
+  combined transfer row on the device (`features/transactions/history-model.ts`). Import undo,
+  and sync after a push or a resolution that took a side out of a transfer, set
+  `transferOutside` on a live side left without a live partner (`releaseLoneSides` in
+  `ledger/ledger.service.ts`).
 - **Account references (BR-3).** A viewer who cannot see a row's account receives
   `accountId: null`. Sending that null back in an upsert keeps the author's account. Only the
   author may choose an account from their own personal workspace.
