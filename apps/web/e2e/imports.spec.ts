@@ -7,7 +7,7 @@ const ann = E2E_USERS.ann;
 const fixture = (name: string) => fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
 
 /** Accounts are edited through REST and reach the device on the next pull, so reload after. */
-async function createAccount(page: Page, name: string) {
+async function createAccount(page: Page, name: string, currency = 'EUR') {
   const { workspaces } = await apiCall<{ workspaces: { id: string; kind: string }[] }>(
     page,
     'GET',
@@ -18,7 +18,7 @@ async function createAccount(page: Page, name: string) {
     workspaceId: personal.id,
     name,
     kind: 'bank',
-    currency: 'EUR',
+    currency,
   });
   await page.reload();
 }
@@ -98,7 +98,7 @@ test('a BBVA statement is read as the bank exports it and categorized', async ({
   await page.goto('/imports/new');
   await page.getByLabel('Statement file').setInputFiles(fixture('bbva.csv'));
   await expect(page.getByText('Read as Windows-1252, semicolon-separated: 6 rows.')).toBeVisible();
-  await expect(page.getByRole('radio', { name: 'BBVA' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByLabel('Bank')).toHaveText('BBVA');
   await expect(page.locator('#main').getByRole('status')).toHaveText(
     '5 rows ready. 1 row cannot be read and will be rejected',
   );
@@ -130,10 +130,7 @@ test('a Santander statement is read with its preset, and its reference is the de
   await page.goto('/imports/new');
   await page.getByLabel('Statement file').setInputFiles(fixture('santander.csv'));
   await expect(page.getByText('Read as Windows-1252, semicolon-separated: 3 rows.')).toBeVisible();
-  await expect(page.getByRole('radio', { name: 'Santander' })).toHaveAttribute(
-    'aria-checked',
-    'true',
-  );
+  await expect(page.getByLabel('Bank')).toHaveText('Santander');
   await expect(page.getByLabel('Transaction ID')).toHaveText(/Referencia/);
   await page.getByRole('button', { name: 'Import 3 rows' }).click();
   await expect(stat(page, 'Imported')).toHaveText('3');
@@ -273,4 +270,164 @@ test('without a personal account, the import page points to accounts', async ({
     'href',
     '/accounts',
   );
+});
+
+/** The body of the next `POST /imports`, to prove what leaves the browser. */
+const importBody = (page: Page) =>
+  page
+    .waitForRequest((r) => r.method() === 'POST' && r.url().endsWith('/api/v1/imports'))
+    .then((r) => r.postData() ?? '');
+
+test('a Santander XLSX is read with its preset, on the transaction date', async ({
+  page,
+  signInAs,
+  db,
+}) => {
+  await signInAs('ann');
+  await createAccount(page, 'Santander');
+  await page.goto('/imports/new');
+  await page.getByLabel('Statement file').setInputFiles(fixture('santander.xlsx'));
+  await expect(page.getByText('Read as an Excel workbook: 4 rows.')).toBeVisible();
+  await expect(page.getByLabel('Bank')).toHaveText('Santander');
+  await expect(page.getByLabel('Date', { exact: true })).toHaveText(/Transaction date/);
+  await expect(page.getByRole('row', { name: /Mercadona/ })).toContainText('Oct 1, 2026');
+  await expect(page.locator('#main').getByRole('status')).toHaveText('4 rows ready');
+  const body = importBody(page);
+  await page.getByRole('button', { name: 'Import 4 rows' }).click();
+  await expect(stat(page, 'Imported')).toHaveText('4');
+  for (const secret of ['ES00 0000 1111 2222 3333 4444', 'LUCIA PRUEBA', 'Holder']) {
+    expect(await body).not.toContain(secret);
+  }
+  expect(await db.history(ann.email)).toMatchObject([
+    {
+      description: 'Pago Movil En Mercadona, Madrid',
+      amount_minor: 4567,
+      occurred_on: '2026-10-01',
+    },
+    { description: 'Transferencia De Empresa Ejemplo Sl', amount_minor: 123456 },
+    { description: 'Compra Cafeteria Luna, Madrid', amount_minor: 320, occurred_on: '2026-10-05' },
+    { description: 'Recibo Electricidad Ejemplo, Madrid', amount_minor: 6000, currency: 'EUR' },
+  ]);
+});
+
+test('a monobank .xls opens as a workbook and imports the card-currency amount', async ({
+  page,
+  signInAs,
+  db,
+}) => {
+  await signInAs('ann');
+  await createAccount(page, 'monobank', 'UAH');
+  await page.goto('/imports/new');
+  await page.getByLabel('Statement file').setInputFiles(fixture('monobank.xls'));
+  await expect(page.getByText('Read as an Excel workbook: 4 rows.')).toBeVisible();
+  await expect(page.getByLabel('Bank')).toHaveText('monobank');
+  await expect(page.getByLabel('Amount', { exact: true })).toHaveText(/Card currency amount/);
+  await expect(page.getByLabel('Currency', { exact: true })).toHaveText('Not in this file');
+  await expect(page.locator('#main').getByRole('status')).toHaveText('4 rows ready');
+  const body = importBody(page);
+  await page.getByRole('button', { name: 'Import 4 rows' }).click();
+  await expect(stat(page, 'Imported')).toHaveText('4');
+  const sent = await body;
+  for (const secret of ['Olena', '1234567890', 'UA000000000000000000000000000', '5375']) {
+    expect(sent).not.toContain(secret);
+  }
+  expect(await db.history(ann.email)).toMatchObject([
+    { description: 'Silpo', amount_minor: 25050, occurred_on: '2026-10-02' },
+    { description: 'Netflix', amount_minor: 43512, currency: 'UAH' },
+    { description: 'From: Petro Probnyi', amount_minor: 200000, review_status: 'confirmed' },
+    { description: 'ATM Example', amount_minor: 50000, occurred_on: '2026-10-08' },
+  ]);
+});
+
+test('a PrivatBank file with two cards imports one card, then the next', async ({
+  page,
+  signInAs,
+  db,
+}) => {
+  await signInAs('ann');
+  await createAccount(page, 'Privat UAH', 'UAH');
+  await createAccount(page, 'Privat EUR', 'EUR');
+  await page.goto('/imports/new');
+  await page.getByRole('combobox', { name: 'Account' }).click();
+  await page.getByRole('option', { name: /Privat UAH/ }).click();
+  await page.getByLabel('Statement file').setInputFiles(fixture('privatbank.xlsx'));
+  await expect(page.getByLabel('Bank')).toHaveText('PrivatBank');
+  // The card in the account's currency comes first.
+  await expect(page.getByLabel('Card to import')).toHaveText('5168 **** **** 0001');
+  await expect(page.locator('#main').getByRole('status')).toHaveText('3 rows ready');
+  const body = importBody(page);
+  await page.getByRole('button', { name: 'Import 3 rows' }).click();
+  await expect(stat(page, 'Imported')).toHaveText('3');
+  expect(await body).not.toContain('**** ****');
+
+  await page.getByRole('button', { name: 'Import card 4149 **** **** 0002' }).click();
+  await page.getByRole('combobox', { name: 'Account' }).click();
+  await page.getByRole('option', { name: /Privat EUR/ }).click();
+  await expect(page.getByLabel('Card to import')).toHaveText('4149 **** **** 0002');
+  await expect(page.locator('#main').getByRole('status')).toHaveText(
+    '3 rows ready. 1 row does not match the running balance',
+  );
+  await expect(
+    page.getByRole('table', { name: 'Rows to check' }).getByRole('row', { name: /Restaurant/ }),
+  ).toContainText('Balance does not follow from the previous row');
+  await page.getByRole('button', { name: 'Import 3 rows' }).click();
+  await expect(stat(page, 'Imported')).toHaveText('3');
+  await expect(page.getByRole('button', { name: /^Import card/ })).toHaveCount(0);
+
+  const history = await db.history(ann.email);
+  expect(history.filter((r) => r.currency === 'UAH').map((r) => r.amount_minor)).toEqual([
+    32040, 9500, 1500000,
+  ]);
+  expect(history.filter((r) => r.currency === 'EUR').map((r) => r.amount_minor)).toEqual([
+    4599, 2000, 3050,
+  ]);
+});
+
+test('a legacy .xls is refused, rows without an amount are skipped, a mapping is remembered', async ({
+  page,
+  signInAs,
+}) => {
+  await signInAs('ann');
+  await createAccount(page, 'Main');
+  await page.goto('/imports/new');
+  const input = page.getByLabel('Statement file');
+  await input.setInputFiles({
+    name: 'old.xls',
+    mimeType: 'application/vnd.ms-excel',
+    buffer: Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0, 0, 0, 0]),
+  });
+  await expect(page.getByRole('alert')).toHaveText(
+    'This is an old binary Excel file (.xls). Save it as .xlsx or CSV in a spreadsheet app and upload that.',
+  );
+
+  const csv = {
+    name: 'custom.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('Day;Text;Value\n05/10/2026;Bakery;-3,50\n06/10/2026;Pending;—\n'),
+  };
+  await input.setInputFiles(csv);
+  await page.getByLabel('Description').click();
+  await page.getByRole('option', { name: /Text/ }).click();
+  await page.getByLabel('Amount', { exact: true }).click();
+  await page.getByRole('option', { name: /Value/ }).click();
+  await page.getByLabel('Date', { exact: true }).click();
+  await page.getByRole('option', { name: /Day/ }).click();
+  await page.getByLabel('Date format').click();
+  await page.getByRole('option', { name: 'Day/Month/Year' }).click();
+  await page.getByLabel('Decimal separator').click();
+  await page.getByRole('option', { name: 'Comma (12,50)' }).click();
+  await expect(page.locator('#main').getByRole('status')).toHaveText(
+    '1 row ready. 1 row has no amount and is skipped',
+  );
+  await expect(
+    page.getByRole('table', { name: 'Rows to check' }).getByRole('row', { name: /Pending/ }),
+  ).toContainText('No amount in the card currency');
+  await page.getByRole('button', { name: 'Import 1 row' }).click();
+  await expect(stat(page, 'Imported')).toHaveText('1');
+
+  await page.getByRole('button', { name: 'Import another' }).click();
+  await input.setInputFiles(csv);
+  await expect(page.getByLabel('Date format')).toHaveText('Day/Month/Year');
+  await expect(page.getByLabel('Amount', { exact: true })).toHaveText(/Value/);
+  await expect(page.getByRole('button', { name: 'Import 1 row' })).toBeEnabled();
 });

@@ -43,7 +43,7 @@ deploy/      Docker images, nginx config, backup script
 | `sync`        | push (idempotent mutations), pull (revision cursor), conflicts          |
 | `budgets`     | monthly category limits and progress                                    |
 | `recurring`   | recurring rules and the idempotent generator job                        |
-| `imports`     | CSV batches, dedupe, categorization, review queue, undo                 |
+| `imports`     | statement batches, dedupe, categorization, review queue, undo           |
 | `analytics`   | totals, time series, category breakdown, period comparison              |
 
 `workspaces` exports `AccessPolicy`, which every other module calls before touching
@@ -224,7 +224,7 @@ edited through REST and arrive through pull like transactions.
   (which bounds the wait for the ledger lock) and `idle_in_transaction_session_timeout` 60 s, and
   waits at most 10 s for a pool connection. A statement or lock timeout answers
   `503 UNAVAILABLE` with nothing committed; the client keeps the push queued and retries it.
-- **Transfers (BR-36, ADR-014).** An upsert carries `transferId` and `transferOutside`. Both are
+- **Transfers (BR-36, ADR-015).** An upsert carries `transferId` and `transferOutside`. Both are
   optional on the wire: a client older than transfers (a queued mutation, a tab open across a
   deploy) leaves them out, and the row keeps its mark. The server checks the other live rows with
   the same `transferId`. The web writes both sides of a mark or unmark in one IndexedDB commit
@@ -254,6 +254,27 @@ runs 10 s after startup and every 15 minutes (off when `NODE_ENV=test`). Each du
 its own `ledgerTransaction`, re-reads its row `for update`, inserts every occurrence up to today in
 the rule's timezone with `ON CONFLICT (recurring_rule_id, recurring_occurrence) DO NOTHING`, and
 advances `nextOccurrence` (null after `endsOn`). Create and edit generate due occurrences at once.
+
+## Statement import
+
+Statements are parsed in the browser (`features/imports`), so header metadata (names, tax id,
+passport, IBAN, card numbers) never leaves the device (BR-36). The pipeline is one data shape, a
+table of text cells (`Row = { line, cells }`), made by a reader per format:
+
+- `statement.ts` sniffs the bytes (zip magic is XLSX, the OLE magic is a legacy `.xls` and is
+  refused, `%PDF` is not read yet, anything else is CSV), applies the size limit of that format,
+  finds the header row and the row limit (BR-26).
+- `csv.ts` decodes UTF-8 or Windows-1252, detects the delimiter and splits RFC 4180 rows.
+- `xlsx.ts` reads the zip with `DecompressionStream('deflate-raw')` and the XML with
+  `DOMParser`: first sheet, shared and inline strings, numbers at Excel's 15 digits, date-styled
+  numbers as `YYYY-MM-DD`. Rows are padded to one width, as a CSV pads its metadata lines.
+- `mapping.ts` owns presets (matched on the header signature), value parsing (the only money
+  parser), card listing, skipped rows and the running-balance check (`prepareRows`), and the
+  remembered mapping per header signature in `localStorage['spending.importMapping:<headers>']`.
+
+A new format (PDF next) only needs a reader that returns rows and a branch in `statement.ts`.
+The server receives the normalized rows and the mapping (column indexes, formats, file kind) and
+validates them as before.
 
 ## Analytics
 

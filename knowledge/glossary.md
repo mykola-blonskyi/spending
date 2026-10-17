@@ -35,8 +35,29 @@ payments" and one item a "rule".
 
 ### Import
 
-Bringing transactions in from a bank statement CSV. Imported rows wait in review until the user
-picks personal or family and a category.
+Bringing transactions in from a bank statement (CSV or XLSX). Imported rows wait in review until
+the user picks personal or family and a category.
+
+### Preset
+
+A known bank layout (BBVA, Santander, monobank, PrivatBank) recognized by its header row; it
+fills in the column mapping and formats. "Other" is any file without one.
+
+### Header signature
+
+The header row of a statement, normalized (lowercase, single spaces, no card currency suffix).
+Presets are matched against it, and the last mapping for a file without a preset is remembered
+under it on the device.
+
+### Card currency amount
+
+The amount in the card's or account's own currency, which is what gets imported. The operation
+amount in a foreign currency, the rate, commission and cashback are not.
+
+### Running balance check
+
+The balance column after each row should equal the previous balance plus the row's amount. A row
+that does not is shown as a warning before import; it is still imported.
 
 ### Transfer
 
@@ -73,6 +94,9 @@ The register is polite "ви" in Ukrainian, polite "вы" in Russian and "tú" i
 | recurring rule     | recurring payment, rule | регулярний платіж, правило | регулярный платёж, правило  | pago recurrente, regla |
 | import             | import                  | імпорт                     | импорт                      | importación            |
 | statement          | bank statement          | банківська виписка         | банковская выписка          | extracto bancario      |
+| card               | card                    | картка                     | карта                       | tarjeta                |
+| balance            | balance                 | залишок                    | остаток                     | saldo                  |
+| skipped row        | skipped row             | пропущений рядок           | пропущенная строка          | fila omitida           |
 | review             | review                  | перевірка, перевірити      | проверка, проверить         | revisión, revisar      |
 | sync               | sync                    | синхронізація              | синхронизация               | sincronización         |
 | transfer           | transfer                | переказ                    | перевод                     | transferencia          |

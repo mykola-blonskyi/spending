@@ -202,7 +202,8 @@ export const en = {
       title: 'Imports',
       description: 'Bring in transactions from a bank statement.',
       emptyTitle: 'No imports yet',
-      emptyDescription: 'Upload a CSV file from your bank to add many transactions at once.',
+      emptyDescription:
+        'Upload a CSV or XLSX statement from your bank to add many transactions at once.',
     },
     family: {
       title: 'Family',
@@ -508,20 +509,25 @@ export const en = {
     start: 'Import statement',
     offline: 'Importing needs a connection. Your past imports are listed below.',
     newTitle: 'Import a statement',
-    newDescription: 'Upload a CSV from your bank, check how its columns are read, then import.',
+    newDescription:
+      'Upload a CSV or XLSX from your bank, check how its columns are read, then import.',
     account: 'Account',
     accountHint: 'Entries go into this account and use its currency unless the file names one.',
     noAccountsTitle: 'Create an account first',
     noAccountsAction: 'Open accounts',
     noAccountsDescription: 'A statement is imported into one of your personal accounts.',
     file: 'Statement file',
-    fileHint: 'A CSV export of up to 2 MiB and 5,000 rows.',
+    fileHint: 'A CSV of up to 2 MiB or an XLSX of up to 5 MiB, with up to 5,000 rows.',
     chooseFile: 'Choose file',
     noFile: 'No file chosen',
-    fileTooLarge: 'This file is larger than 2 MiB. Export a shorter period and try again.',
+    fileTooLarge: 'This file is larger than {size} MiB. Export a shorter period and try again.',
     tooManyRows: 'This file has more than 5,000 rows. Export a shorter period and try again.',
     emptyFile: 'No table of transactions was found in this file.',
     readFailed: 'This file could not be read.',
+    legacyXls:
+      'This is an old binary Excel file (.xls). Save it as .xlsx or CSV in a spreadsheet app and upload that.',
+    unsupported: 'This file type cannot be read. Upload a CSV or XLSX statement.',
+    detectedWorkbook: 'Read as an Excel workbook: {count, plural, one {# row} other {# rows}}.',
     detected: 'Read as {encoding}, {delimiter}: {count, plural, one {# row} other {# rows}}.',
     delimiters: {
       semicolon: 'semicolon-separated',
@@ -529,7 +535,13 @@ export const en = {
       tab: 'tab-separated',
     },
     bank: 'Bank',
-    presets: { bbva: 'BBVA', santander: 'Santander', custom: 'Other' },
+    presets: {
+      bbva: 'BBVA',
+      santander: 'Santander',
+      monobank: 'monobank',
+      privatbank: 'PrivatBank',
+      custom: 'Other',
+    },
     columns: 'Columns',
     column: {
       date: 'Date',
@@ -539,6 +551,8 @@ export const en = {
       credit: 'Credit (money in)',
       externalId: 'Transaction ID',
       currency: 'Currency',
+      card: 'Card',
+      balance: 'Balance',
     },
     notMapped: 'Not in this file',
     amountLayout: 'Amount columns',
@@ -555,6 +569,22 @@ export const en = {
     problemRows:
       '{count, plural, one {# row cannot be read and will be rejected} other {# rows cannot be read and will be rejected}}',
     incomplete: 'Choose the date, description and amount columns to continue.',
+    skippedRows:
+      '{count, plural, one {# row has no amount and is skipped} other {# rows have no amount and are skipped}}',
+    balanceRows:
+      '{count, plural, one {# row does not match the running balance} other {# rows do not match the running balance}}',
+    checks: 'Rows to check',
+    checksHint:
+      'Skipped rows are not imported. A balance mismatch is only a warning; the row is imported.',
+    note: 'Note',
+    skippedNote: 'No amount in the card currency',
+    balanceNote: 'Balance does not follow from the previous row',
+    card: 'Card to import',
+    cardHint:
+      'This file holds several cards. Import them one at a time, each into its own account.',
+    noCard: 'No card',
+    cardRows: '{currency}, {count, plural, one {# row} other {# rows}}',
+    cardImported: 'imported',
     submit: 'Import {count, plural, one {# row} other {# rows}}',
     importing: 'Importing…',
     summary: {
@@ -582,6 +612,7 @@ export const en = {
       allCategorized: 'Every imported entry has a category.',
       pullStalled: 'The imported entries appear here once this device can sync again.',
       importAnother: 'Import another',
+      importNextCard: 'Import card {card}',
       openHistory: 'Open history',
     },
     reasons: {
