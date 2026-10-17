@@ -490,7 +490,7 @@ test.describe('PDF statements', () => {
     }
     expect(await db.history(ann.email)).toMatchObject([
       { description: 'Recibo Gimnasio Norte S.L.', amount_minor: 3500, occurred_on: '2026-09-01' },
-      { description: 'Compra Libreria Mar, Valencia, Tarjeta', amount_minor: 1250 },
+      { description: 'Compra Libreria Mar, Madrid, Tarjeta', amount_minor: 1250 },
       { description: /^Recibo Agua Clara/, amount_minor: 2510, occurred_on: '2026-09-30' },
       { description: 'Transferencia Inmediata De Acme Iberia S.L.', amount_minor: 150000 },
       { description: /^Compra Panaderia Sol/, amount_minor: 340, occurred_on: '2026-10-16' },

@@ -18,7 +18,7 @@ describe('readPdf', () => {
       rows: [
         [
           '16 Oct 2026',
-          'Compra Panaderia Sol, Valencia, Tarjeta 0000000000000000 , Comision 0,00',
+          'Compra Panaderia Sol, Madrid, Tarjeta 0000000000000000 , Comision 0,00',
           '-3,40€',
           '1.234,56€',
           '16 Oct 2026',
@@ -39,7 +39,7 @@ describe('readPdf', () => {
         ],
         [
           '29 Sept 2026',
-          'Compra Libreria Mar, Valencia, Tarjeta',
+          'Compra Libreria Mar, Madrid, Tarjeta',
           '-12,50€',
           '-236,94€',
           '29 Sept 2026',
@@ -184,7 +184,7 @@ describe('readPdf', () => {
         [
           '11.10.2026',
           '11.10.2026',
-          'Оплата товарів\\послуг\\\\ES\\Valencia\\Cafe Sol TX01 : Google Pay ****0000.',
+          'Оплата товарів\\послуг\\\\ES\\Madrid\\Cafe Sol TX01 : Google Pay ****0000.',
           'EUR',
           '-4.50',
           '-195.30',
