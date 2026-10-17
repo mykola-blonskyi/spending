@@ -186,7 +186,7 @@ test('the table view on desktop covers the whole history and is remembered', asy
   expect(await tableRows.count()).toBeLessThan(DOM_BUDGET);
   expect(await scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(100_000);
   expect(await page.evaluate(() => scrollY)).toBe(0);
-  await expect(table.getByRole('button', { name: 'Sort by date' })).toBeInViewport();
+  await expect(table.getByRole('button', { name: 'Date', exact: true })).toBeInViewport();
 
   await scrollTable(0);
   const newest = table.getByRole('link').first();
@@ -202,10 +202,10 @@ test('the table view on desktop covers the whole history and is remembered', asy
 
   // The largest EUR amounts the seed makes; USD and GBP have no rate here, so they go last.
   const largest = [/^Seed 1081 /, /^Seed 2162 /, /^Seed 540 /];
-  const sortByAmount = table.getByRole('button', { name: 'Sort by amount' });
+  const sortByAmount = table.getByRole('button', { name: 'Amount', exact: true });
   const amountHeader = table
     .getByRole('columnheader')
-    .filter({ has: page.getByRole('button', { name: 'Sort by amount' }) });
+    .filter({ has: page.getByRole('button', { name: 'Amount', exact: true }) });
   await scrollTable(0.5);
   await expect.poll(() => scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(1000);
   await sortByAmount.click();

@@ -33,7 +33,7 @@ type HistoryTableProps = {
 
 // Every row is its own grid, so tracks never size to content: they line up across rows.
 const TRACKS: Record<TableColumn, string> = {
-  date: 'minmax(4rem,0.8fr)',
+  date: 'minmax(5.75rem,0.8fr)',
   description: 'minmax(4rem,2fr)',
   category: 'minmax(3rem,1fr)',
   account: 'minmax(3rem,1.1fr)',
@@ -122,7 +122,7 @@ function Header({ column, sort }: { column: TableColumn; sort: TableSort }) {
     >
       <button
         type="button"
-        aria-label={t(`history.sort.${column}`)}
+        title={t(`history.sort.${column}`)}
         onClick={() => setTableSort(nextSort(sort, column))}
         className={cn(
           'flex min-w-0 items-center gap-1 rounded-sm outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60',
