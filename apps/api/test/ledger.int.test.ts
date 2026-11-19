@@ -4,6 +4,7 @@ import { addDays } from '../src/common/dates';
 import { fxRates, importBatches, recurringRules, transactions } from '../src/database/schema';
 import { FX_RATE_SOURCE, type FxRateSource } from '../src/ledger/fx/fx-source';
 import { FxService } from '../src/ledger/fx/fx.service';
+import { SYNC_PROTOCOL } from '../src/sync/mutations';
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
 import {
   as,
@@ -184,7 +185,7 @@ describe('ledger', () => {
       expect(edited.revision).toBeGreaterThan(created.revision);
 
       const { accounts } = await json<{ accounts: Account[] }>(
-        await as(t, bob, '/v1/sync/pull?cursor=0'),
+        await as(t, bob, `/v1/sync/pull?protocol=${SYNC_PROTOCOL}&cursor=0`),
         200,
       );
       expect(accounts.find((a) => a.id === created.id)).toMatchObject({
@@ -246,7 +247,7 @@ describe('ledger', () => {
       const [wallet, jar] = [await create('Wallet'), await create('Jar')];
       const pull = async (cursor: number) =>
         json<{ accounts: { id: string }[]; transactions: { id: string }[]; cursor: number }>(
-          await as(t, bob, `/v1/sync/pull?cursor=${cursor}`),
+          await as(t, bob, `/v1/sync/pull?protocol=${SYNC_PROTOCOL}&cursor=${cursor}`),
           200,
         );
       const before = await pull(0);

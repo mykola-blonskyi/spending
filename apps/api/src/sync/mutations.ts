@@ -252,7 +252,16 @@ export function pullWindow(
   return { cutoff: Math.max(cursor, ...last), hasMore: false };
 }
 
+/**
+ * Bumped whenever an older client would misread a pull page (e.g. #139 sent account tombstones that
+ * older clients ignored while advancing their cursor). The web app's copy is in
+ * apps/web/src/data/sync/transport.ts; raise both together.
+ */
+export const SYNC_PROTOCOL = 1;
+
 export const pullQuerySchema = z.strictObject({
+  // Absent in clients older than the gate itself, which therefore count as protocol 0.
+  protocol: z.coerce.number().int().min(0).default(0),
   cursor: z.coerce.number().int().min(0).default(0),
   limit: z.coerce.number().int().min(1).max(1000).default(500),
 });

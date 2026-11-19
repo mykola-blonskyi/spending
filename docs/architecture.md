@@ -236,7 +236,7 @@ edited through REST and arrive through pull like transactions.
   `POST /sync/conflicts/:id/resolve` with `server`, `local` or `merged` (plus `transaction`)
   writes the chosen version against the current version and closes the conflict. Resolving again
   returns the current state without writing.
-- **Pull.** `GET /sync/pull?cursor=&limit=` (limit 1 to 1000, default 500) reads one
+- **Pull.** `GET /sync/pull?protocol=&cursor=&limit=` (limit 1 to 1000, default 500) reads one
   repeatable-read snapshot. It returns the actor's workspaces, then accounts, categories and
   transactions (tombstones as `{ id, workspaceId, deletedAt, revision }`) with `revision > cursor`,
   and all open conflicts. Accounts, categories, transactions and `sync_tombstones` share one
@@ -245,6 +245,9 @@ edited through REST and arrive through pull like transactions.
   returned `cursor` is the page's last revision (the input cursor when nothing changed).
   Pending-review rows are included; the client hides them. Every page also carries `epoch`, the
   uuid in the single-row `sync_epoch` table, which only `deploy/after-restore.sql` changes.
+- **Protocol gate (ADR-018).** A pull whose `protocol` (absent counts as 0) is below the server's
+  `SYNC_PROTOCOL` gets `426 UPGRADE_REQUIRED` and no rows, so an outdated build never moves its
+  cursor. The web app then installs the new service worker and reloads without asking.
 - **Moves.** When an author moves a row to their other workspace, a `sync_tombstones` row for the
   workspace it left is written at the move's revision, and other users' open conflicts on it are
   dropped. Members of that workspace pull it once as a tombstone in `transactions`. Later edits

@@ -11,7 +11,9 @@ const CATEGORY_NAMES = ['Groceries', 'Dining', 'Transport', 'Housing', 'Health',
  */
 export async function seedEntries(page: Page, count: number): Promise<void> {
   const session = await (await page.request.get('/api/v1/auth/session')).json();
-  const pull = await (await page.request.get('/api/v1/sync/pull?cursor=0&limit=1000')).json();
+  const pull = await (
+    await page.request.get('/api/v1/sync/pull?protocol=1&cursor=0&limit=1000')
+  ).json();
   const personal = pull.workspaces.find((w: { kind: string }) => w.kind === 'personal');
   const categories = pull.categories.filter(
     (c: { workspaceId: string }) => c.workspaceId === personal.id,
@@ -82,7 +84,9 @@ export async function createAccount(
   account: { name: string; kind: 'cash' | 'card'; currency: string },
 ): Promise<string> {
   const session = await (await page.request.get('/api/v1/auth/session')).json();
-  const pull = await (await page.request.get('/api/v1/sync/pull?cursor=0&limit=1000')).json();
+  const pull = await (
+    await page.request.get('/api/v1/sync/pull?protocol=1&cursor=0&limit=1000')
+  ).json();
   const personal = pull.workspaces.find((w: { kind: string }) => w.kind === 'personal');
   const created = await page.request.post('/api/v1/accounts', {
     headers: { 'X-CSRF-Token': session.csrfToken, Origin: APP_ORIGIN },
@@ -108,7 +112,9 @@ type Entry = {
 /** Pushes exact entries into the signed-in user's personal workspace, as another device would. */
 export async function pushEntries(page: Page, entries: readonly Entry[]): Promise<void> {
   const session = await (await page.request.get('/api/v1/auth/session')).json();
-  const pull = await (await page.request.get('/api/v1/sync/pull?cursor=0&limit=1000')).json();
+  const pull = await (
+    await page.request.get('/api/v1/sync/pull?protocol=1&cursor=0&limit=1000')
+  ).json();
   const personal = pull.workspaces.find((w: { kind: string }) => w.kind === 'personal');
   const categoryId = (key: string | undefined, kind: string) =>
     pull.categories.find(
