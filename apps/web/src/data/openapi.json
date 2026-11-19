@@ -17,7 +17,9 @@
             }
           }
         },
-        "tags": ["Health"]
+        "tags": [
+          "Health"
+        ]
       }
     },
     "/api/health/ready": {
@@ -36,7 +38,9 @@
             }
           }
         },
-        "tags": ["Health"]
+        "tags": [
+          "Health"
+        ]
       }
     },
     "/api/v1/auth/login": {
@@ -57,7 +61,9 @@
             "description": "Redirect to the identity provider"
           }
         },
-        "tags": ["Auth"]
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/api/v1/auth/callback": {
@@ -69,7 +75,9 @@
             "description": "Redirect into the app or back to sign-in"
           }
         },
-        "tags": ["Auth"]
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/api/v1/auth/session": {
@@ -88,7 +96,9 @@
             }
           }
         },
-        "tags": ["Auth"]
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/api/v1/auth/logout": {
@@ -107,7 +117,9 @@
             }
           }
         },
-        "tags": ["Auth"]
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/api/v1/me": {
@@ -126,7 +138,9 @@
             }
           }
         },
-        "tags": ["Me"]
+        "tags": [
+          "Me"
+        ]
       },
       "patch": {
         "operationId": "MeController_update",
@@ -153,7 +167,9 @@
             }
           }
         },
-        "tags": ["Me"]
+        "tags": [
+          "Me"
+        ]
       },
       "delete": {
         "operationId": "DataRightsController_remove",
@@ -173,7 +189,9 @@
             "description": ""
           }
         },
-        "tags": ["DataRights"]
+        "tags": [
+          "DataRights"
+        ]
       }
     },
     "/api/v1/workspaces": {
@@ -192,7 +210,9 @@
             }
           }
         },
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       }
     },
     "/api/v1/family": {
@@ -221,7 +241,9 @@
             }
           }
         },
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       },
       "patch": {
         "operationId": "WorkspacesController_rename",
@@ -248,7 +270,9 @@
             }
           }
         },
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       },
       "delete": {
         "operationId": "WorkspacesController_remove",
@@ -268,7 +292,9 @@
             "description": ""
           }
         },
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       }
     },
     "/api/v1/family/invitations": {
@@ -297,7 +323,9 @@
             }
           }
         },
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       },
       "get": {
         "operationId": "WorkspacesController_invitations",
@@ -314,7 +342,9 @@
             }
           }
         },
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       }
     },
     "/api/v1/family/invitations/{id}": {
@@ -335,7 +365,9 @@
             "description": ""
           }
         },
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       }
     },
     "/api/v1/family/leave": {
@@ -347,7 +379,9 @@
             "description": ""
           }
         },
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       }
     },
     "/api/v1/family/members/{userId}": {
@@ -368,7 +402,9 @@
             "description": ""
           }
         },
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       }
     },
     "/api/v1/family/transfer": {
@@ -397,7 +433,9 @@
             }
           }
         },
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       }
     },
     "/api/v1/family/events": {
@@ -416,7 +454,9 @@
             }
           }
         },
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       }
     },
     "/api/v1/invitations/{token}": {
@@ -442,7 +482,9 @@
             }
           }
         },
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       }
     },
     "/api/v1/invitations/{token}/accept": {
@@ -468,7 +510,9 @@
             }
           }
         },
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       }
     },
     "/api/v1/accounts": {
@@ -498,7 +542,9 @@
             }
           }
         },
-        "tags": ["Ledger"]
+        "tags": [
+          "Ledger"
+        ]
       },
       "post": {
         "operationId": "LedgerController_createAccount",
@@ -525,7 +571,9 @@
             }
           }
         },
-        "tags": ["Ledger"]
+        "tags": [
+          "Ledger"
+        ]
       }
     },
     "/api/v1/accounts/{id}": {
@@ -564,7 +612,9 @@
             }
           }
         },
-        "tags": ["Ledger"]
+        "tags": [
+          "Ledger"
+        ]
       },
       "delete": {
         "operationId": "LedgerController_deleteAccount",
@@ -584,7 +634,9 @@
             "description": ""
           }
         },
-        "tags": ["Ledger"]
+        "tags": [
+          "Ledger"
+        ]
       }
     },
     "/api/v1/categories": {
@@ -614,7 +666,9 @@
             }
           }
         },
-        "tags": ["Ledger"]
+        "tags": [
+          "Ledger"
+        ]
       },
       "post": {
         "operationId": "LedgerController_createCategory",
@@ -641,7 +695,9 @@
             }
           }
         },
-        "tags": ["Ledger"]
+        "tags": [
+          "Ledger"
+        ]
       }
     },
     "/api/v1/categories/{id}": {
@@ -680,7 +736,9 @@
             }
           }
         },
-        "tags": ["Ledger"]
+        "tags": [
+          "Ledger"
+        ]
       }
     },
     "/api/v1/sync/push": {
@@ -709,7 +767,9 @@
             }
           }
         },
-        "tags": ["Sync"]
+        "tags": [
+          "Sync"
+        ]
       }
     },
     "/api/v1/sync/pull": {
@@ -751,7 +811,9 @@
             }
           }
         },
-        "tags": ["Sync"]
+        "tags": [
+          "Sync"
+        ]
       }
     },
     "/api/v1/sync/conflicts": {
@@ -770,7 +832,9 @@
             }
           }
         },
-        "tags": ["Sync"]
+        "tags": [
+          "Sync"
+        ]
       }
     },
     "/api/v1/sync/conflicts/{id}/resolve": {
@@ -808,7 +872,9 @@
             }
           }
         },
-        "tags": ["Sync"]
+        "tags": [
+          "Sync"
+        ]
       }
     },
     "/api/v1/me/export": {
@@ -827,7 +893,9 @@
             }
           }
         },
-        "tags": ["DataRights"]
+        "tags": [
+          "DataRights"
+        ]
       }
     },
     "/api/v1/imports": {
@@ -856,7 +924,9 @@
             }
           }
         },
-        "tags": ["Imports"]
+        "tags": [
+          "Imports"
+        ]
       },
       "get": {
         "operationId": "ImportsController_list",
@@ -873,7 +943,9 @@
             }
           }
         },
-        "tags": ["Imports"]
+        "tags": [
+          "Imports"
+        ]
       }
     },
     "/api/v1/imports/review": {
@@ -892,7 +964,9 @@
             }
           }
         },
-        "tags": ["Imports"]
+        "tags": [
+          "Imports"
+        ]
       }
     },
     "/api/v1/imports/review/confirm": {
@@ -921,7 +995,9 @@
             }
           }
         },
-        "tags": ["Imports"]
+        "tags": [
+          "Imports"
+        ]
       }
     },
     "/api/v1/imports/learn": {
@@ -943,7 +1019,9 @@
             "description": ""
           }
         },
-        "tags": ["Imports"]
+        "tags": [
+          "Imports"
+        ]
       }
     },
     "/api/v1/imports/{id}/undo": {
@@ -972,7 +1050,9 @@
             }
           }
         },
-        "tags": ["Imports"]
+        "tags": [
+          "Imports"
+        ]
       }
     },
     "/api/v1/imports/undone": {
@@ -991,7 +1071,9 @@
             }
           }
         },
-        "tags": ["Imports"]
+        "tags": [
+          "Imports"
+        ]
       }
     },
     "/api/v1/imports/{id}": {
@@ -1013,7 +1095,9 @@
             "description": ""
           }
         },
-        "tags": ["Imports"]
+        "tags": [
+          "Imports"
+        ]
       }
     },
     "/api/v1/budgets": {
@@ -1052,7 +1136,9 @@
             }
           }
         },
-        "tags": ["Budgets"]
+        "tags": [
+          "Budgets"
+        ]
       },
       "put": {
         "operationId": "BudgetsController_put",
@@ -1079,7 +1165,9 @@
             }
           }
         },
-        "tags": ["Budgets"]
+        "tags": [
+          "Budgets"
+        ]
       }
     },
     "/api/v1/budgets/{id}": {
@@ -1101,7 +1189,9 @@
             "description": ""
           }
         },
-        "tags": ["Budgets"]
+        "tags": [
+          "Budgets"
+        ]
       }
     },
     "/api/v1/recurring-rules": {
@@ -1131,7 +1221,9 @@
             }
           }
         },
-        "tags": ["Recurring"]
+        "tags": [
+          "Recurring"
+        ]
       },
       "post": {
         "operationId": "RecurringController_create",
@@ -1158,7 +1250,9 @@
             }
           }
         },
-        "tags": ["Recurring"]
+        "tags": [
+          "Recurring"
+        ]
       }
     },
     "/api/v1/recurring-rules/{id}": {
@@ -1197,7 +1291,9 @@
             }
           }
         },
-        "tags": ["Recurring"]
+        "tags": [
+          "Recurring"
+        ]
       },
       "delete": {
         "operationId": "RecurringController_remove",
@@ -1217,7 +1313,9 @@
             "description": ""
           }
         },
-        "tags": ["Recurring"]
+        "tags": [
+          "Recurring"
+        ]
       }
     },
     "/api/v1/analytics/summary": {
@@ -1271,7 +1369,9 @@
             }
           }
         },
-        "tags": ["Analytics"]
+        "tags": [
+          "Analytics"
+        ]
       }
     }
   },
@@ -1296,11 +1396,17 @@
             "type": "string"
           }
         },
-        "required": ["status", "version"],
+        "required": [
+          "status",
+          "version"
+        ],
         "additionalProperties": false
       },
       "AvatarUrl_Output": {
-        "type": ["string", "null"]
+        "type": [
+          "string",
+          "null"
+        ]
       },
       "SessionDto_Output": {
         "type": "object",
@@ -1324,19 +1430,43 @@
               },
               "locale": {
                 "type": "string",
-                "enum": ["en", "uk", "ru", "es"]
+                "enum": [
+                  "en",
+                  "uk",
+                  "ru",
+                  "es"
+                ]
               },
               "theme": {
                 "type": "string",
-                "enum": ["light", "dark", "system"]
+                "enum": [
+                  "light",
+                  "dark",
+                  "system"
+                ]
               },
               "layout": {
                 "type": "string",
-                "enum": ["calm", "cards", "soft", "journal", "bento", "split", "playful", "hybrid"]
+                "enum": [
+                  "calm",
+                  "cards",
+                  "soft",
+                  "journal",
+                  "bento",
+                  "split",
+                  "playful",
+                  "hybrid"
+                ]
               },
               "palette": {
                 "type": "string",
-                "enum": ["emerald", "rose", "ocean", "sand", "graphite"]
+                "enum": [
+                  "emerald",
+                  "rose",
+                  "ocean",
+                  "sand",
+                  "graphite"
+                ]
               },
               "timezone": {
                 "type": "string"
@@ -1359,11 +1489,17 @@
             "type": "string"
           }
         },
-        "required": ["user", "csrfToken"],
+        "required": [
+          "user",
+          "csrfToken"
+        ],
         "additionalProperties": false
       },
       "EndSessionUrl_Output": {
-        "type": ["string", "null"]
+        "type": [
+          "string",
+          "null"
+        ]
       },
       "LogoutDto_Output": {
         "type": "object",
@@ -1372,7 +1508,9 @@
             "$ref": "#/components/schemas/EndSessionUrl_Output"
           }
         },
-        "required": ["endSessionUrl"],
+        "required": [
+          "endSessionUrl"
+        ],
         "additionalProperties": false
       },
       "ProfileDto_Output": {
@@ -1394,19 +1532,43 @@
           },
           "locale": {
             "type": "string",
-            "enum": ["en", "uk", "ru", "es"]
+            "enum": [
+              "en",
+              "uk",
+              "ru",
+              "es"
+            ]
           },
           "theme": {
             "type": "string",
-            "enum": ["light", "dark", "system"]
+            "enum": [
+              "light",
+              "dark",
+              "system"
+            ]
           },
           "layout": {
             "type": "string",
-            "enum": ["calm", "cards", "soft", "journal", "bento", "split", "playful", "hybrid"]
+            "enum": [
+              "calm",
+              "cards",
+              "soft",
+              "journal",
+              "bento",
+              "split",
+              "playful",
+              "hybrid"
+            ]
           },
           "palette": {
             "type": "string",
-            "enum": ["emerald", "rose", "ocean", "sand", "graphite"]
+            "enum": [
+              "emerald",
+              "rose",
+              "ocean",
+              "sand",
+              "graphite"
+            ]
           },
           "timezone": {
             "type": "string"
@@ -1435,19 +1597,43 @@
           },
           "locale": {
             "type": "string",
-            "enum": ["en", "uk", "ru", "es"]
+            "enum": [
+              "en",
+              "uk",
+              "ru",
+              "es"
+            ]
           },
           "theme": {
             "type": "string",
-            "enum": ["light", "dark", "system"]
+            "enum": [
+              "light",
+              "dark",
+              "system"
+            ]
           },
           "layout": {
             "type": "string",
-            "enum": ["calm", "cards", "soft", "journal", "bento", "split", "playful", "hybrid"]
+            "enum": [
+              "calm",
+              "cards",
+              "soft",
+              "journal",
+              "bento",
+              "split",
+              "playful",
+              "hybrid"
+            ]
           },
           "palette": {
             "type": "string",
-            "enum": ["emerald", "rose", "ocean", "sand", "graphite"]
+            "enum": [
+              "emerald",
+              "rose",
+              "ocean",
+              "sand",
+              "graphite"
+            ]
           },
           "timezone": {
             "type": "string",
@@ -1457,7 +1643,10 @@
         "additionalProperties": false
       },
       "StoredName_Output": {
-        "type": ["string", "null"]
+        "type": [
+          "string",
+          "null"
+        ]
       },
       "WorkspaceListDto_Output": {
         "type": "object",
@@ -1474,14 +1663,20 @@
                 },
                 "kind": {
                   "type": "string",
-                  "enum": ["personal", "family"]
+                  "enum": [
+                    "personal",
+                    "family"
+                  ]
                 },
                 "name": {
                   "$ref": "#/components/schemas/StoredName_Output"
                 },
                 "role": {
                   "type": "string",
-                  "enum": ["owner", "member"]
+                  "enum": [
+                    "owner",
+                    "member"
+                  ]
                 },
                 "members": {
                   "type": "array",
@@ -1497,11 +1692,17 @@
                         "type": "string"
                       },
                       "avatarUrl": {
-                        "type": ["string", "null"]
+                        "type": [
+                          "string",
+                          "null"
+                        ]
                       },
                       "role": {
                         "type": "string",
-                        "enum": ["owner", "member"]
+                        "enum": [
+                          "owner",
+                          "member"
+                        ]
                       },
                       "joinedAt": {
                         "type": "string",
@@ -1509,17 +1710,31 @@
                         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                       }
                     },
-                    "required": ["userId", "displayName", "avatarUrl", "role", "joinedAt"],
+                    "required": [
+                      "userId",
+                      "displayName",
+                      "avatarUrl",
+                      "role",
+                      "joinedAt"
+                    ],
                     "additionalProperties": false
                   }
                 }
               },
-              "required": ["id", "kind", "name", "role", "members"],
+              "required": [
+                "id",
+                "kind",
+                "name",
+                "role",
+                "members"
+              ],
               "additionalProperties": false
             }
           }
         },
-        "required": ["workspaces"],
+        "required": [
+          "workspaces"
+        ],
         "additionalProperties": false
       },
       "FamilyNameDto": {
@@ -1531,7 +1746,9 @@
             "maxLength": 60
           }
         },
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "additionalProperties": false
       },
       "WorkspaceDto_Output": {
@@ -1544,14 +1761,20 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["personal", "family"]
+            "enum": [
+              "personal",
+              "family"
+            ]
           },
           "name": {
             "$ref": "#/components/schemas/StoredName_Output"
           },
           "role": {
             "type": "string",
-            "enum": ["owner", "member"]
+            "enum": [
+              "owner",
+              "member"
+            ]
           },
           "members": {
             "type": "array",
@@ -1567,11 +1790,17 @@
                   "type": "string"
                 },
                 "avatarUrl": {
-                  "type": ["string", "null"]
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "role": {
                   "type": "string",
-                  "enum": ["owner", "member"]
+                  "enum": [
+                    "owner",
+                    "member"
+                  ]
                 },
                 "joinedAt": {
                   "type": "string",
@@ -1579,12 +1808,24 @@
                   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                 }
               },
-              "required": ["userId", "displayName", "avatarUrl", "role", "joinedAt"],
+              "required": [
+                "userId",
+                "displayName",
+                "avatarUrl",
+                "role",
+                "joinedAt"
+              ],
               "additionalProperties": false
             }
           }
         },
-        "required": ["id", "kind", "name", "role", "members"],
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "role",
+          "members"
+        ],
         "additionalProperties": false
       },
       "DeleteFamilyDto": {
@@ -1595,7 +1836,9 @@
             "maxLength": 200
           }
         },
-        "required": ["confirmName"],
+        "required": [
+          "confirmName"
+        ],
         "additionalProperties": false
       },
       "CreateInvitationDto": {
@@ -1627,7 +1870,11 @@
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           }
         },
-        "required": ["id", "url", "expiresAt"],
+        "required": [
+          "id",
+          "url",
+          "expiresAt"
+        ],
         "additionalProperties": false
       },
       "InvitationListDto_Output": {
@@ -1645,7 +1892,12 @@
                 },
                 "state": {
                   "type": "string",
-                  "enum": ["pending", "accepted", "revoked", "expired"]
+                  "enum": [
+                    "pending",
+                    "accepted",
+                    "revoked",
+                    "expired"
+                  ]
                 },
                 "createdAt": {
                   "type": "string",
@@ -1695,7 +1947,10 @@
                           "type": "string"
                         }
                       },
-                      "required": ["userId", "displayName"],
+                      "required": [
+                        "userId",
+                        "displayName"
+                      ],
                       "additionalProperties": false
                     },
                     {
@@ -1717,7 +1972,9 @@
             }
           }
         },
-        "required": ["invitations"],
+        "required": [
+          "invitations"
+        ],
         "additionalProperties": false
       },
       "TransferDto": {
@@ -1729,7 +1986,9 @@
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           }
         },
-        "required": ["userId"],
+        "required": [
+          "userId"
+        ],
         "additionalProperties": false
       },
       "EventListDto_Output": {
@@ -1772,7 +2031,10 @@
                           "type": "string"
                         }
                       },
-                      "required": ["userId", "displayName"],
+                      "required": [
+                        "userId",
+                        "displayName"
+                      ],
                       "additionalProperties": false
                     },
                     {
@@ -1794,7 +2056,10 @@
                           "type": "string"
                         }
                       },
-                      "required": ["userId", "displayName"],
+                      "required": [
+                        "userId",
+                        "displayName"
+                      ],
                       "additionalProperties": false
                     },
                     {
@@ -1808,12 +2073,20 @@
                   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                 }
               },
-              "required": ["id", "type", "actor", "subject", "createdAt"],
+              "required": [
+                "id",
+                "type",
+                "actor",
+                "subject",
+                "createdAt"
+              ],
               "additionalProperties": false
             }
           }
         },
-        "required": ["events"],
+        "required": [
+          "events"
+        ],
         "additionalProperties": false
       },
       "InvitationPreviewDto_Output": {
@@ -1832,14 +2105,27 @@
           },
           "state": {
             "type": "string",
-            "enum": ["pending", "accepted", "revoked", "expired"]
+            "enum": [
+              "pending",
+              "accepted",
+              "revoked",
+              "expired"
+            ]
           }
         },
-        "required": ["familyName", "ownerName", "expiresAt", "state"],
+        "required": [
+          "familyName",
+          "ownerName",
+          "expiresAt",
+          "state"
+        ],
         "additionalProperties": false
       },
       "OpeningOn_Output": {
-        "type": ["string", "null"]
+        "type": [
+          "string",
+          "null"
+        ]
       },
       "ArchivedAt_Output": {
         "anyOf": [
@@ -1876,7 +2162,13 @@
                 },
                 "kind": {
                   "type": "string",
-                  "enum": ["cash", "bank", "card", "savings", "other"]
+                  "enum": [
+                    "cash",
+                    "bank",
+                    "card",
+                    "savings",
+                    "other"
+                  ]
                 },
                 "currency": {
                   "type": "string"
@@ -1925,11 +2217,16 @@
             }
           }
         },
-        "required": ["accounts"],
+        "required": [
+          "accounts"
+        ],
         "additionalProperties": false
       },
       "OpeningOnInput": {
-        "type": ["string", "null"]
+        "type": [
+          "string",
+          "null"
+        ]
       },
       "CreateAccountDto": {
         "type": "object",
@@ -1946,7 +2243,13 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["cash", "bank", "card", "savings", "other"]
+            "enum": [
+              "cash",
+              "bank",
+              "card",
+              "savings",
+              "other"
+            ]
           },
           "currency": {
             "type": "string"
@@ -1960,7 +2263,12 @@
             "$ref": "#/components/schemas/OpeningOnInput"
           }
         },
-        "required": ["workspaceId", "name", "kind", "currency"],
+        "required": [
+          "workspaceId",
+          "name",
+          "kind",
+          "currency"
+        ],
         "additionalProperties": false
       },
       "AccountDto_Output": {
@@ -1981,7 +2289,13 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["cash", "bank", "card", "savings", "other"]
+            "enum": [
+              "cash",
+              "bank",
+              "card",
+              "savings",
+              "other"
+            ]
           },
           "currency": {
             "type": "string"
@@ -2038,7 +2352,13 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["cash", "bank", "card", "savings", "other"]
+            "enum": [
+              "cash",
+              "bank",
+              "card",
+              "savings",
+              "other"
+            ]
           },
           "openingBalanceMinor": {
             "type": "integer",
@@ -2055,7 +2375,10 @@
         "additionalProperties": false
       },
       "SystemKey_Output": {
-        "type": ["string", "null"]
+        "type": [
+          "string",
+          "null"
+        ]
       },
       "CategoryListDto_Output": {
         "type": "object",
@@ -2080,7 +2403,10 @@
                 },
                 "kind": {
                   "type": "string",
-                  "enum": ["income", "expense"]
+                  "enum": [
+                    "income",
+                    "expense"
+                  ]
                 },
                 "color": {
                   "type": "string"
@@ -2127,7 +2453,9 @@
             }
           }
         },
-        "required": ["categories"],
+        "required": [
+          "categories"
+        ],
         "additionalProperties": false
       },
       "CreateCategoryDto": {
@@ -2145,7 +2473,10 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["income", "expense"]
+            "enum": [
+              "income",
+              "expense"
+            ]
           },
           "color": {
             "type": "string",
@@ -2156,7 +2487,13 @@
             "pattern": "^[a-z0-9-]{1,40}$"
           }
         },
-        "required": ["workspaceId", "name", "kind", "color", "icon"],
+        "required": [
+          "workspaceId",
+          "name",
+          "kind",
+          "color",
+          "icon"
+        ],
         "additionalProperties": false
       },
       "CategoryDto_Output": {
@@ -2177,7 +2514,10 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["income", "expense"]
+            "enum": [
+              "income",
+              "expense"
+            ]
           },
           "color": {
             "type": "string"
@@ -2299,7 +2639,10 @@
                         },
                         "kind": {
                           "type": "string",
-                          "enum": ["income", "expense"]
+                          "enum": [
+                            "income",
+                            "expense"
+                          ]
                         },
                         "amountMinor": {
                           "type": "integer",
@@ -2375,7 +2718,12 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": ["mutationId", "type", "baseVersion", "transaction"],
+                  "required": [
+                    "mutationId",
+                    "type",
+                    "baseVersion",
+                    "transaction"
+                  ],
                   "additionalProperties": false
                 },
                 {
@@ -2401,14 +2749,21 @@
                       "maximum": 9007199254740991
                     }
                   },
-                  "required": ["mutationId", "type", "transactionId", "baseVersion"],
+                  "required": [
+                    "mutationId",
+                    "type",
+                    "transactionId",
+                    "baseVersion"
+                  ],
                   "additionalProperties": false
                 }
               ]
             }
           }
         },
-        "required": ["mutations"],
+        "required": [
+          "mutations"
+        ],
         "additionalProperties": false
       },
       "TransactionView_Output": {
@@ -2426,11 +2781,17 @@
           },
           "scope": {
             "type": "string",
-            "enum": ["personal", "family"]
+            "enum": [
+              "personal",
+              "family"
+            ]
           },
           "kind": {
             "type": "string",
-            "enum": ["income", "expense"]
+            "enum": [
+              "income",
+              "expense"
+            ]
           },
           "amountMinor": {
             "type": "integer",
@@ -2467,7 +2828,11 @@
                     "type": "string"
                   }
                 },
-                "required": ["rate", "rateDate", "source"],
+                "required": [
+                  "rate",
+                  "rateDate",
+                  "source"
+                ],
                 "additionalProperties": false
               },
               {
@@ -2510,11 +2875,18 @@
           },
           "source": {
             "type": "string",
-            "enum": ["manual", "import", "recurring"]
+            "enum": [
+              "manual",
+              "import",
+              "recurring"
+            ]
           },
           "reviewStatus": {
             "type": "string",
-            "enum": ["confirmed", "pending_review"]
+            "enum": [
+              "confirmed",
+              "pending_review"
+            ]
           },
           "importBatchId": {
             "anyOf": [
@@ -2559,10 +2931,16 @@
                 ]
               },
               "displayName": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             },
-            "required": ["userId", "displayName"],
+            "required": [
+              "userId",
+              "displayName"
+            ],
             "additionalProperties": false
           },
           "version": {
@@ -2637,7 +3015,12 @@
             "maximum": 9007199254740991
           }
         },
-        "required": ["id", "workspaceId", "deletedAt", "revision"],
+        "required": [
+          "id",
+          "workspaceId",
+          "deletedAt",
+          "revision"
+        ],
         "additionalProperties": false
       },
       "PushResponseDto_Output": {
@@ -2670,7 +3053,11 @@
                       ]
                     }
                   },
-                  "required": ["mutationId", "status", "transaction"],
+                  "required": [
+                    "mutationId",
+                    "status",
+                    "transaction"
+                  ],
                   "additionalProperties": false
                 },
                 {
@@ -2701,7 +3088,12 @@
                       ]
                     }
                   },
-                  "required": ["mutationId", "status", "conflictId", "transaction"],
+                  "required": [
+                    "mutationId",
+                    "status",
+                    "conflictId",
+                    "transaction"
+                  ],
                   "additionalProperties": false
                 },
                 {
@@ -2723,14 +3115,21 @@
                       "type": "string"
                     }
                   },
-                  "required": ["mutationId", "status", "code", "message"],
+                  "required": [
+                    "mutationId",
+                    "status",
+                    "code",
+                    "message"
+                  ],
                   "additionalProperties": false
                 }
               ]
             }
           }
         },
-        "required": ["results"],
+        "required": [
+          "results"
+        ],
         "additionalProperties": false
       },
       "PullResponseDto_Output": {
@@ -2753,17 +3152,28 @@
                 },
                 "kind": {
                   "type": "string",
-                  "enum": ["personal", "family"]
+                  "enum": [
+                    "personal",
+                    "family"
+                  ]
                 },
                 "name": {
                   "$ref": "#/components/schemas/StoredName_Output"
                 },
                 "role": {
                   "type": "string",
-                  "enum": ["owner", "member"]
+                  "enum": [
+                    "owner",
+                    "member"
+                  ]
                 }
               },
-              "required": ["id", "kind", "name", "role"],
+              "required": [
+                "id",
+                "kind",
+                "name",
+                "role"
+              ],
               "additionalProperties": false
             }
           },
@@ -2787,7 +3197,13 @@
                 },
                 "kind": {
                   "type": "string",
-                  "enum": ["cash", "bank", "card", "savings", "other"]
+                  "enum": [
+                    "cash",
+                    "bank",
+                    "card",
+                    "savings",
+                    "other"
+                  ]
                 },
                 "currency": {
                   "type": "string"
@@ -2855,7 +3271,10 @@
                 },
                 "kind": {
                   "type": "string",
-                  "enum": ["income", "expense"]
+                  "enum": [
+                    "income",
+                    "expense"
+                  ]
                 },
                 "color": {
                   "type": "string"
@@ -2956,7 +3375,10 @@
                         },
                         "kind": {
                           "type": "string",
-                          "enum": ["income", "expense"]
+                          "enum": [
+                            "income",
+                            "expense"
+                          ]
                         },
                         "amountMinor": {
                           "type": "integer",
@@ -3039,7 +3461,9 @@
                           "const": true
                         }
                       },
-                      "required": ["deleted"],
+                      "required": [
+                        "deleted"
+                      ],
                       "additionalProperties": false
                     }
                   ]
@@ -3138,7 +3562,10 @@
                         },
                         "kind": {
                           "type": "string",
-                          "enum": ["income", "expense"]
+                          "enum": [
+                            "income",
+                            "expense"
+                          ]
                         },
                         "amountMinor": {
                           "type": "integer",
@@ -3221,7 +3648,9 @@
                           "const": true
                         }
                       },
-                      "required": ["deleted"],
+                      "required": [
+                        "deleted"
+                      ],
                       "additionalProperties": false
                     }
                   ]
@@ -3255,7 +3684,9 @@
             }
           }
         },
-        "required": ["conflicts"],
+        "required": [
+          "conflicts"
+        ],
         "additionalProperties": false
       },
       "ResolveDto": {
@@ -3263,7 +3694,11 @@
         "properties": {
           "resolution": {
             "type": "string",
-            "enum": ["server", "local", "merged"]
+            "enum": [
+              "server",
+              "local",
+              "merged"
+            ]
           },
           "transaction": {
             "type": "object",
@@ -3280,7 +3715,10 @@
               },
               "kind": {
                 "type": "string",
-                "enum": ["income", "expense"]
+                "enum": [
+                  "income",
+                  "expense"
+                ]
               },
               "amountMinor": {
                 "type": "integer",
@@ -3356,7 +3794,9 @@
             "additionalProperties": false
           }
         },
-        "required": ["resolution"],
+        "required": [
+          "resolution"
+        ],
         "additionalProperties": false
       },
       "ResolveResponseDto_Output": {
@@ -3373,7 +3813,11 @@
           },
           "resolution": {
             "type": "string",
-            "enum": ["server", "local", "merged"]
+            "enum": [
+              "server",
+              "local",
+              "merged"
+            ]
           },
           "resolvedAt": {
             "type": "string",
@@ -3391,17 +3835,32 @@
             ]
           }
         },
-        "required": ["id", "status", "resolution", "resolvedAt", "transaction"],
+        "required": [
+          "id",
+          "status",
+          "resolution",
+          "resolvedAt",
+          "transaction"
+        ],
         "additionalProperties": false
       },
       "AvatarUrl": {
-        "type": ["string", "null"]
+        "type": [
+          "string",
+          "null"
+        ]
       },
       "StoredName": {
-        "type": ["string", "null"]
+        "type": [
+          "string",
+          "null"
+        ]
       },
       "OpeningOn": {
-        "type": ["string", "null"]
+        "type": [
+          "string",
+          "null"
+        ]
       },
       "ArchivedAt": {
         "anyOf": [
@@ -3416,7 +3875,10 @@
         ]
       },
       "SystemKey": {
-        "type": ["string", "null"]
+        "type": [
+          "string",
+          "null"
+        ]
       },
       "TransactionView": {
         "type": "object",
@@ -3433,11 +3895,17 @@
           },
           "scope": {
             "type": "string",
-            "enum": ["personal", "family"]
+            "enum": [
+              "personal",
+              "family"
+            ]
           },
           "kind": {
             "type": "string",
-            "enum": ["income", "expense"]
+            "enum": [
+              "income",
+              "expense"
+            ]
           },
           "amountMinor": {
             "type": "integer",
@@ -3474,7 +3942,11 @@
                     "type": "string"
                   }
                 },
-                "required": ["rate", "rateDate", "source"]
+                "required": [
+                  "rate",
+                  "rateDate",
+                  "source"
+                ]
               },
               {
                 "type": "null"
@@ -3516,11 +3988,18 @@
           },
           "source": {
             "type": "string",
-            "enum": ["manual", "import", "recurring"]
+            "enum": [
+              "manual",
+              "import",
+              "recurring"
+            ]
           },
           "reviewStatus": {
             "type": "string",
-            "enum": ["confirmed", "pending_review"]
+            "enum": [
+              "confirmed",
+              "pending_review"
+            ]
           },
           "importBatchId": {
             "anyOf": [
@@ -3565,10 +4044,16 @@
                 ]
               },
               "displayName": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             },
-            "required": ["userId", "displayName"]
+            "required": [
+              "userId",
+              "displayName"
+            ]
           },
           "version": {
             "type": "integer",
@@ -3644,19 +4129,43 @@
               },
               "locale": {
                 "type": "string",
-                "enum": ["en", "uk", "ru", "es"]
+                "enum": [
+                  "en",
+                  "uk",
+                  "ru",
+                  "es"
+                ]
               },
               "theme": {
                 "type": "string",
-                "enum": ["light", "dark", "system"]
+                "enum": [
+                  "light",
+                  "dark",
+                  "system"
+                ]
               },
               "layout": {
                 "type": "string",
-                "enum": ["calm", "cards", "soft", "journal", "bento", "split", "playful", "hybrid"]
+                "enum": [
+                  "calm",
+                  "cards",
+                  "soft",
+                  "journal",
+                  "bento",
+                  "split",
+                  "playful",
+                  "hybrid"
+                ]
               },
               "palette": {
                 "type": "string",
-                "enum": ["emerald", "rose", "ocean", "sand", "graphite"]
+                "enum": [
+                  "emerald",
+                  "rose",
+                  "ocean",
+                  "sand",
+                  "graphite"
+                ]
               },
               "timezone": {
                 "type": "string"
@@ -3686,14 +4195,20 @@
                 },
                 "kind": {
                   "type": "string",
-                  "enum": ["personal", "family"]
+                  "enum": [
+                    "personal",
+                    "family"
+                  ]
                 },
                 "name": {
                   "$ref": "#/components/schemas/StoredName"
                 },
                 "role": {
                   "type": "string",
-                  "enum": ["owner", "member"]
+                  "enum": [
+                    "owner",
+                    "member"
+                  ]
                 },
                 "members": {
                   "type": "array",
@@ -3709,11 +4224,17 @@
                         "type": "string"
                       },
                       "avatarUrl": {
-                        "type": ["string", "null"]
+                        "type": [
+                          "string",
+                          "null"
+                        ]
                       },
                       "role": {
                         "type": "string",
-                        "enum": ["owner", "member"]
+                        "enum": [
+                          "owner",
+                          "member"
+                        ]
                       },
                       "joinedAt": {
                         "type": "string",
@@ -3721,11 +4242,23 @@
                         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                       }
                     },
-                    "required": ["userId", "displayName", "avatarUrl", "role", "joinedAt"]
+                    "required": [
+                      "userId",
+                      "displayName",
+                      "avatarUrl",
+                      "role",
+                      "joinedAt"
+                    ]
                   }
                 }
               },
-              "required": ["id", "kind", "name", "role", "members"]
+              "required": [
+                "id",
+                "kind",
+                "name",
+                "role",
+                "members"
+              ]
             }
           },
           "accounts": {
@@ -3748,7 +4281,13 @@
                 },
                 "kind": {
                   "type": "string",
-                  "enum": ["cash", "bank", "card", "savings", "other"]
+                  "enum": [
+                    "cash",
+                    "bank",
+                    "card",
+                    "savings",
+                    "other"
+                  ]
                 },
                 "currency": {
                   "type": "string"
@@ -3815,7 +4354,10 @@
                 },
                 "kind": {
                   "type": "string",
-                  "enum": ["income", "expense"]
+                  "enum": [
+                    "income",
+                    "expense"
+                  ]
                 },
                 "color": {
                   "type": "string"
@@ -3941,7 +4483,10 @@
                 },
                 "kind": {
                   "type": "string",
-                  "enum": ["income", "expense"]
+                  "enum": [
+                    "income",
+                    "expense"
+                  ]
                 },
                 "amountMinor": {
                   "type": "integer",
@@ -3980,7 +4525,12 @@
                 },
                 "frequency": {
                   "type": "string",
-                  "enum": ["daily", "weekly", "monthly", "yearly"]
+                  "enum": [
+                    "daily",
+                    "weekly",
+                    "monthly",
+                    "yearly"
+                  ]
                 },
                 "interval": {
                   "type": "integer",
@@ -3991,13 +4541,19 @@
                   "type": "string"
                 },
                 "endsOn": {
-                  "type": ["string", "null"]
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "timezone": {
                   "type": "string"
                 },
                 "nextOccurrence": {
-                  "type": ["string", "null"]
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "pausedAt": {
                   "anyOf": [
@@ -4109,7 +4665,10 @@
                         "type": "string"
                       }
                     },
-                    "required": ["line", "reason"]
+                    "required": [
+                      "line",
+                      "reason"
+                    ]
                   }
                 },
                 "createdAt": {
@@ -4170,7 +4729,12 @@
                   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                 }
               },
-              "required": ["workspaceId", "merchantKey", "categoryId", "updatedAt"]
+              "required": [
+                "workspaceId",
+                "merchantKey",
+                "categoryId",
+                "updatedAt"
+              ]
             }
           },
           "conflicts": {
@@ -4205,7 +4769,10 @@
                         },
                         "kind": {
                           "type": "string",
-                          "enum": ["income", "expense"]
+                          "enum": [
+                            "income",
+                            "expense"
+                          ]
                         },
                         "amountMinor": {
                           "type": "integer",
@@ -4288,7 +4855,9 @@
                           "const": true
                         }
                       },
-                      "required": ["deleted"],
+                      "required": [
+                        "deleted"
+                      ],
                       "additionalProperties": false
                     }
                   ]
@@ -4299,7 +4868,12 @@
                   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                 }
               },
-              "required": ["id", "transactionId", "local", "createdAt"]
+              "required": [
+                "id",
+                "transactionId",
+                "local",
+                "createdAt"
+              ]
             }
           }
         },
@@ -4325,7 +4899,9 @@
             "maxLength": 200
           }
         },
-        "required": ["confirmation"],
+        "required": [
+          "confirmation"
+        ],
         "additionalProperties": false
       },
       "ImportDto": {
@@ -4384,12 +4960,22 @@
                   "pattern": "^\\d{4}$"
                 }
               },
-              "required": ["line", "occurredOn", "amountMinor", "description"],
+              "required": [
+                "line",
+                "occurredOn",
+                "amountMinor",
+                "description"
+              ],
               "additionalProperties": false
             }
           }
         },
-        "required": ["accountId", "fileName", "mapping", "rows"],
+        "required": [
+          "accountId",
+          "fileName",
+          "mapping",
+          "rows"
+        ],
         "additionalProperties": false
       },
       "ImportBatchView_Output": {
@@ -4523,15 +5109,27 @@
                     },
                     "reason": {
                       "type": "string",
-                      "enum": ["keyword", "counterpart"]
+                      "enum": [
+                        "keyword",
+                        "counterpart"
+                      ]
                     }
                   },
-                  "required": ["transactionId", "counterpartId", "reason"],
+                  "required": [
+                    "transactionId",
+                    "counterpartId",
+                    "reason"
+                  ],
                   "additionalProperties": false
                 }
               }
             },
-            "required": ["count", "transactionIds", "bankCategories", "transferSuggestions"],
+            "required": [
+              "count",
+              "transactionIds",
+              "bankCategories",
+              "transferSuggestions"
+            ],
             "additionalProperties": false
           },
           "duplicates": {
@@ -4562,12 +5160,20 @@
                   ]
                 }
               },
-              "required": ["line", "reason"],
+              "required": [
+                "line",
+                "reason"
+              ],
               "additionalProperties": false
             }
           }
         },
-        "required": ["batch", "imported", "duplicates", "rejected"],
+        "required": [
+          "batch",
+          "imported",
+          "duplicates",
+          "rejected"
+        ],
         "additionalProperties": false
       },
       "BatchListDto_Output": {
@@ -4580,7 +5186,9 @@
             }
           }
         },
-        "required": ["batches"],
+        "required": [
+          "batches"
+        ],
         "additionalProperties": false
       },
       "ReviewListDto_Output": {
@@ -4623,19 +5231,30 @@
                     },
                     "reason": {
                       "type": "string",
-                      "enum": ["keyword", "counterpart"]
+                      "enum": [
+                        "keyword",
+                        "counterpart"
+                      ]
                     }
                   },
-                  "required": ["counterpartId", "reason"],
+                  "required": [
+                    "counterpartId",
+                    "reason"
+                  ],
                   "additionalProperties": false
                 }
               },
-              "required": ["transaction", "familyCategoryId"],
+              "required": [
+                "transaction",
+                "familyCategoryId"
+              ],
               "additionalProperties": false
             }
           }
         },
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "additionalProperties": false
       },
       "ConfirmDto": {
@@ -4655,7 +5274,10 @@
                 },
                 "scope": {
                   "type": "string",
-                  "enum": ["personal", "family"]
+                  "enum": [
+                    "personal",
+                    "family"
+                  ]
                 },
                 "categoryId": {
                   "anyOf": [
@@ -4689,16 +5311,24 @@
                       ]
                     }
                   },
-                  "required": ["counterpartId"],
+                  "required": [
+                    "counterpartId"
+                  ],
                   "additionalProperties": false
                 }
               },
-              "required": ["transactionId", "scope", "categoryId"],
+              "required": [
+                "transactionId",
+                "scope",
+                "categoryId"
+              ],
               "additionalProperties": false
             }
           }
         },
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "additionalProperties": false
       },
       "ConfirmResultDto_Output": {
@@ -4711,7 +5341,9 @@
             }
           }
         },
-        "required": ["transactions"],
+        "required": [
+          "transactions"
+        ],
         "additionalProperties": false
       },
       "LearnDto": {
@@ -4739,12 +5371,18 @@
                   "maxLength": 100
                 }
               },
-              "required": ["transactionId", "categoryId", "bankCategory"],
+              "required": [
+                "transactionId",
+                "categoryId",
+                "bankCategory"
+              ],
               "additionalProperties": false
             }
           }
         },
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "additionalProperties": false
       },
       "UndoResultDto_Output": {
@@ -4764,7 +5402,11 @@
             "maximum": 9007199254740991
           }
         },
-        "required": ["batch", "deleted", "kept"],
+        "required": [
+          "batch",
+          "deleted",
+          "kept"
+        ],
         "additionalProperties": false
       },
       "ClearResultDto_Output": {
@@ -4776,7 +5418,9 @@
             "maximum": 9007199254740991
           }
         },
-        "required": ["removed"],
+        "required": [
+          "removed"
+        ],
         "additionalProperties": false
       },
       "BudgetListDto_Output": {
@@ -4799,7 +5443,10 @@
                 },
                 "scope": {
                   "type": "string",
-                  "enum": ["personal", "family"]
+                  "enum": [
+                    "personal",
+                    "family"
+                  ]
                 },
                 "categoryId": {
                   "type": "string",
@@ -4833,13 +5480,20 @@
                         "maximum": 9007199254740991
                       }
                     },
-                    "required": ["currency", "amountMinor"],
+                    "required": [
+                      "currency",
+                      "amountMinor"
+                    ],
                     "additionalProperties": false
                   }
                 },
                 "status": {
                   "type": "string",
-                  "enum": ["ok", "near", "over"]
+                  "enum": [
+                    "ok",
+                    "near",
+                    "over"
+                  ]
                 }
               },
               "required": [
@@ -4857,7 +5511,9 @@
             }
           }
         },
-        "required": ["budgets"],
+        "required": [
+          "budgets"
+        ],
         "additionalProperties": false
       },
       "PutBudgetDto": {
@@ -4879,7 +5535,11 @@
             "maximum": 1000000000000
           }
         },
-        "required": ["workspaceId", "categoryId", "amountMinor"],
+        "required": [
+          "workspaceId",
+          "categoryId",
+          "amountMinor"
+        ],
         "additionalProperties": false
       },
       "BudgetDto_Output": {
@@ -4897,7 +5557,10 @@
           },
           "scope": {
             "type": "string",
-            "enum": ["personal", "family"]
+            "enum": [
+              "personal",
+              "family"
+            ]
           },
           "categoryId": {
             "type": "string",
@@ -4931,13 +5594,20 @@
                   "maximum": 9007199254740991
                 }
               },
-              "required": ["currency", "amountMinor"],
+              "required": [
+                "currency",
+                "amountMinor"
+              ],
               "additionalProperties": false
             }
           },
           "status": {
             "type": "string",
-            "enum": ["ok", "near", "over"]
+            "enum": [
+              "ok",
+              "near",
+              "over"
+            ]
           }
         },
         "required": [
@@ -4966,7 +5636,10 @@
         ]
       },
       "NullableDate_Output": {
-        "type": ["string", "null"]
+        "type": [
+          "string",
+          "null"
+        ]
       },
       "NullableTimestamp_Output": {
         "anyOf": [
@@ -5000,14 +5673,20 @@
                 },
                 "scope": {
                   "type": "string",
-                  "enum": ["personal", "family"]
+                  "enum": [
+                    "personal",
+                    "family"
+                  ]
                 },
                 "createdBy": {
                   "$ref": "#/components/schemas/NullableId_Output"
                 },
                 "kind": {
                   "type": "string",
-                  "enum": ["income", "expense"]
+                  "enum": [
+                    "income",
+                    "expense"
+                  ]
                 },
                 "amountMinor": {
                   "type": "integer",
@@ -5028,7 +5707,12 @@
                 },
                 "frequency": {
                   "type": "string",
-                  "enum": ["daily", "weekly", "monthly", "yearly"]
+                  "enum": [
+                    "daily",
+                    "weekly",
+                    "monthly",
+                    "yearly"
+                  ]
                 },
                 "interval": {
                   "type": "integer",
@@ -5086,11 +5770,16 @@
             }
           }
         },
-        "required": ["rules"],
+        "required": [
+          "rules"
+        ],
         "additionalProperties": false
       },
       "EndsOn": {
-        "type": ["string", "null"]
+        "type": [
+          "string",
+          "null"
+        ]
       },
       "CreateRuleDto": {
         "type": "object",
@@ -5102,7 +5791,10 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["income", "expense"]
+            "enum": [
+              "income",
+              "expense"
+            ]
           },
           "amountMinor": {
             "type": "integer",
@@ -5145,7 +5837,12 @@
           },
           "frequency": {
             "type": "string",
-            "enum": ["daily", "weekly", "monthly", "yearly"]
+            "enum": [
+              "daily",
+              "weekly",
+              "monthly",
+              "yearly"
+            ]
           },
           "interval": {
             "default": 1,
@@ -5165,7 +5862,14 @@
             "maxLength": 64
           }
         },
-        "required": ["workspaceId", "kind", "amountMinor", "currency", "frequency", "startsOn"],
+        "required": [
+          "workspaceId",
+          "kind",
+          "amountMinor",
+          "currency",
+          "frequency",
+          "startsOn"
+        ],
         "additionalProperties": false
       },
       "RuleDto_Output": {
@@ -5183,14 +5887,20 @@
           },
           "scope": {
             "type": "string",
-            "enum": ["personal", "family"]
+            "enum": [
+              "personal",
+              "family"
+            ]
           },
           "createdBy": {
             "$ref": "#/components/schemas/NullableId_Output"
           },
           "kind": {
             "type": "string",
-            "enum": ["income", "expense"]
+            "enum": [
+              "income",
+              "expense"
+            ]
           },
           "amountMinor": {
             "type": "integer",
@@ -5211,7 +5921,12 @@
           },
           "frequency": {
             "type": "string",
-            "enum": ["daily", "weekly", "monthly", "yearly"]
+            "enum": [
+              "daily",
+              "weekly",
+              "monthly",
+              "yearly"
+            ]
           },
           "interval": {
             "type": "integer",
@@ -5272,7 +5987,10 @@
         "properties": {
           "kind": {
             "type": "string",
-            "enum": ["income", "expense"]
+            "enum": [
+              "income",
+              "expense"
+            ]
           },
           "amountMinor": {
             "type": "integer",
@@ -5312,7 +6030,12 @@
           },
           "frequency": {
             "type": "string",
-            "enum": ["daily", "weekly", "monthly", "yearly"]
+            "enum": [
+              "daily",
+              "weekly",
+              "monthly",
+              "yearly"
+            ]
           },
           "interval": {
             "type": "integer",
@@ -5348,12 +6071,19 @@
                 "type": "string"
               }
             },
-            "required": ["from", "to"],
+            "required": [
+              "from",
+              "to"
+            ],
             "additionalProperties": false
           },
           "granularity": {
             "type": "string",
-            "enum": ["day", "week", "month"]
+            "enum": [
+              "day",
+              "week",
+              "month"
+            ]
           },
           "totals": {
             "type": "object",
@@ -5374,7 +6104,11 @@
                 "maximum": 9007199254740991
               }
             },
-            "required": ["incomeMinor", "expenseMinor", "balanceMinor"],
+            "required": [
+              "incomeMinor",
+              "expenseMinor",
+              "balanceMinor"
+            ],
             "additionalProperties": false
           },
           "unconverted": {
@@ -5396,7 +6130,11 @@
                   "maximum": 9007199254740991
                 }
               },
-              "required": ["currency", "incomeMinor", "expenseMinor"],
+              "required": [
+                "currency",
+                "incomeMinor",
+                "expenseMinor"
+              ],
               "additionalProperties": false
             }
           },
@@ -5418,17 +6156,29 @@
                   ]
                 },
                 "name": {
-                  "type": ["string", "null"]
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "systemKey": {
-                  "type": ["string", "null"]
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "kind": {
                   "type": "string",
-                  "enum": ["income", "expense"]
+                  "enum": [
+                    "income",
+                    "expense"
+                  ]
                 },
                 "color": {
-                  "type": ["string", "null"]
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "amountMinor": {
                   "type": "integer",
@@ -5470,7 +6220,11 @@
                   "maximum": 9007199254740991
                 }
               },
-              "required": ["bucket", "incomeMinor", "expenseMinor"],
+              "required": [
+                "bucket",
+                "incomeMinor",
+                "expenseMinor"
+              ],
               "additionalProperties": false
             }
           },
@@ -5487,7 +6241,10 @@
                     "type": "string"
                   }
                 },
-                "required": ["from", "to"],
+                "required": [
+                  "from",
+                  "to"
+                ],
                 "additionalProperties": false
               },
               "totals": {
@@ -5509,7 +6266,11 @@
                     "maximum": 9007199254740991
                   }
                 },
-                "required": ["incomeMinor", "expenseMinor", "balanceMinor"],
+                "required": [
+                  "incomeMinor",
+                  "expenseMinor",
+                  "balanceMinor"
+                ],
                 "additionalProperties": false
               },
               "byCategory": {
@@ -5530,17 +6291,29 @@
                       ]
                     },
                     "name": {
-                      "type": ["string", "null"]
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "systemKey": {
-                      "type": ["string", "null"]
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "kind": {
                       "type": "string",
-                      "enum": ["income", "expense"]
+                      "enum": [
+                        "income",
+                        "expense"
+                      ]
                     },
                     "color": {
-                      "type": ["string", "null"]
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "amountMinor": {
                       "type": "integer",
@@ -5582,15 +6355,31 @@
                     "maximum": 9007199254740991
                   }
                 },
-                "required": ["incomeMinor", "expenseMinor", "balanceMinor"],
+                "required": [
+                  "incomeMinor",
+                  "expenseMinor",
+                  "balanceMinor"
+                ],
                 "additionalProperties": false
               }
             },
-            "required": ["period", "totals", "byCategory", "deltas"],
+            "required": [
+              "period",
+              "totals",
+              "byCategory",
+              "deltas"
+            ],
             "additionalProperties": false
           }
         },
-        "required": ["period", "granularity", "totals", "unconverted", "byCategory", "series"],
+        "required": [
+          "period",
+          "granularity",
+          "totals",
+          "unconverted",
+          "byCategory",
+          "series"
+        ],
         "additionalProperties": false
       }
     }
