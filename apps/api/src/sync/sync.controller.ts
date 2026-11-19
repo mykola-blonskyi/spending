@@ -15,6 +15,7 @@ import type { Response } from 'express';
 import { ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { createZodDto, ZodResponse } from 'nestjs-zod';
 import { type Actor, CurrentActor } from '../common/actor';
+import { ApiError } from '../common/errors';
 import { SyncMutationBudget } from '../common/rate-limit';
 import {
   conflictListSchema,
@@ -24,6 +25,7 @@ import {
   pushResponseSchema,
   resolveBodySchema,
   resolveResponseSchema,
+  SYNC_PROTOCOL,
 } from './mutations';
 import { SyncService } from './sync.service';
 
@@ -59,6 +61,7 @@ export class SyncController {
   @ApiQuery({ type: PullQueryDto })
   @ZodResponse({ status: 200, type: PullResponseDto })
   pull(@CurrentActor() actor: Actor, @Query() query: PullQueryDto) {
+    if (query.protocol < SYNC_PROTOCOL) throw new ApiError('UPGRADE_REQUIRED');
     return this.sync.pull(actor.userId, query.cursor, query.limit);
   }
 

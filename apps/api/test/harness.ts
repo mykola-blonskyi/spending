@@ -4,6 +4,7 @@ import { sql } from 'drizzle-orm';
 import { createApp } from '../src/bootstrap';
 import { parseConfig } from '../src/common/config';
 import { DB, type Db } from '../src/database/database.module';
+import { SYNC_PROTOCOL } from '../src/sync/mutations';
 import { testDatabaseUrl } from './env';
 
 export type TestApp = { app: NestExpressApplication; db: Db; baseUrl: string };
@@ -244,7 +245,7 @@ export async function liveRows<T extends Record<string, unknown>>(
   reviewStatus: 'confirmed' | 'pending_review' = 'confirmed',
 ): Promise<T[]> {
   const { transactions } = await body<{ transactions: Record<string, unknown>[] }>(
-    await as(t, session, '/v1/sync/pull?limit=1000'),
+    await as(t, session, `/v1/sync/pull?protocol=${SYNC_PROTOCOL}&limit=1000`),
     200,
   );
   const key = (r: Record<string, unknown>) => `${r.occurredOn}|${r.createdAt}|${r.id}`;

@@ -23,11 +23,13 @@ const ERROR_STATUS = {
   CURRENCY_MISMATCH: HttpStatus.UNPROCESSABLE_ENTITY,
   REVIEW_REQUIRED: HttpStatus.CONFLICT,
   MUTATION_ID_REUSED: HttpStatus.CONFLICT,
+  // Nest's HttpStatus has no 426.
+  UPGRADE_REQUIRED: 426,
   RATE_LIMITED: HttpStatus.TOO_MANY_REQUESTS,
   PAYLOAD_TOO_LARGE: HttpStatus.PAYLOAD_TOO_LARGE,
   UNAVAILABLE: HttpStatus.SERVICE_UNAVAILABLE,
   INTERNAL: HttpStatus.INTERNAL_SERVER_ERROR,
-} as const satisfies Record<string, HttpStatus>;
+} as const satisfies Record<string, number>;
 
 export type ErrorCode = keyof typeof ERROR_STATUS;
 
