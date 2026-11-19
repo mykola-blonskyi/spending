@@ -124,7 +124,7 @@ export const uk = {
     syncNow: 'Синхронізувати зараз',
   },
   userMenu: {
-    label: 'Акаунт: {name}',
+    label: 'Акаунт:',
   },
   invite: {
     title: 'Приєднатися до «{family}»?',

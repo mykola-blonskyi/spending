@@ -23,18 +23,19 @@ export function UserMenu({ showName = true }: { showName?: boolean }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          aria-label={t('userMenu.label', { name: profile.displayName })}
           className={cn(
             'flex h-10 max-w-56 items-center gap-2 rounded-full p-1 transition-colors duration-150 outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/60',
             showName && 'sm:pr-3',
           )}
         >
           <UserAvatar user={profile} />
-          {showName && (
-            <span className="hidden truncate text-sm font-medium sm:inline">
-              {profile.displayName}
-            </span>
-          )}
+          {/* The name comes from the content, not aria-label: the visible text must be in it (WCAG 2.5.3). */}
+          <span className="sr-only">{t('userMenu.label')}</span>{' '}
+          <span
+            className={cn('sr-only truncate text-sm font-medium', showName && 'sm:not-sr-only')}
+          >
+            {profile.displayName}
+          </span>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-60">
           <DropdownMenuLabel className="flex flex-col gap-0.5 font-normal">

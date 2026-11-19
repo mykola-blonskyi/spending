@@ -62,6 +62,8 @@ beforeEach(() => {
   localStorage.clear();
   setDesktop(true);
   vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(800);
+  // TanStack Virtual sizes its scroll box by clientHeight from virtual-core 3.19.11 on.
+  vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(800);
   setWidth(1200);
 });
 afterEach(() => vi.restoreAllMocks());

@@ -116,7 +116,7 @@ export const en = {
     syncNow: 'Sync now',
   },
   userMenu: {
-    label: 'Account: {name}',
+    label: 'Account:',
   },
   invite: {
     title: 'Join {family}?',
