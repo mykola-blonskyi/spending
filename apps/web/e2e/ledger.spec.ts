@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { E2E_USERS } from './support/env';
+import { APP_ORIGIN, E2E_USERS } from './support/env';
 import { createAccount, pushEntries } from './support/seed';
 
 const ann = E2E_USERS.ann;
@@ -105,6 +105,45 @@ test('an unused account can be deleted; one with an entry offers Archive instead
   await expect
     .poll(() => db.accounts(ann.email))
     .toContainEqual({ name: 'Wallet', kind: 'cash', currency: 'EUR', archived: true });
+});
+
+test('an account deleted elsewhere whose tombstone this device missed can still be deleted here', async ({
+  page,
+  signInAs,
+  db,
+}) => {
+  await signInAs('ann');
+  const ghost = await createAccount(page, { name: 'Monobank', kind: 'card', currency: 'EUR' });
+  await page.goto('/accounts');
+  await expect(page.getByRole('listitem').filter({ hasText: 'Monobank' })).toBeVisible();
+
+  await page.route('**/api/v1/sync/pull**', async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    body.transactions = body.transactions.filter((row: { id: string }) => row.id !== ghost);
+    await route.fulfill({ response, json: body });
+  });
+  const session = await (await page.request.get('/api/v1/auth/session')).json();
+  const deleted = await page.request.delete(`/api/v1/accounts/${ghost}`, {
+    headers: { 'X-CSRF-Token': session.csrfToken, Origin: APP_ORIGIN },
+  });
+  expect(deleted.status()).toBe(204);
+  await page.reload();
+  await expect(page.getByRole('listitem').filter({ hasText: 'Monobank' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Delete Monobank' }).click();
+  const confirm = page.getByRole('alertdialog');
+  await expect(confirm.getByRole('heading')).toHaveText('Delete the account Monobank?');
+  const gone = page.waitForResponse((r) => r.url().endsWith(`/accounts/${ghost}`));
+  await confirm.getByRole('button', { name: 'Delete' }).click();
+  expect((await gone).status()).toBe(404);
+  await expect(confirm).toBeHidden();
+  await expect(page.getByRole('listitem').filter({ hasText: 'Monobank' })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Accounts');
+  await expect(page.getByRole('listitem').filter({ hasText: 'Monobank' })).toHaveCount(0);
+  expect((await db.accounts(ann.email)).map((a) => a.name)).not.toContain('Monobank');
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
 });
 
 test('the server rejects a second account with the same name and kind', async ({

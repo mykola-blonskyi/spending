@@ -78,6 +78,19 @@ export async function discardChange(store: LocalStore, id: string): Promise<void
   await store.commit((state) => discardFailed(state, id));
 }
 
+/**
+ * Drops an account the server no longer has. A client that missed its deletion tombstone (BR-41),
+ * e.g. pulled by a bundle that predated it, never gets it again past its cursor.
+ */
+export async function forgetAccount(store: LocalStore, id: string): Promise<void> {
+  await store.commit((state) => {
+    if (!state.accounts.has(id)) return state;
+    const accounts = new Map(state.accounts);
+    accounts.delete(id);
+    return { ...state, accounts };
+  });
+}
+
 /** Resolves a conflict on the server (online only), then closes it on this device. */
 export async function resolveConflict(
   store: LocalStore,
