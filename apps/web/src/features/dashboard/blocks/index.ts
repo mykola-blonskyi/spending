@@ -1,3 +1,4 @@
+export { AccountOverview } from './account-overview';
 export { BudgetOverview } from './budget-overview';
 export { CategoryBreakdown } from './category-breakdown';
 export { PeriodControls, ScopeSwitch } from './period-controls';

@@ -11,6 +11,7 @@ import {
   transactions,
   users,
 } from '../src/database/schema';
+import { SYNC_PROTOCOL } from '../src/sync/mutations';
 import { SyncService } from '../src/sync/sync.service';
 import { testDatabaseUrl } from './env';
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
@@ -134,7 +135,7 @@ describe('sync', () => {
     return ((await response.json()) as { results: Result[] }).results;
   }
   async function pull(s: Session, cursor = 0, limit?: number): Promise<Pull> {
-    const query = `cursor=${cursor}${limit ? `&limit=${limit}` : ''}`;
+    const query = `protocol=${SYNC_PROTOCOL}&cursor=${cursor}${limit ? `&limit=${limit}` : ''}`;
     const response = await as(t, s, `/v1/sync/pull?${query}`);
     expect(response.status).toBe(200);
     return (await response.json()) as Pull;
@@ -716,11 +717,23 @@ describe('sync', () => {
     expect(await t.db.select().from(transactions)).toEqual([]);
   }, 30_000);
 
+  it('refuses a pull from a client older than the sync protocol (426)', async () => {
+    for (const query of ['cursor=0', `protocol=${SYNC_PROTOCOL - 1}&cursor=0`]) {
+      const response = await as(t, ann, `/v1/sync/pull?${query}`);
+      expect(response.status).toBe(426);
+      expect(await response.json()).toMatchObject({ error: { code: 'UPGRADE_REQUIRED' } });
+    }
+  });
+
   it('validates push bodies and pull cursors', async () => {
     const bad = await as(t, ann, '/v1/sync/push', { method: 'POST', body: { mutations: [] } });
     expect(bad.status).toBe(400);
-    expect((await as(t, ann, '/v1/sync/pull?cursor=-1')).status).toBe(400);
-    expect((await as(t, ann, '/v1/sync/pull?limit=1001')).status).toBe(400);
+    expect((await as(t, ann, `/v1/sync/pull?protocol=${SYNC_PROTOCOL}&cursor=-1`)).status).toBe(
+      400,
+    );
+    expect((await as(t, ann, `/v1/sync/pull?protocol=${SYNC_PROTOCOL}&limit=1001`)).status).toBe(
+      400,
+    );
     const withoutCsrf = await fetch(`${t.baseUrl}/api/v1/sync/push`, {
       method: 'POST',
       headers: {

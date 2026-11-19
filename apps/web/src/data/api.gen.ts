@@ -2313,6 +2313,7 @@ export interface operations {
     SyncController_pull: {
         parameters: {
             query?: {
+                protocol?: number;
                 cursor?: number;
                 limit?: number;
             };

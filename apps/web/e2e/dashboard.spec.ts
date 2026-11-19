@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 import { apiCall, expect, test } from './fixtures';
-import { pushEntries } from './support/seed';
+import { createAccount, pushEntries } from './support/seed';
 
 const barFill = (page: Page) =>
   page
@@ -45,7 +45,7 @@ test('seeded entries add up on the overview, compared with the month before', as
   const pull = await apiCall<{
     workspaces: { id: string; kind: string }[];
     categories: { id: string; systemKey: string | null; workspaceId: string }[];
-  }>(page, 'GET', '/api/v1/sync/pull?cursor=0&limit=1000');
+  }>(page, 'GET', '/api/v1/sync/pull?protocol=1&cursor=0&limit=1000');
   const personal = pull.workspaces.find((w) => w.kind === 'personal')!;
   const groceries = pull.categories.find(
     (c) => c.systemKey === 'groceries' && c.workspaceId === personal.id,
@@ -101,4 +101,44 @@ test('seeded entries add up on the overview, compared with the month before', as
   await page.emulateMedia({ colorScheme: 'dark' });
   await expect.poll(() => barFill(page)).not.toBe(light);
   expect(light).not.toBe('');
+});
+
+test('each account shows its balance and its own income, expenses and transfers', async ({
+  page,
+  signInAs,
+}) => {
+  await signInAs('ann');
+  const salary = await createAccount(page, { name: 'Salary', kind: 'card', currency: 'EUR' });
+  const savings = await createAccount(page, { name: 'Savings', kind: 'cash', currency: 'EUR' });
+  const today = new Date().toISOString().slice(0, 10);
+  const transferId = crypto.randomUUID();
+  await pushEntries(page, [
+    {
+      kind: 'income',
+      amountMinor: 100_000,
+      occurredOn: today,
+      description: 'Pay',
+      accountId: salary,
+    },
+    { amountMinor: 10_000, occurredOn: today, description: 'Bills', accountId: salary },
+    { amountMinor: 30_000, occurredOn: today, description: 'Save', accountId: salary, transferId },
+    {
+      kind: 'income',
+      amountMinor: 30_000,
+      occurredOn: today,
+      description: 'Save',
+      accountId: savings,
+      transferId,
+    },
+  ]);
+  await page.goto('/');
+  const accounts = page.getByRole('region', { name: 'Accounts' });
+  const items = accounts.getByRole('listitem');
+  await expect(items).toHaveCount(2);
+  await expect(items.nth(0)).toHaveText(
+    'Salary€600.00€600.00Income+€1,000.00Expenses-€100.00Transfers out-€300.00',
+  );
+  await expect(items.nth(1)).toHaveText('Savings€300.00€300.00Transfers in+€300.00');
+  await expect(page.getByRole('region', { name: 'Totals' })).toContainText('Period net€900.00');
+  await page.screenshot({ path: 'test-results/dashboard-accounts.png', fullPage: true });
 });

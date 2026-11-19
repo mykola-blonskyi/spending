@@ -121,7 +121,7 @@ export const es = {
     syncNow: 'Sincronizar ahora',
   },
   userMenu: {
-    label: 'Cuenta: {name}',
+    label: 'Cuenta:',
   },
   invite: {
     title: '¿Unirte a {family}?',
@@ -792,6 +792,13 @@ export const es = {
       length: 'Elige un periodo de diez años como máximo.',
     },
     scope: { label: 'De quién', all: 'Todo', personal: 'Personal', family: 'Familia' },
+    accounts: {
+      title: 'Cuentas',
+      income: 'Ingresos',
+      expense: 'Gastos',
+      transfersIn: 'Transferencias recibidas',
+      transfersOut: 'Transferencias enviadas',
+    },
     totals: {
       title: 'Totales',
       income: 'Ingresos',
@@ -1055,6 +1062,7 @@ export const es = {
     INVALID_CATEGORY: 'Esta categoría está archivada o no encaja con este tipo. Elige otra.',
     INVALID_TRANSFER:
       'Este movimiento no puede ser un lado de esa transferencia. Vuelve a marcarlo.',
+    UPGRADE_REQUIRED: 'Hace falta una nueva versión de la aplicación. Se está cargando.',
     CURRENCY_MISMATCH:
       'Un movimiento con cuenta debe estar en la moneda de esa cuenta. Cambia la cuenta o la moneda.',
     REVIEW_REQUIRED:

@@ -2,6 +2,7 @@ import { useTranslations } from '@i18n/index';
 import { PageHeader } from '@shared/components';
 import { cn } from '@shared/lib/utils';
 import {
+  AccountOverview,
   BudgetOverview,
   CategoryBreakdown,
   DashboardStatus,
@@ -28,6 +29,7 @@ export function BentoDashboard() {
       </div>
       <DashboardStatus dashboard={dashboard} />
       <div className={cn('grid gap-3 lg:grid-cols-6', dashboard.refreshing && 'opacity-60')}>
+        <AccountOverview dashboard={dashboard} tileClassName={tile} className="lg:col-span-6" />
         <TotalsTiles dashboard={dashboard} tileClassName={tile} className="lg:col-span-6" />
         <TrendChart dashboard={dashboard} className={cn(tile, 'lg:col-span-4')} />
         <UnconvertedList dashboard={dashboard} className={cn(tile, 'lg:col-span-2')} />

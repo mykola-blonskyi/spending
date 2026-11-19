@@ -448,3 +448,32 @@ towards the balance, which is shown as "N entries before the opening date are no
 account without an opening balance counts its whole history, so existing accounts show the sum of
 their entries until the user enters what they held on a date. Setting the current balance to match the bank (#132) can recompute the
 opening balance without creating an entry.
+
+## ADR-018: Gate sync pulls on a protocol number, forcing an update only when it rises
+
+Date: 2026-11-19
+
+**Context.** A new version waits for the user to accept the reload prompt, so an older bundle can
+keep syncing for hours. After #139 such a bundle pulled account tombstones it did not understand,
+advanced its cursor past them and kept a deleted account for good; entries saved to it were
+rejected (#147).
+
+**Decision.** The pull takes `protocol`, and the server refuses one below its `SYNC_PROTOCOL` with
+`426 UPGRADE_REQUIRED` before reading anything. Clients that predate the gate send none and count
+as 0. The web app sends its own `SYNC_PROTOCOL`; on `UPGRADE_REQUIRED` it fetches the new service
+worker and applies it without asking, and it never reloads on that path without a waiting worker,
+which would only bring back the cached build. The two constants (`apps/api/src/sync/mutations.ts`,
+`apps/web/src/data/sync/transport.ts`) rise together whenever an older client would misread a
+pull page.
+
+**Alternatives.**
+
+- Reload every tab on every deploy (`registerType: 'autoUpdate'`): drops unsaved input on deploys
+  that change nothing for sync, and an old tab still syncs until its next update check.
+- A build version compared on every request: the web image does not know its commit at build
+  time, and any deploy would cut sync off until reload.
+
+**Consequences.** An outdated build stops syncing instead of corrupting its cache; its local
+changes stay queued and go out after the update. Raising the protocol reloads every open tab
+once, and a form half filled in at that moment is lost. Forgetting to raise it leaves the old
+risk, so the operations guide lists it as a release step.

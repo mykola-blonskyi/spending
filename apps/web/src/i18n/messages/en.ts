@@ -116,7 +116,7 @@ export const en = {
     syncNow: 'Sync now',
   },
   userMenu: {
-    label: 'Account: {name}',
+    label: 'Account:',
   },
   invite: {
     title: 'Join {family}?',
@@ -766,6 +766,13 @@ export const en = {
       length: 'Choose a period of at most ten years.',
     },
     scope: { label: 'Whose money', all: 'Combined', personal: 'Personal', family: 'Family' },
+    accounts: {
+      title: 'Accounts',
+      income: 'Income',
+      expense: 'Expenses',
+      transfersIn: 'Transfers in',
+      transfersOut: 'Transfers out',
+    },
     totals: {
       title: 'Totals',
       income: 'Income',
@@ -1019,6 +1026,7 @@ export const en = {
     INVALID_ACCOUNT: 'This account is archived or not available here. Pick another one.',
     INVALID_CATEGORY: 'This category is archived or does not fit this type. Pick another one.',
     INVALID_TRANSFER: 'This entry cannot be a side of that transfer. Mark it again.',
+    UPGRADE_REQUIRED: 'A new version of the app is required. It is loading now.',
     CURRENCY_MISMATCH:
       'An entry with an account must be in that account’s currency. Change the account or the currency.',
     REVIEW_REQUIRED: 'This entry is waiting for review in an import and cannot be changed yet.',

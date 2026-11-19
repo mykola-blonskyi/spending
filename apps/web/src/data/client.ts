@@ -4,6 +4,7 @@ import type { paths } from './api.gen';
 import { ApiError, parseApiError } from './api-error';
 import { emitAuthLost } from './auth-events';
 import { clearCsrfToken, getCsrfToken, setCsrfToken } from './csrf';
+import { emitUpgradeRequired } from './upgrade-events';
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -27,6 +28,7 @@ const apiMiddleware: Middleware = {
     const error = parseApiError(response.status, await readBody(response));
     // A stale token is dropped so the next write fetches a fresh one.
     if (error.code === 'CSRF_FAILED') clearCsrfToken();
+    if (error.code === 'UPGRADE_REQUIRED') emitUpgradeRequired();
     // Only our own envelope proves the session ended; a bare 401 (e.g. from a proxy) must not log users out.
     if (
       response.status === 401 &&

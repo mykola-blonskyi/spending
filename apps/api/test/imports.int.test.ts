@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { categoryRules, fxRates, importBatches, transactions } from '../src/database/schema';
+import { SYNC_PROTOCOL } from '../src/sync/mutations';
 import { type FakeOidc, startFakeOidc } from './fake-oidc/server';
 import {
   as,
@@ -628,8 +629,12 @@ describe('imports', () => {
     const confirm = (s: Session, items: unknown[]) =>
       as(t, s, '/v1/imports/review/confirm', { method: 'POST', body: { items } });
     const pulled = async (s: Session) =>
-      (await json<{ transactions: { id: string }[] }>(await as(t, s, '/v1/sync/pull'), 200))
-        .transactions;
+      (
+        await json<{ transactions: { id: string }[] }>(
+          await as(t, s, `/v1/sync/pull?protocol=${SYNC_PROTOCOL}`),
+          200,
+        )
+      ).transactions;
 
     it('holds imported rows for review, invisible to everyone else', async () => {
       const personalIds = await categoryIds(ann, annPersonal);

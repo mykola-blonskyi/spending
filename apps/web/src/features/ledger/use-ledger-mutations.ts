@@ -13,7 +13,7 @@ import {
   updateCategory,
 } from '@data/ledger';
 import { isSignedOutError } from '@data/session';
-import { useSyncNow } from '@data/sync';
+import { useForgetAccount, useSyncNow } from '@data/sync';
 import { useTranslations } from '@i18n/index';
 
 /**
@@ -44,6 +44,7 @@ function useLedgerWrite() {
 
 export function useAccountsAdmin() {
   const { run, isPending } = useLedgerWrite();
+  const forget = useForgetAccount();
   return {
     isPending,
     create: (input: AccountCreate) => run(() => createAccount(input)),
@@ -52,7 +53,14 @@ export function useAccountsAdmin() {
       patch: Pick<AccountPatch, 'name' | 'kind' | 'openingBalanceMinor' | 'openingOn'>,
     ) => run(() => updateAccount(id, patch)),
     archive: (id: string, archived: boolean) => run(() => updateAccount(id, { archived })),
-    remove: (id: string) => run(() => deleteAccount(id)),
+    // Already gone on the server: the deletion is done, only this device still shows it.
+    remove: (id: string) =>
+      run(() =>
+        deleteAccount(id).catch((error: unknown) => {
+          if (errorCode(error) !== 'NOT_FOUND') throw error;
+          return forget(id);
+        }),
+      ),
   };
 }
 

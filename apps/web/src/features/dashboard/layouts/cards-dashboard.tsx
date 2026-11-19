@@ -1,6 +1,7 @@
 import { useTranslations } from '@i18n/index';
 import { cn } from '@shared/lib/utils';
 import {
+  AccountOverview,
   BudgetOverview,
   CategoryBreakdown,
   DashboardStatus,
@@ -25,6 +26,7 @@ export function CardsDashboard() {
       <ScopeSwitch dashboard={dashboard} />
       <DashboardStatus dashboard={dashboard} />
       <div className={cn('flex flex-col gap-4', dashboard.refreshing && 'opacity-60')}>
+        <AccountOverview dashboard={dashboard} tileClassName={card} />
         <TotalsTiles dashboard={dashboard} tileClassName={card} />
         <UnconvertedList dashboard={dashboard} className={card} />
         <TrendChart dashboard={dashboard} className={card} />

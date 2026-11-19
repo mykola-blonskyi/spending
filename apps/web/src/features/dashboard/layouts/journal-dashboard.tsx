@@ -2,6 +2,7 @@ import { useTranslations } from '@i18n/index';
 import { PageHeader } from '@shared/components';
 import { cn } from '@shared/lib/utils';
 import {
+  AccountOverview,
   BudgetOverview,
   CategoryBreakdown,
   DashboardStatus,
@@ -26,6 +27,7 @@ export function JournalDashboard() {
       <ScopeSwitch dashboard={dashboard} />
       <DashboardStatus dashboard={dashboard} />
       <div className={cn('flex flex-col gap-5', dashboard.refreshing && 'opacity-60')}>
+        <AccountOverview dashboard={dashboard} className={entry} />
         <TotalsTiles dashboard={dashboard} className={entry} />
         <UnconvertedList dashboard={dashboard} className={entry} />
         <TrendChart dashboard={dashboard} className={entry} />
