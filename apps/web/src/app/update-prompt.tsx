@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { onUpgradeRequired } from '@data/upgrade-events';
 import { useTranslations } from '@i18n/index';
 
 const UPDATE_CHECK_MS = 60 * 60 * 1000;
@@ -9,11 +10,16 @@ const UPDATE_CHECK_MS = 60 * 60 * 1000;
  * Offers a new version once its service worker is installed and waiting. Only a click on Reload
  * activates it; a tab that did not click keeps running, with any unsaved input, until its own
  * user reloads.
+ *
+ * Except when the server refuses this build's sync protocol (UPGRADE_REQUIRED): then the new
+ * version is fetched and applied without asking, since this build can no longer sync. It never
+ * plain-reloads on that path, which would only bring back the same cached build.
  */
 export function UpdatePrompt() {
   const t = useTranslations();
   const registration = useRef<ServiceWorkerRegistration>(undefined);
   const reloadRequested = useRef(false);
+  const forced = useRef(false);
   const {
     needRefresh: [needRefresh],
     updateServiceWorker,
@@ -28,8 +34,27 @@ export function UpdatePrompt() {
     },
   });
 
+  useEffect(
+    () =>
+      onUpgradeRequired(() => {
+        forced.current = true;
+        if (registration.current?.waiting) {
+          reloadRequested.current = true;
+          void updateServiceWorker();
+        } else {
+          void registration.current?.update();
+        }
+      }),
+    [updateServiceWorker],
+  );
+
   useEffect(() => {
     if (!needRefresh) return;
+    if (forced.current) {
+      reloadRequested.current = true;
+      void updateServiceWorker();
+      return;
+    }
     toast(t('states.update.available'), {
       id: 'app-update',
       duration: Infinity,

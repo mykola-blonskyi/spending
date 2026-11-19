@@ -45,7 +45,7 @@ test('seeded entries add up on the overview, compared with the month before', as
   const pull = await apiCall<{
     workspaces: { id: string; kind: string }[];
     categories: { id: string; systemKey: string | null; workspaceId: string }[];
-  }>(page, 'GET', '/api/v1/sync/pull?cursor=0&limit=1000');
+  }>(page, 'GET', '/api/v1/sync/pull?protocol=1&cursor=0&limit=1000');
   const personal = pull.workspaces.find((w) => w.kind === 'personal')!;
   const groceries = pull.categories.find(
     (c) => c.systemKey === 'groceries' && c.workspaceId === personal.id,

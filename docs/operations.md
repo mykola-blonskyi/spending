@@ -419,6 +419,11 @@ security headers through the public URL (`scripts/check-deploy.sh`). A red CI ru
 nothing. When several merges land close together, the runs for older commits stand down (main
 has moved) and only the newest commit deploys. Deploys are serialized.
 
+When a change makes older clients misread a pull page (a new row kind, a new meaning for an
+existing field), raise `SYNC_PROTOCOL` in both `apps/api/src/sync/mutations.ts` and
+`apps/web/src/data/sync/transport.ts` in the same PR (ADR-018). Open tabs then reload into the new
+version on their next pull.
+
 By hand (redeploy, or after fixing a Coolify setting): Actions → Deploy → Run workflow, branch
 `main`. A manual run re-runs CI for that commit first.
 

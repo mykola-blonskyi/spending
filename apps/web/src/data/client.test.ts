@@ -3,6 +3,7 @@ import { ApiError } from './api-error';
 import { onAuthLost } from './auth-events';
 import { createApiClient } from './client';
 import { clearCsrfToken, getCsrfToken, setCsrfToken } from './csrf';
+import { onUpgradeRequired } from './upgrade-events';
 
 type Loose = Record<'GET' | 'POST' | 'DELETE', (path: string) => Promise<unknown>>;
 
@@ -103,6 +104,20 @@ describe('error handling', () => {
     expect(error.fromEnvelope).toBe(false);
     expect(listener).not.toHaveBeenCalled();
     expect(getCsrfToken()).toBe('tok');
+  });
+
+  it('announces that the server requires a newer client (UPGRADE_REQUIRED)', async () => {
+    const listener = vi.fn();
+    const unsubscribe = onUpgradeRequired(listener);
+    const { client } = setup(() =>
+      json(426, { error: { code: 'UPGRADE_REQUIRED', message: 'UPGRADE_REQUIRED' } }),
+    );
+
+    const error = (await client.GET('/api/health').catch((e: unknown) => e)) as ApiError;
+    unsubscribe();
+
+    expect(error.code).toBe('UPGRADE_REQUIRED');
+    expect(listener).toHaveBeenCalledOnce();
   });
 
   it('stops notifying after unsubscribe', async () => {

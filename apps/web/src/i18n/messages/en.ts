@@ -1026,6 +1026,7 @@ export const en = {
     INVALID_ACCOUNT: 'This account is archived or not available here. Pick another one.',
     INVALID_CATEGORY: 'This category is archived or does not fit this type. Pick another one.',
     INVALID_TRANSFER: 'This entry cannot be a side of that transfer. Mark it again.',
+    UPGRADE_REQUIRED: 'A new version of the app is required. It is loading now.',
     CURRENCY_MISMATCH:
       'An entry with an account must be in that account’s currency. Change the account or the currency.',
     REVIEW_REQUIRED: 'This entry is waiting for review in an import and cannot be changed yet.',
