@@ -39,6 +39,8 @@ beforeEach(() => {
   setDesktop(false);
   // jsdom lays nothing out; give the virtualized list a viewport so it renders rows.
   vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(800);
+  // TanStack Virtual sizes its scroll box by clientHeight from virtual-core 3.19.11 on.
+  vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(800);
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
     DOMRect.fromRect({ width: 400, height: 56 }),
   );

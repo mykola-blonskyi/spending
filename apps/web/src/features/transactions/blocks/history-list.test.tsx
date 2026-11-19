@@ -42,6 +42,8 @@ beforeEach(() => {
   localStorage.clear();
   // jsdom lays nothing out; every element reports one row's height.
   vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(600);
+  // TanStack Virtual sizes its scroll box by clientHeight from virtual-core 3.19.11 on.
+  vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600);
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
     DOMRect.fromRect({ width: 400, height: ROW }),
   );

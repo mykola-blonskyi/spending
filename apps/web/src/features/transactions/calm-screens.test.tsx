@@ -23,6 +23,8 @@ beforeEach(() => {
   Element.prototype.scrollIntoView = () => {};
   // jsdom lays nothing out; give the history's scroll box a height so it renders rows.
   vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(800);
+  // TanStack Virtual sizes its scroll box by clientHeight from virtual-core 3.19.11 on.
+  vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(800);
   vi.stubGlobal('matchMedia', () => ({
     matches: false,
     addEventListener: () => {},

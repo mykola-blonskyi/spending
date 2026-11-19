@@ -121,7 +121,7 @@ export const es = {
     syncNow: 'Sincronizar ahora',
   },
   userMenu: {
-    label: 'Cuenta: {name}',
+    label: 'Cuenta:',
   },
   invite: {
     title: '¿Unirte a {family}?',

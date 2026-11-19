@@ -125,7 +125,7 @@ export const ru = {
     syncNow: 'Синхронизировать сейчас',
   },
   userMenu: {
-    label: 'Аккаунт: {name}',
+    label: 'Аккаунт:',
   },
   invite: {
     title: 'Присоединиться к «{family}»?',
