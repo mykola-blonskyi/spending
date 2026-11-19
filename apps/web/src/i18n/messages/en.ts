@@ -766,6 +766,13 @@ export const en = {
       length: 'Choose a period of at most ten years.',
     },
     scope: { label: 'Whose money', all: 'Combined', personal: 'Personal', family: 'Family' },
+    accounts: {
+      title: 'Accounts',
+      income: 'Income',
+      expense: 'Expenses',
+      transfersIn: 'Transfers in',
+      transfersOut: 'Transfers out',
+    },
     totals: {
       title: 'Totals',
       income: 'Income',

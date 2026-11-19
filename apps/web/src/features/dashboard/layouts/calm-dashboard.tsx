@@ -2,6 +2,7 @@ import { useTranslations } from '@i18n/index';
 import { PageHeader } from '@shared/components';
 import { cn } from '@shared/lib/utils';
 import {
+  AccountOverview,
   BudgetOverview,
   CategoryBreakdown,
   DashboardStatus,
@@ -28,6 +29,7 @@ export function CalmDashboard() {
       </div>
       <DashboardStatus dashboard={dashboard} />
       <div className={cn('flex flex-col gap-6', dashboard.refreshing && 'opacity-60')}>
+        <AccountOverview dashboard={dashboard} tileClassName={tile} />
         <TotalsTiles dashboard={dashboard} tileClassName={tile} />
         <UnconvertedList dashboard={dashboard} className={tile} />
         <TrendChart dashboard={dashboard} className={tile} />

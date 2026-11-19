@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { api } from '@data/client';
 import { createQueryClient } from '@data/query-client';
-import { useWorkspaces } from '@data/sync';
+import { type Account, useAccountPeriods, useAccounts, useWorkspaces } from '@data/sync';
 import { FAMILY, PERSONAL } from '@data/sync/fixtures';
 import { testProfile, testSession } from '@data/testing';
 import { I18nProvider } from '@i18n/index';
@@ -19,6 +19,8 @@ vi.mock(import('@data/sync'), async (importOriginal) => ({
   ...(await importOriginal()),
   useWorkspaces: vi.fn(() => ({ ready: true, items: [PERSONAL] })),
   useCategories: vi.fn(() => ({ ready: true, items: [] })),
+  useAccounts: vi.fn(() => ({ ready: true, items: [] })),
+  useAccountPeriods: vi.fn(() => new Map()),
 }));
 const get = vi.mocked(api.GET);
 
@@ -86,7 +88,68 @@ beforeEach(() => {
     path === '/api/v1/analytics/summary' ? { data: summary } : { data: { budgets: [] } }) as never);
 });
 
+const account = (patch: Partial<Account>): Account =>
+  ({
+    id: 'acc-1',
+    workspaceId: PERSONAL.id,
+    name: 'Card',
+    kind: 'card',
+    currency: 'EUR',
+    archivedAt: null,
+    openingBalanceMinor: 0,
+    openingOn: null,
+    revision: 1,
+    createdAt: '2026-10-01T00:00:00.000Z',
+    updatedAt: '2026-10-01T00:00:00.000Z',
+    ...patch,
+  }) as Account;
+
 describe('dashboard', () => {
+  it('shows each account with its balance and what moved in and out of it, transfers apart', async () => {
+    vi.mocked(useAccounts).mockReturnValue({
+      ready: true,
+      items: [
+        account({ id: 'acc-salary', name: 'Salary' }),
+        account({ id: 'acc-savings', name: 'Savings', kind: 'savings' }),
+        account({ id: 'acc-old', name: 'Old', archivedAt: '2026-11-01T00:00:00.000Z' }),
+      ],
+    });
+    vi.mocked(useAccountPeriods).mockReturnValue(
+      new Map([
+        [
+          'acc-salary',
+          {
+            incomeMinor: 100_000,
+            expenseMinor: 10_000,
+            transfersInMinor: 0,
+            transfersOutMinor: 30_000,
+            closingMinor: 60_000,
+          },
+        ],
+        [
+          'acc-savings',
+          {
+            incomeMinor: 0,
+            expenseMinor: 0,
+            transfersInMinor: 30_000,
+            transfersOutMinor: 0,
+            closingMinor: 30_000,
+          },
+        ],
+      ]),
+    );
+    renderScreen();
+    const accounts = await screen.findByRole('region', { name: 'Accounts' });
+    const items = within(accounts).getAllByRole('listitem');
+    expect(items.map((item) => item.textContent)).toEqual([
+      'Salary€600.00€600.00Income+€1,000.00Expenses-€100.00Transfers out-€300.00',
+      'Savings€300.00€300.00Transfers in+€300.00',
+    ]);
+    expect(vi.mocked(useAccountPeriods)).toHaveBeenCalledWith(
+      expect.objectContaining({ from: month.from, to: month.to }),
+    );
+  });
+
   it('shows totals with their change, categories, unconverted amounts and the trend as a table', async () => {
     renderScreen();
     const totals = await screen.findByRole('region', { name: 'Totals' });

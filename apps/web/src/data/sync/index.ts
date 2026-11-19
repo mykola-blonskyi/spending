@@ -1,5 +1,6 @@
 export {
   useAccountBalances,
+  useAccountPeriods,
   useAccounts,
   useCategories,
   useConflicts,
@@ -36,6 +37,7 @@ export {
 } from './model';
 export {
   type AccountBalance,
+  type AccountPeriod,
   type EntrySync,
   type Fx,
   type TransactionEntry,
