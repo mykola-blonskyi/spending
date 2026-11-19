@@ -141,7 +141,9 @@ Rules are numbered so code, tests and PRs can cite them (`BR-n`).
   only, as with archiving. The server re-checks under the ledger lock and refuses a used account
   with `409 ACCOUNT_IN_USE` (details carry the entry and rule counts). An account in use is
   archived instead: the dialog names why and offers Archive. Deleting writes a `sync_tombstones`
-  row for the account, so every device drops it on its next pull. Deleting asks first and warns
+  row for the account, so every device drops it on its next pull. A device that missed the
+  tombstone (an older app version pulled past it) still shows the account; deleting it there gets
+  `404 NOT_FOUND`, which counts as done and drops it on that device. Deleting asks first and warns
   when the opening balance is not zero.
 - **BR-21.** Pending-review transactions are excluded from history, totals and budgets until they
   are confirmed.

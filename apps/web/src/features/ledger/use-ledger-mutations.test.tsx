@@ -9,6 +9,7 @@ import { I18nProvider } from '@i18n/index';
 import { useAccountsAdmin } from './use-ledger-mutations';
 
 const refresh = vi.hoisted(() => vi.fn());
+const forgetAccount = vi.hoisted(() => vi.fn());
 vi.mock('sonner', () => ({ toast: { error: vi.fn() } }));
 vi.mock('@data/ledger', () => ({
   createAccount: vi.fn(),
@@ -17,7 +18,10 @@ vi.mock('@data/ledger', () => ({
   createCategory: vi.fn(),
   updateCategory: vi.fn(),
 }));
-vi.mock('@data/sync', () => ({ useSyncNow: () => refresh }));
+vi.mock('@data/sync', () => ({
+  useSyncNow: () => refresh,
+  useForgetAccount: () => forgetAccount,
+}));
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <QueryClientProvider client={createQueryClient()}>
@@ -28,6 +32,7 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 beforeEach(() => {
   vi.clearAllMocks();
   refresh.mockResolvedValue(undefined);
+  forgetAccount.mockResolvedValue(undefined);
 });
 
 describe('useAccountsAdmin', () => {
@@ -90,5 +95,21 @@ describe('useAccountsAdmin', () => {
     expect(toast.error).toHaveBeenCalledWith(
       'This account has entries or recurring rules now, so it cannot be deleted. Archive it instead.',
     );
+  });
+
+  it('forgets an account the server no longer has, so a missed deletion can be cleared', async () => {
+    vi.mocked(deleteAccount).mockRejectedValue(
+      new ApiError({ status: 404, code: 'NOT_FOUND', message: 'gone' }),
+    );
+    const { result } = renderHook(() => useAccountsAdmin(), { wrapper });
+
+    let deleted: boolean | undefined;
+    await act(async () => {
+      deleted = await result.current.remove('a-1');
+    });
+
+    expect(deleted).toBe(true);
+    expect(forgetAccount).toHaveBeenCalledWith('a-1');
+    expect(toast.error).not.toHaveBeenCalled();
   });
 });

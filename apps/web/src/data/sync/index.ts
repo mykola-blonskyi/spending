@@ -5,6 +5,7 @@ export {
   useConflicts,
   useDeleteTransaction,
   useDiscardChange,
+  useForgetAccount,
   useInitialSync,
   useSyncMeta,
   useLocalTransaction,

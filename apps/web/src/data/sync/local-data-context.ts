@@ -36,6 +36,7 @@ import type { TransferDraft } from './transfer';
 import {
   deleteTransaction,
   discardChange,
+  forgetAccount,
   markTransfer,
   recordTransaction,
   recordTransfer,
@@ -249,6 +250,7 @@ export const useMarkTransfer = (): ((id: string, counterpartId: string | null) =
   useWriter(markTransfer);
 export const useUnmarkTransfer = (): ((id: string) => Promise<void>) => useWriter(unmarkTransfer);
 export const useDiscardChange = (): ((id: string) => Promise<void>) => useWriter(discardChange);
+export const useForgetAccount = (): ((id: string) => Promise<void>) => useWriter(forgetAccount);
 export const useResolveConflict = (): ((
   conflictId: string,
   resolution: Resolution,
