@@ -796,6 +796,13 @@ export const uk = {
       length: 'Виберіть період не довший за десять років.',
     },
     scope: { label: 'Чиї гроші', all: 'Разом', personal: 'Особисті', family: 'Сімейні' },
+    accounts: {
+      title: 'Рахунки',
+      income: 'Доходи',
+      expense: 'Витрати',
+      transfersIn: 'Перекази на рахунок',
+      transfersOut: 'Перекази з рахунку',
+    },
     totals: {
       title: 'Підсумки',
       income: 'Доходи',

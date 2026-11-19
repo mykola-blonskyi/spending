@@ -800,6 +800,13 @@ export const ru = {
       length: 'Выберите период не длиннее десяти лет.',
     },
     scope: { label: 'Чьи деньги', all: 'Вместе', personal: 'Личные', family: 'Семейные' },
+    accounts: {
+      title: 'Счета',
+      income: 'Доходы',
+      expense: 'Расходы',
+      transfersIn: 'Переводы на счёт',
+      transfersOut: 'Переводы со счёта',
+    },
     totals: {
       title: 'Итоги',
       income: 'Доходы',

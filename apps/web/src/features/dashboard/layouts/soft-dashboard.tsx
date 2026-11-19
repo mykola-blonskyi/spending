@@ -2,6 +2,7 @@ import { useTranslations } from '@i18n/index';
 import { PageHeader } from '@shared/components';
 import { cn } from '@shared/lib/utils';
 import {
+  AccountOverview,
   BudgetOverview,
   CategoryBreakdown,
   DashboardStatus,
@@ -29,6 +30,7 @@ export function SoftDashboard() {
       </div>
       <DashboardStatus dashboard={dashboard} />
       <div className={cn('flex flex-col gap-4', dashboard.refreshing && 'opacity-60')}>
+        <AccountOverview dashboard={dashboard} tileClassName={surface} />
         <TotalsTiles dashboard={dashboard} tileClassName={surface} />
         <UnconvertedList dashboard={dashboard} className={surface} />
         <TrendChart dashboard={dashboard} className={surface} />

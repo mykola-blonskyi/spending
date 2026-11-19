@@ -2,6 +2,7 @@ import { useTranslations } from '@i18n/index';
 import { PageHeader } from '@shared/components';
 import { cn } from '@shared/lib/utils';
 import {
+  AccountOverview,
   BudgetOverview,
   CategoryBreakdown,
   DashboardStatus,
@@ -34,6 +35,7 @@ export function SplitDashboard() {
         )}
       >
         <div className="flex min-w-0 flex-col gap-4">
+          <AccountOverview dashboard={dashboard} tileClassName={panel} />
           <TotalsTiles dashboard={dashboard} tileClassName={panel} />
           <TrendChart dashboard={dashboard} className={panel} />
           <CategoryBreakdown dashboard={dashboard} className={panel} />

@@ -101,6 +101,8 @@ type Entry = {
   category?: string;
   description: string;
   accountId?: string;
+  /** Shared by both sides of a transfer (BR-37). */
+  transferId?: string;
 };
 
 /** Pushes exact entries into the signed-in user's personal workspace, as another device would. */

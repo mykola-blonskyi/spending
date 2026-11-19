@@ -792,6 +792,13 @@ export const es = {
       length: 'Elige un periodo de diez años como máximo.',
     },
     scope: { label: 'De quién', all: 'Todo', personal: 'Personal', family: 'Familia' },
+    accounts: {
+      title: 'Cuentas',
+      income: 'Ingresos',
+      expense: 'Gastos',
+      transfersIn: 'Transferencias recibidas',
+      transfersOut: 'Transferencias enviadas',
+    },
     totals: {
       title: 'Totales',
       income: 'Ingresos',

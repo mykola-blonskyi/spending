@@ -5,7 +5,7 @@ import { localRow, page, sequentialIds, serverRow, syncedState } from './fixture
 import { emptyLocalState, type LocalState } from './model';
 import { reducePull } from './pull';
 import { applyLocalChange, setMutationState } from './queue';
-import { accountBalance, openingForBalance, queryTransactions } from './query';
+import { accountBalance, accountPeriod, openingForBalance, queryTransactions } from './query';
 import { deriveSyncStatus, smoothingDelay } from './status';
 
 const history = syncedState(
@@ -163,6 +163,45 @@ describe('smoothingDelay', () => {
     ['leaving syncing is immediate', synced, syncing, 0, 0],
   ])('%s', (_, next, shown, shownFor, expected) => {
     expect(smoothingDelay(next, shown, shownFor)).toBe(expected);
+  });
+});
+
+describe('accountPeriod', () => {
+  const card: Parameters<typeof accountPeriod>[0] = {
+    id: 'acc-card',
+    openingBalanceMinor: 50000,
+    openingOn: '2026-10-01',
+  };
+  const november = { from: '2026-11-01', to: '2026-11-30' };
+  const on = (patch: Parameters<typeof serverRow>[0]) =>
+    serverRow({ accountId: card.id, amountMinor: 1000, occurredOn: '2026-11-10', ...patch });
+
+  it('splits the period into income, expenses and transfers, and ends at the balance on its last day', () => {
+    const state = syncedState(
+      on({ id: 'before', kind: 'income', amountMinor: 7000, occurredOn: '2026-10-20' }),
+      on({ id: 'pay', kind: 'income', amountMinor: 100000 }),
+      on({ id: 'bill', kind: 'expense', amountMinor: 10000 }),
+      on({ id: 'in', kind: 'income', amountMinor: 3000, transferId: 'tr-1' }),
+      on({ id: 'out', kind: 'expense', amountMinor: 20000, transferId: 'tr-2' }),
+      on({ id: 'after', kind: 'expense', amountMinor: 999, occurredOn: '2026-12-01' }),
+      serverRow({ id: 'other', accountId: 'acc-cash', amountMinor: 5, occurredOn: '2026-11-10' }),
+    );
+    expect(accountPeriod(card, state.transactions.values(), november)).toEqual({
+      incomeMinor: 100000,
+      expenseMinor: 10000,
+      transfersInMinor: 3000,
+      transfersOutMinor: 20000,
+      closingMinor: 50000 + 7000 + 100000 - 10000 + 3000 - 20000,
+    });
+  });
+
+  it('leaves out entries before the opening date and an opening balance that starts later', () => {
+    const state = syncedState(on({ id: 'old', kind: 'income', occurredOn: '2026-09-01' }));
+    expect(accountPeriod(card, state.transactions.values(), november).closingMinor).toBe(50000);
+    expect(
+      accountPeriod(card, state.transactions.values(), { from: '2026-09-01', to: '2026-09-30' })
+        .closingMinor,
+    ).toBe(0);
   });
 });
 

@@ -23,6 +23,8 @@ import type {
 import {
   type AccountBalance,
   accountBalance,
+  type AccountPeriod,
+  accountPeriod,
   localEntries,
   openingForBalance,
   queryTransactions,
@@ -128,6 +130,22 @@ export function useAccountBalances(): ReadonlyMap<string, AccountBalance> {
     return balances;
   }, [state]);
 }
+/** Every account's flows and closing balance over a period, by account id. */
+export function useAccountPeriods(
+  period: Readonly<{ from: string; to: string }>,
+): ReadonlyMap<string, AccountPeriod> {
+  const state = useLocalState();
+  const { from, to } = period;
+  return useMemo(() => {
+    const periods = new Map<string, AccountPeriod>();
+    if (!state) return periods;
+    for (const account of state.accounts.values()) {
+      periods.set(account.id, accountPeriod(account, state.transactions.values(), { from, to }));
+    }
+    return periods;
+  }, [state, from, to]);
+}
+
 /** Builds the account patch that makes the balance equal a target, from this device's entries. */
 export function useOpeningForBalance(): (
   account: Account,

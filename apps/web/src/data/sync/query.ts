@@ -176,6 +176,42 @@ export function accountBalance(
   return { balanceMinor, uncounted, entries };
 }
 
+export type AccountPeriod = Readonly<{
+  incomeMinor: number;
+  expenseMinor: number;
+  transfersInMinor: number;
+  transfersOutMinor: number;
+  /** The balance at the end of the period's last day. */
+  closingMinor: number;
+}>;
+
+/** One account's period: its flows between `from` and `to`, counted as its balance is (BR-40). */
+export function accountPeriod(
+  account: Pick<Account, 'id' | 'openingBalanceMinor' | 'openingOn'>,
+  records: Iterable<TransactionRecord>,
+  period: Readonly<{ from: string; to: string }>,
+): AccountPeriod {
+  const flows = { incomeMinor: 0, expenseMinor: 0, transfersInMinor: 0, transfersOutMinor: 0 };
+  let closingMinor =
+    account.openingOn !== null && account.openingOn <= period.to ? account.openingBalanceMinor : 0;
+  for (const record of records) {
+    if (isDeleted(record.local)) continue;
+    const row = record.local ?? record.server;
+    if (row?.accountId !== account.id || row.occurredOn > period.to) continue;
+    if (account.openingOn !== null && row.occurredOn < account.openingOn) continue;
+    const income = row.kind === 'income';
+    closingMinor += income ? row.amountMinor : -row.amountMinor;
+    if (row.occurredOn < period.from) continue;
+    // Rows stored by older clients may lack the field.
+    if (row.transferId) {
+      flows[income ? 'transfersInMinor' : 'transfersOutMinor'] += row.amountMinor;
+    } else {
+      flows[income ? 'incomeMinor' : 'expenseMinor'] += row.amountMinor;
+    }
+  }
+  return { ...flows, closingMinor };
+}
+
 /**
  * The opening balance and date that make the account show `targetMinor` (BR-40). An account with
  * no opening date starts at its earliest live entry (today when it has none), so no entry drops
